@@ -213,23 +213,23 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# CSRF Settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://janhelp-mnrqcf3h.b4a.run',
+    'http://janhelp-mnrqcf3h.b4a.run',
+    'https://*.back4app.com',
+    'https://*.b4a.run',
+]
+
 # Production Security Settings
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False  # Let the proxy handle SSL redirect to avoid loops
+    SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     X_FRAME_OPTIONS = 'DENY'
-    CSRF_TRUSTED_ORIGINS = [
-        'https://janhelp-mnrqcf3h.b4a.run',
-        'http://janhelp-mnrqcf3h.b4a.run',
-        'https://*.back4app.com',
-        'https://*.b4a.run',
-    ]
-    USE_X_FORWARDED_HOST = True
-    USE_X_FORWARDED_PORT = True
