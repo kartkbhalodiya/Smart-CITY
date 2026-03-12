@@ -43,7 +43,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = ['*']
 
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
@@ -258,6 +258,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CSRF Settings
 CSRF_TRUSTED_ORIGINS = [
+    'https://*.vercel.app',
     'https://janhelp.vercel.app',
     'https://janhelp-mnrqcf3h.b4a.run',
     'http://janhelp-mnrqcf3h.b4a.run',
@@ -272,8 +273,5 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     X_FRAME_OPTIONS = 'DENY'
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
