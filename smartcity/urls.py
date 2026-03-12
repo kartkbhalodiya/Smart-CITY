@@ -20,20 +20,6 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse
-import sys
-
-def health_check(request):
-    """Simple health check endpoint for debugging"""
-    import django
-    return JsonResponse({
-        'status': 'ok',
-        'python_version': sys.version,
-        'django_version': django.get_version(),
-        'debug': settings.DEBUG,
-        'cloudinary_enabled': getattr(settings, 'CLOUDINARY_ENABLED', False),
-        'database_engine': settings.DATABASES['default']['ENGINE'],
-    })
 
 def admin_dashboard_redirect(request):
     if not request.user.is_authenticated:
@@ -50,7 +36,6 @@ def admin_dashboard_redirect(request):
     return admin.site.index(request)
 
 urlpatterns = [
-    path("health/", health_check, name="health_check"),
     path("admin/", admin_dashboard_redirect, name="admin_dashboard_redirect"),
     path("admin/", admin.site.urls),
     path("", include('complaints.urls')),

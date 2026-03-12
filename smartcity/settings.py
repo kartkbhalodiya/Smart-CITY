@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,72 +30,36 @@ SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*', '.vercel.app']
-
-USE_X_FORWARDED_HOST = True
-USE_X_FORWARDED_PORT = True
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host.strip()]
+if not DEBUG and os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
 
 
 # Application definition
 
-# Validate Cloudinary credentials (all 3 required)
-try:
-    CLOUDINARY_ENABLED = all([
-        os.getenv('CLOUDINARY_CLOUD_NAME'),
-        os.getenv('CLOUDINARY_API_KEY'),
-        os.getenv('CLOUDINARY_API_SECRET')
-    ])
-except Exception as e:
-    print(f"Cloudinary validation error: {e}")
-    CLOUDINARY_ENABLED = False
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "cloudinary_storage",
+    "django.contrib.staticfiles",
+    "cloudinary",
+    "complaints",
+]
 
-if CLOUDINARY_ENABLED:
-    INSTALLED_APPS = [
-        "django.contrib.admin",
-        "django.contrib.auth",
-        "django.contrib.contenttypes",
-        "django.contrib.sessions",
-        "django.contrib.messages",
-        "cloudinary_storage",
-        "django.contrib.staticfiles",
-        "cloudinary",
-        "complaints",
-    ]
-    # Remove Whitenoise when using Cloudinary
-    MIDDLEWARE = [
-        "django.middleware.security.SecurityMiddleware",
-        "django.contrib.sessions.middleware.SessionMiddleware",
-        "django.middleware.locale.LocaleMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "django.middleware.csrf.CsrfViewMiddleware",
-        "django.contrib.auth.middleware.AuthenticationMiddleware",
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    ]
-else:
-    INSTALLED_APPS = [
-        "django.contrib.admin",
-        "django.contrib.auth",
-        "django.contrib.contenttypes",
-        "django.contrib.sessions",
-        "django.contrib.messages",
-        "django.contrib.staticfiles",
-        "complaints",
-    ]
-    # Use Whitenoise for local static files
-    MIDDLEWARE = [
-        "django.middleware.security.SecurityMiddleware",
-        "whitenoise.middleware.WhiteNoiseMiddleware",
-        "django.contrib.sessions.middleware.SessionMiddleware",
-        "django.middleware.locale.LocaleMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "django.middleware.csrf.CsrfViewMiddleware",
-        "django.contrib.auth.middleware.AuthenticationMiddleware",
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    ]
-
-
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
 
 ROOT_URLCONF = "smartcity.urls"
 
@@ -111,7 +74,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            "debug": False,
+            "debug": True,
         },
     },
 ]
@@ -124,28 +87,13 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 
 if os.getenv('DATABASE_URL'):
     # Supabase Connection details
-    try:
-        import dj_database_url
-        database_url = os.getenv('DATABASE_URL')
-        
-        # Ensure proper SSL for Supabase if not present in URL
-        if 'supabase.co' in database_url and 'sslmode' not in database_url:
-            if '?' in database_url:
-                database_url += '&sslmode=require'
-            else:
-                database_url += '?sslmode=require'
-                
-        db_config = dj_database_url.parse(database_url)
-        db_config['CONN_MAX_AGE'] = 600
-        
-        if db_config:
-            DATABASES = {'default': db_config}
-        else:
-            raise ValueError("Parsed db_config is empty")
-            
-    except Exception as e:
-        print(f"Database configuration error: {e}", file=sys.stderr)
-        # Fallback to manual environment variables
+    # We use manual parsing here because dj-database-url is having issues with some passwords
+    # Extracting host from DATABASE_URL or using it directly
+    import dj_database_url
+    db_config = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    
+    # If dj_database_url fails, we fall back to manual values from environment
+    if not db_config:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
@@ -154,11 +102,10 @@ if os.getenv('DATABASE_URL'):
                 'PASSWORD': os.getenv('DB_PASSWORD'),
                 'HOST': os.getenv('DB_HOST'),
                 'PORT': os.getenv('DB_PORT', '5432'),
-                'OPTIONS': {
-                    'sslmode': 'require',
-                },
             }
         }
+    else:
+        DATABASES = {'default': db_config}
 else:
     DATABASES = {
         "default": {
@@ -198,18 +145,14 @@ LANGUAGES = [
     ('gu', 'ગુજરાતી'),
 ]
 
-# Only add locale path if it exists (prevents warnings on Vercel)
-try:
-    if (BASE_DIR / 'locale').exists():
-        LOCALE_PATHS = [BASE_DIR / 'locale']
-    else:
-        LOCALE_PATHS = []
-except Exception:
-    LOCALE_PATHS = []
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 TIME_ZONE = "UTC"
 
 USE_I18N = True
+USE_L10N = True
 
 USE_TZ = True
 
@@ -218,57 +161,27 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Production Static Storage
-if CLOUDINARY_ENABLED:
-    # Use Cloudinary for both static and media files
-    # Don't use STATICFILES_DIRS on serverless (no local filesystem)
-    STATICFILES_DIRS = []
-    STATIC_ROOT = BASE_DIR / "staticfiles"  # Always set a path
-    
-    try:
-        STORAGES = {
-            "default": {
-                "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-            },
-            "staticfiles": {
-                "BACKEND": "cloudinary_storage.storage.StaticHashedCloudinaryStorage",
-            },
-        }
-        CLOUDINARY_STORAGE = {
-            'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
-            'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
-            'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
-        }
-    except Exception as e:
-        print(f"Cloudinary storage configuration error: {e}")
-        # Fallback to basic storage
-        STATICFILES_DIRS = []
-        STATIC_ROOT = BASE_DIR / "staticfiles"
-        STORAGES = {
-            "default": {
-                "BACKEND": "django.core.files.storage.FileSystemStorage",
-            },
-            "staticfiles": {
-                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-            },
-        }
-else:
-    # Use Whitenoise for local static files
-    STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
-    STATIC_ROOT = BASE_DIR / "staticfiles"
-    
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-        },
-    }
+# Production Static Storage (Whitenoise)
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
-WHITENOISE_MANIFEST_STRICT = False
-WHITENOISE_USE_FINDERS = True
+# Fallback for libraries like django-cloudinary-storage that don't support STORAGES yet
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
 
 # Media Storage
 MEDIA_URL = "/media/"
@@ -291,38 +204,26 @@ LOGIN_URL = '/login/'
 
 # Session settings - Keep user logged in
 SESSION_COOKIE_AGE = 9999909600  # 2 weeks in seconds
-SESSION_SAVE_EVERY_REQUEST = False
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-
-# Caching settings
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-    }
-}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CSRF Settings
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.vercel.app',
-    'https://janhelp.vercel.app',
-    'https://janhelp-mnrqcf3h.b4a.run',
-    'http://janhelp-mnrqcf3h.b4a.run',
-    'https://*.back4app.com',
-    'https://*.b4a.run',
-]
-
 # Production Security Settings
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    X_FRAME_OPTIONS = 'DENY'
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True

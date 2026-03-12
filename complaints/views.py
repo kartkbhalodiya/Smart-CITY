@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.csrf import csrf_exempt
@@ -9,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from .models import (
     OTP, Complaint, Department, DepartmentUser, CityAdmin, CitizenProfile,
     ComplaintMedia, ComplaintResolutionProof, ManagedState, ManagedCity,
@@ -1139,15 +1137,7 @@ def get_managed_category_payload():
     if not categories:
         return [], {}, {}
 
-    category_options = []
-    for c in categories:
-        logo_url = ''
-        if c.logo:
-            try:
-                logo_url = c.logo.url
-            except Exception:
-                logo_url = ''
-        category_options.append({'key': c.key, 'name': c.name, 'logo_url': logo_url})
+    category_options = [{'key': c.key, 'name': c.name, 'logo_url': c.logo.url if c.logo else ''} for c in categories]
 
     sub_map = {}
     field_map = {}
@@ -1254,32 +1244,18 @@ def get_active_citizen_category_cards(is_guest=False):
             if is_guest:
                 href += '&guest=true'
 
-        logo_url = ''
-        if category.logo:
-            try:
-                logo_url = category.logo.url
-            except Exception:
-                logo_url = ''
-
         cards.append({
             'key': category.key,
             'name': category.name,
             'emoji': category.emoji or emoji_map.get(category.key, ''),
             'color': color_map.get(category.key, '#06ffa5'),
-            'logo_url': logo_url,
+            'logo_url': category.logo.url if category.logo else '',
             'href': href,
         })
     return cards
 
 def register_view(request):
-    # Get managed states and cities from database
-    states = ManagedState.objects.all().order_by('name')
-    cities = ManagedCity.objects.select_related('state').all().order_by('name')
-    
-    context = {
-        'states': states,
-        'cities': cities,
-    }
+    context = {}
     
     if request.method == 'POST':
         registration_data = {
@@ -1475,36 +1451,28 @@ def logout_view(request):
     return redirect('login')
 
 def user_dashboard(request):
-    try:
-        # Check if guest mode
-        is_guest = request.GET.get('guest') == 'true'
-        category_cards = get_active_citizen_category_cards(is_guest=is_guest)
-        
-        if is_guest:
-            return render(request, 'user_dashboard.html', {
-                'complaints': [],
-                'is_guest': True,
-                'user': {'first_name': 'Guest', 'last_name': 'User'},
-                'category_cards': category_cards,
-            })
-        
-        # Regular user dashboard (requires login)
-        if not request.user.is_authenticated:
-            return redirect('/dashboard/?guest=true')
-            
-        complaints = Complaint.objects.select_related('assigned_department').prefetch_related('media').filter(user=request.user).order_by('-created_at')
+    # Check if guest mode
+    is_guest = request.GET.get('guest') == 'true'
+    category_cards = get_active_citizen_category_cards(is_guest=is_guest)
+    
+    if is_guest:
         return render(request, 'user_dashboard.html', {
-            'complaints': complaints,
-            'is_guest': False,
+            'complaints': [],
+            'is_guest': True,
+            'user': {'first_name': 'Guest', 'last_name': 'User'},
             'category_cards': category_cards,
         })
-    except Exception as e:
-        import traceback
-        print(f"Error in user_dashboard: {str(e)}")
-        print(traceback.format_exc())
-        if settings.DEBUG:
-            raise e
-        return HttpResponse("A server error occurred. Please try again later.", status=500)
+    
+    # Regular user dashboard (requires login)
+    if not request.user.is_authenticated:
+        return redirect('/dashboard/?guest=true')
+        
+    complaints = Complaint.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'user_dashboard.html', {
+        'complaints': complaints,
+        'is_guest': False,
+        'category_cards': category_cards,
+    })
 
 def track_complaints(request):
     if not request.user.is_authenticated:
@@ -2214,8 +2182,8 @@ def super_admin_dashboard(request):
     total_departments = Department.objects.count()
     total_city_admins = CityAdmin.objects.count()
     
-    recent_complaints = Complaint.objects.select_related('assigned_department', 'user').prefetch_related('media').order_by('-created_at')[:10]
-    city_admins = CityAdmin.objects.select_related('user').all()
+    recent_complaints = Complaint.objects.order_by('-created_at')[:10]
+    city_admins = CityAdmin.objects.all()
     
     context = {
         'total_complaints': total_complaints,
@@ -2265,7 +2233,7 @@ def super_admin_problems(request):
         .order_by('city')
     )
 
-    complaints = base_complaints.select_related('assigned_department', 'user').prefetch_related('media')
+    complaints = base_complaints
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if state_filter:
@@ -2321,7 +2289,7 @@ def super_admin_solved(request):
         .order_by('city')
     )
 
-    complaints = base_complaints.select_related('assigned_department', 'user').prefetch_related('media')
+    complaints = base_complaints
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if state_filter:
@@ -3433,7 +3401,7 @@ def super_admin_total(request):
         .order_by('city')
     )
 
-    complaints = base_complaints.select_related('assigned_department', 'user').prefetch_related('media')
+    complaints = base_complaints
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if state_filter:
@@ -3884,7 +3852,7 @@ def department_dashboard_new(request):
         department = dept_user.department
         
         # Get complaints for this department
-        complaints = Complaint.objects.select_related('user').prefetch_related('media').filter(
+        complaints = Complaint.objects.filter(
             assigned_department=department
         ).order_by('-created_at')
         
@@ -4285,7 +4253,7 @@ def city_admin_problems(request):
             return redirect('user_dashboard')
         
         # Get all complaints for this city admin's city and state
-        complaints = Complaint.objects.select_related('assigned_department', 'user').prefetch_related('media').filter(
+        complaints = Complaint.objects.filter(
             city__iexact=city_admin.city_name,
             state__iexact=city_admin.state
         ).order_by('-created_at')
@@ -4835,7 +4803,7 @@ def city_admin_analytics(request):
     ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
     
     # Get complaints for this city admin
-    complaints = Complaint.objects.select_related('assigned_department').filter(
+    complaints = Complaint.objects.filter(
         city__iexact=city_admin.city_name,
         state__iexact=city_admin.state
     ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
@@ -5495,83 +5463,3 @@ If you did not request this password reset, please contact your administrator im
         return redirect('login')
     
     return render(request, 'forgot_password.html')
-
-
-def track_complaint_page(request):
-    """Modern track complaint page"""
-    return render(request, 'track_complaint.html')
-
-def forgot_password(request):
-    """Forgot password view"""
-    return render(request, 'forgot_password.html')
-
-def translation_test(request):
-    """Translation test view"""
-    return render(request, 'translation_test.html')
-
-def dynamic_fields_test(request):
-    """Dynamic fields test view"""
-    return render(request, 'dynamic_fields_test.html')
-
-def super_admin_delete_user(request, user_id):
-    """Delete user view"""
-    if not request.user.is_superuser:
-        return redirect('user_dashboard')
-    user = get_object_or_404(User, id=user_id)
-    user.delete()
-    messages.success(request, 'User deleted successfully!')
-    return redirect('super_admin_users')
-
-def city_admin_department_detail(request, department_id):
-    """City admin department detail view"""
-    try:
-        if request.user.is_superuser:
-            city_admin = CityAdmin.objects.first()
-        else:
-            city_admin = CityAdmin.objects.get(user=request.user)
-        
-        if not city_admin:
-            return redirect('user_dashboard')\n    except CityAdmin.DoesNotExist:
-        return redirect('user_dashboard')
-    
-    department = get_object_or_404(Department, id=department_id, city_admin=city_admin)
-    return render(request, 'city_admin_department_detail.html', {'department': department, 'city_admin': city_admin})
-
-def city_admin_analytics(request):
-    """City admin analytics view"""
-    try:
-        if request.user.is_superuser:
-            city_admin = CityAdmin.objects.first()
-        else:
-            city_admin = CityAdmin.objects.get(user=request.user)
-        
-        if not city_admin:
-            return redirect('user_dashboard')
-    except CityAdmin.DoesNotExist:
-        return redirect('user_dashboard')
-    
-    return render(request, 'city_admin_analytics.html', {'city_admin': city_admin})
-
-def city_admin_update_password(request):
-    """City admin update password view"""
-    try:
-        if request.user.is_superuser:
-            city_admin = CityAdmin.objects.first()
-        else:
-            city_admin = CityAdmin.objects.get(user=request.user)
-        
-        if not city_admin:
-            return redirect('user_dashboard')
-    except CityAdmin.DoesNotExist:
-        return redirect('user_dashboard')
-    
-    if request.method == 'POST':
-        new_password = request.POST.get('new_password')
-        if new_password:
-            request.user.set_password(new_password)
-            request.user.save()
-            messages.success(request, 'Password updated successfully!')
-            return redirect('city_admin_dashboard')
-    
-    return render(request, 'city_admin_update_password.html', {'city_admin': city_admin})
-

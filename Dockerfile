@@ -22,4 +22,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Start Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "smartcity.wsgi:application"]
+CMD gunicorn --bind 0.0.0.0:${PORT:-8000} smartcity.wsgi:application

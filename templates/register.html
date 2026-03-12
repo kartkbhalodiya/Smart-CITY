@@ -3,159 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Register - JanHelp</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
-    
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
+    <title>Register - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root {
-            --primary-blue: #1E66F5;
-            --green-accent: #2ECC71;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.5);
-        }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: #f8fafc;
-            overflow-x: hidden;
-            padding: 20px 10px;
-        }
-
-        /* Background */
-        .bg-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            transition: background-image 0.5s ease;
-        }
-
-        /* Desktop Background */
-        @media (min-width: 1025px) {
-            .bg-container {
-                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web");
-                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-        }
-
-        /* Mobile Background */
-        @media (max-width: 1024px) {
-            .bg-container {
-                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile");
-                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-        }
-
-        .bg-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: linear-gradient(135deg, rgba(30, 102, 245, 0.15) 0%, rgba(102, 126, 234, 0.12) 50%, rgba(118, 75, 162, 0.08) 100%);
+            background: #ffffff;
+            padding: 20px;
         }
 
         .container {
-            max-width: 480px;
-            width: 100%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(248, 249, 250, 0.95);
             border-radius: 20px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 20px 50px rgba(30, 102, 245, 0.15), 0 0 100px rgba(30, 102, 245, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             padding: 30px 25px;
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
         }
 
         .header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 30px;
         }
 
-        .logo-img {
-            max-width: 160px;
-            height: auto;
-            margin-bottom: 8px;
-        }
-
-        .brand-subtitle {
-            color: var(--primary-blue);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            margin-bottom: 6px;
-            font-family: 'Poppins', sans-serif;
+        .header i {
+            font-size: 50px;
+            color: #28a745;
+            margin-bottom: 10px;
         }
 
         .header h1 {
-            font-family: 'Poppins', sans-serif;
-            color: var(--text-dark);
-            font-size: 22px;
+            color: #2d3436;
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #636e72;
+            font-size: 13px;
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 0;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
-            color: var(--text-dark);
+            color: #2d3436;
             font-size: 12px;
             font-weight: 600;
             margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 11px 14px 11px 40px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
-            color: var(--text-dark);
+            padding: 12px 15px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            color: #2d3436;
             font-size: 14px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
             transition: all 0.3s;
         }
 
@@ -163,220 +89,97 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: var(--primary-blue);
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(30, 102, 245, 0.1);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .form-group textarea {
             resize: vertical;
-            min-height: 70px;
-            padding-left: 14px;
-        }
-
-        .form-group select {
-            padding-left: 14px;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 14px;
-            pointer-events: none;
-        }
-
-        .input-wrapper {
-            position: relative;
-        }
-
-        .location-section {
-            margin-bottom: 14px;
-        }
-
-        .location-title {
-            color: var(--text-dark);
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .location-buttons {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .location-divider {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 12px;
-            font-weight: 600;
-            margin: 10px 0;
+            min-height: 80px;
         }
 
         .btn {
-            flex: 1;
-            padding: 11px;
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
+            width: 100%;
+            padding: 14px;
+            background: #28a745;
             color: #ffffff;
             border: none;
-            border-radius: 12px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
+            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            font-family: 'Poppins', sans-serif;
-            box-shadow: 0 8px 16px rgba(30, 102, 245, 0.2);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 20px rgba(30, 102, 245, 0.3);
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
         }
 
         .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, var(--green-accent) 0%, #27ae60 100%);
-            box-shadow: 0 8px 16px rgba(46, 204, 113, 0.2);
-        }
-
-        .btn-secondary:hover {
-            box-shadow: 0 12px 20px rgba(46, 204, 113, 0.3);
-        }
-
-        .btn-full {
-            width: 100%;
-            margin-top: 6px;
+            transform: scale(0.98);
         }
 
         .footer {
             text-align: center;
             margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
         }
 
         .footer p {
-            color: var(--text-muted);
-            font-size: 12px;
-            margin-bottom: 6px;
+            color: #6c757d;
+            font-size: 13px;
+            margin-bottom: 8px;
         }
 
         .footer a {
-            color: var(--primary-blue);
+            color: #667eea;
             font-weight: 600;
             text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        .guest-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 12px;
-            padding: 10px;
-            background: #fff;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px;
-            color: var(--text-dark);
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .guest-link:hover {
-            border-color: var(--primary-blue);
-            color: var(--primary-blue);
         }
 
         .alert {
-            padding: 10px 14px;
+            padding: 12px;
             border-radius: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 500;
             text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
 
         .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
+            background: rgba(40, 167, 69, 0.9);
+            color: #fff;
         }
 
         .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        #locationDisplay {
-            padding: 10px;
-            background: rgba(30, 102, 245, 0.1);
-            border-radius: 10px;
-            font-size: 12px;
-            color: var(--text-dark);
-            display: none;
-            margin-top: 10px;
-        }
-
-        #mapContainer {
-            display: none;
-            margin-top: 10px;
-        }
-
-        #map {
-            height: 250px;
-            border-radius: 12px;
-            border: 1.5px solid #e2e8f0;
+            background: rgba(220, 53, 69, 0.9);
+            color: #fff;
         }
 
         @media (max-width: 480px) {
             .form-row {
                 grid-template-columns: 1fr;
+                gap: 0;
             }
 
             .container {
-                padding: 24px 18px;
+                padding: 25px 20px;
             }
 
             .header h1 {
-                font-size: 20px;
+                font-size: 22px;
             }
 
-            .location-buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
+            .header i {
+                font-size: 45px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="bg-container"></div>
-    <div class="bg-overlay"></div>
-    
     <script src="/static/js/translations.js"></script>
     <div class="container">
         {% if messages %}
@@ -386,10 +189,9 @@
         {% endif %}
 
         <div class="header">
-            <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" class="logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-            <div style="display:none; font-size: 40px; margin-bottom: 8px;">🏛️</div>
-            <p class="brand-subtitle">Complaint Management System</p>
-            <h1>Create Account</h1>
+            <i class="fa-solid fa-user-plus"></i>
+            <h1>Citizen Registration</h1>
+            <p>Join Smart City Portal</p>
         </div>
         
         <form method="post">
@@ -397,38 +199,29 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label><i class="fa-solid fa-user"></i> First Name</label>
-                    <div class="input-wrapper">
-                        <input type="text" name="name" placeholder="John" required style="padding-left: 14px;">
-                    </div>
+                    <label>First Name</label>
+                    <input type="text" name="name" placeholder="John" required>
                 </div>
                 <div class="form-group">
-                    <label><i class="fa-solid fa-user"></i> Last Name</label>
-                    <div class="input-wrapper">
-                        <input type="text" name="surname" placeholder="Doe" required style="padding-left: 14px;">
-                    </div>
+                    <label>Surname</label>
+                    <input type="text" name="surname" placeholder="Doe" required>
                 </div>
             </div>
 
             <div class="form-group">
-                <label><i class="fa-solid fa-phone"></i> Mobile Number</label>
-                <div class="input-wrapper">
-                    <input type="tel" name="mobile_no" placeholder="+91 98765 43210" required style="padding-left: 14px;">
-                </div>
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="john@example.com" required>
             </div>
 
             <div class="form-group">
-                <label><i class="fa-solid fa-envelope"></i> Email Address</label>
-                <div class="input-wrapper">
-                    <input type="email" name="email" placeholder="john@example.com" required style="padding-left: 14px;">
-                </div>
+                <label>Mobile Number</label>
+                <input type="tel" name="mobile_no" placeholder="+91 98765 43210" required>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label><i class="fa-solid fa-map"></i> State</label>
-                    <select name="state" id="state" required>
-                        <option value="">Select State</option>
+            <div class="form-group">
+                <label>State</label>
+                <select name="state" id="state" required>
+                    <option value="">Select State</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Gujarat">Gujarat</option>
                     <option value="Karnataka">Karnataka</option>
@@ -452,80 +245,68 @@
                     <option value="Himachal Pradesh">Himachal Pradesh</option>
                     <option value="Jammu and Kashmir">Jammu and Kashmir</option>
                     <option value="Goa">Goa</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label><i class="fa-solid fa-city"></i> City</label>
-                    <select name="district" id="district" required>
-                        <option value="">Select City</option>
-                    </select>
-                </div>
+                </select>
             </div>
 
             <div class="form-group">
-                <label><i class="fa-solid fa-location-dot"></i> Address</label>
-                <textarea name="address" placeholder="House no, Street, Landmark..." required></textarea>
+                <label>District</label>
+                <select name="district" id="district" required>
+                    <option value="">Select District</option>
+                </select>
             </div>
 
             <div class="form-group">
-                <label><i class="fa-solid fa-id-card"></i> Aadhaar Number (Optional)</label>
-                <div class="input-wrapper">
-                    <input type="text" name="aadhaar" placeholder="1234 5678 9012" maxlength="14" style="padding-left: 14px;">
-                </div>
+                <label>Taluka</label>
+                <select name="taluka" id="taluka" required>
+                    <option value="">Select Taluka</option>
+                </select>
             </div>
 
-            <div class="location-section">
-                <div class="location-title"><i class="fa-solid fa-location-crosshairs"></i> Location (GPS)</div>
-                <div class="location-buttons">
-                    <button type="button" class="btn" onclick="getCurrentLocation()" id="detectLocationBtn">
-                        <i class="fa-solid fa-location-arrow"></i>
-                        <span>Detect Current Location</span>
+            <div class="form-group">
+                <label>Village / City</label>
+                <input type="text" name="city" id="cityInput" placeholder="Enter village or city name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Location (GPS)</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" class="btn" onclick="getCurrentLocation()" style="flex: 1; background: #28a745; padding: 12px;">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        Current Location
+                    </button>
+                    <button type="button" class="btn" onclick="openMap()" style="flex: 1; background: #667eea; padding: 12px;">
+                        <i class="fa-solid fa-map-marked-alt"></i>
+                        Pick on Map
                     </button>
                 </div>
-                <div class="location-divider">OR</div>
-                <button type="button" class="btn btn-secondary" onclick="openMap()" style="width: 100%;" id="pickMapBtn">
-                    <i class="fa-solid fa-map-marked-alt"></i>
-                    <span>Pick Location on Map</span>
-                </button>
-                <input type="hidden" name="latitude" id="latitude" required>
-                <input type="hidden" name="longitude" id="longitude" required>
-                <div id="locationDisplay">
+                <input type="hidden" name="latitude" id="latitude">
+                <input type="hidden" name="longitude" id="longitude">
+                <div id="locationDisplay" style="padding: 10px; background: #e9ecef; border-radius: 8px; font-size: 12px; color: #495057; display: none;">
                     <i class="fa-solid fa-map-pin"></i> <span id="locationText"></span>
-                </div>
-                <div id="locationError" style="display: none; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; font-size: 12px; color: #dc2626; margin-top: 10px;">
-                    <i class="fa-solid fa-exclamation-triangle"></i> <span id="locationErrorText"></span>
                 </div>
             </div>
 
-            <div id="mapContainer">
-                <div id="mapLoading" style="display: none; text-align: center; padding: 40px; background: rgba(30, 102, 245, 0.05); border-radius: 12px; margin-bottom: 10px;">
-                    <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(30, 102, 245, 0.2); border-top-color: var(--primary-blue); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <p style="margin-top: 15px; color: var(--primary-blue); font-weight: 600;">Loading map...</p>
-                </div>
-                <div id="map"></div>
-                <button type="button" class="btn btn-full" onclick="confirmLocation()">
+            <div id="mapContainer" style="display: none; margin-bottom: 15px;">
+                <div id="map" style="height: 300px; border-radius: 10px; border: 1px solid #dee2e6;"></div>
+                <button type="button" class="btn" onclick="confirmLocation()" style="margin-top: 10px; background: #28a745;">
                     <i class="fa-solid fa-check"></i> Confirm Location
                 </button>
             </div>
 
-            <style>
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-            </style>
+            <div class="form-group">
+                <label>Full Address</label>
+                <textarea name="address" placeholder="House no, Street, Landmark..." required></textarea>
+            </div>
             
-            <button type="submit" class="btn btn-full">
-                <i class="fa-solid fa-user-plus"></i>
+            <button type="submit" class="btn">
+                <i class="fa-solid fa-check-circle"></i>
                 Register Now
             </button>
         </form>
         
         <div class="footer">
-            <p>Already have account? <a href="{% url 'login' %}">Login</a></p>
-            <a href="{% url 'track_guest_complaint' %}" class="guest-link">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                Track Complaint as Guest
-            </a>
+            <p>Already have an account?</p>
+            <a href="{% url 'login' %}">Sign In Here</a>
         </div>
     </div>
 
@@ -556,53 +337,131 @@
                 document.getElementById('longitude').value = e.latlng.lng;
             });
         }
+        const locationData = {
+            "Maharashtra": {
+                "Mumbai": ["Andheri", "Borivali", "Kurla", "Bandra", "Dadar"],
+                "Pune": ["Haveli", "Mulshi", "Maval", "Bhor", "Velhe"],
+                "Nagpur": ["Nagpur", "Kamptee", "Hingna", "Umred", "Kuhi"],
+                "Thane": ["Thane", "Kalyan", "Bhiwandi", "Ulhasnagar", "Ambarnath"],
+                "Nashik": ["Nashik", "Igatpuri", "Dindori", "Sinnar", "Niphad"]
+            },
+            "Gujarat": {
+                "Ahmedabad": ["Ahmedabad City", "Daskroi", "Sanand", "Dholka", "Bavla"],
+                "Surat": ["Surat City", "Chorasi", "Palsana", "Mangrol", "Kamrej"],
+                "Vadodara": ["Vadodara", "Karjan", "Savli", "Dabhoi", "Padra"],
+                "Rajkot": ["Rajkot", "Lodhika", "Jasdan", "Kotda Sangani", "Paddhari"],
+                "Gandhinagar": ["Gandhinagar", "Kalol", "Mansa", "Dehgam"]
+            },
+            "Karnataka": {
+                "Bangalore Urban": ["Bangalore North", "Bangalore South", "Anekal"],
+                "Mysore": ["Mysore", "Hunsur", "K.R. Nagar", "Nanjangud", "T. Narasipur"],
+                "Mangalore": ["Mangalore", "Bantwal", "Belthangady", "Puttur", "Sullia"],
+                "Hubli": ["Hubli", "Dharwad", "Kalghatgi", "Kundgol", "Navalgund"]
+            },
+            "Tamil Nadu": {
+                "Chennai": ["Alandur", "Ambattur", "Madhavaram", "Manali", "Perambur"],
+                "Coimbatore": ["Coimbatore North", "Coimbatore South", "Pollachi", "Valparai"],
+                "Madurai": ["Madurai North", "Madurai South", "Melur", "Peraiyur", "Vadipatti"],
+                "Salem": ["Salem", "Attur", "Edappadi", "Mettur", "Omalur"]
+            },
+            "Rajasthan": {
+                "Jaipur": ["Jaipur", "Amber", "Bassi", "Chaksu", "Jamwa Ramgarh"],
+                "Jodhpur": ["Jodhpur", "Bilara", "Osian", "Phalodi", "Shergarh"],
+                "Udaipur": ["Udaipur", "Girwa", "Mavli", "Vallabhnagar", "Kherwara"],
+                "Kota": ["Kota", "Ladpura", "Pipalda", "Sangod"]
+            },
+            "Uttar Pradesh": {
+                "Lucknow": ["Lucknow", "Mohanlalganj", "Malihabad", "Bakshi Ka Talab"],
+                "Kanpur": ["Kanpur Nagar", "Ghatampur", "Bilhaur", "Akbarpur"],
+                "Agra": ["Agra", "Fatehabad", "Kheragarh", "Etmadpur", "Bah"],
+                "Varanasi": ["Varanasi", "Pindra", "Sewapuri"]
+            },
+            "Madhya Pradesh": {
+                "Bhopal": ["Bhopal", "Berasia", "Huzur"],
+                "Indore": ["Indore", "Mhow", "Depalpur", "Sanwer"],
+                "Jabalpur": ["Jabalpur", "Patan", "Sihora", "Kundam"],
+                "Gwalior": ["Gwalior", "Bhitarwar", "Dabra", "Morar"]
+            },
+            "West Bengal": {
+                "Kolkata": ["Kolkata"],
+                "Howrah": ["Howrah", "Bally-Jagachha", "Domjur", "Panchla"],
+                "Darjeeling": ["Darjeeling", "Kalimpong", "Kurseong", "Mirik"],
+                "Durgapur": ["Durgapur", "Faridpur", "Pandabeswar"]
+            },
+            "Bihar": {
+                "Patna": ["Patna Sadar", "Danapur", "Barh", "Masaurhi", "Paliganj"],
+                "Gaya": ["Gaya", "Bodh Gaya", "Manpur", "Sherghati", "Tikari"],
+                "Bhagalpur": ["Bhagalpur", "Kahalgaon", "Naugachhia", "Sultanganj"]
+            },
+            "Andhra Pradesh": {
+                "Visakhapatnam": ["Visakhapatnam", "Anakapalle", "Bheemunipatnam", "Paderu"],
+                "Vijayawada": ["Vijayawada", "Gannavaram", "Kanchikacherla", "Tiruvuru"],
+                "Guntur": ["Guntur", "Tenali", "Mangalagiri", "Sattenapalle"]
+            },
+            "Telangana": {
+                "Hyderabad": ["Hyderabad", "Secunderabad", "Serilingampally", "Rajendranagar"],
+                "Warangal": ["Warangal", "Hanamkonda", "Jangaon", "Parkal"],
+                "Nizamabad": ["Nizamabad", "Armoor", "Bodhan", "Dichpally"]
+            },
+            "Kerala": {
+                "Thiruvananthapuram": ["Thiruvananthapuram", "Neyyattinkara", "Nedumangad", "Varkala"],
+                "Kochi": ["Kochi", "Kanayannur", "Paravur", "Vypeen"],
+                "Kozhikode": ["Kozhikode", "Vatakara", "Koyilandy", "Thamarassery"]
+            },
+            "Punjab": {
+                "Ludhiana": ["Ludhiana East", "Ludhiana West", "Jagraon", "Khanna", "Raikot"],
+                "Amritsar": ["Amritsar", "Ajnala", "Majitha", "Tarn Taran"],
+                "Jalandhar": ["Jalandhar", "Phillaur", "Nakodar", "Shahkot"]
+            },
+            "Haryana": {
+                "Faridabad": ["Faridabad", "Ballabgarh", "Tigaon"],
+                "Gurgaon": ["Gurgaon", "Pataudi", "Sohna", "Manesar"],
+                "Panipat": ["Panipat", "Samalkha", "Israna"]
+            },
+            "Delhi": {
+                "Central Delhi": ["Connaught Place", "Karol Bagh", "Paharganj"],
+                "North Delhi": ["Civil Lines", "Model Town", "Narela"],
+                "South Delhi": ["Hauz Khas", "Saket", "Vasant Vihar"],
+                "East Delhi": ["Preet Vihar", "Mayur Vihar", "Shahdara"],
+                "West Delhi": ["Janakpuri", "Rajouri Garden", "Punjabi Bagh"]
+            }
+        };
+
         const stateSelect = document.getElementById('state');
         const districtSelect = document.getElementById('district');
-
-        // Build city data from Django context - only cities added by admin
-        const cityData = {};
-        {% for city in cities %}
-        const stateName = '{{ city.state.name }}';
-        if (!cityData[stateName]) {
-            cityData[stateName] = [];
-        }
-        cityData[stateName].push('{{ city.name }}');
-        {% endfor %}
+        const talukaSelect = document.getElementById('taluka');
 
         stateSelect.addEventListener('change', function() {
             const state = this.value;
-            districtSelect.innerHTML = '<option value="">Select City</option>';
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
             
-            if (state && cityData[state]) {
-                cityData[state].forEach(city => {
+            if (state && locationData[state]) {
+                Object.keys(locationData[state]).forEach(district => {
                     const option = document.createElement('option');
-                    option.value = city;
-                    option.textContent = city;
+                    option.value = district;
+                    option.textContent = district;
                     districtSelect.appendChild(option);
                 });
-            } else if (state) {
-                // No cities added for this state yet
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = 'No cities available for this state';
-                option.disabled = true;
-                districtSelect.appendChild(option);
+            }
+        });
+
+        districtSelect.addEventListener('change', function() {
+            const state = stateSelect.value;
+            const district = this.value;
+            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+            
+            if (state && district && locationData[state][district]) {
+                locationData[state][district].forEach(taluka => {
+                    const option = document.createElement('option');
+                    option.value = taluka;
+                    option.textContent = taluka;
+                    talukaSelect.appendChild(option);
+                });
             }
         });
 
         function getCurrentLocation() {
-            const detectBtn = document.getElementById('detectLocationBtn');
-            const btnText = detectBtn.querySelector('span');
-            const btnIcon = detectBtn.querySelector('i');
-            const errorDiv = document.getElementById('locationError');
-            const errorText = document.getElementById('locationErrorText');
-            
-            // Show loading state
-            btnText.textContent = 'Detecting...';
-            btnIcon.className = 'fa-solid fa-spinner fa-spin';
-            detectBtn.disabled = true;
-            errorDiv.style.display = 'none';
-            
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -613,145 +472,36 @@
                         document.getElementById('locationDisplay').style.display = 'block';
                         document.getElementById('locationText').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
                         
-                        // Reset button
-                        btnText.textContent = 'Location Detected ✓';
-                        btnIcon.className = 'fa-solid fa-check';
-                        detectBtn.disabled = false;
-                        
-                        // Auto-open map
-                        setTimeout(() => {
-                            document.getElementById('mapContainer').style.display = 'block';
-                            document.getElementById('mapLoading').style.display = 'block';
-                            if (!map) {
-                                setTimeout(() => {
-                                    initMap(lat, lng);
-                                    document.getElementById('mapLoading').style.display = 'none';
-                                }, 500);
+                        document.getElementById('mapContainer').style.display = 'block';
+                        if (!map) {
+                            initMap(lat, lng);
+                        } else {
+                            if (mapInitialized && typeof mappls !== 'undefined') {
+                                map.setCenter([lat, lng]);
+                                marker.setPosition([lat, lng]);
                             } else {
                                 map.setView([lat, lng], 13);
                                 marker.setLatLng([lat, lng]);
-                                document.getElementById('mapLoading').style.display = 'none';
                             }
-                        }, 300);
-                    },
-                    (error) => {
-                        // Reset button
-                        btnText.textContent = 'Detect Current Location';
-                        btnIcon.className = 'fa-solid fa-location-arrow';
-                        detectBtn.disabled = false;
-                        
-                        // Show error
-                        errorDiv.style.display = 'block';
-                        if (error.code === error.PERMISSION_DENIED) {
-                            errorText.textContent = 'Location permission denied. Please enable location access or use "Pick Location on Map".';
-                        } else if (error.code === error.POSITION_UNAVAILABLE) {
-                            errorText.textContent = 'Location unavailable. Please try "Pick Location on Map".';
-                        } else if (error.code === error.TIMEOUT) {
-                            errorText.textContent = 'Location request timeout. Please try again or use "Pick Location on Map".';
-                        } else {
-                            errorText.textContent = 'Unable to get location. Please use "Pick Location on Map".';
                         }
                     },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
+                    () => alert('Unable to get location. Please enable location services.')
                 );
             } else {
-                btnText.textContent = 'Detect Current Location';
-                btnIcon.className = 'fa-solid fa-location-arrow';
-                detectBtn.disabled = false;
-                errorDiv.style.display = 'block';
-                errorText.textContent = 'Geolocation is not supported by your browser. Please use "Pick Location on Map".';
+                alert('Geolocation is not supported by your browser.');
             }
         }
 
         function openMap() {
-            const pickBtn = document.getElementById('pickMapBtn');
-            const btnText = pickBtn.querySelector('span');
-            const btnIcon = pickBtn.querySelector('i');
-            const errorDiv = document.getElementById('locationError');
+            const defaultLat = 20.5937;
+            const defaultLng = 78.9629;
+            const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+            const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
             
-            errorDiv.style.display = 'none';
             document.getElementById('mapContainer').style.display = 'block';
-            document.getElementById('mapLoading').style.display = 'block';
             
-            // Try to get user location first
-            if (navigator.geolocation) {
-                btnText.textContent = 'Getting your location...';
-                btnIcon.className = 'fa-solid fa-spinner fa-spin';
-                pickBtn.disabled = true;
-                
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        
-                        if (!map) {
-                            setTimeout(() => {
-                                initMap(lat, lng);
-                                document.getElementById('latitude').value = lat;
-                                document.getElementById('longitude').value = lng;
-                                document.getElementById('mapLoading').style.display = 'none';
-                                btnText.textContent = 'Pick Location on Map';
-                                btnIcon.className = 'fa-solid fa-map-marked-alt';
-                                pickBtn.disabled = false;
-                            }, 500);
-                        } else {
-                            map.setView([lat, lng], 13);
-                            marker.setLatLng([lat, lng]);
-                            document.getElementById('latitude').value = lat;
-                            document.getElementById('longitude').value = lng;
-                            document.getElementById('mapLoading').style.display = 'none';
-                            btnText.textContent = 'Pick Location on Map';
-                            btnIcon.className = 'fa-solid fa-map-marked-alt';
-                            pickBtn.disabled = false;
-                        }
-                    },
-                    (error) => {
-                        // Fallback to default location (India center)
-                        const defaultLat = 20.5937;
-                        const defaultLng = 78.9629;
-                        
-                        if (!map) {
-                            setTimeout(() => {
-                                initMap(defaultLat, defaultLng);
-                                document.getElementById('mapLoading').style.display = 'none';
-                                btnText.textContent = 'Pick Location on Map';
-                                btnIcon.className = 'fa-solid fa-map-marked-alt';
-                                pickBtn.disabled = false;
-                            }, 500);
-                        } else {
-                            map.setView([defaultLat, defaultLng], 5);
-                            marker.setLatLng([defaultLat, defaultLng]);
-                            document.getElementById('mapLoading').style.display = 'none';
-                            btnText.textContent = 'Pick Location on Map';
-                            btnIcon.className = 'fa-solid fa-map-marked-alt';
-                            pickBtn.disabled = false;
-                        }
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 5000,
-                        maximumAge: 0
-                    }
-                );
-            } else {
-                // No geolocation support, use default location
-                const defaultLat = 20.5937;
-                const defaultLng = 78.9629;
-                
-                if (!map) {
-                    setTimeout(() => {
-                        initMap(defaultLat, defaultLng);
-                        document.getElementById('mapLoading').style.display = 'none';
-                    }, 500);
-                } else {
-                    map.setView([defaultLat, defaultLng], 5);
-                    marker.setLatLng([defaultLat, defaultLng]);
-                    document.getElementById('mapLoading').style.display = 'none';
-                }
+            if (!map) {
+                setTimeout(() => initMap(lat, lng), 100);
             }
         }
 
@@ -763,20 +513,8 @@
                 document.getElementById('locationDisplay').style.display = 'block';
                 document.getElementById('locationText').textContent = `Lat: ${parseFloat(lat).toFixed(6)}, Lng: ${parseFloat(lng).toFixed(6)}`;
                 document.getElementById('mapContainer').style.display = 'none';
-                document.getElementById('locationError').style.display = 'none';
-                
-                // Update button states
-                const detectBtn = document.getElementById('detectLocationBtn');
-                const pickBtn = document.getElementById('pickMapBtn');
-                detectBtn.querySelector('span').textContent = 'Location Set ✓';
-                detectBtn.querySelector('i').className = 'fa-solid fa-check';
-                pickBtn.querySelector('span').textContent = 'Location Set ✓';
-                pickBtn.querySelector('i').className = 'fa-solid fa-check';
             } else {
-                const errorDiv = document.getElementById('locationError');
-                const errorText = document.getElementById('locationErrorText');
-                errorDiv.style.display = 'block';
-                errorText.textContent = 'Please select a location on the map by clicking.';
+                alert('Please select a location on the map.');
             }
         }
     </script>
