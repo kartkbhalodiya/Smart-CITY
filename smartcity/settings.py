@@ -15,11 +15,16 @@ import os
 import socket
 
 # Force IPv4 for database connections (Back4App IPv6 compatibility fix)
+# Patch socket at the very beginning
 orig_getaddrinfo = socket.getaddrinfo
-def patched_getaddrinfo(*args, **kwargs):
-    responses = orig_getaddrinfo(*args, **kwargs)
-    return [res for res in responses if res[0] == socket.AF_INET]
+def patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    # Force AF_INET (IPv4)
+    return orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
 socket.getaddrinfo = patched_getaddrinfo
+
+# Also try to patch psycopg2 connect if possible later or use a different host
+# If you have access to Supabase dashboard, check if they provide an IPv4 only hostname
+# or use the direct IP if it's static (not recommended but for testing)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,7 +41,7 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lpw9@ca^itz(&6+*7%5chidrfd")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -178,12 +183,12 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
 # Fallback for libraries like django-cloudinary-storage that don't support STORAGES yet
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 WHITENOISE_MANIFEST_STRICT = False
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 CLOUDINARY_STORAGE = {
