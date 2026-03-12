@@ -1,0 +1,138 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .edit-wrap {
+        max-width: 700px;
+    }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .section-title {
+        font-size: 0.86rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: #475569;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.68rem 0.75rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .actions {
+        display: flex;
+        gap: 0.6rem;
+        margin-top: 0.4rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        border-radius: 10px;
+        padding: 0.68rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        flex: 1;
+    }
+
+    .btn-primary {
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #334155;
+    }
+
+    @media (max-width: 768px) {
+        .panel {
+            padding: 0.85rem;
+        }
+
+        .actions {
+            flex-direction: column-reverse;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Update existing city details.</p>
+    </div>
+
+    <div class="edit-wrap">
+        <div class="panel">
+            <h3 class="section-title">Edit City</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <select name="state_id" class="form-input" required>
+                        {% for state in states %}
+                            <option value="{{ state.id }}" {% if city_obj.state_id == state.id %}selected{% endif %}>
+                                {{ state.name }} ({{ state.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City Code</label>
+                    <input type="text" name="city_code" class="form-input" value="{{ city_obj.code }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City Name</label>
+                    <input type="text" name="city_name" class="form-input" value="{{ city_obj.name }}" required>
+                </div>
+                <div class="actions">
+                    <a href="{% url 'super_admin_add_city' %}" class="btn-secondary">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Save City
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

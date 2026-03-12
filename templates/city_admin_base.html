@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}City Admin Dashboard{% endblock %} - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #1a1a1a;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-250px);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #007bff 0%, #00d2ff 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #000000;
+            letter-spacing: -1px;
+        }
+
+        .sidebar-nav {
+            padding: 1.5rem 0.75rem;
+            height: calc(100vh - 84px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(15, 23, 42, 0.28) transparent;
+        }
+
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.28);
+            border-radius: 999px;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            padding: 0 0.75rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #000000;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.8rem 1rem;
+            color: #000000;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.6);
+            color: #000000;
+            transform: translateX(4px);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-link.active {
+            background: rgba(0, 0, 0, 0.08);
+            color: #000000;
+            font-weight: 700;
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .nav-icon {
+            width: 18px;
+            text-align: center;
+            font-size: 1rem;
+            color: #000000;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            overflow-x: hidden;
+            width: calc(100% - 250px);
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .topbar {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .menu-toggle {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1.1rem;
+            color: #4a5568;
+            cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: white;
+            color: #007bff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .topbar-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .topbar-center {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 0.5rem 1.25rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .topbar-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .topbar-info-item i {
+            color: #007bff;
+            font-size: 0.9rem;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-btn {
+            background: rgba(0, 123, 255, 0.1);
+            color: #007bff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            border: 1px solid rgba(0, 123, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .profile-btn:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+        }
+
+        .logout-btn {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: #dc3545;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+        }
+
+        /* Profile Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: #f1f5f9;
+            color: #dc3545;
+        }
+
+        .profile-info {
+            margin-bottom: 2rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .password-section {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .password-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .option-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .option-btn.active {
+            border-color: #007bff;
+            background: rgba(0, 123, 255, 0.1);
+            color: #007bff;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .password-form {
+            display: none;
+        }
+
+        .password-form.show {
+            display: block;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 0.4rem;
+            letter-spacing: -1px;
+        }
+
+        .page-subtitle {
+            color: #64748b;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-250px);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
+                padding: 1rem;
+            }
+
+            .topbar-center {
+                display: none;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topbar-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-city"></i>
+            </div>
+            <span class="sidebar-title">City Admin</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <span class="nav-section-title">Overview</span>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_dashboard' %}active{% endif %}">
+                        <i class="fa-solid fa-chart-line nav-icon"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-section-title">Complaints</span>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_problems' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_problems' %}active{% endif %}">
+                        <i class="fa-solid fa-triangle-exclamation nav-icon"></i>
+                        <span>Problems</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_solved' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_solved' %}active{% endif %}">
+                        <i class="fa-solid fa-circle-check nav-icon"></i>
+                        <span>Solved Problems</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_review' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_review' %}active{% endif %}">
+                        <i class="fa-solid fa-star-half-stroke nav-icon"></i>
+                        <span>Review</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_total' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_total' %}active{% endif %}">
+                        <i class="fa-solid fa-list-check nav-icon"></i>
+                        <span>Total Problems</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-section-title">Management</span>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_departments' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_departments' %}active{% endif %}">
+                        <i class="fa-solid fa-building nav-icon"></i>
+                        <span>Departments</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_citizens' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_citizens' %}active{% endif %}">
+                        <i class="fa-solid fa-users nav-icon"></i>
+                        <span>Citizens</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{% url 'city_admin_analytics' %}" class="nav-link {% if request.resolver_match.url_name == 'city_admin_analytics' %}active{% endif %}">
+                        <i class="fa-solid fa-chart-pie nav-icon"></i>
+                        <span>Analytics</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="topbar-title">City Administration</div>
+            </div>
+
+            <div class="topbar-center">
+                {% if city_admin %}
+                <div class="topbar-info-item">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ city_admin.city_name }}</span>
+                </div>
+                {% endif %}
+                <div class="topbar-info-item">
+                    <i class="fa-solid fa-calendar-alt"></i>
+                    <span id="currentDate"></span>
+                </div>
+                <div class="topbar-info-item">
+                    <i class="fa-solid fa-clock"></i>
+                    <span id="currentTime"></span>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <button class="profile-btn" onclick="openProfileModal()">
+                    <i class="fa-solid fa-user"></i> Profile
+                </button>
+                <a href="{% url 'logout' %}" class="logout-btn">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Profile Information</h3>
+                <button class="close-btn" onclick="closeProfileModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">{{ user.first_name }} {{ user.last_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">City:</span>
+                    <span class="info-value">{{ city_admin.city_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Role:</span>
+                    <span class="info-value">City Administrator</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Joined:</span>
+                    <span class="info-value">{{ user.date_joined|date:"M d, Y" }}</span>
+                </div>
+            </div>
+
+            <div class="password-section">
+                <h4 style="margin-bottom: 1rem; color: #1a1a1a;">Update Password</h4>
+                
+                <div class="password-options">
+                    <button class="option-btn active" onclick="selectPasswordOption('old')" id="oldPassBtn">
+                        <i class="fa-solid fa-key"></i> Old Password
+                    </button>
+                    <button class="option-btn" onclick="selectPasswordOption('otp')" id="otpBtn">
+                        <i class="fa-solid fa-envelope"></i> OTP Verification
+                    </button>
+                </div>
+
+                <form id="oldPasswordForm" class="password-form show">
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-input" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-input" id="newPassword1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-input" id="newPassword2" required>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="updatePasswordWithOld()">
+                        <i class="fa-solid fa-save"></i> Update Password
+                    </button>
+                </form>
+
+                <form id="otpPasswordForm" class="password-form">
+                    <div id="otpStep1">
+                        <p style="margin-bottom: 1rem; color: #64748b;">We'll send an OTP to your email for verification</p>
+                        <button type="button" class="btn btn-primary" onclick="sendOTPForPassword()">
+                            <i class="fa-solid fa-paper-plane"></i> Send OTP
+                        </button>
+                    </div>
+                    <div id="otpStep2" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Enter OTP</label>
+                            <input type="text" class="form-input" id="otpCode" maxlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="form-input" id="newPasswordOTP" required>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="updatePasswordWithOTP()">
+                            <i class="fa-solid fa-save"></i> Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeProfileModal()">
+                    <i class="fa-solid fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const overlay = document.getElementById('overlay');
+
+        function toggleSidebar() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('show');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            }
+        }
+
+        menuToggle.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+        });
+
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Update Date
+            const dateOptions = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-US', dateOptions);
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) dateElement.textContent = dateStr;
+            
+            // Update Time
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) timeElement.textContent = timeStr;
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // Profile Modal Functions
+        function openProfileModal() {
+            document.getElementById('profileModal').classList.add('show');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('show');
+            resetPasswordForms();
+        }
+
+        function selectPasswordOption(option) {
+            const oldBtn = document.getElementById('oldPassBtn');
+            const otpBtn = document.getElementById('otpBtn');
+            const oldForm = document.getElementById('oldPasswordForm');
+            const otpForm = document.getElementById('otpPasswordForm');
+
+            if (option === 'old') {
+                oldBtn.classList.add('active');
+                otpBtn.classList.remove('active');
+                oldForm.classList.add('show');
+                otpForm.classList.remove('show');
+            } else {
+                otpBtn.classList.add('active');
+                oldBtn.classList.remove('active');
+                otpForm.classList.add('show');
+                oldForm.classList.remove('show');
+            }
+            resetPasswordForms();
+        }
+
+        function resetPasswordForms() {
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword1').value = '';
+            document.getElementById('newPassword2').value = '';
+            document.getElementById('otpCode').value = '';
+            document.getElementById('newPasswordOTP').value = '';
+            document.getElementById('otpStep1').style.display = 'block';
+            document.getElementById('otpStep2').style.display = 'none';
+        }
+
+        function updatePasswordWithOld() {
+            const current = document.getElementById('currentPassword').value;
+            const new1 = document.getElementById('newPassword1').value;
+            const new2 = document.getElementById('newPassword2').value;
+
+            if (!current || !new1 || !new2) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            if (new1 !== new2) {
+                alert('New passwords do not match');
+                return;
+            }
+
+            fetch('{% url "city_admin_update_password" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    method: 'old_password',
+                    current_password: current,
+                    new_password: new1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password updated successfully!');
+                    closeProfileModal();
+                } else {
+                    alert(data.message || 'Error updating password');
+                }
+            })
+            .catch(error => {
+                alert('Error updating password');
+            });
+        }
+
+        function sendOTPForPassword() {
+            fetch('{% url "city_admin_update_password" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    method: 'send_otp'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('otpStep1').style.display = 'none';
+                    document.getElementById('otpStep2').style.display = 'block';
+                    alert('OTP sent to your email!');
+                } else {
+                    alert(data.message || 'Error sending OTP');
+                }
+            })
+            .catch(error => {
+                alert('Error sending OTP');
+            });
+        }
+
+        function updatePasswordWithOTP() {
+            const otp = document.getElementById('otpCode').value;
+            const newPassword = document.getElementById('newPasswordOTP').value;
+
+            if (!otp || !newPassword) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            fetch('{% url "city_admin_update_password" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    method: 'otp_verify',
+                    otp: otp,
+                    new_password: newPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password updated successfully!');
+                    closeProfileModal();
+                } else {
+                    alert(data.message || 'Error updating password');
+                }
+            })
+            .catch(error => {
+                alert('Error updating password');
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('profileModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProfileModal();
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Complaint - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .preview-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .preview-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .preview-section:last-child {
+            border-bottom: none;
+        }
+
+        .preview-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preview-row {
+            display: flex;
+            margin-bottom: 12px;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 150px;
+            font-size: 13px;
+        }
+
+        .preview-value {
+            color: #2d3436;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-confirm {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: #fff;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .alert {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        @media (max-width: 480px) {
+            .preview-row {
+                flex-direction: column;
+            }
+
+            .preview-label {
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fa-solid fa-eye"></i> Preview Your Complaint</h1>
+            <p>Review details before final submission</p>
+        </div>
+
+        <div class="alert">
+            <i class="fa-solid fa-info-circle"></i>
+            Please review all information carefully. Once confirmed, your complaint will be submitted and a PDF receipt will be emailed to you.
+        </div>
+
+        <div class="preview-card">
+            <div class="preview-section">
+                <h3>Complaint Details</h3>
+                <div class="preview-row">
+                    <div class="preview-label">Category:</div>
+                    <div class="preview-value">{{ data.complaint_type|title }}</div>
+                </div>
+                {% if data.subcategory %}
+                <div class="preview-row">
+                    <div class="preview-label">Subcategory:</div>
+                    <div class="preview-value">{{ data.subcategory }}</div>
+                </div>
+                {% endif %}
+                <div class="preview-row">
+                    <div class="preview-label">Title:</div>
+                    <div class="preview-value">{{ data.title }}</div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-label">Description:</div>
+                    <div class="preview-value">{{ data.description }}</div>
+                </div>
+            </div>
+
+            {% if data.field_item_stolen or data.field_estimated_value %}
+            <div class="preview-section">
+                <h3>Additional Details</h3>
+                {% for key, value in data.items %}
+                    {% if key|slice:":6" == "field_" and value %}
+                    <div class="preview-row">
+                        <div class="preview-label">{{ key|slice:"6:"|title }}:</div>
+                        <div class="preview-value">{{ value }}</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="preview-section">
+                <h3>Location</h3>
+                <div class="preview-row">
+                    <div class="preview-label">City:</div>
+                    <div class="preview-value">{{ data.city }}</div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-label">Pincode:</div>
+                    <div class="preview-value">{{ data.pincode }}</div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-label">Address:</div>
+                    <div class="preview-value">{{ data.address }}</div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-label">Coordinates:</div>
+                    <div class="preview-value">{{ data.latitude }}, {{ data.longitude }}</div>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h3>Contact Information</h3>
+                <div class="preview-row">
+                    <div class="preview-label">Name:</div>
+                    <div class="preview-value">{% if data.anonymous %}Anonymous{% else %}{{ data.full_name }}{% endif %}</div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-label">Phone:</div>
+                    <div class="preview-value">{{ data.phone }}</div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-label">Email:</div>
+                    <div class="preview-value">{{ data.email }}</div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="btn-group">
+                <button type="submit" name="back" class="btn btn-back">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Go Back & Edit
+                </button>
+                <button type="button" onclick="window.print()" class="btn" style="background: #3b82f6; color: #fff;">
+                    <i class="fa-solid fa-print"></i>
+                    Print
+                </button>
+                <button type="submit" name="confirm" class="btn btn-confirm">
+                    <i class="fa-solid fa-check"></i>
+                    Confirm & Submit
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

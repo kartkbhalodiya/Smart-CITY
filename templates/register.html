@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Register - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(248, 249, 250, 0.95);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px 25px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header i {
+            font-size: 50px;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            color: #2d3436;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #636e72;
+            font-size: 13px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2d3436;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            color: #2d3436;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #28a745;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .footer p {
+            color: #6c757d;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .footer a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.9);
+            color: #fff;
+        }
+
+        .alert-error {
+            background: rgba(220, 53, 69, 0.9);
+            color: #fff;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .container {
+                padding: 25px 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header i {
+                font-size: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="/static/js/translations.js"></script>
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="header">
+            <i class="fa-solid fa-user-plus"></i>
+            <h1>Citizen Registration</h1>
+            <p>Join Smart City Portal</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="name" placeholder="John" required>
+                </div>
+                <div class="form-group">
+                    <label>Surname</label>
+                    <input type="text" name="surname" placeholder="Doe" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="john@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="tel" name="mobile_no" placeholder="+91 98765 43210" required>
+            </div>
+
+            <div class="form-group">
+                <label>State</label>
+                <select name="state" id="state" required>
+                    <option value="">Select State</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                    <option value="Goa">Goa</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>District</label>
+                <select name="district" id="district" required>
+                    <option value="">Select District</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Taluka</label>
+                <select name="taluka" id="taluka" required>
+                    <option value="">Select Taluka</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Village / City</label>
+                <input type="text" name="city" id="cityInput" placeholder="Enter village or city name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Location (GPS)</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" class="btn" onclick="getCurrentLocation()" style="flex: 1; background: #28a745; padding: 12px;">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        Current Location
+                    </button>
+                    <button type="button" class="btn" onclick="openMap()" style="flex: 1; background: #667eea; padding: 12px;">
+                        <i class="fa-solid fa-map-marked-alt"></i>
+                        Pick on Map
+                    </button>
+                </div>
+                <input type="hidden" name="latitude" id="latitude">
+                <input type="hidden" name="longitude" id="longitude">
+                <div id="locationDisplay" style="padding: 10px; background: #e9ecef; border-radius: 8px; font-size: 12px; color: #495057; display: none;">
+                    <i class="fa-solid fa-map-pin"></i> <span id="locationText"></span>
+                </div>
+            </div>
+
+            <div id="mapContainer" style="display: none; margin-bottom: 15px;">
+                <div id="map" style="height: 300px; border-radius: 10px; border: 1px solid #dee2e6;"></div>
+                <button type="button" class="btn" onclick="confirmLocation()" style="margin-top: 10px; background: #28a745;">
+                    <i class="fa-solid fa-check"></i> Confirm Location
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Full Address</label>
+                <textarea name="address" placeholder="House no, Street, Landmark..." required></textarea>
+            </div>
+            
+            <button type="submit" class="btn">
+                <i class="fa-solid fa-check-circle"></i>
+                Register Now
+            </button>
+        </form>
+        
+        <div class="footer">
+            <p>Already have an account?</p>
+            <a href="{% url 'login' %}">Sign In Here</a>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker;
+        
+        function initMap(lat, lng) {
+            if (map) {
+                map.remove();
+            }
+            map = L.map('map').setView([lat, lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            
+            marker.on('dragend', function(e) {
+                const pos = marker.getLatLng();
+                document.getElementById('latitude').value = pos.lat;
+                document.getElementById('longitude').value = pos.lng;
+            });
+            
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                document.getElementById('latitude').value = e.latlng.lat;
+                document.getElementById('longitude').value = e.latlng.lng;
+            });
+        }
+        const locationData = {
+            "Maharashtra": {
+                "Mumbai": ["Andheri", "Borivali", "Kurla", "Bandra", "Dadar"],
+                "Pune": ["Haveli", "Mulshi", "Maval", "Bhor", "Velhe"],
+                "Nagpur": ["Nagpur", "Kamptee", "Hingna", "Umred", "Kuhi"],
+                "Thane": ["Thane", "Kalyan", "Bhiwandi", "Ulhasnagar", "Ambarnath"],
+                "Nashik": ["Nashik", "Igatpuri", "Dindori", "Sinnar", "Niphad"]
+            },
+            "Gujarat": {
+                "Ahmedabad": ["Ahmedabad City", "Daskroi", "Sanand", "Dholka", "Bavla"],
+                "Surat": ["Surat City", "Chorasi", "Palsana", "Mangrol", "Kamrej"],
+                "Vadodara": ["Vadodara", "Karjan", "Savli", "Dabhoi", "Padra"],
+                "Rajkot": ["Rajkot", "Lodhika", "Jasdan", "Kotda Sangani", "Paddhari"],
+                "Gandhinagar": ["Gandhinagar", "Kalol", "Mansa", "Dehgam"]
+            },
+            "Karnataka": {
+                "Bangalore Urban": ["Bangalore North", "Bangalore South", "Anekal"],
+                "Mysore": ["Mysore", "Hunsur", "K.R. Nagar", "Nanjangud", "T. Narasipur"],
+                "Mangalore": ["Mangalore", "Bantwal", "Belthangady", "Puttur", "Sullia"],
+                "Hubli": ["Hubli", "Dharwad", "Kalghatgi", "Kundgol", "Navalgund"]
+            },
+            "Tamil Nadu": {
+                "Chennai": ["Alandur", "Ambattur", "Madhavaram", "Manali", "Perambur"],
+                "Coimbatore": ["Coimbatore North", "Coimbatore South", "Pollachi", "Valparai"],
+                "Madurai": ["Madurai North", "Madurai South", "Melur", "Peraiyur", "Vadipatti"],
+                "Salem": ["Salem", "Attur", "Edappadi", "Mettur", "Omalur"]
+            },
+            "Rajasthan": {
+                "Jaipur": ["Jaipur", "Amber", "Bassi", "Chaksu", "Jamwa Ramgarh"],
+                "Jodhpur": ["Jodhpur", "Bilara", "Osian", "Phalodi", "Shergarh"],
+                "Udaipur": ["Udaipur", "Girwa", "Mavli", "Vallabhnagar", "Kherwara"],
+                "Kota": ["Kota", "Ladpura", "Pipalda", "Sangod"]
+            },
+            "Uttar Pradesh": {
+                "Lucknow": ["Lucknow", "Mohanlalganj", "Malihabad", "Bakshi Ka Talab"],
+                "Kanpur": ["Kanpur Nagar", "Ghatampur", "Bilhaur", "Akbarpur"],
+                "Agra": ["Agra", "Fatehabad", "Kheragarh", "Etmadpur", "Bah"],
+                "Varanasi": ["Varanasi", "Pindra", "Sewapuri"]
+            },
+            "Madhya Pradesh": {
+                "Bhopal": ["Bhopal", "Berasia", "Huzur"],
+                "Indore": ["Indore", "Mhow", "Depalpur", "Sanwer"],
+                "Jabalpur": ["Jabalpur", "Patan", "Sihora", "Kundam"],
+                "Gwalior": ["Gwalior", "Bhitarwar", "Dabra", "Morar"]
+            },
+            "West Bengal": {
+                "Kolkata": ["Kolkata"],
+                "Howrah": ["Howrah", "Bally-Jagachha", "Domjur", "Panchla"],
+                "Darjeeling": ["Darjeeling", "Kalimpong", "Kurseong", "Mirik"],
+                "Durgapur": ["Durgapur", "Faridpur", "Pandabeswar"]
+            },
+            "Bihar": {
+                "Patna": ["Patna Sadar", "Danapur", "Barh", "Masaurhi", "Paliganj"],
+                "Gaya": ["Gaya", "Bodh Gaya", "Manpur", "Sherghati", "Tikari"],
+                "Bhagalpur": ["Bhagalpur", "Kahalgaon", "Naugachhia", "Sultanganj"]
+            },
+            "Andhra Pradesh": {
+                "Visakhapatnam": ["Visakhapatnam", "Anakapalle", "Bheemunipatnam", "Paderu"],
+                "Vijayawada": ["Vijayawada", "Gannavaram", "Kanchikacherla", "Tiruvuru"],
+                "Guntur": ["Guntur", "Tenali", "Mangalagiri", "Sattenapalle"]
+            },
+            "Telangana": {
+                "Hyderabad": ["Hyderabad", "Secunderabad", "Serilingampally", "Rajendranagar"],
+                "Warangal": ["Warangal", "Hanamkonda", "Jangaon", "Parkal"],
+                "Nizamabad": ["Nizamabad", "Armoor", "Bodhan", "Dichpally"]
+            },
+            "Kerala": {
+                "Thiruvananthapuram": ["Thiruvananthapuram", "Neyyattinkara", "Nedumangad", "Varkala"],
+                "Kochi": ["Kochi", "Kanayannur", "Paravur", "Vypeen"],
+                "Kozhikode": ["Kozhikode", "Vatakara", "Koyilandy", "Thamarassery"]
+            },
+            "Punjab": {
+                "Ludhiana": ["Ludhiana East", "Ludhiana West", "Jagraon", "Khanna", "Raikot"],
+                "Amritsar": ["Amritsar", "Ajnala", "Majitha", "Tarn Taran"],
+                "Jalandhar": ["Jalandhar", "Phillaur", "Nakodar", "Shahkot"]
+            },
+            "Haryana": {
+                "Faridabad": ["Faridabad", "Ballabgarh", "Tigaon"],
+                "Gurgaon": ["Gurgaon", "Pataudi", "Sohna", "Manesar"],
+                "Panipat": ["Panipat", "Samalkha", "Israna"]
+            },
+            "Delhi": {
+                "Central Delhi": ["Connaught Place", "Karol Bagh", "Paharganj"],
+                "North Delhi": ["Civil Lines", "Model Town", "Narela"],
+                "South Delhi": ["Hauz Khas", "Saket", "Vasant Vihar"],
+                "East Delhi": ["Preet Vihar", "Mayur Vihar", "Shahdara"],
+                "West Delhi": ["Janakpuri", "Rajouri Garden", "Punjabi Bagh"]
+            }
+        };
+
+        const stateSelect = document.getElementById('state');
+        const districtSelect = document.getElementById('district');
+        const talukaSelect = document.getElementById('taluka');
+
+        stateSelect.addEventListener('change', function() {
+            const state = this.value;
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+            
+            if (state && locationData[state]) {
+                Object.keys(locationData[state]).forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            }
+        });
+
+        districtSelect.addEventListener('change', function() {
+            const state = stateSelect.value;
+            const district = this.value;
+            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+            
+            if (state && district && locationData[state][district]) {
+                locationData[state][district].forEach(taluka => {
+                    const option = document.createElement('option');
+                    option.value = taluka;
+                    option.textContent = taluka;
+                    talukaSelect.appendChild(option);
+                });
+            }
+        });
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        document.getElementById('latitude').value = lat;
+                        document.getElementById('longitude').value = lng;
+                        document.getElementById('locationDisplay').style.display = 'block';
+                        document.getElementById('locationText').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                        
+                        document.getElementById('mapContainer').style.display = 'block';
+                        if (!map) {
+                            initMap(lat, lng);
+                        } else {
+                            if (mapInitialized && typeof mappls !== 'undefined') {
+                                map.setCenter([lat, lng]);
+                                marker.setPosition([lat, lng]);
+                            } else {
+                                map.setView([lat, lng], 13);
+                                marker.setLatLng([lat, lng]);
+                            }
+                        }
+                    },
+                    () => alert('Unable to get location. Please enable location services.')
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        function openMap() {
+            const defaultLat = 20.5937;
+            const defaultLng = 78.9629;
+            const lat = parseFloat(document.getElementById('latitude').value) || defaultLat;
+            const lng = parseFloat(document.getElementById('longitude').value) || defaultLng;
+            
+            document.getElementById('mapContainer').style.display = 'block';
+            
+            if (!map) {
+                setTimeout(() => initMap(lat, lng), 100);
+            }
+        }
+
+        function confirmLocation() {
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+            
+            if (lat && lng) {
+                document.getElementById('locationDisplay').style.display = 'block';
+                document.getElementById('locationText').textContent = `Lat: ${parseFloat(lat).toFixed(6)}, Lng: ${parseFloat(lng).toFixed(6)}`;
+                document.getElementById('mapContainer').style.display = 'none';
+            } else {
+                alert('Please select a location on the map.');
+            }
+        }
+    </script>
+</body>
+<script>
+    // Language translation system
+    const translations = {
+        'hi': {
+            'Citizen Registration': 'नागरिक पंजीकरण',
+            'Join Smart City Portal': 'स्मार्ट सिटी पोर्टल में शामिल हों',
+            'First Name': 'पहला नाम',
+            'Surname': 'उपनाम',
+            'Email Address': 'ईमेल पता',
+            'Mobile Number': 'मोबाइल नंबर',
+            'State': 'राज्य',
+            'District': 'जिला',
+            'Taluka': 'तालुका',
+            'Village / City': 'गांव / शहर',
+            'Location (GPS)': 'स्थान (GPS)',
+            'Current Location': 'वर्तमान स्थान',
+            'Pick on Map': 'मैप पर चुनें',
+            'Confirm Location': 'स्थान की पुष्टि करें',
+            'Full Address': 'पूरा पता',
+            'Register Now': 'अभी पंजीकरण करें',
+            'Already have an account?': 'पहले से खाता है?',
+            'Sign In Here': 'यहां साइन इन करें'
+        },
+        'gu': {
+            'Citizen Registration': 'નાગરિક નોંધણી',
+            'Join Smart City Portal': 'સ્માર્ટ સિટી પોર્ટલમાં જોડાઓ',
+            'First Name': 'પહેલું નામ',
+            'Surname': 'ઉપનામ',
+            'Email Address': 'ઈમેલ પતા',
+            'Mobile Number': 'મોબાઇલ નંબર',
+            'State': 'રાજ્ય',
+            'District': 'જિલ્લો',
+            'Taluka': 'તાલુકો',
+            'Village / City': 'ગામ / શહેર',
+            'Location (GPS)': 'સ્થાન (GPS)',
+            'Current Location': 'વર્તમાન સ્થાન',
+            'Pick on Map': 'મેપ પર પસંદ કરો',
+            'Confirm Location': 'સ્થાનની ખાતરી કરો',
+            'Full Address': 'પૂરો પતો',
+            'Register Now': 'અભી નોંધણી કરાવો',
+            'Already have an account?': 'જે ખાતું છે?',
+            'Sign In Here': 'અહીં સાઇન ઇન કરો'
+        }
+    };
+
+    function translatePage(lang) {
+        if (lang === 'en') return;
+        
+        const langTranslations = translations[lang];
+        if (!langTranslations) return;
+
+        // Translate text content
+        document.querySelectorAll('h1, p, label, button, a').forEach(element => {
+            const text = element.textContent.trim();
+            if (langTranslations[text]) {
+                element.textContent = langTranslations[text];
+            }
+        });
+    }
+
+    // Load saved language on page load
+    window.addEventListener('load', () => {
+        const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+        translatePage(savedLang);
+    });
+
+    // Rest of existing JavaScript code...
+</html>

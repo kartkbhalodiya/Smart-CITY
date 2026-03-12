@@ -1,0 +1,21 @@
+# Docker
+.git
+.gitignore
+.dockerignore
+.env
+.venv
+.vscode
+.idea
+.qodo
+.zencoder
+.zenflow
+__pycache__
+*.pyc
+db.sqlite3
+staticfiles
+media
+*.log
+Dockerfile
+Procfile
+README.md
+*.md

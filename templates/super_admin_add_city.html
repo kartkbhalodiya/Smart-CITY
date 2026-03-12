@@ -1,0 +1,278 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 1rem;
+    }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .section-title {
+        font-size: 0.86rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: #475569;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.68rem 0.75rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .btn-primary {
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 0.62rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 460px;
+    }
+
+    th {
+        text-align: left;
+        font-size: 0.72rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.7rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    td {
+        padding: 0.7rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.86rem;
+    }
+
+    .actions-cell {
+        white-space: nowrap;
+    }
+
+    .row-actions {
+        display: inline-flex;
+        gap: 0.35rem;
+        align-items: center;
+    }
+
+    .btn-action {
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #334155;
+        border-radius: 8px;
+        padding: 0.34rem 0.55rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+    .btn-action.edit {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .btn-action.delete {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .mobile-list {
+        display: none;
+    }
+
+    .mobile-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.75rem;
+        background: #ffffff;
+    }
+
+    .mobile-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.7rem;
+        font-size: 0.84rem;
+        color: #334155;
+        margin-bottom: 0.35rem;
+    }
+
+    .mobile-row:last-child {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 900px) {
+        .layout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .panel {
+            padding: 0.85rem;
+        }
+
+        .table-wrap {
+            display: none;
+        }
+
+        .mobile-list {
+            display: grid;
+            gap: 0.6rem;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Add new city with city code and selected state.</p>
+    </div>
+
+    <div class="layout-grid">
+        <div class="panel">
+            <h3 class="section-title">Add New City</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <select name="state_id" class="form-input" required>
+                        <option value="">Select State</option>
+                        {% for state in states %}
+                            <option value="{{ state.id }}">{{ state.name }} ({{ state.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City Code</label>
+                    <input type="text" name="city_code" class="form-input" placeholder="e.g. VDR" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City Name</label>
+                    <input type="text" name="city_name" class="form-input" placeholder="e.g. Vadodara" required>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-plus"></i> Add City
+                </button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3 class="section-title">Existing Cities</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>City</th>
+                            <th>State</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for city in cities %}
+                            <tr>
+                                <td><strong>{{ city.code }}</strong></td>
+                                <td>{{ city.name }}</td>
+                                <td>{{ city.state.name }}</td>
+                                <td class="actions-cell">
+                                    <div class="row-actions">
+                                        <a href="{% url 'super_admin_edit_city' city.id %}" class="btn-action edit">
+                                            <i class="fa-solid fa-pen"></i> Edit
+                                        </a>
+                                        <form method="POST" action="{% url 'super_admin_delete_city' city.id %}" style="margin:0;" onsubmit="return confirm('Delete this city?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-action delete">
+                                                <i class="fa-solid fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align:center; color:#64748b;">No cities added yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mobile-list">
+                {% for city in cities %}
+                    <div class="mobile-card">
+                        <div class="mobile-row"><strong>Code</strong><span>{{ city.code }}</span></div>
+                        <div class="mobile-row"><strong>City</strong><span>{{ city.name }}</span></div>
+                        <div class="mobile-row"><strong>State</strong><span>{{ city.state.name }}</span></div>
+                        <div class="mobile-row" style="margin-top:0.5rem;">
+                            <a href="{% url 'super_admin_edit_city' city.id %}" class="btn-action edit" style="flex:1;">Edit</a>
+                            <form method="POST" action="{% url 'super_admin_delete_city' city.id %}" style="margin:0; flex:1;" onsubmit="return confirm('Delete this city?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action delete" style="width:100%;">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="mobile-card" style="text-align:center; color:#64748b;">No cities added yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

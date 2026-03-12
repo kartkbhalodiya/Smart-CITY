@@ -1,0 +1,479 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .filters-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 18px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: end;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.3rem;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.68rem 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-filter,
+    .btn-reset {
+        border-radius: 10px;
+        padding: 0.65rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+    }
+
+    .btn-filter {
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .btn-reset {
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+        flex: 1;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 0.9rem;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+    }
+
+    .stat-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.35rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 18px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.85rem;
+    }
+
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .category-card {
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 0.8rem;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        transition: all 0.2s ease;
+    }
+
+    .category-card:hover {
+        border-color: #93c5fd;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+    }
+
+    .category-card.active {
+        border-color: #2563eb;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15);
+        background: #eff6ff;
+    }
+
+    .category-name {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.8rem;
+        font-size: 0.8rem;
+        color: #334155;
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-row span:last-child {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 980px;
+    }
+
+    th {
+        text-align: left;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.84rem;
+        color: #1e293b;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    .rating-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .rated {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .unrated {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-view {
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-radius: 8px;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .mobile-list {
+        display: none;
+    }
+
+    .mobile-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 0.8rem;
+    }
+
+    .mobile-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.82rem;
+        color: #334155;
+        margin-bottom: 0.32rem;
+    }
+
+    .mobile-row:last-child {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 1100px) {
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .filters-card,
+        .panel {
+            padding: 0.85rem;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .table-wrap {
+            display: none;
+        }
+
+        .mobile-list {
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .btn-view {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">Review Analytics</h2>
+        <p class="page-subtitle">City and state wise solved complaints, ratings, and feedback performance.</p>
+    </div>
+
+    <div class="filters-card">
+        <form method="GET" class="filter-grid">
+            <div>
+                <label class="form-label">State</label>
+                <select name="state" class="form-input">
+                    <option value="">All States</option>
+                    {% for state in state_options %}
+                        <option value="{{ state }}" {% if state_filter == state %}selected{% endif %}>{{ state }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">City</label>
+                <select name="city" class="form-input">
+                    <option value="">All Cities</option>
+                    {% for city in city_options %}
+                        <option value="{{ city }}" {% if city_filter == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Category</label>
+                <select name="category" class="form-input">
+                    <option value="">All Categories</option>
+                    {% for cat_key, cat_name in complaint_types %}
+                        <option value="{{ cat_key }}" {% if category_filter == cat_key %}selected{% endif %}>{{ cat_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter"><i class="fa-solid fa-filter"></i> Apply Filter</button>
+                <a href="{% url 'super_admin_review' %}" class="btn-reset">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Complaints</div>
+            <div class="stat-value">{{ total_count }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Solved Complaints</div>
+            <div class="stat-value">{{ solved_count }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Solve Ratio</div>
+            <div class="stat-value">{{ solve_ratio }}%</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Average Rating</div>
+            <div class="stat-value">{{ avg_rating }} / 5</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Positive Feedback</div>
+            <div class="stat-value">{{ positive_ratio }}%</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3 class="section-title">Category Review Summary</h3>
+        <div class="category-grid">
+            {% for row in category_rows %}
+                <a
+                    class="category-card {% if category_filter == row.key %}active{% endif %}"
+                    href="{% url 'super_admin_review' %}?category={{ row.key }}{% if state_filter %}&state={{ state_filter|urlencode }}{% endif %}{% if city_filter %}&city={{ city_filter|urlencode }}{% endif %}"
+                >
+                    <div class="category-name">{{ row.label }}</div>
+                    <div class="metric-row"><span>Total</span><span>{{ row.total }}</span></div>
+                    <div class="metric-row"><span>Solved</span><span>{{ row.solved }}</span></div>
+                    <div class="metric-row"><span>Solve Ratio</span><span>{{ row.solve_ratio }}%</span></div>
+                    <div class="metric-row"><span>Rated</span><span>{{ row.rated }}</span></div>
+                    <div class="metric-row"><span>Avg Rating</span><span>{{ row.avg_rating }}</span></div>
+                    <div class="metric-row"><span>Positive</span><span>{{ row.positive_ratio }}%</span></div>
+                </a>
+            {% empty %}
+                <div class="mobile-card" style="text-align:center; color:#64748b;">No category data available for selected filters.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3 class="section-title">Solved Complaints With Review Data</h3>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Complaint No</th>
+                        <th>Category</th>
+                        <th>Subject</th>
+                        <th>City / State</th>
+                        <th>User Rating</th>
+                        <th>Feedback</th>
+                        <th>Proof Uploaded</th>
+                        <th>Resolved On</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                        <tr>
+                            <td><strong>#{{ complaint.complaint_number }}</strong></td>
+                            <td>{{ complaint.get_complaint_type_display }}</td>
+                            <td>{{ complaint.title }}</td>
+                            <td>{{ complaint.city }} / {{ complaint.state }}</td>
+                            <td>
+                                {% if complaint.citizen_rating %}
+                                    <span class="rating-pill rated">
+                                        <i class="fa-solid fa-star"></i> {{ complaint.citizen_rating }}/5
+                                    </span>
+                                {% else %}
+                                    <span class="rating-pill unrated">Not Rated</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if complaint.citizen_feedback %}Given{% else %}Not Given{% endif %}</td>
+                            <td>{{ complaint.resolution_proofs.count }}</td>
+                            <td>{{ complaint.resolved_at|date:"M d, Y"|default:complaint.updated_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'super_admin_complaint_detail' complaint.id %}?from=review" class="btn-view">
+                                    <i class="fa-solid fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="9" style="text-align:center; color:#64748b;">No solved complaints found for selected filters.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-list">
+            {% for complaint in complaints %}
+                <div class="mobile-card">
+                    <div class="mobile-row"><strong>Complaint</strong><span>#{{ complaint.complaint_number }}</span></div>
+                    <div class="mobile-row"><strong>Category</strong><span>{{ complaint.get_complaint_type_display }}</span></div>
+                    <div class="mobile-row"><strong>Subject</strong><span>{{ complaint.title }}</span></div>
+                    <div class="mobile-row"><strong>Location</strong><span>{{ complaint.city }} / {{ complaint.state }}</span></div>
+                    <div class="mobile-row">
+                        <strong>Rating</strong>
+                        <span>
+                            {% if complaint.citizen_rating %}
+                                {{ complaint.citizen_rating }}/5
+                            {% else %}
+                                Not Rated
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="mobile-row"><strong>Feedback</strong><span>{% if complaint.citizen_feedback %}Given{% else %}Not Given{% endif %}</span></div>
+                    <div class="mobile-row"><strong>Proof Count</strong><span>{{ complaint.resolution_proofs.count }}</span></div>
+                    <div class="mobile-row"><strong>Resolved</strong><span>{{ complaint.resolved_at|date:"M d, Y"|default:complaint.updated_at|date:"M d, Y" }}</span></div>
+                    <div style="margin-top:0.55rem;">
+                        <a href="{% url 'super_admin_complaint_detail' complaint.id %}?from=review" class="btn-view">
+                            <i class="fa-solid fa-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="mobile-card" style="text-align:center; color:#64748b;">No solved complaints found for selected filters.</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

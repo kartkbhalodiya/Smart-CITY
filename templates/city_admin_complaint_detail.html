@@ -1,0 +1,811 @@
+{% extends 'city_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+    .detail-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .info-section {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .info-section h3 {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 0.75rem;
+    }
+
+    .info-grid-vertical {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.5;
+    }
+
+    .meta-grid {
+        margin-top: 1.25rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .meta-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+    }
+
+    .meta-label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.3rem;
+    }
+
+    .meta-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        word-break: break-word;
+    }
+
+    .issue-overview {
+        margin-top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .issue-tags {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .issue-tag-card,
+    .issue-subject-card,
+    .issue-description-card {
+        border: 1px solid #dbe3ee;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 1rem 1.1rem;
+    }
+
+    .issue-tag-label,
+    .issue-subject-label,
+    .issue-description-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.45rem;
+    }
+
+    .issue-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.38rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.12);
+        color: #1d4ed8;
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .issue-pill-alt {
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+    }
+
+    .issue-priority-high {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+    }
+
+    .issue-priority-medium {
+        background: rgba(245, 158, 11, 0.14);
+        color: #92400e;
+    }
+
+    .issue-muted {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .issue-subject-value {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.4;
+    }
+
+    .issue-description-value {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+        color: #1e293b;
+        font-size: 0.98rem;
+        font-weight: 500;
+        line-height: 1.6;
+    }
+
+    .status-bar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: static;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .badge-pending { background: #fee2e2; color: #991b1b; }
+    .badge-confirmed { background: #fef3c7; color: #92400e; }
+    .badge-process { background: #dbeafe; color: #1e40af; }
+    .badge-reopened { background: #fef3c7; color: #b45309; }
+    .badge-solved { background: #dcfce7; color: #166534; }
+    .badge-rejected { background: #f1f5f9; color: #475569; }
+
+    .btn-action {
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        font-size: 0.875rem;
+    }
+
+    .btn-blue {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-blue:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-map {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-map:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-detail {
+        background: rgba(0, 0, 0, 0.05);
+        color: #ef4444;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-detail:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: #dc2626;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-proceed {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-solve {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-proceed:hover, .btn-solve:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.1);
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .media-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+        background: #f8fafc;
+    }
+
+    .media-item:hover {
+        transform: scale(1.02);
+    }
+
+    .media-item img, .media-item video {
+        width: 100%;
+        display: block;
+        height: 250px;
+        object-fit: contain;
+        background: #000;
+    }
+
+    .media-caption {
+        padding: 0.75rem;
+        background: white;
+        font-size: 0.75rem;
+        color: #64748b;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .solve-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        padding: 1rem;
+    }
+
+    .solve-modal.show {
+        display: flex;
+    }
+
+    .solve-modal-card {
+        width: 100%;
+        max-width: 560px;
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+        padding: 1.25rem;
+    }
+
+    .solve-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.4rem;
+    }
+
+    .solve-subtitle {
+        font-size: 0.88rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+
+    .solve-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .proof-btn {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #0f172a;
+        border-radius: 10px;
+        padding: 0.6rem 0.95rem;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .proof-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0.9rem;
+    }
+
+    .solve-notes {
+        width: 100%;
+        min-height: 88px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.7rem 0.8rem;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 0.86rem;
+        margin-bottom: 1rem;
+    }
+
+    .solve-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.7rem;
+    }
+
+    .btn-cancel,
+    .btn-submit-proof {
+        border: none;
+        border-radius: 10px;
+        padding: 0.62rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-submit-proof {
+        background: #10b981;
+        color: white;
+    }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+            <h2 class="page-title">{{ page_title }}</h2>
+            <p class="page-subtitle">Detailed information and management for this complaint.</p>
+        </div>
+        <a href="{{ back_url }}" class="btn-action btn-map">
+            <i class="fa-solid fa-arrow-left"></i> {{ back_label }}
+        </a>
+    </div>
+
+    <div class="detail-container">
+        <!-- Basic Info Section -->
+        <div class="info-section">
+            <h3><i class="fa-solid fa-circle-info"></i> Complaint Overview</h3>
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <div class="meta-label">Complaint Number</div>
+                    <div class="meta-value" style="color: #2563eb;">#{{ complaint.complaint_number }}</div>
+                </div>
+                <div class="meta-card">
+                    <div class="meta-label">Current Work Status</div>
+                    <div class="meta-value">
+                        <span class="badge badge-{{ complaint.work_status }}">
+                            {{ complaint.get_work_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="meta-card">
+                    <div class="meta-label">Submitted On</div>
+                    <div class="meta-value">{{ complaint.created_at|date:"M d, Y h:i A" }}</div>
+                </div>
+                <div class="meta-card">
+                    <div class="meta-label">Last Updated</div>
+                    <div class="meta-value">{{ complaint.updated_at|date:"M d, Y h:i A" }}</div>
+                </div>
+                <div class="meta-card">
+                    <div class="meta-label">Resolved On</div>
+                    <div class="meta-value">{% if complaint.resolved_at %}{{ complaint.resolved_at|date:"M d, Y h:i A" }}{% else %}Not Resolved Yet{% endif %}</div>
+                </div>
+                <div class="meta-card">
+                    <div class="meta-label">Coordinates</div>
+                    <div class="meta-value">{{ complaint.latitude|floatformat:6 }}, {{ complaint.longitude|floatformat:6 }}</div>
+                </div>
+            </div>
+            
+            <div class="issue-overview">
+                <div class="issue-tags">
+                    <div class="issue-tag-card">
+                        <div class="issue-tag-label">Category</div>
+                        <div>
+                            <span class="issue-pill">
+                                <i class="fa-solid fa-layer-group"></i> {{ complaint.get_complaint_type_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="issue-tag-card">
+                        <div class="issue-tag-label">Priority</div>
+                        <div>
+                            <span class="issue-pill {% if complaint.priority == 'high' %}issue-priority-high{% elif complaint.priority == 'medium' %}issue-priority-medium{% else %}issue-pill-alt{% endif %}">
+                                <i class="fa-solid fa-signal"></i> {{ complaint.priority|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="issue-subject-card">
+                    <div class="issue-subject-label">Subject</div>
+                    <div class="issue-subject-value">{{ complaint.title }}</div>
+                </div>
+                <div class="issue-description-card">
+                    <div class="issue-description-label">Description</div>
+                    <div class="issue-description-value">{{ complaint.description|linebreaksbr }}</div>
+                </div>
+            </div>
+            
+            {% if complaint.resolution_notes %}
+            <div class="info-item" style="margin-top: 1.5rem;">
+                <div class="info-label">Resolution Notes</div>
+                <div class="info-value" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.2rem; border-radius: 12px; font-weight: 500; color: #166534;">
+                    {{ complaint.resolution_notes }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Citizen Details Section -->
+        <div class="info-section">
+            <h3><i class="fa-solid fa-user"></i> Citizen Information</h3>
+            <div class="info-grid-vertical">
+                <div class="info-item">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value">
+                        {% if complaint.user %}
+                            {{ complaint.user.get_full_name|default:complaint.user.username }}
+                        {% else %}
+                            {{ complaint.guest_name|default:"Guest User" }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Contact Details</div>
+                    <div class="info-value">
+                        <div><i class="fa-solid fa-phone" style="font-size: 0.8rem; opacity: 0.6;"></i> {{ complaint.guest_phone|default:complaint.user.citizenprofile.mobile_no|default:"Not Provided" }}</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.25rem;"><i class="fa-solid fa-envelope" style="font-size: 0.8rem; opacity: 0.6;"></i> {{ complaint.guest_email|default:complaint.user.email|default:"Not Provided" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Details -->
+        <div class="info-section">
+            <h3><i class="fa-solid fa-location-dot"></i> Incident Location</h3>
+            <div class="info-grid-vertical" style="align-items: center;">
+                <div style="flex: 2;">
+                    <div class="info-item" style="margin-bottom: 1.5rem;">
+                        <div class="info-label">Exact Address</div>
+                        <div class="info-value">{{ complaint.address }}</div>
+                    </div>
+                    <div class="info-grid-vertical" style="grid-template-columns: 1fr 1fr;">
+                        <div class="info-item">
+                            <div class="info-label">City</div>
+                            <div class="info-value">{{ complaint.city }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Pincode</div>
+                            <div class="info-value">{{ complaint.pincode }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex: 1; display: flex; justify-content: flex-end;">
+                    <a href="https://www.google.com/maps?q={{ complaint.latitude }},{{ complaint.longitude }}" target="_blank" class="btn-action btn-map">
+                        <i class="fa-solid fa-map-location-dot"></i> Open Live Map
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Evidence -->
+        <div class="info-section">
+            <h3><i class="fa-solid fa-images"></i> Visual Evidence (Uploaded Proof)</h3>
+            {% if complaint.media.all %}
+            <div class="media-grid">
+                {% for media in complaint.media.all %}
+                    <div class="media-item">
+                        {% if media.file_type == 'image' %}
+                            <a href="{{ media.file.url }}" target="_blank">
+                                <img src="{{ media.file.url }}" alt="Complaint Media">
+                            </a>
+                        {% else %}
+                            <video controls>
+                                <source src="{{ media.file.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% endif %}
+                        <div class="media-caption">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fa-solid fa-file"></i> {{ media.file.name|slice:"16:" }}</span>
+                                <a href="{{ media.file.url }}" download class="btn-detail" style="padding: 2px 8px; font-size: 0.65rem;">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                <i class="fa-solid fa-file-circle-xmark" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                <p style="color: #64748b; font-weight: 600;">No live proof or media uploaded by the user.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Work Completion Proof -->
+        <div class="info-section">
+            <h3><i class="fa-solid fa-clipboard-check"></i> Work Completion Proof</h3>
+            {% if complaint.resolution_proofs.all %}
+            <div class="media-grid">
+                {% for proof in complaint.resolution_proofs.all %}
+                    <div class="media-item">
+                        {% if proof.file_type == 'image' %}
+                            <a href="{{ proof.file.url }}" target="_blank">
+                                <img src="{{ proof.file.url }}" alt="Completion Proof">
+                            </a>
+                        {% else %}
+                            <video controls>
+                                <source src="{{ proof.file.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% endif %}
+                        <div class="media-caption">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap:0.5rem;">
+                                <div style="display:flex; flex-direction:column; gap:0.15rem;">
+                                    <span><i class="fa-solid fa-calendar-check"></i> {{ proof.uploaded_at|date:"M d, Y h:i A" }}</span>
+                                    <span style="font-size:0.68rem; color:#475569;">
+                                        <i class="fa-solid fa-user"></i>
+                                        {% if proof.uploaded_by %}
+                                            {{ proof.uploaded_by.get_full_name|default:proof.uploaded_by.username }}
+                                        {% else %}
+                                            Department
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <a href="{{ proof.file.url }}" download class="btn-detail" style="padding: 2px 8px; font-size: 0.65rem;">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                <i class="fa-solid fa-file-circle-xmark" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                <p style="color: #64748b; font-weight: 600;">No completion proof uploaded yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if complaint.reopen_proofs.all %}
+        <div class="info-section">
+            <h3><i class="fa-solid fa-rotate-left"></i> Reopen History</h3>
+            <div class="media-grid">
+                {% for reopen in complaint.reopen_proofs.all %}
+                    <div class="media-item">
+                        <a href="{{ reopen.proof.url }}" target="_blank">
+                            <img src="{{ reopen.proof.url }}" alt="Reopen Proof">
+                        </a>
+                        <div class="media-caption">
+                            <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                                <span><i class="fa-solid fa-calendar"></i> {{ reopen.created_at|date:"M d, Y h:i A" }}</span>
+                                <span style="font-size:0.68rem; color:#475569;"><i class="fa-solid fa-user"></i> {{ reopen.requested_by.get_full_name|default:reopen.requested_by.username|default:"Citizen" }}</span>
+                                <span style="font-size:0.72rem; color:#1e293b; line-height:1.4;">{{ reopen.reason }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="info-section">
+            <h3><i class="fa-solid fa-star"></i> Citizen Rating & Feedback</h3>
+            {% if complaint.citizen_rating %}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= complaint.citizen_rating %}
+                            <i class="fa-solid fa-star" style="color:#f59e0b;"></i>
+                        {% else %}
+                            <i class="fa-regular fa-star" style="color:#cbd5e1;"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span style="font-size:0.92rem; color:#334155; margin-left:0.4rem;">{{ complaint.citizen_rating }}/5</span>
+                </div>
+                <div style="font-size: 0.9rem; color: #64748b; font-weight: 700; margin-bottom: 0.5rem;">
+                    Submitted on {{ complaint.citizen_rated_at|date:"M d, Y h:i A" }}
+                </div>
+                <div style="font-size: 0.92rem; color: #1e293b; line-height: 1.6;">
+                    {{ complaint.citizen_feedback|default:"No written feedback provided." }}
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                <i class="fa-solid fa-star-half-stroke" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                <p style="color: #64748b; font-weight: 600;">Citizen has not submitted rating yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Status Action Bar -->
+        <div class="status-bar" style="position: sticky; bottom: 2rem; z-index: 100;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span class="info-label" style="margin-bottom: 0;">CURRENT STATUS</span>
+                <span class="badge badge-{{ complaint.work_status }}">
+                    <i class="fa-solid fa-circle-dot"></i> {{ complaint.get_work_status_display }}
+                </span>
+            </div>
+            <div class="action-group">
+                <form method="POST" action="{% url 'update_complaint_status' complaint.id %}" style="display: flex; gap: 1rem;">
+                    {% csrf_token %}
+                    <input type="hidden" name="from_page" value="city_admin">
+                    
+                    {% if complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}
+                    <button type="submit" name="status" value="confirmed" class="btn-action btn-blue">
+                        <i class="fa-solid fa-check"></i> Confirm Complaint
+                    </button>
+                    {% endif %}
+
+                    {% if complaint.work_status == 'confirmed' %}
+                    <button type="submit" name="status" value="process" class="btn-action btn-proceed">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Move to Progress
+                    </button>
+                    {% endif %}
+
+                    {% if complaint.work_status == 'process' %}
+                    <button type="button" class="btn-action btn-solve" id="openSolveProofModalBtn">
+                        <i class="fa-solid fa-circle-check"></i> Mark as Solved
+                    </button>
+                    {% endif %}
+
+                    {% if complaint.work_status != 'solved' and complaint.work_status != 'rejected' %}
+                    <button type="submit" name="status" value="rejected" class="btn-action" style="background: #ef4444; color: white;" onclick="return confirm('Are you sure you want to reject this complaint?')">
+                        <i class="fa-solid fa-xmark"></i> Reject
+                    </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="solve-modal" id="solveProofModal">
+            <div class="solve-modal-card">
+                <form method="POST" enctype="multipart/form-data" id="solveProofForm" action="{% url 'update_complaint_status' complaint.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="from_page" value="city_admin">
+                    <input type="hidden" name="status" value="solved">
+                    <h3 class="solve-title">Upload Work Completion Proof</h3>
+                    <p class="solve-subtitle">Before marking solved, upload photo/video proof from camera or gallery.</p>
+
+                    <input type="file" id="proofCameraInput" name="resolution_proofs" accept="image/*,video/*" capture="environment" style="display:none;" multiple>
+                    <input type="file" id="proofGalleryInput" name="resolution_proofs" accept="image/*,video/*" style="display:none;" multiple>
+
+                    <div class="solve-actions">
+                        <button type="button" class="proof-btn" id="openCameraBtn">
+                            <i class="fa-solid fa-camera"></i> Camera
+                        </button>
+                        <button type="button" class="proof-btn" id="openGalleryBtn">
+                            <i class="fa-solid fa-images"></i> Gallery
+                        </button>
+                    </div>
+
+                    <div class="proof-meta" id="proofFileInfo">No proof selected.</div>
+                    <textarea name="notes" class="solve-notes" placeholder="Optional notes about completed work"></textarea>
+
+                    <div class="solve-footer">
+                        <button type="button" class="btn-cancel" id="cancelSolveBtn">Cancel</button>
+                        <button type="submit" class="btn-submit-proof">Upload & Mark Solved</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const solveProofModal = document.getElementById('solveProofModal');
+    const solveProofForm = document.getElementById('solveProofForm');
+    const proofCameraInput = document.getElementById('proofCameraInput');
+    const proofGalleryInput = document.getElementById('proofGalleryInput');
+    const proofFileInfo = document.getElementById('proofFileInfo');
+    const cancelSolveBtn = document.getElementById('cancelSolveBtn');
+    const openSolveProofModalBtn = document.getElementById('openSolveProofModalBtn');
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const openGalleryBtn = document.getElementById('openGalleryBtn');
+
+    function selectedProofCount() {
+        return (proofCameraInput?.files?.length || 0) + (proofGalleryInput?.files?.length || 0);
+    }
+
+    function updateProofMeta() {
+        const total = selectedProofCount();
+        if (proofFileInfo) {
+            proofFileInfo.textContent = total > 0 ? `${total} file(s) selected` : 'No proof selected.';
+        }
+    }
+
+    function closeSolveModal() {
+        if (!solveProofModal) return;
+        solveProofModal.classList.remove('show');
+        if (solveProofForm) solveProofForm.reset();
+        updateProofMeta();
+    }
+
+    openSolveProofModalBtn?.addEventListener('click', () => solveProofModal?.classList.add('show'));
+    openCameraBtn?.addEventListener('click', () => proofCameraInput?.click());
+    openGalleryBtn?.addEventListener('click', () => proofGalleryInput?.click());
+    proofCameraInput?.addEventListener('change', updateProofMeta);
+    proofGalleryInput?.addEventListener('change', updateProofMeta);
+    cancelSolveBtn?.addEventListener('click', closeSolveModal);
+
+    solveProofModal?.addEventListener('click', function(e) {
+        if (e.target === solveProofModal) closeSolveModal();
+    });
+
+    solveProofForm?.addEventListener('submit', function(e) {
+        if (selectedProofCount() === 0) {
+            e.preventDefault();
+            alert('Please upload at least one completion proof file.');
+        }
+    });
+</script>
+{% endblock %}

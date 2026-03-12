@@ -1,0 +1,507 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .content-section {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    }
+
+    .form-section {
+        background: rgba(102, 126, 234, 0.05);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .form-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-submit-group {
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 12px;
+        font-family: inherit;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .input-with-btn {
+        display: flex;
+        gap: 0.55rem;
+        align-items: center;
+    }
+
+    .btn-generate {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        border-radius: 10px;
+        padding: 0.68rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-submit {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    .btn-submit:hover {
+        background: #764ba2;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .quick-links {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .quick-link {
+        text-decoration: none;
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #334155;
+        border-radius: 10px;
+        padding: 0.55rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 980px;
+    }
+
+    th {
+        text-align: left;
+        padding: 1rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        padding: 1.2rem 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-active { background: #d1fae5; color: #065f46; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+
+    .row-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .btn-action {
+        border-radius: 8px;
+        padding: 0.4rem 0.68rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+    .btn-edit {
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .btn-delete {
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 1.65rem;
+            line-height: 1.25;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .form-section,
+        .content-section {
+            padding: 1rem;
+            border-radius: 16px;
+        }
+
+        .form-title {
+            font-size: 0.98rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 0.85rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .input-with-btn {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-generate {
+            width: 100%;
+            justify-content: center;
+            display: inline-flex;
+        }
+
+        .form-input {
+            font-size: 16px;
+            padding: 0.72rem 0.9rem;
+        }
+
+        .quick-links {
+            flex-direction: column;
+        }
+
+        .quick-link,
+        .btn-submit {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .form-submit-group {
+            align-items: stretch;
+        }
+
+        .table-container {
+            overflow: visible;
+        }
+
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+            display: block;
+            width: 100%;
+        }
+
+        table {
+            min-width: 0;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        tbody tr {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.85rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        tbody td {
+            border-bottom: none;
+            padding: 0.35rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.84rem;
+            line-height: 1.35;
+        }
+
+        tbody td::before {
+            content: attr(data-label);
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            flex: 0 0 94px;
+        }
+
+        .row-actions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .row-actions form,
+        .btn-action {
+            width: 100%;
+        }
+
+        tbody tr td:last-child {
+            padding-top: 0.6rem;
+            margin-top: 0.2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        tbody tr td:last-child::before {
+            content: "";
+            flex: 0;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Managing city-level administrators and their jurisdictions</p>
+    </div>
+
+    <div class="form-section">
+        <h3 class="form-title">
+            <i class="fa-solid fa-user-plus"></i>
+            Add New City Admin
+        </h3>
+        <form action="{% url 'add_city_admin' %}" method="POST">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" class="form-input" placeholder="e.g. John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-input" placeholder="admin@city.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password (Auto Generated)</label>
+                    <div class="input-with-btn">
+                        <input type="text" name="password" id="cityAdminPasswordInput" class="form-input" value="{{ generated_password }}" required>
+                        <button type="button" class="btn-generate" id="regenerateCityAdminPasswordBtn">
+                            <i class="fa-solid fa-key"></i> Generate
+                        </button>
+                    </div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:0.35rem;">
+                        This password and assignment details will be sent to admin email automatically.
+                    </div>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>State</label>
+                    <select name="state" id="stateSelect" class="form-input" required>
+                        <option value="">Select State</option>
+                        {% for state in state_options %}
+                            <option value="{{ state }}">{{ state }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>City Name</label>
+                    <select name="city" id="citySelect" class="form-input" required>
+                        <option value="">Select City</option>
+                        {% for city in managed_cities %}
+                            <option value="{{ city.name }}" data-state="{{ city.state.name|lower }}">
+                                {{ city.name }} ({{ city.state.name }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group form-submit-group">
+                    <button type="submit" class="btn-submit">
+                        <i class="fa-solid fa-check"></i> Create Admin
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="content-section">
+        <h3 class="form-title" style="margin-bottom: 2rem;">
+            <i class="fa-solid fa-users-gear"></i>
+            Existing City Admins
+        </h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Admin Name</th>
+                        <th>Email / Username</th>
+                        <th>City & State</th>
+                        <th>Joined Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for admin in city_admins %}
+                    <tr>
+                        <td data-label="Admin Name" style="font-weight: 700; color: #1e293b;">{{ admin.user.get_full_name }}</td>
+                        <td data-label="Email">{{ admin.user.email }}</td>
+                        <td data-label="City & State">
+                            <div style="font-weight: 600;">{{ admin.city_name }}</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">{{ admin.state }}</div>
+                        </td>
+                        <td data-label="Joined" style="color: #64748b; font-size: 0.85rem;">{{ admin.created_at|date:"M d, Y" }}</td>
+                        <td data-label="Status">
+                            {% if admin.is_active %}
+                                <span class="badge badge-active">Active</span>
+                            {% else %}
+                                <span class="badge badge-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Action">
+                            <div class="row-actions">
+                                <a href="{% url 'super_admin_edit_city_admin' admin.id %}" class="btn-action btn-edit">
+                                    <i class="fa-solid fa-pen"></i> Edit
+                                </a>
+                                <form method="POST" action="{% url 'super_admin_delete_city_admin' admin.id %}" style="margin:0;" onsubmit="return confirm('Delete this city admin?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-action btn-delete">
+                                        <i class="fa-solid fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">No city admins found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const stateSelect = document.getElementById('stateSelect');
+    const citySelect = document.getElementById('citySelect');
+    const allCityOptions = Array.from(citySelect.querySelectorAll('option')).slice(1);
+
+    function filterCitiesByState() {
+        const selectedState = (stateSelect.value || '').trim().toLowerCase();
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        allCityOptions.forEach(opt => {
+            if (!selectedState || (opt.dataset.state || '') === selectedState) {
+                citySelect.appendChild(opt.cloneNode(true));
+            }
+        });
+    }
+
+    stateSelect.addEventListener('change', filterCitiesByState);
+    filterCitiesByState();
+
+    const cityAdminPasswordInput = document.getElementById('cityAdminPasswordInput');
+    const regenerateCityAdminPasswordBtn = document.getElementById('regenerateCityAdminPasswordBtn');
+
+    regenerateCityAdminPasswordBtn?.addEventListener('click', function() {
+        const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lower = 'abcdefghijklmnopqrstuvwxyz';
+        const digits = '0123456789';
+        const symbols = '!@#$%^&*()-_=+';
+        const pool = upper + lower + digits + symbols;
+        const len = 14;
+
+        let result = [
+            upper[Math.floor(Math.random() * upper.length)],
+            lower[Math.floor(Math.random() * lower.length)],
+            digits[Math.floor(Math.random() * digits.length)],
+            symbols[Math.floor(Math.random() * symbols.length)]
+        ];
+
+        for (let i = result.length; i < len; i++) {
+            result.push(pool[Math.floor(Math.random() * pool.length)]);
+        }
+
+        result = result.sort(() => Math.random() - 0.5);
+        cityAdminPasswordInput.value = result.join('');
+    });
+</script>
+{% endblock %}

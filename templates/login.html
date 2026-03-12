@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sign In - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px 20px 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .admin-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #34495e;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .admin-link:hover {
+            background: #2c3e50;
+            transform: translateY(-2px);
+        }
+
+        .glass-card {
+            background: rgba(248, 249, 250, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            font-size: 60px;
+            color: #667eea;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .logo h1 {
+            color: #2d3436;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #636e72;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            color: #2d3436;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            color: #2d3436;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .input-group input::placeholder {
+            color: #adb5bd;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            background: #ffffff;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 18px;
+            top: 48px;
+            color: #6c757d;
+            font-size: 18px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: #667eea;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            box-shadow: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .info-text {
+            text-align: center;
+            color: #6c757d;
+            font-size: 12px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.9);
+            color: #fff;
+        }
+
+        .alert-error {
+            background: rgba(220, 53, 69, 0.9);
+            color: #fff;
+        }
+
+        @media (max-width: 480px) {
+            .admin-link {
+                top: 10px;
+                right: 10px;
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+
+            .glass-card {
+                padding: 30px 20px;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
+
+            .logo i {
+                font-size: 50px;
+            }
+
+            .input-group input {
+                padding: 14px 14px 14px 45px;
+                font-size: 15px;
+            }
+
+            .btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .glass-card {
+                padding: 25px 20px;
+            }
+
+            .logo {
+                margin-bottom: 20px;
+            }
+
+            .logo i {
+                font-size: 45px;
+                margin-bottom: 10px;
+            }
+
+            .input-group {
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="/static/js/translations.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <div id="google_translate_element" style="display:none;"></div>
+    <a href="/admin" class="admin-link">
+        <i class="fa-solid fa-shield-halved"></i>
+        Admin
+    </a>
+    
+    <div class="glass-card">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="logo">
+            <i class="fa-solid fa-building-shield"></i>
+            <h1>SMART CITY</h1>
+            <p>Citizen Portal</p>
+        </div>
+        
+        <div class="language-selector" style="margin-bottom: 20px; text-align: center;">
+            <select onchange="changeLanguage(this.value)" style="padding: 8px 15px; border: 1px solid #dee2e6; border-radius: 8px; font-size: 13px; background: #fff;">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="gu">ગુજરાતી (Gujarati)</option>
+            </select>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="input-group">
+                <label>Email / Username</label>
+                <input type="text" name="identifier" placeholder="Enter your email" required autocomplete="email">
+                <i class="fa-solid fa-envelope"></i>
+            </div>
+
+            <div class="input-group">
+                <label>Password (Optional)</label>
+                <input type="password" name="password" placeholder="Leave blank for OTP" autocomplete="current-password">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            
+            <button type="submit" class="btn">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Sign In
+            </button>
+
+            <p class="info-text">Citizens: Leave password blank to receive OTP via email</p>
+        </form>
+        
+        <div style="text-align: center; margin: 15px 0;">
+            <a href="{% url 'forgot_password' %}" style="color: #690909; text-decoration: none; font-size: 13px; font-weight: 600;">
+                <i class="fa-solid fa-key"></i> Forgot Password?
+            </a>
+        </div>
+        
+        <div class="divider">New User?</div>
+        
+        <a href="{% url 'register' %}" class="btn btn-outline">
+            <i class="fa-solid fa-user-plus"></i>
+            Create Account
+        </a>
+        
+        <div class="divider">Guest Mode</div>
+        
+        <a href="{% url 'guest_complaint' %}?from=citizen" class="btn" style="background: #d7da14; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+            <i class="fa-solid fa-file-plus"></i>
+            Continue as Guest
+        </a>
+        
+        <a href="{% url 'track_guest_complaint' %}" class="btn btn-outline" style="border-color: #10b981; color: #10b981; margin-top: 10px;">
+            <i class="fa-solid fa-search"></i>
+            Track Complaint
+        </a>
+    </div>
+</body>
+<script>
+    const translations = {
+        'hi': {
+            'SMART CITY': 'स्मार्ट सिटी',
+            'Citizen Portal': 'नागरिक पोर्टल',
+            'Email / Username': 'ईमेल / यूजरनेम',
+            'Enter your email': 'अपना ईमेल दर्ज करें',
+            'Password (Optional)': 'पासवर्ड (वैकल्पिक)',
+            'Leave blank for OTP': 'OTP के लिए खाली छोड़ें',
+            'Sign In': 'साइन इन',
+            'Citizens: Leave password blank to receive OTP via email': 'नागरिक: ईमेल के जरिए OTP प्राप्त करने के लिए पासवर्ड खाली छोड़ें',
+            'New User?': 'नए यूजर?',
+            'Create Account': 'खाता बनाएं',
+            'Guest Mode': 'अतिथि मोड',
+            'Continue as Guest': 'अतिथि के रूप में जारी रखें',
+            'Track Complaint': 'शिकायत ट्रैक करें'
+        },
+        'gu': {
+            'SMART CITY': 'સ્માર્ટ સિટી',
+            'Citizen Portal': 'નાગરિક પોર્ટલ',
+            'Email / Username': 'ઈમેલ / યૂજરનેમ',
+            'Enter your email': 'તમારો ઈમેલ દાખલ કરો',
+            'Password (Optional)': 'પાસવર્ડ (વૈકલ્પિક)',
+            'Leave blank for OTP': 'OTP માટે ખાલી છોડો',
+            'Sign In': 'સાઇન ઇન',
+            'Citizens: Leave password blank to receive OTP via email': 'નાગરિકો: ઈમેલ વડે OTP મેળવવા માટે પાસવર્ડ ખાલી છોડો',
+            'New User?': 'નવા યૂજર?',
+            'Create Account': 'ખાતું બનાવો',
+            'Guest Mode': 'મહેમાન મોડ',
+            'Continue as Guest': 'મહેમાન તરીકે ચાલુ રાખો',
+            'Track Complaint': 'ફરિયાદ ટ્રેક કરો'
+        },
+        'bn': {
+            'SMART CITY': 'স্মার্ট সিটি',
+            'Citizen Portal': 'নাগরিক পোর্টাল',
+            'Sign In': 'সাইন ইন',
+            'Create Account': 'অ্যাকাউন্ট তৈরি করুন',
+            'Continue as Guest': 'অতিথি হিসেবে চালিয়ে যান',
+            'Track Complaint': 'সমস্যা ট্র্যাক করুন'
+        },
+        'ta': {
+            'SMART CITY': 'ஸ்மார்ட் சிடி',
+            'Citizen Portal': 'குடிமக்கள் தளம்',
+            'Sign In': 'உள்நுழைவு',
+            'Create Account': 'கணக்கை துவங்கவும்',
+            'Continue as Guest': 'விருந்தினராக தொடரவும்',
+            'Track Complaint': 'பிரச்சினையை கக்கவும்'
+        }
+    };
+
+    function changeLanguage(lang) {
+        localStorage.setItem('selectedLanguage', lang);
+        
+        // Use Google Translate API
+        setTimeout(() => {
+            const translateSelect = document.querySelector('.goog-te-combo');
+            if (translateSelect) {
+                translateSelect.value = lang;
+                translateSelect.dispatchEvent(new Event('change'));
+            } else {
+                location.reload();
+            }
+        }, 500);
+    }
+    
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'hi,gu,en',
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+        }, 'google_translate_element');
+    }
+
+    function translatePage(lang) {
+        if (lang === 'en') return;
+        
+        const langTranslations = translations[lang];
+        if (!langTranslations) return;
+
+        // Translate text content
+        document.querySelectorAll('h1, p, label, button, a, .info-text').forEach(element => {
+            const text = element.textContent.trim();
+            if (langTranslations[text]) {
+                element.textContent = langTranslations[text];
+            }
+        });
+
+        // Translate placeholders
+        document.querySelectorAll('input[placeholder]').forEach(input => {
+            const placeholder = input.getAttribute('placeholder');
+            if (langTranslations[placeholder]) {
+                input.setAttribute('placeholder', langTranslations[placeholder]);
+            }
+        });
+    }
+
+    // Load saved language on page load
+    window.addEventListener('load', () => {
+        const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+        document.querySelector('select').value = savedLang;
+        translatePage(savedLang);
+    });
+</script>
+</html>

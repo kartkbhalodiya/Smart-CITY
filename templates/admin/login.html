@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - Smart City Portal{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 450px; margin: 60px auto;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <i class="fa-solid fa-user-shield" style="font-size: 3.5rem; color: #34495e; margin-bottom: 1rem;"></i>
+        <h1 style="color: var(--secondary); font-size: 1.75rem; font-weight: 800; letter-spacing: -0.5px;">Admin Portal</h1>
+        <p style="color: var(--text-muted); font-weight: 500;">Administrative System Login</p>
+    </div>
+    
+    {% if form.errors and not form.non_field_errors %}
+    <div class="alert alert-error" style="margin-bottom: 1.5rem; font-size: 0.9rem;">
+        Please correct the error below.
+    </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+    {% for error in form.non_field_errors %}
+    <div class="alert alert-error" style="margin-bottom: 1.5rem; font-size: 0.9rem;">
+        {{ error }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="input-group">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--secondary); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px;">USERNAME</label>
+            <input type="text" name="username" placeholder="Admin username" required autofocus>
+            <i class="fa-solid fa-user"></i>
+        </div>
+        
+        <div class="input-group" style="margin-top: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--secondary); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px;">PASSWORD</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+            <i class="fa-solid fa-key"></i>
+        </div>
+        
+        <input type="hidden" name="next" value="{{ next }}">
+        
+        <button type="submit" class="btn" style="width: 100%; padding: 1rem; font-size: 1rem; margin-top: 2rem; background: #34495e;">
+            <i class="fa-solid fa-right-to-bracket" style="margin-right: 10px;"></i>
+            Log in to Admin
+        </button>
+    </form>
+    
+    <div style="text-align: center; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 2rem;">
+        <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 0.9rem;">
+            <i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i>
+            Return to Citizen Portal
+        </a>
+    </div>
+</div>
+{% endblock %}

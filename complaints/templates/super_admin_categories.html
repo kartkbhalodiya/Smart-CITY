@@ -1,0 +1,463 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 420px 1fr;
+        gap: 1rem;
+    }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .section-title {
+        font-size: 0.84rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: #475569;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.68rem 0.75rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .row-head {
+        display: grid;
+        grid-template-columns: 1fr 130px 120px 130px;
+        gap: 0.45rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .row-item {
+        display: grid;
+        grid-template-columns: 1fr 130px 120px 130px auto;
+        gap: 0.45rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .sub-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.45rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .btn-small {
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 8px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 0.45rem 0.6rem;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 0.62rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .category-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.8rem;
+        margin-bottom: 0.7rem;
+        background: #ffffff;
+    }
+
+    .category-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.7rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .cat-main {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .cat-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        border: 1px solid #dbe1ea;
+        object-fit: cover;
+        background: #f8fafc;
+    }
+
+    .cat-name {
+        font-weight: 800;
+        font-size: 0.9rem;
+        color: #0f172a;
+    }
+
+    .cat-key {
+        color: #64748b;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 999px;
+        padding: 0.2rem 0.55rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+    }
+
+    .pill-on { background: #dcfce7; color: #166534; }
+    .pill-off { background: #fee2e2; color: #991b1b; }
+
+    .meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.35rem;
+        line-height: 1.45;
+    }
+
+    .toggle-btn {
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 8px;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .edit-link {
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-radius: 8px;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    @media (max-width: 1024px) {
+        .layout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .panel {
+            padding: 0.85rem;
+        }
+
+        .row-head {
+            display: none;
+        }
+
+        .row-item {
+            grid-template-columns: 1fr;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.5rem;
+        }
+
+        .sub-row {
+            grid-template-columns: 1fr;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.5rem;
+        }
+
+        .row-item .btn-small,
+        .sub-row .btn-small {
+            width: 100%;
+        }
+
+        .category-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .cat-main {
+            width: 100%;
+        }
+
+        .card-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .card-actions form {
+            width: 100%;
+        }
+
+        .edit-link,
+        .toggle-btn {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Add category logo, name, multiple subcategories, and custom fields users will fill in complaint form.</p>
+    </div>
+
+    <div class="layout-grid">
+        <div class="panel">
+            <h3 class="section-title">Add New Category</h3>
+            <form method="POST" enctype="multipart/form-data" id="categoryForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+
+                <div class="form-group">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" name="category_name" class="form-input" placeholder="e.g. Health Services" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Emoji (optional)</label>
+                    <input type="text" name="category_emoji" class="form-input" placeholder="e.g. 🚰">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Key (optional)</label>
+                    <input type="text" name="category_key" class="form-input" placeholder="e.g. health">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Logo</label>
+                    <input type="file" name="category_logo" class="form-input" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                        <label class="form-label" style="margin:0;">Subcategories</label>
+                        <button type="button" class="btn-small" id="addSubBtn">+ Add Subcategory</button>
+                    </div>
+                    <p class="meta" style="margin-bottom:0.45rem;">Minimum 10 subcategories are required.</p>
+                    <div id="subRows"></div>
+                </div>
+
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                        <label class="form-label" style="margin:0;">Custom Fields</label>
+                        <button type="button" class="btn-small" id="addFieldBtn">+ Add Field</button>
+                    </div>
+                    <div class="row-head">
+                        <span class="form-label" style="margin:0;">Field Label</span>
+                        <span class="form-label" style="margin:0;">Applies To</span>
+                        <span class="form-label" style="margin:0;">Type</span>
+                        <span class="form-label" style="margin:0;">Required</span>
+                    </div>
+                    <div id="fieldRows"></div>
+                    <p class="meta">For dropdown fields, put options as comma-separated values.</p>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-plus"></i> Create Category
+                </button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3 class="section-title">Existing Categories</h3>
+            {% for category in categories %}
+                <div class="category-card">
+                    <div class="category-head">
+                        <div class="cat-main">
+                            {% if category.logo %}
+                                <img src="{{ category.logo.url }}" alt="{{ category.name }}" class="cat-logo">
+                            {% else %}
+                                <span class="cat-logo" style="display:inline-flex; align-items:center; justify-content:center; color:#94a3b8;">
+                                    <i class="fa-solid fa-image"></i>
+                                </span>
+                            {% endif %}
+                            <div>
+                                <div class="cat-name">{{ category.name }}</div>
+                                <div class="cat-key">{{ category.key }}</div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'super_admin_edit_category' category.id %}" class="edit-link">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </a>
+                            <form method="POST" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle">
+                                <input type="hidden" name="category_id" value="{{ category.id }}">
+                                <button type="submit" class="toggle-btn">
+                                    {% if category.is_active %}Disable{% else %}Enable{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <span class="pill {% if category.is_active %}pill-on{% else %}pill-off{% endif %}">
+                        {% if category.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                    {% if category.emoji %}
+                        <div class="meta"><strong>Emoji:</strong> {{ category.emoji }}</div>
+                    {% endif %}
+                    <div class="meta">
+                        <strong>Subcategories:</strong>
+                        {% for sub in category.subcategories.all %}
+                            {% if sub.is_active %}
+                                {{ sub.name }}{% if not forloop.last %}, {% endif %}
+                            {% endif %}
+                        {% empty %}None{% endfor %}
+                    </div>
+                    <div class="meta">
+                        <strong>Fields:</strong>
+                        {% for field in category.dynamic_fields.all %}
+                            {% if field.is_active %}
+                                {{ field.label }} ({{ field.get_field_type_display }}){% if field.subcategory %} [{{ field.subcategory.name }}]{% else %} [All]{% endif %}{% if field.is_required %}*{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% endif %}
+                        {% empty %}None{% endfor %}
+                    </div>
+                </div>
+            {% empty %}
+                <p class="meta">No categories found.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const subRows = document.getElementById('subRows');
+    const fieldRows = document.getElementById('fieldRows');
+    const addSubBtn = document.getElementById('addSubBtn');
+    const addFieldBtn = document.getElementById('addFieldBtn');
+
+    const fieldTypeOptions = `{% for key, name in field_types %}<option value="{{ key }}">{{ name }}</option>{% endfor %}`;
+
+    function addSubRow(value = '') {
+        const row = document.createElement('div');
+        row.className = 'sub-row';
+        row.innerHTML = `
+            <input type="text" name="subcategory_names[]" class="form-input" placeholder="Subcategory name" value="${value}">
+            <button type="button" class="btn-small" onclick="this.parentElement.remove(); refreshFieldSubcategoryOptions();">Remove</button>
+        `;
+        subRows.appendChild(row);
+    }
+
+    function addFieldRow() {
+        const row = document.createElement('div');
+        row.className = 'row-item';
+        row.innerHTML = `
+            <div>
+                <input type="text" name="field_labels[]" class="form-input" placeholder="e.g. House Number">
+                <input type="text" name="field_options[]" class="form-input" placeholder="Option1, Option2 (only for dropdown)" style="margin-top:0.35rem;">
+            </div>
+            <select name="field_subcategories[]" class="form-input field-sub-select">
+                <option value="__all__">All Subcategories</option>
+            </select>
+            <select name="field_types[]" class="form-input">${fieldTypeOptions}</select>
+            <select name="field_required[]" class="form-input">
+                <option value="0">Optional</option>
+                <option value="1">Required</option>
+            </select>
+            <button type="button" class="btn-small" onclick="this.parentElement.remove()">Remove</button>
+        `;
+        fieldRows.appendChild(row);
+        refreshFieldSubcategoryOptions();
+    }
+
+    function getSubcategoryNames() {
+        return Array.from(document.querySelectorAll('input[name=\"subcategory_names[]\"]'))
+            .map(input => input.value.trim())
+            .filter(Boolean);
+    }
+
+    function refreshFieldSubcategoryOptions() {
+        const names = getSubcategoryNames();
+        const selects = document.querySelectorAll('.field-sub-select');
+
+        selects.forEach(select => {
+            const previous = select.value;
+            select.innerHTML = '<option value=\"__all__\">All Subcategories</option>';
+            names.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+            const stillExists = Array.from(select.options).some(option => option.value === previous);
+            select.value = stillExists ? previous : '__all__';
+        });
+    }
+
+    addSubBtn.addEventListener('click', () => {
+        addSubRow();
+        refreshFieldSubcategoryOptions();
+    });
+    addFieldBtn.addEventListener('click', () => addFieldRow());
+
+    for (let i = 0; i < 10; i += 1) {
+        addSubRow();
+    }
+    addFieldRow();
+
+    subRows.addEventListener('input', function(event) {
+        if (event.target && event.target.name === 'subcategory_names[]') {
+            refreshFieldSubcategoryOptions();
+        }
+    });
+</script>
+{% endblock %}

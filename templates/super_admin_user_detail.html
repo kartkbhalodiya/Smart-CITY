@@ -1,0 +1,384 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .profile-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        background: #2563eb;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-email {
+        color: #64748b;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .info-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .complaint-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .complaint-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-color: #2563eb;
+    }
+
+    .complaint-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .complaint-number {
+        font-weight: 800;
+        color: #2563eb;
+        font-size: 0.85rem;
+    }
+
+    .complaint-date {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .complaint-title {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+        color: #1e293b;
+    }
+
+    .complaint-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-pending { background: #fee2e2; color: #991b1b; }
+    .badge-confirmed { background: #fef3c7; color: #92400e; }
+    .badge-process { background: #dbeafe; color: #1e40af; }
+    .badge-reopened { background: #fef3c7; color: #b45309; }
+    .badge-solved { background: #dcfce7; color: #166534; }
+    .badge-rejected { background: #f1f5f9; color: #475569; }
+
+    .meta-item {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .priority-high { color: #dc2626; }
+    .priority-medium { color: #d97706; }
+    .priority-normal { color: #16a34a; }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(37, 99, 235, 0.05);
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: rgba(37, 99, 235, 0.1);
+        transform: translateX(-3px);
+    }
+
+    .btn-delete {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .btn-delete:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    @media (max-width: 1024px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            line-height: 1.2;
+        }
+
+        .card {
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            font-size: 1.8rem;
+            border-radius: 16px;
+        }
+
+        .profile-name {
+            font-size: 1.35rem;
+        }
+
+        .complaint-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .meta-item {
+            width: 100%;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <a href="{% url 'super_admin_users' %}" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Back to Users
+        </a>
+        <h2 class="page-title">User Profile</h2>
+        <p class="page-subtitle">Detailed information and complaint history for {{ user_obj.get_full_name|default:user_obj.username }}</p>
+    </div>
+
+    <div class="detail-grid">
+        <div class="sidebar-info">
+            <div class="card">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        {{ user_obj.first_name|first }}{{ user_obj.last_name|first }}
+                    </div>
+                    <h3 class="profile-name">{{ user_obj.get_full_name|default:user_obj.username }}</h3>
+                    <p class="profile-email">{{ user_obj.email }}</p>
+                </div>
+
+                <div class="info-group">
+                    <span class="info-label">Mobile Number</span>
+                    <span class="info-value">{{ profile.mobile_no|default:"Not Provided" }}</span>
+                </div>
+
+                <div class="info-group">
+                    <span class="info-label">Aadhaar Number</span>
+                    <span class="info-value">
+                        {% if profile.aadhaar_number %}
+                            XXXX-XXXX-{{ profile.aadhaar_number|slice:"-4:" }}
+                        {% else %}
+                            Not Provided
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="info-group">
+                    <span class="info-label">Location</span>
+                    <span class="info-value">
+                        {% if profile.city %}
+                            {{ profile.city }}, {{ profile.state }}
+                        {% else %}
+                            Location not set
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="info-group">
+                    <span class="info-label">Joined Date</span>
+                    <span class="info-value">{{ user_obj.date_joined|date:"F d, Y" }}</span>
+                </div>
+
+                <div class="info-group" style="margin-bottom: 0;">
+                    <span class="info-label">Account Status</span>
+                    <span class="badge {% if user_obj.is_active %}badge-solved{% else %}badge-rejected{% endif %}" style="display: inline-block;">
+                        {% if user_obj.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+
+                <div style="margin-top: 2rem; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+                    <a href="{% url 'super_admin_delete_user' user_obj.id %}" class="btn-delete" onclick="return confirm('Are you sure you want to delete this user? This will remove all their data and complaints permanently.')">
+                        <i class="fa-solid fa-trash-can"></i> Delete Account
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="section-title">
+                    <i class="fa-solid fa-location-dot" style="color: #2563eb;"></i>
+                    Address Details
+                </h3>
+                <div class="info-group">
+                    <span class="info-label">Full Address</span>
+                    <span class="info-value" style="font-size: 0.9rem; line-height: 1.5; display: block;">
+                        {{ profile.address|default:"No address details provided." }}
+                    </span>
+                </div>
+                <div class="info-group" style="margin-bottom: 0;">
+                    <span class="info-label">Taluka / District</span>
+                    <span class="info-value">{{ profile.taluka }} / {{ profile.district }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-info">
+            <div class="card">
+                <h3 class="section-title">
+                    <i class="fa-solid fa-file-invoice" style="color: #2563eb;"></i>
+                    Applied Complaints ({{ complaints.count }})
+                </h3>
+
+                <div class="complaints-list">
+                    {% for complaint in complaints %}
+                        <a href="{% url 'super_admin_complaint_detail' complaint.id %}" class="complaint-card">
+                            <div class="complaint-header">
+                                <span class="complaint-number">#{{ complaint.complaint_number }}</span>
+                                <span class="complaint-date">{{ complaint.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <h4 class="complaint-title">{{ complaint.title }}</h4>
+                            <div class="complaint-meta">
+                                <span class="badge badge-{{ complaint.work_status }}">
+                                    {{ complaint.get_work_status_display }}
+                                </span>
+                                <span class="meta-item priority-{{ complaint.priority }}">
+                                    <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i>
+                                    {{ complaint.get_priority_display }} Priority
+                                </span>
+                                <span class="meta-item">
+                                    <i class="fa-solid fa-building"></i>
+                                    {{ complaint.assigned_department.name|default:"Unassigned" }}
+                                </span>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div style="text-align: center; padding: 3rem; color: #64748b;">
+                            <i class="fa-solid fa-clipboard-question" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                            This user hasn't submitted any complaints yet.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

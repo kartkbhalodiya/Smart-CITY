@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Complaint - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .form-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .subcategory-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .subcategory-card {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .subcategory-card:hover {
+            background: #e9ecef;
+        }
+
+        .subcategory-card.active {
+            background: #2c3e50;
+            color: #fff;
+            border-color: #2c3e50;
+        }
+
+        .dynamic-fields {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .dynamic-fields.show {
+            display: block;
+        }
+
+        .btn {
+            padding: 14px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: #2c3e50;
+            color: #fff;
+            width: 100%;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .location-btn {
+            background: #10b981;
+            color: #fff;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .location-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .location-info.show {
+            display: block;
+        }
+
+        .file-input {
+            padding: 10px !important;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        @media (max-width: 480px) {
+            .subcategory-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <script src="/static/js/comprehensive_translations.js"></script>
+    <div class="container">
+        <div class="header">
+            <h1 id="pageTitle">Submit Complaint</h1>
+            <a href="{% url 'user_dashboard' %}" class="back-btn">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="complaintForm">
+            {% csrf_token %}
+            
+            <div class="form-card">
+                <div class="form-group">
+                    <label>Main Category</label>
+                    <select name="complaint_type" id="mainCategory" required {% if initial_type %}disabled{% endif %}>
+                        <option value="">Select Category</option>
+                        {% if has_managed_categories %}
+                            {% for cat in managed_categories %}
+                                <option value="{{ cat.key }}" {% if initial_type == cat.key %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        {% else %}
+                            {% for cat_id, cat_name in fallback_complaint_types %}
+                                <option value="{{ cat_id }}" {% if initial_type == cat_id %}selected{% endif %}>{{ cat_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    {% if initial_type %}
+                    <input type="hidden" name="complaint_type" value="{{ initial_type }}">
+                    {% endif %}
+                </div>
+
+                <div class="form-group" id="subcategorySection" style="display: none;">
+                    <label>Subcategory</label>
+                    <select id="subcategoryDropdown" class="form-control">
+                        <option value="">Select Subcategory</option>
+                    </select>
+                    <input type="hidden" name="subcategory" id="subcategoryValue">
+                </div>
+
+                <div id="dynamicFields" class="dynamic-fields"></div>
+            </div>
+
+            <div class="form-card">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">Common Details</h3>
+                
+                <div class="form-group">
+                    <label>Complaint Title</label>
+                    <input type="text" name="title" placeholder="Brief title of your complaint" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Detailed Description</label>
+                    <textarea name="description" placeholder="Provide detailed information..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Evidence (Optional)</label>
+                    <input type="file" name="media" class="file-input" accept="image/*,video/*,.pdf" multiple>
+                    <small style="color: #6c757d;">Max 10MB per file. Formats: JPG, PNG, PDF, MP4</small>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">Location Details</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                    <button type="button" class="btn" style="background: #10b981; color: #fff; padding: 12px;" onclick="autoDetectLocation()">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                        Auto Detect
+                    </button>
+                    <button type="button" class="btn" style="background: #3b82f6; color: #fff; padding: 12px;" onclick="selectOnMap()">
+                        <i class="fa-solid fa-map-marked-alt"></i>
+                        Select on Map
+                    </button>
+                    <button type="button" class="btn" style="background: #6366f1; color: #fff; padding: 12px;" onclick="manualEntry()">
+                        <i class="fa-solid fa-pen"></i>
+                        Manual Entry
+                    </button>
+                </div>
+
+                <div id="mapContainer" style="display: none; margin-bottom: 20px;">
+                    <div id="map" style="height: 400px; width: 100%; border-radius: 10px; border: 1px solid #dee2e6;"></div>
+                    <button type="button" class="btn location-btn" onclick="confirmMapLocation()" style="margin-top: 10px;">
+                        <i class="fa-solid fa-check"></i>
+                        Confirm Location
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label>GPS Coordinates</label>
+                    <input type="text" id="coordinatesDisplay" placeholder="Coordinates will appear here" readonly style="background: #f8f9fa; cursor: not-allowed;">
+                </div>
+
+                <div class="form-group">
+                    <label>State</label>
+                    <select name="state" id="stateInput" required>
+                        <option value="Gujarat">Gujarat</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>City / District</label>
+                    <select name="city" id="cityInput" required onchange="document.getElementById('districtInput').value = this.value">
+                        <option value="">Select City</option>
+                        <option value="Jamnagar">Jamnagar</option>
+                        <option value="Rajkot">Rajkot</option>
+                        <option value="Ahmedabad">Ahmedabad</option>
+                        <option value="Vadodara">Vadodara</option>
+                    </select>
+                    <input type="hidden" name="district" id="districtInput">
+                </div>
+
+                <div class="form-group">
+                    <label>Area / Locality</label>
+                    <input type="text" name="area" id="areaInput" placeholder="Enter area">
+                </div>
+
+                <div class="form-group">
+                    <label>Road Name</label>
+                    <input type="text" name="road" id="roadInput" placeholder="Enter road name">
+                </div>
+
+                <div class="form-group">
+                    <label>Landmark</label>
+                    <input type="text" name="landmark" id="landmarkInput" placeholder="Enter landmark">
+                </div>
+
+                <div class="form-group">
+                    <label>Pin Code</label>
+                    <input type="text" name="pincode" id="pincodeInput" placeholder="Enter pincode" pattern="[0-9]{6}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Address</label>
+                    <textarea name="address" id="addressInput" placeholder="Complete address" rows="3" required></textarea>
+                </div>
+
+                <input type="hidden" name="latitude" id="latitudeInput">
+                <input type="hidden" name="longitude" id="longitudeInput">
+            </div>
+
+            <div class="form-card">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">Your Information</h3>
+                
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" name="phone" value="{% if user.is_authenticated %}{{ user.citizenprofile.mobile_no }}{% endif %}" pattern="[0-9]{10}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Complaint Priority</label>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="button" class="priority-btn" data-priority="high" onclick="setPriority('high')" style="flex: 1; padding: 12px; border: 2px solid #ef4444; background: #fee2e2; color: #dc2626; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-circle-exclamation"></i> HIGH
+                        </button>
+                        <button type="button" class="priority-btn" data-priority="medium" onclick="setPriority('medium')" style="flex: 1; padding: 12px; border: 2px solid #f59e0b; background: #fef3c7; color: #d97706; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> MEDIUM
+                        </button>
+                        <button type="button" class="priority-btn" data-priority="normal" onclick="setPriority('normal')" style="flex: 1; padding: 12px; border: 2px solid #10b981; background: #d1fae5; color: #059669; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-circle-check"></i> NORMAL
+                        </button>
+                    </div>
+                    <input type="hidden" name="priority" id="priorityInput" value="normal" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Preferred Contact Method</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; cursor: pointer; margin: 0;">
+                            <input type="checkbox" name="contact_phone" value="phone" style="width: auto;">
+                            <span><i class="fa-solid fa-phone"></i> Phone</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; cursor: pointer; margin: 0;">
+                            <input type="checkbox" name="contact_email" value="email" style="width: auto;">
+                            <span><i class="fa-solid fa-envelope"></i> Email</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; cursor: pointer; margin: 0;">
+                            <input type="checkbox" name="contact_sms" value="sms" style="width: auto;">
+                            <span><i class="fa-solid fa-message"></i> SMS</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" name="anonymous" id="anonymous">
+                    <label for="anonymous" style="margin: 0; text-transform: none;">Submit as Anonymous</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-paper-plane"></i>
+                Submit Complaint
+            </button>
+        </form>
+    </div>
+
+    <!-- Load Leaflet (Free Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let map, marker;
+        let mapLoaded = true;
+
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, Leaflet ready');
+        });
+
+        function setPriority(level) {
+            document.getElementById('priorityInput').value = level;
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                if (btn.dataset.priority === level) {
+                    if (level === 'high') {
+                        btn.style.background = '#dc2626';
+                        btn.style.color = '#fff';
+                    } else if (level === 'medium') {
+                        btn.style.background = '#f59e0b';
+                        btn.style.color = '#fff';
+                    } else {
+                        btn.style.background = '#10b981';
+                        btn.style.color = '#fff';
+                    }
+                } else {
+                    const priority = btn.dataset.priority;
+                    if (priority === 'high') {
+                        btn.style.background = '#fee2e2';
+                        btn.style.color = '#dc2626';
+                    } else if (priority === 'medium') {
+                        btn.style.background = '#fef3c7';
+                        btn.style.color = '#d97706';
+                    } else {
+                        btn.style.background = '#d1fae5';
+                        btn.style.color = '#059669';
+                    }
+                }
+            });
+        }
+
+        function autoDetectLocation() {
+            const btn = event.target;
+            btn.innerHTML = '<div class="spinner"></div>Detecting...';
+            btn.disabled = true;
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    document.getElementById('latitudeInput').value = lat;
+                    document.getElementById('longitudeInput').value = lng;
+                    document.getElementById('coordinatesDisplay').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+                    await updateAddressFromCoordinates(lat, lng);
+                    alert('Location detected successfully!');
+                    
+                    btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Auto Detect';
+                    btn.disabled = false;
+                }, (error) => {
+                    alert('Please enable location services and try again.');
+                    btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Auto Detect';
+                    btn.disabled = false;
+                });
+            }
+        }
+
+        function selectOnMap() {
+            const btn = event.target;
+            if (!mapLoaded) {
+                alert('Map is still loading, please wait a moment and try again.');
+                return;
+            }
+            
+            btn.innerHTML = '<div class="spinner"></div>Loading Map...';
+            btn.disabled = true;
+            
+            const mapContainer = document.getElementById('mapContainer');
+            mapContainer.style.display = 'block';
+            
+            if (!map) {
+                setTimeout(() => {
+                    initMap();
+                    btn.innerHTML = '<i class="fa-solid fa-map-marked-alt"></i> Select on Map';
+                    btn.disabled = false;
+                }, 500);
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-map-marked-alt"></i> Select on Map';
+                btn.disabled = false;
+            }
+        }
+
+        function initMap() {
+            try {
+                // Get user's current location first
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        document.getElementById('latitudeInput').value = lat;
+                        document.getElementById('longitudeInput').value = lng;
+                        document.getElementById('coordinatesDisplay').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                        
+                        // Initialize Leaflet map
+                        map = L.map('map').setView([lat, lng], 16);
+                        
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors'
+                        }).addTo(map);
+                        
+                        marker = L.marker([lat, lng], {
+                            draggable: true
+                        }).addTo(map);
+                        
+                        marker.on('dragend', function() {
+                            const pos = marker.getLatLng();
+                            const newLat = pos.lat;
+                            const newLng = pos.lng;
+                            
+                            document.getElementById('latitudeInput').value = newLat;
+                            document.getElementById('longitudeInput').value = newLng;
+                            document.getElementById('coordinatesDisplay').value = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+                            updateAddressFromCoordinates(newLat, newLng);
+                        });
+                        
+                        map.on('click', function(e) {
+                            marker.setLatLng(e.latlng);
+                            const newLat = e.latlng.lat;
+                            const newLng = e.latlng.lng;
+                            
+                            document.getElementById('latitudeInput').value = newLat;
+                            document.getElementById('longitudeInput').value = newLng;
+                            document.getElementById('coordinatesDisplay').value = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+                            updateAddressFromCoordinates(newLat, newLng);
+                        });
+                    }, () => {
+                        // Fallback to default location (Delhi) if geolocation fails
+                        const defaultLat = 28.6139;
+                        const defaultLng = 77.2090;
+                        
+                        map = L.map('map').setView([defaultLat, defaultLng], 12);
+                        
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors'
+                        }).addTo(map);
+                        
+                        marker = L.marker([defaultLat, defaultLng], {
+                            draggable: true
+                        }).addTo(map);
+                        
+                        marker.on('dragend', function() {
+                            const pos = marker.getLatLng();
+                            const newLat = pos.lat;
+                            const newLng = pos.lng;
+                            
+                            document.getElementById('latitudeInput').value = newLat;
+                            document.getElementById('longitudeInput').value = newLng;
+                            document.getElementById('coordinatesDisplay').value = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+                            updateAddressFromCoordinates(newLat, newLng);
+                        });
+                        
+                        map.on('click', function(e) {
+                            marker.setLatLng(e.latlng);
+                            const newLat = e.latlng.lat;
+                            const newLng = e.latlng.lng;
+                            
+                            document.getElementById('latitudeInput').value = newLat;
+                            document.getElementById('longitudeInput').value = newLng;
+                            document.getElementById('coordinatesDisplay').value = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+                            updateAddressFromCoordinates(newLat, newLng);
+                        });
+                    });
+                } else {
+                    // Fallback if geolocation not supported
+                    const fallbackLat = 28.6139;
+                    const fallbackLng = 77.2090;
+                    
+                    map = L.map('map').setView([fallbackLat, fallbackLng], 12);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    
+                    marker = L.marker([fallbackLat, fallbackLng], {
+                        draggable: true
+                    }).addTo(map);
+                    
+                    marker.on('dragend', function() {
+                        const pos = marker.getLatLng();
+                        const newLat = pos.lat;
+                        const newLng = pos.lng;
+                        
+                        document.getElementById('latitudeInput').value = newLat;
+                        document.getElementById('longitudeInput').value = newLng;
+                        document.getElementById('coordinatesDisplay').value = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+                        updateAddressFromCoordinates(newLat, newLng);
+                    });
+                    
+                    map.on('click', function(e) {
+                        marker.setLatLng(e.latlng);
+                        const newLat = e.latlng.lat;
+                        const newLng = e.latlng.lng;
+                        
+                        document.getElementById('latitudeInput').value = newLat;
+                        document.getElementById('longitudeInput').value = newLng;
+                        document.getElementById('coordinatesDisplay').value = `${newLat.toFixed(6)}, ${newLng.toFixed(6)}`;
+                        updateAddressFromCoordinates(newLat, newLng);
+                    });
+                }
+            } catch (error) {
+                console.error('Map initialization error:', error);
+                alert('Failed to load map: ' + error.message);
+            }
+        }
+
+        async function updateAddressFromCoordinates(lat, lng) {
+            try {
+                console.log('Fetching address for:', lat, lng);
+                const response = await fetch(`/api/reverse-geocode/?lat=${lat}&lng=${lng}`);
+                const data = await response.json();
+                console.log('Address response:', data);
+                
+                if (data.results && data.results[0]) {
+                    const addr = data.results[0];
+                    
+                    // Fill pincode
+                    let pincode = addr.pincode || addr.pin || addr.postal_code || addr.postcode || '';
+                    
+                    // Extra fallback: try to extract pincode from formatted address if still empty
+                    if (!pincode && (addr.formatted_address || addr.address)) {
+                        const fullAddr = addr.formatted_address || addr.address;
+                        const pinMatch = fullAddr.match(/\b\d{6}\b/);
+                        if (pinMatch) pincode = pinMatch[0];
+                    }
+                    document.getElementById('pincodeInput').value = pincode;
+                    
+                    console.log('Only pincode filled successfully');
+                } else {
+                    console.log('No address results found');
+                }
+            } catch (error) {
+                console.error('Address update failed:', error);
+            }
+        }
+
+        function manualEntry() {
+            document.getElementById('mapContainer').style.display = 'none';
+        }
+
+        async function confirmMapLocation() {
+            try {
+                console.log('confirmMapLocation called');
+                
+                // Get coordinates directly from marker position
+                let lat, lng;
+                
+                if (marker) {
+                    console.log('Getting coordinates from Leaflet marker');
+                    const pos = marker.getLatLng();
+                    lat = pos.lat;
+                    lng = pos.lng;
+                    
+                    // Update the input fields
+                    document.getElementById('latitudeInput').value = lat;
+                    document.getElementById('longitudeInput').value = lng;
+                    document.getElementById('coordinatesDisplay').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                } else {
+                    console.log('No marker found, getting from input fields');
+                    lat = document.getElementById('latitudeInput').value;
+                    lng = document.getElementById('longitudeInput').value;
+                }
+                
+                console.log('Final coordinates:', lat, lng);
+                
+                if (lat && lng) {
+                    await updateAddressFromCoordinates(lat, lng);
+                    document.getElementById('mapContainer').style.display = 'none';
+                    alert(`Location confirmed: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}`);
+                } else {
+                    alert('Please select a location on the map first.');
+                }
+            } catch (error) {
+                console.error('confirmMapLocation error:', error);
+                alert('Error confirming location: ' + error.message);
+            }
+        }
+        const subcategories = {
+            police: [
+                'Theft / Robbery', 'Cyber Crime', 'Domestic Violence', 'Missing Person',
+                'Drug / Narcotics', 'Traffic Violation', 'Physical Assault', 'Fraud / Scam',
+                'Harassment / Threat', 'Property Damage', 'Illegal Activity', 'Other'
+            ],
+            traffic: [
+                'Signal Jumping', 'Wrong Side Driving', 'Overspeeding', 'Illegal Parking',
+                'No Helmet / Triple Riding', 'No Seatbelt', 'Drunk Driving', 'Rash / Dangerous Driving',
+                'Using Mobile While Driving', 'Heavy Vehicle Violation', 'Road Block / Traffic Obstruction', 'Other Traffic Violation'
+            ],
+            construction: [
+                'Road Damage / Potholes', 'Footpath / Sidewalk Damage', 'Drainage / Sewer Construction Issues',
+                'Bridge / Flyover Structural Issue', 'Illegal Construction', 'Construction Debris / Waste on Road',
+                'Public Building Damage', 'Other'
+            ],
+            water: [
+                'No Water Supply', 'Low Water Pressure', 'Water Leakage', 'Burst Water Pipeline',
+                'Dirty / Contaminated Water', 'Water Tank Overflow', 'Broken Water Tap / Public Tap Issue',
+                'Water Meter Problem', 'Water Tanker Complaint', 'Other'
+            ],
+            electricity: [
+                'Power Outage / No Electricity', 'Frequent Power Cuts', 'Street Light Not Working',
+                'Exposed Electrical Wires', 'Electric Pole Damage', 'Transformer Issue',
+                'Electric Spark / Short Circuit', 'Electricity Meter Problem', 'Illegal Electricity Connection', 'Other'
+            ],
+            garbage: [
+                'Garbage Not Collected', 'Overflowing Garbage Bin', 'Illegal Garbage Dumping',
+                'Dead Animal Removal', 'Garbage Burning', 'Public Dustbin Damage',
+                'Missed Door-to-Door Garbage Collection', 'Garbage Truck Issue', 'Construction Waste Dumping', 'Other'
+            ],
+            road: [
+                'Pothole on Road', 'Broken Road / Damaged Road', 'Water Logging on Road',
+                'Road Construction Delay', 'Road Blocked by Construction Materials', 'Missing / Faded Road Markings',
+                'Speed Breaker Issue', 'Road Shoulder Damage', 'Dangerous Road Conditions', 'Other'
+            ],
+            drainage: [
+                'Blocked Drain', 'Drain Overflow / Sewage Overflow', 'Water Logging / Flooded Area',
+                'Broken Drain Cover / Missing Cover', 'Damaged Drain Structure', 'Sewage Leakage',
+                'Illegal Drain Connection', 'Drain Cleaning Required', 'Manhole Issue', 'Other'
+            ],
+            illegal: [
+                'Illegal Construction', 'Unauthorized Street Vendors / Encroachment', 'Illegal Dumping of Waste',
+                'Unauthorized Water Connection', 'Illegal Electricity Connection / Power Theft', 'Illegal Parking / Vehicle Obstruction',
+                'Illegal Advertisement / Hoardings', 'Noise Pollution (Illegal Activity)', 'Unauthorized Business Activity', 'Other'
+            ],
+            transportation: [
+                'Public Bus Service Issue', 'Bus Stop Infrastructure Issue', 'Traffic Signal Not Working',
+                'Traffic Congestion', 'Illegal Parking', 'Damaged Road Sign / Traffic Sign',
+                'Auto / Taxi Service Complaint', 'Pedestrian Crossing Issue', 'Railway Crossing / Gate Issue', 'Other'
+            ],
+            cyber: [
+                'Online Payment Fraud', 'Phishing Scam', 'OTP / Banking Fraud', 'Social Media Account Hacking',
+                'Online Shopping Fraud', 'Identity Theft', 'Fake Job / Employment Scam',
+                'Crypto / Investment Fraud', 'Mobile App Fraud', 'Other'
+            ],
+            other: [
+                'Public Facility Issue', 'Animal Related Issue', 'Noise Complaint', 'Public Safety Concern',
+                'Government Service Complaint', 'Public Park / Recreation Area Issue', 'Public Event Disturbance',
+                'Environmental Issue', 'General Complaint', 'Other'
+            ]
+        };
+
+        const dynamicFieldsConfig = {
+            'Power Outage / No Electricity': [
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Street / Building Name', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Since When Power Is Not Available', type: 'select', options: ['Few Minutes', '1 Hour', 'Several Hours', 'More Than 1 Day']},
+                {name: 'Affected Area Size', type: 'select', options: ['Single House', 'Building', 'Entire Street', 'Entire Area']},
+                {name: 'Is Emergency', type: 'select', options: ['Yes', 'No']},
+                {name: 'Date & Time of Issue', type: 'datetime-local'}
+            ],
+            'Frequent Power Cuts': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Number of Power Cuts Per Day', type: 'number'},
+                {name: 'Duration of Each Cut', type: 'select', options: ['Few Minutes', '30 Minutes', '1 Hour', 'Several Hours']},
+                {name: 'Time When Issue Happens', type: 'select', options: ['Morning', 'Afternoon', 'Evening', 'Night']}
+            ],
+            'Street Light Not Working': [
+                {name: 'Street Name / Area', type: 'text'},
+                {name: 'Street Light Pole Number', type: 'text'},
+                {name: 'Number of Lights Not Working', type: 'number'},
+                {name: 'Issue Type', type: 'select', options: ['Light Off', 'Flickering', 'Broken Light']},
+                {name: 'Safety Concern', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Exposed Electrical Wires': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Location Type', type: 'select', options: ['Roadside', 'Building', 'Electric Pole']},
+                {name: 'Danger Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Near Public Area', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Electric Pole Damage': [
+                {name: 'Pole Number', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Leaning Pole', 'Broken Pole', 'Damaged Structure']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High', 'Dangerous']}
+            ],
+            'Transformer Issue': [
+                {name: 'Transformer Location', type: 'text'},
+                {name: 'Transformer Number', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Transformer Failure', 'Noise', 'Oil Leakage', 'Fire Risk']},
+                {name: 'Area Affected', type: 'select', options: ['Single Street', 'Multiple Streets']}
+            ],
+            'Electric Spark / Short Circuit': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Location Type', type: 'select', options: ['Electric Pole', 'Junction Box', 'Building Connection']},
+                {name: 'Spark Frequency', type: 'select', options: ['One Time', 'Frequent']},
+                {name: 'Fire Risk', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Electricity Meter Problem': [
+                {name: 'Meter Number', type: 'text'},
+                {name: 'Consumer Number', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Meter Not Working', 'Wrong Reading', 'Damaged Meter']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Illegal Electricity Connection': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Location Description', type: 'text'},
+                {name: 'Type of Issue', type: 'select', options: ['Unauthorized Connection', 'Power Theft']}
+            ],
+            'Garbage Not Collected': [
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Street / Building Name', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Last Garbage Collection Date', type: 'date'},
+                {name: 'Number of Days Garbage Not Collected', type: 'select', options: ['1 Day', '2-3 Days', 'More Than 3 Days']},
+                {name: 'Waste Type', type: 'select', options: ['Household Waste', 'Mixed Waste', 'Organic Waste']}
+            ],
+            'Overflowing Garbage Bin': [
+                {name: 'Bin Location', type: 'text'},
+                {name: 'Bin ID / Number', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Overflow Level', type: 'select', options: ['Slightly Full', 'Full', 'Overflowing']},
+                {name: 'Bad Smell', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Illegal Garbage Dumping': [
+                {name: 'Dump Location', type: 'text'},
+                {name: 'Type of Waste', type: 'select', options: ['Household Waste', 'Construction Waste', 'Industrial Waste', 'Plastic Waste']},
+                {name: 'Size of Dump', type: 'select', options: ['Small', 'Medium', 'Large']},
+                {name: 'Is It Blocking Road / Footpath', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Dead Animal Removal': [
+                {name: 'Animal Type', type: 'select', options: ['Dog', 'Cat', 'Cow', 'Bird', 'Other']},
+                {name: 'Location Found', type: 'text'},
+                {name: 'Condition', type: 'select', options: ['Fresh', 'Decomposed']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Garbage Burning': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Type of Waste Being Burned', type: 'select', options: ['Plastic', 'Mixed Waste', 'Leaves', 'Other']},
+                {name: 'Smoke Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Health Hazard', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Public Dustbin Damage': [
+                {name: 'Bin Location', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Broken Bin', 'Missing Bin', 'Lid Broken']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Missed Door-to-Door Garbage Collection': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Building / House Number', type: 'text'},
+                {name: 'Waste Collection Type', type: 'select', options: ['Daily Collection', 'Scheduled Pickup']},
+                {name: 'Last Collection Date', type: 'date'}
+            ],
+            'Garbage Truck Issue': [
+                {name: 'Garbage Truck Number', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Late Collection', 'Not Arrived', 'Spilling Garbage']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Construction Waste Dumping': [
+                {name: 'Location', type: 'text'},
+                {name: 'Type of Waste', type: 'select', options: ['Cement', 'Bricks', 'Sand', 'Mixed Construction Waste']},
+                {name: 'Size of Dump', type: 'select', options: ['Small', 'Medium', 'Large']},
+                {name: 'Blocking Road / Public Area', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Pothole on Road': [
+                {name: 'Road Name / Area', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Number of Potholes', type: 'number'},
+                {name: 'Pothole Size', type: 'select', options: ['Small', 'Medium', 'Large', 'Very Large']},
+                {name: 'Road Type', type: 'select', options: ['Main Road', 'Internal Road', 'Highway', 'Service Road']},
+                {name: 'Danger Level', type: 'select', options: ['Low', 'Medium', 'High', 'Accident Risk']},
+                {name: 'Date of Issue', type: 'date'}
+            ],
+            'Broken Road / Damaged Road': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road Name', type: 'text'},
+                {name: 'Damage Type', type: 'select', options: ['Cracked Road', 'Surface Broken', 'Large Hole']},
+                {name: 'Length of Damage', type: 'select', options: ['Small Section', 'Medium Section', 'Entire Road']},
+                {name: 'Traffic Impact', type: 'select', options: ['Low', 'Medium', 'Heavy']}
+            ],
+            'Water Logging on Road': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road Name', type: 'text'},
+                {name: 'Cause of Water Logging', type: 'select', options: ['Poor Drainage', 'Potholes', 'Rainwater']},
+                {name: 'Water Depth', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Traffic Disruption', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Road Construction Delay': [
+                {name: 'Road Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Construction Type', type: 'select', options: ['New Road', 'Road Repair', 'Road Expansion']},
+                {name: 'Work Start Date', type: 'date'},
+                {name: 'Expected Completion Date', type: 'date'},
+                {name: 'Current Status', type: 'select', options: ['Work Not Started', 'Slow Progress', 'Stopped']}
+            ],
+            'Road Blocked by Construction Materials': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road Name', type: 'text'},
+                {name: 'Type of Obstruction', type: 'select', options: ['Sand', 'Bricks', 'Cement', 'Machinery']},
+                {name: 'Blocking Level', type: 'select', options: ['Partial Block', 'Full Block']},
+                {name: 'Traffic Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Missing / Faded Road Markings': [
+                {name: 'Road Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Marking Type', type: 'select', options: ['Lane Marking', 'Zebra Crossing', 'Speed Breaker Marking']},
+                {name: 'Visibility Level', type: 'select', options: ['Completely Missing', 'Faded']},
+                {name: 'Safety Concern', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Speed Breaker Issue': [
+                {name: 'Location', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Broken Speed Breaker', 'Missing Marking', 'Very High Bump']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Road Shoulder Damage': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road Name', type: 'text'},
+                {name: 'Shoulder Condition', type: 'select', options: ['Eroded', 'Broken Edge', 'Unsafe']},
+                {name: 'Length of Damage', type: 'select', options: ['Small Section', 'Large Section']}
+            ],
+            'Dangerous Road Conditions': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road Name', type: 'text'},
+                {name: 'Condition Type', type: 'select', options: ['Slippery Surface', 'Loose Gravel', 'Oil Spill']},
+                {name: 'Accident Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Blocked Drain': [
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Street / Road Name', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain', 'Underground Sewer']},
+                {name: 'Blockage Severity', type: 'select', options: ['Minor', 'Moderate', 'Severe']},
+                {name: 'Water Overflow', type: 'select', options: ['Yes', 'No']},
+                {name: 'Date of Issue', type: 'date'}
+            ],
+            'Drain Overflow / Sewage Overflow': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Sewer Line', 'Manhole']},
+                {name: 'Overflow Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Water Spreading on Road', type: 'select', options: ['Yes', 'No']},
+                {name: 'Bad Smell Level', type: 'select', options: ['Low', 'Medium', 'Strong']},
+                {name: 'Health Risk', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Water Logging / Flooded Area': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road / Street Name', type: 'text'},
+                {name: 'Cause of Water Logging', type: 'select', options: ['Drain Blockage', 'Heavy Rain', 'Poor Drainage Design']},
+                {name: 'Water Depth', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Traffic Impact', type: 'select', options: ['No Impact', 'Partial Block', 'Full Block']}
+            ],
+            'Broken Drain Cover / Missing Cover': [
+                {name: 'Location', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Manhole Cover', 'Drain Cover']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High', 'Accident Risk']},
+                {name: 'Pedestrian Danger', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Damaged Drain Structure': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Drain Location', type: 'text'},
+                {name: 'Damage Type', type: 'select', options: ['Cracked Drain Wall', 'Broken Drain Edge', 'Collapsed Drain']},
+                {name: 'Length of Damage', type: 'select', options: ['Small Section', 'Medium Section', 'Large Section']}
+            ],
+            'Sewage Leakage': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Leakage Source', type: 'select', options: ['Sewer Pipe', 'Drain Joint', 'Manhole']},
+                {name: 'Leakage Severity', type: 'select', options: ['Small Leak', 'Continuous Leak', 'Heavy Flow']},
+                {name: 'Bad Smell Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Health Hazard', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Illegal Drain Connection': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Location Description', type: 'text'},
+                {name: 'Connection Type', type: 'select', options: ['Household Waste', 'Industrial Waste']},
+                {name: 'Environmental Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Drain Cleaning Required': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain']},
+                {name: 'Last Cleaning Date', type: 'date'},
+                {name: 'Waste Type', type: 'select', options: ['Plastic Waste', 'Mud', 'Leaves', 'Mixed Waste']}
+            ],
+            'Manhole Issue': [
+                {name: 'Manhole Location', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Open Manhole', 'Broken Cover', 'Overflow']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High', 'Dangerous']}
+            ],
+            'Blocked Drain': [
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Street / Road Name', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain', 'Underground Sewer']},
+                {name: 'Blockage Severity', type: 'select', options: ['Minor', 'Moderate', 'Severe']},
+                {name: 'Water Overflow', type: 'select', options: ['Yes', 'No']},
+                {name: 'Date of Issue', type: 'date'}
+            ],
+            'Drain Overflow / Sewage Overflow': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Sewer Line', 'Manhole']},
+                {name: 'Overflow Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Water Spreading on Road', type: 'select', options: ['Yes', 'No']},
+                {name: 'Bad Smell Level', type: 'select', options: ['Low', 'Medium', 'Strong']},
+                {name: 'Health Risk', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Water Logging / Flooded Area': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road / Street Name', type: 'text'},
+                {name: 'Cause of Water Logging', type: 'select', options: ['Drain Blockage', 'Heavy Rain', 'Poor Drainage Design']},
+                {name: 'Water Depth', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Traffic Impact', type: 'select', options: ['No Impact', 'Partial Block', 'Full Block']}
+            ],
+            'Broken Drain Cover / Missing Cover': [
+                {name: 'Location', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Manhole Cover', 'Drain Cover']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High', 'Accident Risk']},
+                {name: 'Pedestrian Danger', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Damaged Drain Structure': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Drain Location', type: 'text'},
+                {name: 'Damage Type', type: 'select', options: ['Cracked Drain Wall', 'Broken Drain Edge', 'Collapsed Drain']},
+                {name: 'Length of Damage', type: 'select', options: ['Small Section', 'Medium Section', 'Large Section']}
+            ],
+            'Sewage Leakage': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Leakage Source', type: 'select', options: ['Sewer Pipe', 'Drain Joint', 'Manhole']},
+                {name: 'Leakage Severity', type: 'select', options: ['Small Leak', 'Continuous Leak', 'Heavy Flow']},
+                {name: 'Bad Smell Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Health Hazard', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Illegal Drain Connection': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Location Description', type: 'text'},
+                {name: 'Connection Type', type: 'select', options: ['Household Waste', 'Industrial Waste']},
+                {name: 'Environmental Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Drain Cleaning Required': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain']},
+                {name: 'Last Cleaning Date', type: 'date'},
+                {name: 'Waste Type', type: 'select', options: ['Plastic Waste', 'Mud', 'Leaves', 'Mixed Waste']}
+            ],
+            'Manhole Issue': [
+                {name: 'Manhole Location', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Open Manhole', 'Broken Cover', 'Overflow']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High', 'Dangerous']}
+            ],
+            'No Water Supply': [
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Street / Building Name', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Since When Water Is Not Available', type: 'select', options: ['Few Hours', '1 Day', '2-3 Days', 'More Than 3 Days']},
+                {name: 'Water Source Type', type: 'select', options: ['Municipal Supply', 'Tanker', 'Borewell', 'Society Tank']},
+                {name: 'Number of Houses Affected', type: 'number'},
+                {name: 'Date & Time of Issue', type: 'datetime-local'}
+            ],
+            'Low Water Pressure': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Building / House Number', type: 'text'},
+                {name: 'Floor Level', type: 'select', options: ['Ground', '1st', '2nd', '3rd', 'Above']},
+                {name: 'Pressure Level', type: 'select', options: ['Very Low', 'Low']},
+                {name: 'Time When Issue Happens', type: 'select', options: ['Morning', 'Afternoon', 'Evening', 'Night']}
+            ],
+            'Water Leakage': [
+                {name: 'Leakage Location', type: 'select', options: ['Road Pipeline', 'Building Pipe', 'Water Meter Area']},
+                {name: 'Area / Street Name', type: 'text'},
+                {name: 'Water Flow Severity', type: 'select', options: ['Small Leak', 'Continuous Flow', 'Flooding']},
+                {name: 'Duration of Leakage', type: 'select', options: ['Few Hours', '1 Day', 'Multiple Days']}
+            ],
+            'Burst Water Pipeline': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Pipeline Type', type: 'select', options: ['Main Pipeline', 'Local Pipeline']},
+                {name: 'Road Condition', type: 'select', options: ['Road Flooded', 'Water Accumulation', 'Minor Leak']},
+                {name: 'Danger Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Dirty / Contaminated Water': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Water Color', type: 'select', options: ['Brown', 'Yellow', 'Muddy', 'Black']},
+                {name: 'Smell Issue', type: 'select', options: ['No Smell', 'Bad Smell', 'Chemical Smell']},
+                {name: 'Health Risk Concern', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Water Tank Overflow': [
+                {name: 'Tank Location', type: 'select', options: ['Public Tank', 'Society Tank', 'Overhead Tank']},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Overflow Duration', type: 'select', options: ['Few Minutes', 'Continuous Overflow']},
+                {name: 'Water Wastage Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Broken Water Tap / Public Tap Issue': [
+                {name: 'Tap Location', type: 'text'},
+                {name: 'Type of Problem', type: 'select', options: ['Broken Tap', 'Continuous Water Flow', 'No Tap Handle']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Water Meter Problem': [
+                {name: 'Meter Number', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Meter Not Working', 'Incorrect Reading', 'Broken Meter']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Water Tanker Complaint': [
+                {name: 'Tanker Number', type: 'text'},
+                {name: 'Supplier Name', type: 'text'},
+                {name: 'Complaint Type', type: 'select', options: ['Late Delivery', 'No Delivery', 'Poor Water Quality']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Road Damage / Potholes': [
+                {name: 'Road Name / Area', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Severity Level', type: 'select', options: ['Low', 'Medium', 'High', 'Dangerous']},
+                {name: 'Number of Potholes', type: 'number'},
+                {name: 'Approximate Size', type: 'select', options: ['Small', 'Medium', 'Large']},
+                {name: 'Date of Issue', type: 'date'}
+            ],
+            'Footpath / Sidewalk Damage': [
+                {name: 'Type of Issue', type: 'select', options: ['Broken Tiles', 'Blocked Path', 'Uneven Surface']},
+                {name: 'Pedestrian Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Drainage / Sewer Construction Issues': [
+                {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Underground Sewer']},
+                {name: 'Issue Type', type: 'select', options: ['Broken Drain', 'Blocked Drain', 'Overflow']},
+                {name: 'Water Logging', type: 'select', options: ['Yes', 'No']},
+                {name: 'Area Name', type: 'text'}
+            ],
+            'Bridge / Flyover Structural Issue': [
+                {name: 'Structure Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Crack', 'Damage', 'Loose Structure', 'Water Leakage']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'Critical']}
+            ],
+            'Illegal Construction': [
+                {name: 'Building Address', type: 'text'},
+                {name: 'Type of Illegal Activity', type: 'select', options: ['No Permit', 'Encroachment', 'Height Violation']},
+                {name: 'Building Type', type: 'select', options: ['Residential', 'Commercial']}
+            ],
+            'Construction Debris / Waste on Road': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Type of Waste', type: 'select', options: ['Cement Waste', 'Bricks', 'Sand', 'Steel']},
+                {name: 'Blocking Road', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Public Building Damage': [
+                {name: 'Building Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Wall Crack', 'Ceiling Damage', 'Broken Structure']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Theft / Robbery': [{name: 'Item Stolen', type: 'text'}, {name: 'Estimated Value', type: 'text'}, {name: 'Date & Time', type: 'datetime-local'}],
+            'Cyber Crime': [{name: 'Website/Platform', type: 'text'}, {name: 'Type of Cyber Crime', type: 'text'}, {name: 'Transaction Details', type: 'text'}],
+            'Domestic Violence': [{name: 'Victim Name', type: 'text'}, {name: 'Relationship with Accused', type: 'text'}, {name: 'Is Victim Safe?', type: 'select', options: ['Yes', 'No']}],
+            'Missing Person': [{name: 'Person Name', type: 'text'}, {name: 'Age', type: 'number'}, {name: 'Last Seen Location', type: 'text'}, {name: 'Last Seen Date', type: 'date'}, {name: 'Physical Description', type: 'text'}],
+            'Physical Assault': [{name: 'Attacker Name', type: 'text'}, {name: 'Injury Details', type: 'text'}, {name: 'Hospital Visited', type: 'text'}],
+            'Fraud / Scam': [{name: 'Scam Type', type: 'text'}, {name: 'Amount Lost', type: 'number'}, {name: 'Payment Method', type: 'text'}, {name: 'Transaction ID', type: 'text'}],
+            'Harassment / Threat': [{name: 'Person Threatening', type: 'text'}, {name: 'Method', type: 'select', options: ['Call', 'Message', 'In Person']}, {name: 'Date of Incident', type: 'date'}, {name: 'Frequency of Harassment', type: 'text'}],
+            'Property Damage': [{name: 'Property Type', type: 'text'}, {name: 'Damage Type', type: 'text'}, {name: 'Estimated Repair Cost', type: 'number'}, {name: 'Date of Damage', type: 'date'}],
+            'Illegal Activity': [{name: 'Activity Type', type: 'text'}, {name: 'Date/Time Observed', type: 'datetime-local'}, {name: 'Number of People Involved', type: 'number'}, {name: 'Ongoing or One-time', type: 'select', options: ['Ongoing', 'One-time']}],
+            'Signal Jumping': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Signal Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Direction of Vehicle', type: 'text'}, {name: 'Date of Incident', type: 'date'}, {name: 'Time of Incident', type: 'time'}],
+            'Wrong Side Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Exact Location', type: 'text'}, {name: 'City / Area', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Overspeeding': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Estimated Speed', type: 'text'}, {name: 'Speed Limit of Area', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Illegal Parking': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Parking Location', type: 'text'}, {name: 'Blocking Traffic', type: 'select', options: ['Yes', 'No']}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'No Helmet / Triple Riding': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Number of Riders', type: 'number'}, {name: 'Helmet Status', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'No Seatbelt': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Drunk Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}, {name: 'Driver Behavior Description', type: 'text'}, {name: 'Witness Available', type: 'select', options: ['Yes', 'No']}],
+            'Rash / Dangerous Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}, {name: 'Describe Driving Behavior', type: 'text'}],
+            'Using Mobile While Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Heavy Vehicle Violation': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'select', options: ['Truck', 'Bus', 'Trailer']}, {name: 'Violation Type', type: 'text'}, {name: 'Company Name (Optional)', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Road Block / Traffic Obstruction': [{name: 'Obstruction Type', type: 'text'}, {name: 'Vehicle Involved (Optional)', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Illegal Construction': [
+                {name: 'Building / Property Address', type: 'text'},
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Landmark Nearby', type: 'text'},
+                {name: 'Type of Violation', type: 'select', options: ['No Construction Permit', 'Extra Floors', 'Encroachment on Public Land']},
+                {name: 'Building Type', type: 'select', options: ['Residential', 'Commercial', 'Industrial']},
+                {name: 'Safety Risk', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Date of Observation', type: 'date'}
+            ],
+            'Unauthorized Street Vendors / Encroachment': [
+                {name: 'Location of Vendor', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Encroachment Type', type: 'select', options: ['Footpath Blocking', 'Road Blocking', 'Public Space Occupied']},
+                {name: 'Vendor Type', type: 'select', options: ['Food Stall', 'Shop Extension', 'Temporary Stall']},
+                {name: 'Traffic Impact', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Illegal Dumping of Waste': [
+                {name: 'Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Waste Type', type: 'select', options: ['Household Waste', 'Construction Waste', 'Industrial Waste']},
+                {name: 'Size of Dump', type: 'select', options: ['Small', 'Medium', 'Large']},
+                {name: 'Environmental Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Unauthorized Water Connection': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Property Address', type: 'text'},
+                {name: 'Connection Type', type: 'select', options: ['Illegal Pipeline', 'Unauthorized Tap']},
+                {name: 'Impact on Public Supply', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Illegal Electricity Connection / Power Theft': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Property / Location Description', type: 'text'},
+                {name: 'Type of Issue', type: 'select', options: ['Direct Power Theft', 'Unauthorized Connection']},
+                {name: 'Safety Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Illegal Parking / Vehicle Obstruction': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Road / Street Name', type: 'text'},
+                {name: 'Vehicle Type', type: 'select', options: ['Car', 'Truck', 'Bus', 'Two-Wheeler']},
+                {name: 'Parking Violation', type: 'select', options: ['No Parking Zone', 'Blocking Road', 'Blocking Footpath']},
+                {name: 'Vehicle Number', type: 'text'}
+            ],
+            'Illegal Advertisement / Hoardings': [
+                {name: 'Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Advertisement Type', type: 'select', options: ['Billboard', 'Banner', 'Poster']},
+                {name: 'Safety Risk', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Structure Condition', type: 'select', options: ['Safe', 'Damaged', 'Dangerous']}
+            ],
+            'Noise Pollution (Illegal Activity)': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Noise Source', type: 'select', options: ['Loudspeakers', 'Construction Noise', 'Industrial Noise']},
+                {name: 'Time of Occurrence', type: 'select', options: ['Morning', 'Afternoon', 'Evening', 'Night']},
+                {name: 'Duration of Noise', type: 'select', options: ['Short Duration', 'Continuous']},
+                {name: 'Disturbance Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Unauthorized Business Activity': [
+                {name: 'Business Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Business Type', type: 'select', options: ['Industrial Activity', 'Warehouse', 'Factory']},
+                {name: 'License Status', type: 'select', options: ['Suspected No License', 'Expired License']},
+                {name: 'Environmental Impact', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Public Bus Service Issue': [
+                {name: 'Bus Route Number', type: 'text'},
+                {name: 'Bus Stop Name', type: 'text'},
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Bus Not Arriving', 'Late Bus', 'Overcrowded Bus', 'Bus Skipped Stop']},
+                {name: 'Time of Incident', type: 'time'},
+                {name: 'Date of Incident', type: 'date'}
+            ],
+            'Bus Stop Infrastructure Issue': [
+                {name: 'Bus Stop Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Broken Shelter', 'Missing Seating', 'Damaged Signboard']},
+                {name: 'Safety Concern', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Traffic Signal Not Working': [
+                {name: 'Intersection Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Signal Issue Type', type: 'select', options: ['Signal Not Working', 'Blinking Signal', 'Wrong Timing']},
+                {name: 'Traffic Congestion Level', type: 'select', options: ['Low', 'Medium', 'High']},
+                {name: 'Accident Risk', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Traffic Congestion': [
+                {name: 'Road Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Cause of Congestion', type: 'select', options: ['Construction Work', 'Illegal Parking', 'Heavy Traffic']},
+                {name: 'Congestion Time', type: 'select', options: ['Morning Peak', 'Afternoon', 'Evening Peak', 'Night']},
+                {name: 'Severity Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Illegal Parking': [
+                {name: 'Road / Street Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Vehicle Type', type: 'select', options: ['Car', 'Truck', 'Bus', 'Two-Wheeler']},
+                {name: 'Parking Violation', type: 'select', options: ['No Parking Zone', 'Blocking Road', 'Blocking Footpath']},
+                {name: 'Vehicle Number', type: 'text'},
+                {name: 'Traffic Impact', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Damaged Road Sign / Traffic Sign': [
+                {name: 'Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Sign Type', type: 'select', options: ['Stop Sign', 'Speed Limit Sign', 'Direction Sign']},
+                {name: 'Condition', type: 'select', options: ['Broken', 'Missing', 'Faded']},
+                {name: 'Safety Risk', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Auto / Taxi Service Complaint': [
+                {name: 'Vehicle Type', type: 'select', options: ['Auto Rickshaw', 'Taxi', 'Ride Service']},
+                {name: 'Vehicle Number', type: 'text'},
+                {name: 'Driver Behavior Issue', type: 'select', options: ['Overcharging', 'Refused Ride', 'Unsafe Driving']},
+                {name: 'Incident Location', type: 'text'},
+                {name: 'Date & Time of Incident', type: 'datetime-local'}
+            ],
+            'Pedestrian Crossing Issue': [
+                {name: 'Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Missing Zebra Crossing', 'Faded Markings', 'Unsafe Crossing']},
+                {name: 'Traffic Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Railway Crossing / Gate Issue': [
+                {name: 'Crossing Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Gate Not Closing', 'Gate Damage', 'Traffic Delay']},
+                {name: 'Safety Concern', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Online Payment Fraud': [
+                {name: 'Fraud Type', type: 'select', options: ['UPI Fraud', 'Credit Card Fraud', 'Debit Card Fraud', 'Online Wallet Fraud']},
+                {name: 'Payment Method Used', type: 'select', options: ['UPI', 'Net Banking', 'Card Payment', 'Mobile Wallet']},
+                {name: 'Transaction Amount', type: 'number'},
+                {name: 'Transaction Date', type: 'date'},
+                {name: 'Transaction Time', type: 'time'},
+                {name: 'Bank Name', type: 'text'},
+                {name: 'Transaction ID', type: 'text'},
+                {name: 'Fraud Platform', type: 'select', options: ['Website', 'Mobile App', 'Unknown']},
+                {name: 'Suspect Phone Number / ID', type: 'text'}
+            ],
+            'Phishing Scam': [
+                {name: 'Scam Source', type: 'select', options: ['Email', 'SMS', 'Fake Website', 'Phone Call']},
+                {name: 'Sender Email / Phone Number', type: 'text'},
+                {name: 'Website URL', type: 'text'},
+                {name: 'Information Requested', type: 'select', options: ['Bank Details', 'OTP', 'Password']},
+                {name: 'Did You Share Information?', type: 'select', options: ['Yes', 'No']},
+                {name: 'Date of Incident', type: 'date'}
+            ],
+            'OTP / Banking Fraud': [
+                {name: 'Bank Name', type: 'text'},
+                {name: 'Fraud Type', type: 'select', options: ['OTP Scam', 'Bank Impersonation Call']},
+                {name: 'Phone Number of Fraudster', type: 'text'},
+                {name: 'Amount Lost', type: 'number'},
+                {name: 'Transaction ID', type: 'text'},
+                {name: 'Date of Fraud', type: 'date'}
+            ],
+            'Social Media Account Hacking': [
+                {name: 'Platform', type: 'select', options: ['Facebook', 'Instagram', 'Twitter', 'WhatsApp', 'Other']},
+                {name: 'Account Username', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Account Hacked', 'Unauthorized Access', 'Fake Profile Created']},
+                {name: 'Date of Incident', type: 'date'}
+            ],
+            'Online Shopping Fraud': [
+                {name: 'Website / App Name', type: 'text'},
+                {name: 'Product Purchased', type: 'text'},
+                {name: 'Order Amount', type: 'number'},
+                {name: 'Order ID', type: 'text'},
+                {name: 'Fraud Type', type: 'select', options: ['Product Not Delivered', 'Fake Product', 'Payment Taken but No Order']},
+                {name: 'Date of Purchase', type: 'date'}
+            ],
+            'Identity Theft': [
+                {name: 'Type of Identity Stolen', type: 'select', options: ['Aadhaar', 'PAN', 'Bank Details', 'Social Media Identity']},
+                {name: 'Where Identity Was Misused', type: 'text'},
+                {name: 'Date Discovered', type: 'date'}
+            ],
+            'Fake Job / Employment Scam': [
+                {name: 'Company Name', type: 'text'},
+                {name: 'Platform Where Job Was Posted', type: 'select', options: ['Website', 'Social Media', 'Email']},
+                {name: 'Fraud Type', type: 'select', options: ['Registration Fee Scam', 'Fake Offer Letter']},
+                {name: 'Amount Paid', type: 'number'},
+                {name: 'Payment Method', type: 'text'}
+            ],
+            'Crypto / Investment Fraud': [
+                {name: 'Investment Platform Name', type: 'text'},
+                {name: 'Type of Investment', type: 'select', options: ['Cryptocurrency', 'Forex', 'Stock Tips', 'Online Trading']},
+                {name: 'Amount Invested', type: 'number'},
+                {name: 'Amount Lost', type: 'number'},
+                {name: 'Date of Investment', type: 'date'},
+                {name: 'Fraud Type', type: 'select', options: ['Ponzi Scheme', 'Fake Trading Platform']}
+            ],
+            'Mobile App Fraud': [
+                {name: 'App Name', type: 'text'},
+                {name: 'App Source', type: 'select', options: ['Play Store', 'Website', 'Unknown']},
+                {name: 'Fraud Type', type: 'select', options: ['Data Theft', 'Payment Fraud', 'Malware']},
+                {name: 'Date Installed', type: 'date'}
+            ],
+            'Public Facility Issue': [
+                {name: 'Facility Type', type: 'select', options: ['Public Toilet', 'Community Hall', 'Government Office', 'Public Park Facility']},
+                {name: 'Facility Name', type: 'text'},
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Damaged Facility', 'Not Maintained', 'Closed Facility']},
+                {name: 'Date of Issue', type: 'date'}
+            ],
+            'Animal Related Issue': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Animal Type', type: 'select', options: ['Stray Dog', 'Cow', 'Monkey', 'Other']},
+                {name: 'Issue Type', type: 'select', options: ['Animal Attack Risk', 'Animal Blocking Road', 'Injured Animal']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Noise Complaint': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Noise Source', type: 'select', options: ['Construction Work', 'Loudspeakers', 'Party / Event', 'Machinery']},
+                {name: 'Time of Occurrence', type: 'select', options: ['Morning', 'Afternoon', 'Evening', 'Night']},
+                {name: 'Duration of Noise', type: 'select', options: ['Short Time', 'Continuous']},
+                {name: 'Disturbance Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Public Safety Concern': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Safety Issue Type', type: 'select', options: ['Poor Lighting', 'Unsafe Area', 'Suspicious Activity']},
+                {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'Government Service Complaint': [
+                {name: 'Department Name', type: 'text'},
+                {name: 'Service Type', type: 'select', options: ['Document Service', 'Permit Issue', 'Office Delay']},
+                {name: 'Issue Type', type: 'select', options: ['Delay', 'Misbehavior', 'Service Not Provided']},
+                {name: 'Date of Incident', type: 'date'}
+            ],
+            'Public Park / Recreation Area Issue': [
+                {name: 'Park Name', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Broken Equipment', 'Dirty Area', 'Damaged Bench']},
+                {name: 'Safety Concern', type: 'select', options: ['Yes', 'No']}
+            ],
+            'Public Event Disturbance': [
+                {name: 'Event Location', type: 'text'},
+                {name: 'Area Name', type: 'text'},
+                {name: 'Event Type', type: 'select', options: ['Festival', 'Political Event', 'Public Gathering']},
+                {name: 'Issue Type', type: 'select', options: ['Noise', 'Crowd Control Issue', 'Road Block']}
+            ],
+            'Environmental Issue': [
+                {name: 'Area Name', type: 'text'},
+                {name: 'Issue Type', type: 'select', options: ['Air Pollution', 'Water Pollution', 'Dust Pollution']},
+                {name: 'Pollution Source', type: 'text'},
+                {name: 'Severity Level', type: 'select', options: ['Low', 'Medium', 'High']}
+            ],
+            'General Complaint': [
+                {name: 'Area / Locality Name', type: 'text'},
+                {name: 'Issue Category', type: 'select', options: ['Infrastructure', 'Public Safety', 'Service Issue', 'Other']},
+                {name: 'Date of Issue', type: 'date'}
+            ],
+        };
+
+        const managedSubcategories = {{ managed_subcategories_json|safe }};
+        const managedFieldConfig = {{ managed_field_map_json|safe }};
+        const effectiveSubcategories = Object.keys(managedSubcategories).length ? managedSubcategories : subcategories;
+        const effectiveDynamicFields = Object.keys(managedFieldConfig).length ? managedFieldConfig : dynamicFieldsConfig;
+
+        const mainCategory = document.getElementById('mainCategory');
+        const subcategorySection = document.getElementById('subcategorySection');
+        const subcategoryDropdown = document.getElementById('subcategoryDropdown');
+        const subcategoryValue = document.getElementById('subcategoryValue');
+        const dynamicFields = document.getElementById('dynamicFields');
+        const pageTitle = document.getElementById('pageTitle');
+
+        mainCategory.addEventListener('change', function() {
+            const category = this.value;
+            if (category && effectiveSubcategories[category]) {
+                subcategorySection.style.display = 'block';
+                subcategoryDropdown.innerHTML = '<option value="">Select Subcategory</option>';
+                
+                effectiveSubcategories[category].forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub;
+                    option.textContent = sub;
+                    subcategoryDropdown.appendChild(option);
+                });
+
+                pageTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1) + ' Complaint';
+                
+                // Apply translation to subcategory options
+                const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+                if (typeof translatePageComprehensive === 'function') {
+                    translatePageComprehensive(savedLang);
+                }
+            } else {
+                subcategorySection.style.display = 'none';
+            }
+            dynamicFields.classList.remove('show');
+            dynamicFields.innerHTML = '';
+        });
+
+        subcategoryDropdown.addEventListener('change', function() {
+            const sub = this.value;
+            const categoryKey = mainCategory.value;
+            subcategoryValue.value = sub;
+            const dynamicKey = `${categoryKey}::${sub}`;
+            const selectedFields = effectiveDynamicFields[dynamicKey] || effectiveDynamicFields[sub];
+
+            if (sub && selectedFields) {
+                dynamicFields.innerHTML = '<h4 style="margin-bottom: 15px; font-size: 14px;">Additional Details</h4>';
+                selectedFields.forEach(field => {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    const fieldName = field.name || field;
+                    const fieldType = field.type || 'text';
+                    const fieldId = field.id ? `field_${field.id}` : `field_${fieldName.replace(/\s+/g, '_').toLowerCase().replace(/[()/?]/g, '')}`;
+                    const requiredAttr = field.required ? 'required' : '';
+                    
+                    if (fieldType === 'select' && field.options) {
+                        div.innerHTML = `
+                            <label>${fieldName}</label>
+                            <select name="${fieldId}" ${requiredAttr}>
+                                <option value="">Select ${fieldName}</option>
+                                ${field.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                            </select>
+                        `;
+                    } else {
+                        div.innerHTML = `
+                            <label>${fieldName}</label>
+                            ${fieldType === 'textarea'
+                                ? `<textarea name="${fieldId}" placeholder="Enter ${fieldName.toLowerCase()}" ${requiredAttr}></textarea>`
+                                : `<input type="${fieldType}" name="${fieldId}" placeholder="Enter ${fieldName.toLowerCase()}" ${requiredAttr}>`
+                            }
+                        `;
+                    }
+                    dynamicFields.appendChild(div);
+                });
+                dynamicFields.classList.add('show');
+                
+                // Apply translation to new elements
+                setTimeout(() => {
+                    translateDynamicContent();
+                }, 100);
+            } else {
+                dynamicFields.classList.remove('show');
+                dynamicFields.innerHTML = '';
+            }
+        });
+
+
+
+        // Auto-select category if initial_type is set
+        {% if initial_type %}
+        window.addEventListener('load', () => {
+            mainCategory.dispatchEvent(new Event('change'));
+        });
+        {% endif %}
+
+        // Language translation system
+        const translations = {
+            'hi': {
+                'Submit Complaint': 'शिकायत दर्ज करें',
+                'Back': 'वापस',
+                'Main Category': 'मुख्य श्रेणी',
+                'Select Category': 'श्रेणी चुनें',
+                'Police': 'पुलिस',
+                'Traffic': 'यातायात',
+                'Construction': 'निर्माण',
+                'Water Supply': 'जल आपूर्ति',
+                'Electricity': 'बिजली',
+                'Garbage': 'कचरा',
+                'Road/Pothole': 'सड़क/गड्ढा',
+                'Drainage': 'जल निकासी',
+                'Illegal Activity': 'अवैध गतिविधि',
+                'Transportation': 'परिवहन',
+                'Cyber Fraud / Cyber Crime': 'साइबर धोखाधड़ी / साइबर अपराध',
+                'Other / Miscellaneous': 'अन्य / विविध',
+                'Subcategory': 'उपश्रेणी',
+                'Select Subcategory': 'उपश्रेणी चुनें',
+                'Common Details': 'सामान्य विवरण',
+                'Complaint Title': 'शिकायत का शीर्षक',
+                'Brief title of your complaint': 'अपनी शिकायत का संक्षिप्त शीर्षक',
+                'Detailed Description': 'विस्तृत विवरण',
+                'Provide detailed information...': 'विस्तृत जानकारी प्रदान करें...',
+                'Upload Evidence (Optional)': 'साक्ष्य अपलोड करें (वैकल्पिक)',
+                'Location Details': 'स्थान विवरण',
+                'Auto Detect': 'स्वचालित पहचान',
+                'Select on Map': 'मैप पर चुनें',
+                'Manual Entry': 'मैन्युअल एंट्री',
+                'Confirm Location': 'स्थान की पुष्टि करें',
+                'GPS Coordinates': 'GPS निर्देशांक',
+                'State': 'राज्य',
+                'District': 'जिला',
+                'City / Village': 'शहर / गांव',
+                'Area / Locality': 'क्षेत्र / इलाका',
+                'Road Name': 'सड़क का नाम',
+                'Landmark': 'मील का पत्थर',
+                'Pin Code': 'पिन कोड',
+                'Full Address': 'पूरा पता',
+                'Your Information': 'आपकी जानकारी',
+                'Full Name': 'पूरा नाम',
+                'Phone Number': 'फोन नंबर',
+                'Email': 'ईमेल',
+                'Submit Complaint': 'शिकायत दर्ज करें',
+                'Additional Details': 'अतिरिक्त विवरण',
+                'Road Name / Area': 'सड़क का नाम / क्षेत्र',
+                'Enter road name / area': 'सड़क का नाम / क्षेत्र दर्ज करें',
+                'Landmark Nearby': 'नजदीकी मील का पत्थर',
+                'Enter landmark nearby': 'नजदीकी मील का पत्थर दर्ज करें',
+                'Severity Level': 'गंभीरता का स्तर',
+                'Select Severity Level': 'गंभीरता का स्तर चुनें',
+                'Number of Potholes': 'गड्ढों की संख्या',
+                'Enter number of potholes': 'गड्ढों की संख्या दर्ज करें',
+                'Approximate Size': 'अनुमानित आकार',
+                'Select Approximate Size': 'अनुमानित आकार चुनें',
+                'Date of Issue': 'समस्या की तारीख',
+                'Road Damage / Potholes': 'सड़क की क्षति / गड्ढे',
+                'Footpath / Sidewalk Damage': 'फुटपाथ / साइडवॉक क्षति',
+                'Drainage / Sewer Construction Issues': 'ड्रेनेज / सीवर निर्माण समस्याएं',
+                'Bridge / Flyover Structural Issue': 'पुल / फ्लाईओवर संरचनात्मक समस्या',
+                'Illegal Construction': 'अवैध निर्माण',
+                'Construction Debris / Waste on Road': 'सड़क पर निर्माण मलबा / कचरा',
+                'Public Building Damage': 'सार्वजनिक भवन क्षति',
+                'Other': 'अन्य',
+                // Police subcategories
+                'Theft / Robbery': 'चोरी / डकैती',
+                'Cyber Crime': 'साइबर अपराध',
+                'Domestic Violence': 'घरेलू हिंसा',
+                'Missing Person': 'लापता व्यक्ति',
+                'Physical Assault': 'शारीरिक हमला',
+                'Fraud / Scam': 'धोखाधड़ी / जालसाजी',
+                'Harassment / Threat': 'उत्पीड़न / धमकी',
+                'Property Damage': 'संपत्ति क्षति',
+                'Illegal Activity': 'अवैध गतिविधि',
+                // Traffic subcategories
+                'Signal Jumping': 'सिग्नल जंपिंग',
+                'Wrong Side Driving': 'गलत दिशा में ड्राइविंग',
+                'Overspeeding': 'तेज रफ्तार',
+                'Illegal Parking': 'अवैध पार्किंग',
+                'No Helmet / Triple Riding': 'हेलमेट नहीं / तिहरी सवारी',
+                'Drunk Driving': 'नशे में गाड़ी चलाना',
+                'Rash / Dangerous Driving': 'लापरवाह / खतरनाक ड्राइविंग',
+                // Water subcategories
+                'No Water Supply': 'पानी की आपूर्ति नहीं',
+                'Low Water Pressure': 'कम पानी का दबाव',
+                'Water Leakage': 'पानी का रिसाव',
+                'Dirty / Contaminated Water': 'गंदा / दूषित पानी',
+                // Electricity subcategories
+                'Power Outage / No Electricity': 'बिजली कटौती / बिजली नहीं',
+                'Frequent Power Cuts': 'बार-बार बिजली कटौती',
+                'Street Light Not Working': 'स्ट्रीट लाइट काम नहीं कर रही',
+                // Garbage subcategories
+                'Garbage Not Collected': 'कचरा नहीं उठाया गया',
+                'Overflowing Garbage Bin': 'कचरा बिन भर गया',
+                'Illegal Garbage Dumping': 'अवैध कचरा फेंकना',
+                // Common field labels
+                'Enter state': 'राज्य दर्ज करें',
+                'Enter district': 'जिला दर्ज करें',
+                'Enter city': 'शहर दर्ज करें',
+                'Enter area': 'क्षेत्र दर्ज करें',
+                'Enter road name': 'सड़क का नाम दर्ज करें',
+                'Enter landmark': 'मील का पत्थर दर्ज करें',
+                'Enter pincode': 'पिन कोड दर्ज करें',
+                'Complete address': 'पूरा पता',
+                'Coordinates will appear here': 'निर्देशांक यहाँ दिखाई देंगे',
+                'Select': 'चुनें',
+                'Low': 'कम',
+                'Medium': 'मध्यम',
+                'High': 'उच्च',
+                'Small': 'छोटा',
+                'Large': 'बड़ा',
+                'Yes': 'हाँ',
+                'No': 'नहीं'
+            },
+            'gu': {
+                'Submit Complaint': 'ફરિયાદ દાખલ કરો',
+                'Back': 'પાછા',
+                'Main Category': 'મુખ્ય કેટેગરી',
+                'Select Category': 'કેટેગરી પસંદ કરો',
+                'Police': 'પોલીસ',
+                'Traffic': 'ટ્રાફિક',
+                'Construction': 'બાંધકામ',
+                'Water Supply': 'પાણી પુરવઠો',
+                'Electricity': 'વીજળી',
+                'Garbage': 'કચરો',
+                'Road/Pothole': 'રસ્તો/ખાડો',
+                'Drainage': 'ડ્રેનેજ',
+                'Illegal Activity': 'ગેરકાયદેસર પ્રવૃત્તિ',
+                'Transportation': 'પરિવહન',
+                'Cyber Fraud / Cyber Crime': 'સાયબર છેતરપિંડી / સાયબર ક્રાઇમ',
+                'Other / Miscellaneous': 'અન્ય / વિવિધ',
+                'Subcategory': 'પેટા કેટેગરી',
+                'Select Subcategory': 'પેટા કેટેગરી પસંદ કરો',
+                'Common Details': 'સામાન્ય વિગતો',
+                'Complaint Title': 'ફરિયાદનું શીર્ષક',
+                'Brief title of your complaint': 'તમારી ફરિયાદનું સંક્ષિપ્ત શીર્ષક',
+                'Detailed Description': 'વિસ્તૃત વર્ણન',
+                'Provide detailed information...': 'વિસ્તૃત માહિતી પ્રદાન કરો...',
+                'Upload Evidence (Optional)': 'પુરાવા અપલોડ કરો (વૈકલ્પિક)',
+                'Location Details': 'સ્થાન વિગતો',
+                'Auto Detect': 'સ્વચાલિત શોધ',
+                'Select on Map': 'મેપ પર પસંદ કરો',
+                'Manual Entry': 'મેન્યુઅલ એન્ટ્રી',
+                'Confirm Location': 'સ્થાનની ખાતરી કરો',
+                'GPS Coordinates': 'GPS કોઓર્ડિનેટ્સ',
+                'State': 'રાજ્ય',
+                'District': 'જિલ્લો',
+                'City / Village': 'શહેર / ગામ',
+                'Area / Locality': 'વિસ્તાર / વિસ્તાર',
+                'Road Name': 'રસ્તાનું નામ',
+                'Landmark': 'લેન્ડમાર્ક',
+                'Pin Code': 'પિન કોડ',
+                'Full Address': 'સંપૂર્ણ સરનામું',
+                'Your Information': 'તમારી માહિતી',
+                'Full Name': 'પૂરું નામ',
+                'Phone Number': 'ફોન નંબર',
+                'Email': 'ઇમેઇલ',
+                'Submit Complaint': 'ફરિયાદ દાખલ કરો',
+                'Additional Details': 'અતિરિક્ત વિગતો',
+                'Road Name / Area': 'રસ્તાનું નામ / વિસ્તાર',
+                'Enter road name / area': 'રસ્તાનું નામ / વિસ્તાર દાખલ કરો',
+                'Landmark Nearby': 'નજીકનું લેન્ડમાર્ક',
+                'Enter landmark nearby': 'નજીકનું લેન્ડમાર્ક દાખલ કરો',
+                'Severity Level': 'ગંભીરતાનું સ્તર',
+                'Select Severity Level': 'ગંભીરતાનું સ્તર પસંદ કરો',
+                'Number of Potholes': 'ખાડાઓની સંખ્યા',
+                'Enter number of potholes': 'ખાડાઓની સંખ્યા દાખલ કરો',
+                'Approximate Size': 'અનુમાનિત આકાર',
+                'Select Approximate Size': 'અનુમાનિત આકાર પસંદ કરો',
+                'Date of Issue': 'સમસ્યાની તારીખ',
+                'Road Damage / Potholes': 'રસ્તાનું નુકસાન / ખાડાઓ',
+                'Footpath / Sidewalk Damage': 'ફુટપાથ / સાઇડવાક નુકસાન',
+                'Drainage / Sewer Construction Issues': 'ડ્રેનેજ / સીવર બાંધકામની સમસ્યાઓ',
+                'Bridge / Flyover Structural Issue': 'પુલ / ફ્લાઇઓવર સંરચનાત્મક સમસ્યા',
+                'Illegal Construction': 'ગેરકાયદેસર બાંધકામ',
+                'Construction Debris / Waste on Road': 'રસ્તા પર બાંધકામનો મલબો / કચરો',
+                'Public Building Damage': 'સાર્વજનિક ભવનનું નુકસાન',
+                'Other': 'અન્ય',
+                // Police subcategories
+                'Theft / Robbery': 'ચોરી / લુંટ',
+                'Cyber Crime': 'સાયબર ક્રાઇમ',
+                'Domestic Violence': 'ઘરેલું હિંસા',
+                'Missing Person': 'લાપતા વ્યક્તિ',
+                'Physical Assault': 'શારીરિક હમલો',
+                'Fraud / Scam': 'ધોખાધડી / જાલસાજી',
+                'Harassment / Threat': 'ઉત્પીડન / ધમકી',
+                'Property Damage': 'સંપત્તિનું નુકસાન',
+                'Illegal Activity': 'ગેરકાયદેસર પ્રવૃત્તિ',
+                // Traffic subcategories
+                'Signal Jumping': 'સિગ્નલ જંપિંગ',
+                'Wrong Side Driving': 'ગલત દિશામાં ગાડી ચલાવવી',
+                'Overspeeding': 'તેજ રફ્તાર',
+                'Illegal Parking': 'ગેરકાયદેસર પાર્કિંગ',
+                'No Helmet / Triple Riding': 'હેલમેટ નહીં / ત્રિપલ રાઇડિંગ',
+                'Drunk Driving': 'નશામાં ગાડી ચલાવવી',
+                'Rash / Dangerous Driving': 'લાપરવાહ / ખતરનાક ડ્રાઇવિંગ',
+                // Water subcategories
+                'No Water Supply': 'પાણીની પુરવઠો નહીં',
+                'Low Water Pressure': 'ઓછો પાણીનો દબાણ',
+                'Water Leakage': 'પાણીનું લીકેજ',
+                'Dirty / Contaminated Water': 'ગંદું / દૂષિત પાણી',
+                // Electricity subcategories
+                'Power Outage / No Electricity': 'વીજળી કટોતી / વીજળી નહીં',
+                'Frequent Power Cuts': 'વાર-વાર વીજળી કટોતી',
+                'Street Light Not Working': 'સ્ટ્રીટ લાઇટ કામ કરતી નથી',
+                // Garbage subcategories
+                'Garbage Not Collected': 'કચરો ઉઠાવ્યો નથી',
+                'Overflowing Garbage Bin': 'કચરાનો ડબ્બો ભરાઈ ગયો',
+                'Illegal Garbage Dumping': 'ગેરકાયદેસર કચરો ફેંકવો',
+                // Common field labels
+                'Enter state': 'રાજ્ય દાખલ કરો',
+                'Enter district': 'જિલ્લો દાખલ કરો',
+                'Enter city': 'શહેર દાખલ કરો',
+                'Enter area': 'વિસ્તાર દાખલ કરો',
+                'Enter road name': 'રસ્તાનું નામ દાખલ કરો',
+                'Enter landmark': 'લેન્ડમાર્ક દાખલ કરો',
+                'Enter pincode': 'પિન કોડ દાખલ કરો',
+                'Complete address': 'સંપૂર્ણ સરનામું',
+                'Coordinates will appear here': 'કોઓર્ડિનેટ્સ અહીં દિખાશે',
+                'Select': 'પસંદ કરો',
+                'Low': 'ઓછું',
+                'Medium': 'મધ્યમ',
+                'High': 'ઉંચું',
+                'Small': 'નાનું',
+                'Large': 'મોટું',
+                'Yes': 'હા',
+                'No': 'ના'
+            }
+        };
+
+        function translatePage(lang) {
+            if (lang === 'en') return;
+            
+            const langTranslations = translations[lang];
+            if (!langTranslations) return;
+
+            // Translate all text elements
+            document.querySelectorAll('*').forEach(element => {
+                // Skip elements with children to avoid overwriting
+                if (element.children.length === 0) {
+                    const text = element.textContent.trim();
+                    if (text && langTranslations[text]) {
+                        element.textContent = langTranslations[text];
+                    }
+                }
+                
+                // Translate placeholders
+                if (element.placeholder && langTranslations[element.placeholder]) {
+                    element.placeholder = langTranslations[element.placeholder];
+                }
+                
+                // Translate option values
+                if (element.tagName === 'OPTION' && langTranslations[element.textContent.trim()]) {
+                    element.textContent = langTranslations[element.textContent.trim()];
+                }
+            });
+        }
+
+        // Load saved language on page load
+        window.addEventListener('load', () => {
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            if (typeof translatePageComprehensive === 'function') {
+                translatePageComprehensive(savedLang);
+            }
+        });
+    </script>
+</body>
+</html>

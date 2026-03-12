@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Form Fields Test</title>
+    <script src="/static/js/comprehensive_translations.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        select, input { margin: 5px; padding: 5px; }
+        .language-selector { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="language-selector">
+        <label>Language:</label>
+        <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="hi">हिन्दी</option>
+            <option value="gu">ગુજરાતી</option>
+        </select>
+    </div>
+
+    <div class="test-section">
+        <h3>Harassment / Threat Form Fields</h3>
+        <label>Additional Details</label><br>
+        <label>Person Threatening</label><br>
+        <input type="text" placeholder="Enter person threatening"><br>
+        <label>Method</label><br>
+        <select>
+            <option>Select Method</option>
+            <option>Call</option>
+            <option>Message</option>
+            <option>In Person</option>
+        </select><br>
+        <label>Date of Incident</label><br>
+        <label>Frequency of Harassment</label><br>
+        <input type="text" placeholder="Enter frequency of harassment"><br>
+    </div>
+
+    <div class="test-section">
+        <h3>Electricity Form Fields</h3>
+        <label>Area / Locality Name</label><br>
+        <input type="text" placeholder="Enter area / locality name"><br>
+        <label>Street / Building Name</label><br>
+        <input type="text" placeholder="Enter street / building name"><br>
+        <label>Landmark Nearby</label><br>
+        <input type="text" placeholder="Enter landmark nearby"><br>
+        <label>Since When Power Is Not Available</label><br>
+        <select>
+            <option>Select Since When Power Is Not Available</option>
+            <option>Few Minutes</option>
+            <option>1 Hour</option>
+            <option>Several Hours</option>
+            <option>More Than 1 Day</option>
+        </select><br>
+        <label>Affected Area Size</label><br>
+        <select>
+            <option>Select Affected Area Size</option>
+            <option>Single House</option>
+            <option>Building</option>
+            <option>Entire Street</option>
+            <option>Entire Area</option>
+        </select><br>
+        <label>Is Emergency</label><br>
+        <select>
+            <option>Select Is Emergency</option>
+            <option>Yes</option>
+            <option>No</option>
+        </select><br>
+    </div>
+
+    <div class="test-section">
+        <h3>Common Options</h3>
+        <select>
+            <option>Select</option>
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+            <option>Small</option>
+            <option>Large</option>
+            <option>Yes</option>
+            <option>No</option>
+            <option>Other</option>
+        </select>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageSelect = document.getElementById('languageSelect');
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            
+            languageSelect.value = savedLang;
+            
+            languageSelect.addEventListener('change', function() {
+                const selectedLang = this.value;
+                localStorage.setItem('selectedLanguage', selectedLang);
+                translatePageComprehensive(selectedLang);
+            });
+            
+            // Apply translation on page load
+            translatePageComprehensive(savedLang);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .content-section {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        text-align: left;
+        padding: 1rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        padding: 1.2rem 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-pending { background: #fee2e2; color: #991b1b; }
+    .badge-confirmed { background: #fef3c7; color: #92400e; }
+    .badge-process { background: #dbeafe; color: #1e40af; }
+    .badge-reopened { background: #fef3c7; color: #b45309; }
+    .badge-solved { background: #dcfce7; color: #166534; }
+    .badge-rejected { background: #f1f5f9; color: #475569; }
+
+    .filters-wrapper {
+        margin-bottom: 2.5rem;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 220px;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.9rem 1.25rem;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        font-family: inherit;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5px);
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-filter {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.9rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-filter:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .btn-reset {
+        font-weight: 800;
+        color: #ef4444;
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.05);
+        white-space: nowrap;
+    }
+
+    .action-link {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    @media (max-width: 1024px) {
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .btn-filter {
+            width: 100%;
+        }
+
+        .filter-actions {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.65rem;
+            line-height: 1.25;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .filters-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-form {
+            gap: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 0.75rem 0.9rem;
+            border-radius: 12px;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.7rem;
+        }
+
+        .btn-filter,
+        .btn-reset {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .content-section {
+            padding: 1rem;
+            border-radius: 18px;
+            margin-bottom: 1rem;
+        }
+
+        .table-container {
+            overflow: visible;
+        }
+
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+            display: block;
+            width: 100%;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        tbody tr {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.85rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        tbody tr td {
+            border-bottom: none;
+            padding: 0.35rem 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            font-size: 0.86rem;
+            line-height: 1.35;
+        }
+
+        tbody tr td::before {
+            content: attr(data-label);
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            flex: 0 0 92px;
+        }
+
+        tbody tr td:last-child {
+            margin-top: 0.2rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        tbody tr td:last-child::before {
+            content: "";
+            flex: 0;
+        }
+
+        .action-link {
+            width: 100%;
+            padding: 0.45rem 0.7rem;
+            font-size: 0.78rem;
+        }
+
+        .empty-row {
+            display: block;
+            padding: 1.5rem 0.5rem;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        .empty-row td {
+            display: block;
+            text-align: center;
+            padding: 1rem !important;
+        }
+
+        .empty-row td::before {
+            content: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        tbody tr td::before {
+            flex-basis: 78px;
+            font-size: 0.68rem;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Complete overview of all complaints across all cities</p>
+    </div>
+
+    <div class="filters-wrapper">
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-layer-group"></i> Filter by Category</label>
+                <select name="category" class="filter-select">
+                    <option value="">All Categories</option>
+                    {% for cat_id, cat_name in complaint_types %}
+                        <option value="{{ cat_id }}" {% if category_filter == cat_id %}selected{% endif %}>
+                            {{ cat_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-location-dot"></i> Filter by State</label>
+                <select name="state" class="filter-select">
+                    <option value="">All States</option>
+                    {% for state in state_options %}
+                        <option value="{{ state }}" {% if state_filter == state %}selected{% endif %}>
+                            {{ state }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-city"></i> Filter by City</label>
+                <select name="city" class="filter-select">
+                    <option value="">All Cities</option>
+                    {% for city in city_options %}
+                        <option value="{{ city }}" {% if city_filter == city %}selected{% endif %}>
+                            {{ city }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-signal"></i> Filter by Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                    <option value="process" {% if status_filter == 'process' %}selected{% endif %}>Process</option>
+                    <option value="reopened" {% if status_filter == 'reopened' %}selected{% endif %}>Reopened</option>
+                    <option value="solved" {% if status_filter == 'solved' %}selected{% endif %}>Solved</option>
+                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+                <a href="{% url 'super_admin_total' %}" class="btn-reset">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="content-section">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Complaint Title</th>
+                        <th>Type</th>
+                        <th>City</th>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Date Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td data-label="ID" style="font-weight: 700;">#{{ complaint.complaint_number }}</td>
+                        <td data-label="Title">{{ complaint.title }}</td>
+                        <td data-label="Type">{{ complaint.get_complaint_type_display }}</td>
+                        <td data-label="City">{{ complaint.city }}</td>
+                        <td data-label="User">{{ complaint.user.email|default:complaint.guest_email }}</td>
+                        <td data-label="Status">
+                            <span class="badge badge-{{ complaint.work_status }}">
+                                {{ complaint.work_status|title }}
+                            </span>
+                        </td>
+                        <td data-label="Submitted" style="color: #64748b; font-size: 0.85rem;">{{ complaint.created_at|date:"M d, Y" }}</td>
+                        <td data-label="Action">
+                            <a href="{% url 'super_admin_complaint_detail' complaint.id %}" class="action-link">
+                                <i class="fa-solid fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="empty-row">
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #64748b;">No complaints found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

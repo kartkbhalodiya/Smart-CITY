@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Test - Smart City</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .category { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .subcategory { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; }
+        .language-selector { margin-bottom: 20px; }
+        select { padding: 8px; font-size: 16px; }
+        h1, h2, h3 { color: #333; }
+    </style>
+    <script src="/static/js/comprehensive_translations.js"></script>
+</head>
+<body>
+    <div class="language-selector">
+        <label>Select Language:</label>
+        <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="hi">हिन्दी</option>
+            <option value="gu">ગુજરાતી</option>
+        </select>
+    </div>
+
+    <h1>Smart City Complaint Categories</h1>
+
+    <div class="category">
+        <h2>Police</h2>
+        <div class="subcategory">Theft / Robbery</div>
+        <div class="subcategory">Cyber Crime</div>
+        <div class="subcategory">Domestic Violence</div>
+        <div class="subcategory">Missing Person</div>
+        <div class="subcategory">Physical Assault</div>
+    </div>
+
+    <div class="category">
+        <h2>Traffic</h2>
+        <div class="subcategory">Signal Jumping</div>
+        <div class="subcategory">Wrong Side Driving</div>
+        <div class="subcategory">Overspeeding</div>
+        <div class="subcategory">Illegal Parking</div>
+        <div class="subcategory">Drunk Driving</div>
+    </div>
+
+    <div class="category">
+        <h2>Water Supply</h2>
+        <div class="subcategory">No Water Supply</div>
+        <div class="subcategory">Low Water Pressure</div>
+        <div class="subcategory">Water Leakage</div>
+        <div class="subcategory">Dirty / Contaminated Water</div>
+        <div class="subcategory">Water Tank Overflow</div>
+    </div>
+
+    <div class="category">
+        <h2>Electricity</h2>
+        <div class="subcategory">Power Outage / No Electricity</div>
+        <div class="subcategory">Frequent Power Cuts</div>
+        <div class="subcategory">Street Light Not Working</div>
+        <div class="subcategory">Exposed Electrical Wires</div>
+        <div class="subcategory">Transformer Issue</div>
+    </div>
+
+    <div class="category">
+        <h2>Garbage</h2>
+        <div class="subcategory">Garbage Not Collected</div>
+        <div class="subcategory">Overflowing Garbage Bin</div>
+        <div class="subcategory">Illegal Garbage Dumping</div>
+        <div class="subcategory">Dead Animal Removal</div>
+        <div class="subcategory">Garbage Burning</div>
+    </div>
+
+    <div class="category">
+        <h2>Construction</h2>
+        <div class="subcategory">Road Damage / Potholes</div>
+        <div class="subcategory">Illegal Construction</div>
+        <div class="subcategory">Construction Debris / Waste on Road</div>
+        <div class="subcategory">Bridge / Flyover Structural Issue</div>
+    </div>
+
+    <div class="category">
+        <h2>Drainage</h2>
+        <div class="subcategory">Blocked Drain</div>
+        <div class="subcategory">Drain Overflow / Sewage Overflow</div>
+        <div class="subcategory">Water Logging / Flooded Area</div>
+        <div class="subcategory">Sewage Leakage</div>
+    </div>
+
+    <div class="category">
+        <h2>Other</h2>
+        <div class="subcategory">Public Facility Issue</div>
+        <div class="subcategory">Animal Related Issue</div>
+        <div class="subcategory">Noise Complaint</div>
+        <div class="subcategory">Environmental Issue</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageSelect = document.getElementById('languageSelect');
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            
+            languageSelect.value = savedLang;
+            
+            languageSelect.addEventListener('change', function() {
+                const selectedLang = this.value;
+                localStorage.setItem('selectedLanguage', selectedLang);
+                translatePageComprehensive(selectedLang);
+            });
+            
+            // Apply translation on page load
+            translatePageComprehensive(savedLang);
+        });
+    </script>
+</body>
+</html>

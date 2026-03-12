@@ -1,0 +1,487 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .edit-grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 1rem;
+    }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .section-title {
+        font-size: 0.84rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: #475569;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.68rem 0.75rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .small-text {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.3rem;
+    }
+
+    .logo-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .logo-preview {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        border: 1px solid #dbe1ea;
+        object-fit: cover;
+        background: #f8fafc;
+    }
+
+    .sub-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .field-head {
+        display: grid;
+        grid-template-columns: 1fr 130px 120px 120px;
+        gap: 0.45rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .field-row {
+        display: grid;
+        grid-template-columns: 1fr 130px 120px 120px auto;
+        gap: 0.45rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .btn-small {
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 8px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 0.45rem 0.6rem;
+        cursor: pointer;
+    }
+
+    .btn-add {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .btn-remove {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .btn-primary {
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 0.72rem 1rem;
+        font-size: 0.86rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 10px;
+        padding: 0.72rem 1rem;
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+        margin-top: 0.9rem;
+    }
+
+    .list-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    @media (max-width: 1100px) {
+        .edit-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .panel {
+            padding: 0.85rem;
+        }
+
+        .list-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .list-head .btn-add {
+            width: 100%;
+            display: inline-flex;
+            justify-content: center;
+        }
+
+        .field-head {
+            display: none;
+        }
+
+        .field-row {
+            grid-template-columns: 1fr;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.55rem;
+        }
+
+        .sub-row {
+            grid-template-columns: 1fr;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.55rem;
+        }
+
+        .field-row .btn-remove,
+        .sub-row .btn-remove {
+            width: 100%;
+        }
+
+        .logo-wrap {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .actions {
+            grid-template-columns: 1fr;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Edit category name, emoji, subcategories and subcategory-specific fields.</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="edit-grid">
+            <div class="panel">
+                <h3 class="section-title">Category Details</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Category Name</label>
+                    <input type="text" name="category_name" class="form-input" value="{{ category.name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Key</label>
+                    <input type="text" name="category_key" class="form-input" value="{{ category.key }}" required>
+                    <p class="small-text">Used in URLs and complaint mapping.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Emoji</label>
+                    <input type="text" name="category_emoji" class="form-input" value="{{ category.emoji }}" placeholder="e.g. 🚦">
+                    <p class="small-text">Shown on citizen cards when no logo is set.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category Logo</label>
+                    {% if category.logo %}
+                        <div class="logo-wrap">
+                            <img src="{{ category.logo.url }}" alt="{{ category.name }}" class="logo-preview">
+                            <label style="font-size:0.82rem; color:#334155; display:flex; align-items:center; gap:0.4rem;">
+                                <input type="checkbox" name="remove_logo" value="1">
+                                Remove current logo
+                            </label>
+                        </div>
+                    {% endif %}
+                    <input type="file" name="category_logo" class="form-input" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size:0.82rem; color:#334155; display:flex; align-items:center; gap:0.5rem;">
+                        <input type="checkbox" name="is_active" {% if category.is_active %}checked{% endif %}>
+                        Active Category
+                    </label>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    </button>
+                    <a href="{% url 'super_admin_categories' %}" class="btn-secondary">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="list-head" style="margin-bottom:0.6rem;">
+                    <h3 class="section-title" style="margin:0;">Subcategories</h3>
+                    <button type="button" class="btn-small btn-add" id="addSubBtn">+ Add Subcategory</button>
+                </div>
+                <p class="small-text" style="margin-bottom:0.55rem;">Minimum 10 subcategories are required for each category.</p>
+                <div id="subRows">
+                    {% for sub in subcategories %}
+                        <div class="sub-row">
+                            <div>
+                                <input type="hidden" name="subcategory_ids[]" value="{{ sub.id }}">
+                                <input type="text" name="subcategory_names[]" class="form-input" value="{{ sub.name }}" placeholder="Subcategory name">
+                            </div>
+                            <button type="button" class="btn-small btn-remove remove-sub-btn">Remove</button>
+                        </div>
+                    {% empty %}
+                        <div class="sub-row">
+                            <div>
+                                <input type="hidden" name="subcategory_ids[]" value="">
+                                <input type="text" name="subcategory_names[]" class="form-input" placeholder="Subcategory name">
+                            </div>
+                            <button type="button" class="btn-small btn-remove remove-sub-btn">Remove</button>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="list-head" style="margin:1rem 0 0.6rem;">
+                    <h3 class="section-title" style="margin:0;">Fields</h3>
+                    <button type="button" class="btn-small btn-add" id="addFieldBtn">+ Add Field</button>
+                </div>
+
+                <div class="field-head">
+                    <span class="form-label" style="margin:0;">Field Label</span>
+                    <span class="form-label" style="margin:0;">Applies To</span>
+                    <span class="form-label" style="margin:0;">Type</span>
+                    <span class="form-label" style="margin:0;">Required</span>
+                </div>
+
+                <div id="fieldRows">
+                    {% for field in fields %}
+                        <div class="field-row">
+                            <div>
+                                <input type="hidden" name="field_ids[]" value="{{ field.id }}">
+                                <input type="text" name="field_labels[]" class="form-input" value="{{ field.label }}" placeholder="Field label">
+                                <input type="text" name="field_options[]" class="form-input" value="{{ field.options }}" placeholder="Option1, Option2 (dropdown only)" style="margin-top:0.35rem;">
+                            </div>
+                            <select name="field_subcategories[]" class="form-input field-sub-select">
+                                <option value="__all__" {% if not field.subcategory %}selected{% endif %}>All Subcategories</option>
+                                {% for sub in subcategories %}
+                                    <option value="id:{{ sub.id }}" {% if field.subcategory_id == sub.id %}selected{% endif %}>{{ sub.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="field_types[]" class="form-input">
+                                {% for type_key, type_name in field_types %}
+                                    <option value="{{ type_key }}" {% if field.field_type == type_key %}selected{% endif %}>{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="field_required[]" class="form-input">
+                                <option value="0" {% if not field.is_required %}selected{% endif %}>Optional</option>
+                                <option value="1" {% if field.is_required %}selected{% endif %}>Required</option>
+                            </select>
+                            <button type="button" class="btn-small btn-remove remove-field-btn">Remove</button>
+                        </div>
+                    {% empty %}
+                        <div class="field-row">
+                            <div>
+                                <input type="hidden" name="field_ids[]" value="">
+                                <input type="text" name="field_labels[]" class="form-input" placeholder="Field label">
+                                <input type="text" name="field_options[]" class="form-input" placeholder="Option1, Option2 (dropdown only)" style="margin-top:0.35rem;">
+                            </div>
+                            <select name="field_subcategories[]" class="form-input field-sub-select">
+                                <option value="__all__" selected>All Subcategories</option>
+                                {% for sub in subcategories %}
+                                    <option value="id:{{ sub.id }}">{{ sub.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="field_types[]" class="form-input">
+                                {% for type_key, type_name in field_types %}
+                                    <option value="{{ type_key }}">{{ type_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="field_required[]" class="form-input">
+                                <option value="0" selected>Optional</option>
+                                <option value="1">Required</option>
+                            </select>
+                            <button type="button" class="btn-small btn-remove remove-field-btn">Remove</button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <p class="small-text">Each subcategory can have unique fields. Use "All Subcategories" for common fields.</p>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const subRows = document.getElementById('subRows');
+    const fieldRows = document.getElementById('fieldRows');
+    const addSubBtn = document.getElementById('addSubBtn');
+    const addFieldBtn = document.getElementById('addFieldBtn');
+
+    const fieldTypeOptions = `{% for key, name in field_types %}<option value="{{ key }}">{{ name }}</option>{% endfor %}`;
+
+    function getSubcategoryOptions() {
+        const options = [];
+        const seen = new Set();
+        const rows = Array.from(subRows.querySelectorAll('.sub-row'));
+
+        rows.forEach(row => {
+            const idInput = row.querySelector('input[name="subcategory_ids[]"]');
+            const nameInput = row.querySelector('input[name="subcategory_names[]"]');
+            if (!nameInput) return;
+
+            const label = nameInput.value.trim();
+            if (!label) return;
+
+            const idValue = idInput ? idInput.value.trim() : '';
+            const value = idValue ? `id:${idValue}` : `name:${label}`;
+            const key = `${value}::${label.toLowerCase()}`;
+            if (seen.has(key)) return;
+
+            seen.add(key);
+            options.push({ value, label });
+        });
+
+        return options;
+    }
+
+    function refreshFieldSubcategoryOptions() {
+        const options = getSubcategoryOptions();
+        const selects = document.querySelectorAll('.field-sub-select');
+
+        selects.forEach(select => {
+            const previous = select.value;
+            select.innerHTML = '<option value="__all__">All Subcategories</option>';
+
+            options.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.value;
+                option.textContent = item.label;
+                select.appendChild(option);
+            });
+
+            const stillExists = Array.from(select.options).some(option => option.value === previous);
+            select.value = stillExists ? previous : '__all__';
+        });
+    }
+
+    function addSubcategoryRow() {
+        const row = document.createElement('div');
+        row.className = 'sub-row';
+        row.innerHTML = `
+            <div>
+                <input type="hidden" name="subcategory_ids[]" value="">
+                <input type="text" name="subcategory_names[]" class="form-input" placeholder="Subcategory name">
+            </div>
+            <button type="button" class="btn-small btn-remove remove-sub-btn">Remove</button>
+        `;
+        subRows.appendChild(row);
+        refreshFieldSubcategoryOptions();
+    }
+
+    function addFieldRow() {
+        const row = document.createElement('div');
+        row.className = 'field-row';
+        row.innerHTML = `
+            <div>
+                <input type="hidden" name="field_ids[]" value="">
+                <input type="text" name="field_labels[]" class="form-input" placeholder="Field label">
+                <input type="text" name="field_options[]" class="form-input" placeholder="Option1, Option2 (dropdown only)" style="margin-top:0.35rem;">
+            </div>
+            <select name="field_subcategories[]" class="form-input field-sub-select">
+                <option value="__all__">All Subcategories</option>
+            </select>
+            <select name="field_types[]" class="form-input">${fieldTypeOptions}</select>
+            <select name="field_required[]" class="form-input">
+                <option value="0">Optional</option>
+                <option value="1">Required</option>
+            </select>
+            <button type="button" class="btn-small btn-remove remove-field-btn">Remove</button>
+        `;
+        fieldRows.appendChild(row);
+        refreshFieldSubcategoryOptions();
+    }
+
+    addSubBtn.addEventListener('click', addSubcategoryRow);
+    addFieldBtn.addEventListener('click', addFieldRow);
+
+    subRows.addEventListener('input', function(event) {
+        if (event.target && event.target.name === 'subcategory_names[]') {
+            refreshFieldSubcategoryOptions();
+        }
+    });
+
+    subRows.addEventListener('click', function(event) {
+        const removeBtn = event.target.closest('.remove-sub-btn');
+        if (!removeBtn) return;
+        removeBtn.closest('.sub-row').remove();
+        refreshFieldSubcategoryOptions();
+    });
+
+    fieldRows.addEventListener('click', function(event) {
+        const removeBtn = event.target.closest('.remove-field-btn');
+        if (!removeBtn) return;
+        removeBtn.closest('.field-row').remove();
+    });
+
+    refreshFieldSubcategoryOptions();
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Smart City Admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+        <i class="fa-solid fa-building-columns"></i>
+        <span>SMART CITY ADMIN</span>
+    </a>
+</h1>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --primary: #0056b3;
+        --secondary: #34495e;
+        --header-bg: #ffffff;
+        --header-color: #333;
+    }
+
+    #header {
+        background: #ffffff !important;
+        color: #333 !important;
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px 40px;
+    }
+
+    #header a:link, #header a:visited {
+        color: var(--secondary) !important;
+        font-weight: 700;
+    }
+
+    #branding h1 {
+        color: var(--primary) !important;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .module h2, .module caption, .inline-group h2 {
+        background: var(--secondary) !important;
+    }
+
+    div.breadcrumbs {
+        background: #f8f9fa !important;
+        border-bottom: 1px solid #dee2e6;
+        color: #636e72 !important;
+    }
+
+    div.breadcrumbs a {
+        color: var(--primary) !important;
+    }
+
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: var(--primary) !important;
+        border-radius: 8px !important;
+        padding: 10px 20px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .button.default, input[type=submit].default, .submit-row input.default {
+        background: var(--primary) !important;
+    }
+
+    #content-main {
+        padding: 40px !important;
+    }
+
+    .module {
+        border-radius: 12px !important;
+        overflow: hidden;
+        border: 1px solid #dee2e6 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    #user-tools {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

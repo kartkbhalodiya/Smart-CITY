@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ department.name }} Dashboard - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .label {
+            color: #6c757d;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .complaints-section {
+            background: #fff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .complaint-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color);
+        }
+
+        .complaint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .complaint-id {
+            font-weight: 700;
+            color: #2d3436;
+            font-size: 16px;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-assigned { background: #cce5ff; color: #0066cc; }
+        .status-in_progress { background: #e1f5fe; color: #0277bd; }
+        .status-resolved { background: #d4edda; color: #155724; }
+
+        .complaint-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 10px;
+        }
+
+        .complaint-meta {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .complaint-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-progress {
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .btn-resolve {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .btn-view {
+            background: #6c757d;
+            color: #fff;
+        }
+
+        .status-form {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .status-form.show {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #2d3436;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-save {
+            background: #10b981;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div>
+                <h1>{{ department.name }}</h1>
+                <p>{{ department.get_department_type_display }}</p>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                <i class="fa-solid fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="number">{{ total_complaints }}</div>
+            <div class="label">Total Cases</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ pending_complaints }}</div>
+            <div class="label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ in_progress_complaints }}</div>
+            <div class="label">In Progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">{{ resolved_complaints }}</div>
+            <div class="label">Resolved</div>
+        </div>
+    </div>
+
+    <div class="complaints-section">
+        <div class="section-title">
+            <i class="fa-solid fa-list-check"></i>
+            Assigned Complaints
+        </div>
+
+        {% for complaint in complaints %}
+        <div class="complaint-card" style="--color: #2c3e50;">
+            <div class="complaint-header">
+                <div class="complaint-id">{{ complaint.complaint_number }}</div>
+                <span class="status-badge status-{{ complaint.work_status }}">
+                    {{ complaint.get_work_status_display }}
+                </span>
+            </div>
+            
+            <div class="complaint-title">{{ complaint.title }}</div>
+            
+            <div class="complaint-meta">
+                {{ complaint.get_complaint_type_display }} • 
+                {% if complaint.user %}{{ complaint.user.get_full_name }}{% else %}{{ complaint.guest_name }}{% endif %} • 
+                {{ complaint.created_at|date:"M d, Y H:i" }}
+            </div>
+            
+            <div style="margin-bottom: 15px; color: #495057;">
+                {{ complaint.description|truncatewords:20 }}
+            </div>
+            
+            <div class="complaint-actions">
+                {% if complaint.work_status == 'pending' or complaint.work_status == 'assigned' %}
+                <button class="action-btn btn-progress" onclick="showStatusForm({{ complaint.id }}, 'in_progress')">
+                    <i class="fa-solid fa-play"></i> Start Work
+                </button>
+                {% endif %}
+                
+                {% if complaint.work_status == 'in_progress' %}
+                <button class="action-btn btn-resolve" onclick="showStatusForm({{ complaint.id }}, 'resolved')">
+                    <i class="fa-solid fa-check"></i> Mark Resolved
+                </button>
+                {% endif %}
+                
+                <a href="{% url 'view_location' complaint.id %}" class="action-btn btn-view">
+                    <i class="fa-solid fa-eye"></i> View Details
+                </a>
+            </div>
+            
+            <div class="status-form" id="statusForm{{ complaint.id }}">
+                <form method="post" action="{% url 'update_complaint_status' complaint.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" id="statusInput{{ complaint.id }}">
+                    
+                    <div class="form-group">
+                        <label>Resolution Notes</label>
+                        <textarea name="notes" placeholder="Add notes about the work done or resolution..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-save">
+                            <i class="fa-solid fa-save"></i> Update Status
+                        </button>
+                        <button type="button" class="btn-cancel" onclick="hideStatusForm({{ complaint.id }})">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 40px; color: #6c757d;">
+            <i class="fa-solid fa-inbox" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+            <p>No complaints assigned to your department yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function showStatusForm(complaintId, status) {
+            document.getElementById('statusInput' + complaintId).value = status;
+            document.getElementById('statusForm' + complaintId).classList.add('show');
+        }
+        
+        function hideStatusForm(complaintId) {
+            document.getElementById('statusForm' + complaintId).classList.remove('show');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,636 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .content-section {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 20px;
+        padding: 1.6rem;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .input-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: #64748b;
+    }
+
+    .form-input {
+        width: 100%;
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.68rem 0.75rem;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #0f172a;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .code-row {
+        display: flex;
+        gap: 0.55rem;
+    }
+
+    .btn-generate {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        border-radius: 10px;
+        padding: 0.62rem 0.72rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    #departmentMap {
+        width: 100%;
+        height: 320px;
+        border: 1px solid #dbe1ea;
+        border-radius: 12px;
+    }
+
+    .coord-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+        margin-top: 0.7rem;
+    }
+
+    .map-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.7rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .btn-location {
+        border: none;
+        background: #0ea5e9;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 0.55rem 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .hint {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .logo-preview {
+        margin-top: 0.55rem;
+        width: 70px;
+        height: 70px;
+        border-radius: 12px;
+        border: 1px solid #dbe1ea;
+        object-fit: cover;
+        background: #f8fafc;
+    }
+
+    .form-footer {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.7rem;
+    }
+
+    .otp-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .otp-title {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: #1d4ed8;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .btn-secondary {
+        text-decoration: none;
+        border: 1px solid #dbe1ea;
+        background: #f8fafc;
+        color: #334155;
+        border-radius: 10px;
+        padding: 0.62rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .btn-primary {
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 0.62rem 1.05rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    @media (max-width: 768px) {
+        .content-section {
+            padding: 1rem;
+            border-radius: 14px;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .input-actions,
+        .code-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-generate {
+            width: 100%;
+            display: inline-flex;
+            justify-content: center;
+        }
+
+        .coord-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .map-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-location {
+            width: 100%;
+            justify-content: center;
+        }
+
+        #departmentMap {
+            height: 250px;
+        }
+
+        .form-footer {
+            flex-direction: column-reverse;
+        }
+
+        .btn-secondary,
+        .btn-primary {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .content-section {
+            padding: 0.85rem;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h2 class="page-title">{{ page_title }}</h2>
+        <p class="page-subtitle">Create a department with city mapping, admin assignment, category, contact details, and map geolocation.</p>
+    </div>
+
+    <div class="content-section">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if otp_pending %}
+                <div class="otp-box">
+                    <div class="otp-title">OTP Sent</div>
+                    <div class="hint">OTP has been sent to <strong>{{ form_data.email }}</strong>. Enter OTP to complete department creation.</div>
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <select name="state_name" id="stateSelect" class="form-input" required>
+                        <option value="">Select State</option>
+                        {% for state in state_options %}
+                            <option value="{{ state }}" {% if form_data.state_name == state %}selected{% endif %}>{{ state }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select City First</label>
+                    <select name="city_name" id="citySelect" class="form-input" required>
+                        <option value="">Select City</option>
+                        {% for option in city_options %}
+                            <option value="{{ option.city_name }}" data-state="{{ option.state|lower }}" {% if form_data.city_name == option.city_name %}selected{% endif %}>{{ option.city_name }} ({{ option.state }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Select City Admin</label>
+                    <select name="city_admin" id="cityAdminSelect" class="form-input" required>
+                        <option value="">Select City First</option>
+                        {% for admin in city_admins %}
+                            <option value="{{ admin.id }}" data-city="{{ admin.city_name|lower }}" data-state="{{ admin.state|lower }}" {% if form_data.city_admin == admin.id|stringformat:'s' %}selected{% endif %}>
+                                {{ admin.user.get_full_name }} - {{ admin.city_name }} ({{ admin.state }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Department Category (12 Types)</label>
+                    <select name="department_type" class="form-input" required>
+                        <option value="">Select Category</option>
+                        {% for value, label in department_types %}
+                            <option value="{{ value }}" {% if form_data.department_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department Name</label>
+                    <input type="text" name="name" class="form-input" placeholder="e.g. Jamnagar Water Control Unit" value="{{ form_data.name }}" required>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Department Code (4-8 digits, Auto)</label>
+                    <div class="code-row">
+                        <input
+                            type="text"
+                            name="unique_id"
+                            id="departmentCodeInput"
+                            class="form-input"
+                            value="{{ form_data.unique_id|default:generated_code }}"
+                            minlength="4"
+                            maxlength="8"
+                            pattern="[0-9]{4,8}"
+                            inputmode="numeric"
+                            title="Enter 4 to 8 digit department code"
+                            required
+                        >
+                        <button type="button" class="btn-generate" id="regenerateCodeBtn">
+                            <i class="fa-solid fa-rotate"></i> Regenerate
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group" style="justify-content: flex-end;">
+                    <label class="form-label">Department Active</label>
+                    <label style="display:inline-flex; align-items:center; gap:0.5rem; font-weight:700; color:#334155;">
+                        <input type="checkbox" name="is_active" {% if form_data.is_active %}checked{% endif %}>
+                        Active Department
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Department Email</label>
+                    <input type="email" name="email" class="form-input" placeholder="department@smartcity.com" value="{{ form_data.email }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department Phone Number</label>
+                    <input type="text" name="phone" class="form-input" placeholder="10-digit contact number" value="{{ form_data.phone }}" required>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">SLA (Hours)</label>
+                    <input type="number" name="sla_hours" class="form-input" min="1" max="720" value="{{ form_data.sla_hours|default:'72' }}" required>
+                    <div class="hint">Resolution target in hours (used for SLA breach scorecard).</div>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Department Logo</label>
+                    <input type="file" name="department_logo" id="departmentLogoInput" class="form-input" accept="image/*">
+                    <div class="hint">Upload department logo image (PNG/JPG).</div>
+                    <img id="departmentLogoPreview" class="logo-preview" style="display:none;" alt="Logo preview">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Department Login Password</label>
+                    <div class="code-row">
+                        <input
+                            type="text"
+                            name="department_password"
+                            id="departmentPasswordInput"
+                            class="form-input"
+                            value="{{ form_data.department_password|default:generated_password }}"
+                            minlength="10"
+                            required
+                        >
+                        <button type="button" class="btn-generate" id="regeneratePasswordBtn">
+                            <i class="fa-solid fa-key"></i> Generate
+                        </button>
+                    </div>
+                    <div class="hint">Auto-generated strong password. You can edit it manually.</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Office Address</label>
+                    <textarea name="address" id="addressInput" class="form-input" rows="3" placeholder="Full office address..." required>{{ form_data.address }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group full">
+                    <div class="map-actions">
+                        <label class="form-label" style="margin:0;">Select Department Location on Map</label>
+                        <button type="button" class="btn-location" id="currentLocationBtn">
+                            <i class="fa-solid fa-location-crosshairs"></i> Use Current Location
+                        </button>
+                    </div>
+                    <div id="departmentMap"></div>
+                    <div class="hint">Click on map or drag marker. Geocode details will auto-update.</div>
+
+                    <div class="coord-grid">
+                        <div class="form-group">
+                            <label class="form-label">Location Name (Auto)</label>
+                            <input type="text" name="location_name" id="locationNameInput" class="form-input" placeholder="Area / Locality" value="{{ form_data.location_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Coordinates</label>
+                            <input type="text" id="coordinateText" class="form-input" readonly>
+                        </div>
+                    </div>
+                    <input type="hidden" name="latitude" id="latitudeInput" value="{{ form_data.latitude|default:'20.5937' }}">
+                    <input type="hidden" name="longitude" id="longitudeInput" value="{{ form_data.longitude|default:'78.9629' }}">
+                </div>
+            </div>
+
+            {% if otp_pending %}
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label class="form-label">Enter OTP</label>
+                        <input type="text" name="otp_code" class="form-input" placeholder="Enter 6 digit OTP" minlength="6" maxlength="6" pattern="[0-9]{6}" inputmode="numeric">
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="form-footer">
+                <a href="{% url 'super_admin_departments' %}" class="btn-secondary">Cancel</a>
+                {% if otp_pending %}
+                    <button type="submit" name="action" value="send_otp" class="btn-secondary">
+                        <i class="fa-solid fa-paper-plane"></i> Resend OTP
+                    </button>
+                    <button type="submit" name="action" value="verify_create" class="btn-primary">
+                        <i class="fa-solid fa-check"></i> Verify OTP & Create Department
+                    </button>
+                {% else %}
+                    <button type="submit" name="action" value="send_otp" class="btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i> Create Department (Send OTP)
+                    </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const stateSelect = document.getElementById('stateSelect');
+    const citySelect = document.getElementById('citySelect');
+    const cityAdminSelect = document.getElementById('cityAdminSelect');
+    const storedCityOptions = Array.from(citySelect.querySelectorAll('option')).slice(1);
+    const storedCityAdminOptions = Array.from(cityAdminSelect.querySelectorAll('option')).slice(1);
+    const preselectedCityAdmin = "{{ form_data.city_admin|default:''|escapejs }}";
+    let shouldApplyPreselectedAdmin = true;
+
+    function filterCitiesByState() {
+        const selectedState = (stateSelect.value || '').trim().toLowerCase();
+        const currentCity = citySelect.value;
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        storedCityOptions.forEach(opt => {
+            const optionState = (opt.dataset.state || '').trim();
+            if (!selectedState || optionState === selectedState) {
+                const clonedOption = opt.cloneNode(true);
+                citySelect.appendChild(clonedOption);
+            }
+        });
+
+        const matched = Array.from(citySelect.options).find(opt => opt.value === currentCity);
+        if (matched) {
+            citySelect.value = currentCity;
+        } else {
+            citySelect.value = '';
+        }
+        filterCityAdminsByCity();
+    }
+
+    function filterCityAdminsByCity() {
+        const selectedCity = (citySelect.value || '').trim().toLowerCase();
+        const selectedState = (stateSelect.value || '').trim().toLowerCase();
+        cityAdminSelect.innerHTML = '<option value="">Select City Admin</option>';
+
+        if (!selectedCity) {
+            cityAdminSelect.innerHTML = '<option value="">Select City First</option>';
+            return;
+        }
+
+        storedCityAdminOptions.forEach(opt => {
+            if ((opt.dataset.city || '') === selectedCity && (!selectedState || (opt.dataset.state || '') === selectedState)) {
+                const clonedOption = opt.cloneNode(true);
+                if (shouldApplyPreselectedAdmin && preselectedCityAdmin && clonedOption.value === preselectedCityAdmin) {
+                    clonedOption.selected = true;
+                }
+                cityAdminSelect.appendChild(clonedOption);
+            }
+        });
+        shouldApplyPreselectedAdmin = false;
+    }
+
+    citySelect.addEventListener('change', function() {
+        shouldApplyPreselectedAdmin = false;
+        filterCityAdminsByCity();
+    });
+    stateSelect.addEventListener('change', function() {
+        shouldApplyPreselectedAdmin = false;
+        filterCitiesByState();
+    });
+
+    const departmentCodeInput = document.getElementById('departmentCodeInput');
+    document.getElementById('regenerateCodeBtn').addEventListener('click', function() {
+        const len = Math.floor(Math.random() * 5) + 4; // 4 to 8
+        let code = '';
+        for (let i = 0; i < len; i++) code += Math.floor(Math.random() * 10);
+        departmentCodeInput.value = code;
+    });
+    const departmentPasswordInput = document.getElementById('departmentPasswordInput');
+    document.getElementById('regeneratePasswordBtn').addEventListener('click', function() {
+        const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lower = 'abcdefghijklmnopqrstuvwxyz';
+        const digits = '0123456789';
+        const symbols = '!@#$%^&*()-_=+';
+        const pool = upper + lower + digits + symbols;
+        const len = 14;
+        let result = [
+            upper[Math.floor(Math.random() * upper.length)],
+            lower[Math.floor(Math.random() * lower.length)],
+            digits[Math.floor(Math.random() * digits.length)],
+            symbols[Math.floor(Math.random() * symbols.length)]
+        ];
+        for (let i = result.length; i < len; i++) {
+            result.push(pool[Math.floor(Math.random() * pool.length)]);
+        }
+        result = result.sort(() => Math.random() - 0.5);
+        departmentPasswordInput.value = result.join('');
+    });
+
+    const departmentLogoInput = document.getElementById('departmentLogoInput');
+    const departmentLogoPreview = document.getElementById('departmentLogoPreview');
+    departmentLogoInput?.addEventListener('change', function() {
+        const file = this.files && this.files[0];
+        if (!file) {
+            departmentLogoPreview.style.display = 'none';
+            departmentLogoPreview.src = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            departmentLogoPreview.src = e.target.result;
+            departmentLogoPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    });
+
+    const latitudeInput = document.getElementById('latitudeInput');
+    const longitudeInput = document.getElementById('longitudeInput');
+    const coordinateText = document.getElementById('coordinateText');
+    const locationNameInput = document.getElementById('locationNameInput');
+    const addressInput = document.getElementById('addressInput');
+    const currentLocationBtn = document.getElementById('currentLocationBtn');
+
+    let marker = null;
+    const map = L.map('departmentMap').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    function setMarker(lat, lng) {
+        if (!marker) {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                updateLocation(pos.lat, pos.lng, true);
+            });
+        } else {
+            marker.setLatLng([lat, lng]);
+        }
+    }
+
+    async function reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(`/api/reverse-geocode/?lat=${lat}&lng=${lng}`);
+            const data = await response.json();
+            if (!data.results || !data.results.length) return;
+            const best = data.results[0];
+
+            if (best.locality) locationNameInput.value = best.locality;
+            else if (best.city) locationNameInput.value = best.city;
+
+            if (best.formatted_address) addressInput.value = best.formatted_address;
+
+            if (best.city) {
+                const city = best.city.trim();
+                const cityOption = Array.from(citySelect.options).find(
+                    opt => opt.value.toLowerCase() === city.toLowerCase()
+                );
+                if (cityOption) {
+                    citySelect.value = cityOption.value;
+                    filterCityAdminsByCity();
+                }
+            }
+        } catch (error) {
+            // ignore geocode failure silently; coordinates are still kept
+        }
+    }
+
+    function updateLocation(lat, lng, doGeocode = false) {
+        latitudeInput.value = Number(lat).toFixed(6);
+        longitudeInput.value = Number(lng).toFixed(6);
+        coordinateText.value = `${latitudeInput.value}, ${longitudeInput.value}`;
+        setMarker(lat, lng);
+        map.setView([lat, lng], 15);
+        if (doGeocode) reverseGeocode(lat, lng);
+    }
+
+    map.on('click', function(e) {
+        updateLocation(e.latlng.lat, e.latlng.lng, true);
+    });
+
+    currentLocationBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by this browser.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            position => updateLocation(position.coords.latitude, position.coords.longitude, true),
+            () => alert('Unable to fetch current location.')
+        );
+    });
+
+    filterCitiesByState();
+    updateLocation(parseFloat(latitudeInput.value), parseFloat(longitudeInput.value), false);
+</script>
+{% endblock %}

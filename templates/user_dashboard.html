@@ -1,0 +1,779 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .user-info h1 {
+            font-size: 20px;
+            color: #ffffff;
+            font-weight: 800;
+            margin-bottom: 3px;
+        }
+
+        .user-info .location {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 3px;
+        }
+
+        .user-info .time {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .profile-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .profile-icon:active {
+            transform: scale(0.95);
+        }
+
+        .track-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 15px;
+        }
+
+        .emergency-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .emergency-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .emergency-btn:active {
+            transform: scale(0.95);
+        }
+
+        .emergency-btn.cyber {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .emergency-btn.sos {
+            background: rgba(220, 38, 38, 0.3);
+            border-color: rgba(220, 38, 38, 0.5);
+        }
+
+        .emergency-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .emergency-text {
+            flex: 1;
+        }
+
+        .emergency-text .title {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .emergency-text .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+        }
+
+        .track-text {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .track-btn {
+            background: rgba(255, 255, 255, 0.95);
+            color: #2c3e50;
+            padding: 8px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .track-btn:active {
+            transform: scale(0.95);
+        }
+
+        .scroll-to-complaints {
+            scroll-behavior: smooth;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-card .number {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .stat-card .label {
+            color: #636e72;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .service-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .service-card:active {
+            transform: scale(0.95);
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: var(--color);
+        }
+
+        .service-card .icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+
+        .service-icon-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+
+        .service-card .title {
+            color: #2d3436;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .complaints-section {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #2d3436;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .complaint-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color);
+        }
+
+        .complaint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .complaint-id {
+            font-size: 14px;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-confirmed {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-process {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-solved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .complaint-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 5px;
+        }
+
+        .complaint-type {
+            font-size: 12px;
+            color: #636e72;
+            margin-bottom: 10px;
+        }
+
+        .complaint-date {
+            font-size: 11px;
+            color: #adb5bd;
+        }
+
+        .view-btn {
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .empty-state .icon {
+            font-size: 80px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+
+        .empty-state p {
+            color: #636e72;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state a {
+            background: #667eea;
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        @media (max-width: 480px) {
+            .header-top {
+                margin-bottom: 12px;
+            }
+
+            .user-info h1 {
+                font-size: 18px;
+            }
+
+            .profile-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+
+            .track-text {
+                font-size: 13px;
+            }
+
+            .track-btn {
+                padding: 7px 15px;
+                font-size: 12px;
+            }
+
+            .emergency-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            .emergency-text .title {
+                font-size: 13px;
+            }
+
+            .emergency-text .subtitle {
+                font-size: 10px;
+            }
+
+            .stat-card .number {
+                font-size: 40px;
+            }
+
+            .service-card .icon {
+                font-size: 50px;
+            }
+        }
+    </style>
+    <script src="/static/js/translations.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div class="user-info">
+                {% if is_guest %}
+                <h1>Guest User</h1>
+                <div class="location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>Guest Mode</span>
+                </div>
+                {% else %}
+                <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+                <div class="location">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{% if user.citizenprofile.city %}{{ user.citizenprofile.city }}{% else %}India{% endif %}</span>
+                </div>
+                {% endif %}
+                <div class="time">
+                    <i class="fa-solid fa-clock"></i>
+                    <span id="currentTime"></span>
+                </div>
+            </div>
+            {% if is_guest %}
+            <a href="{% url 'login' %}" class="profile-icon" title="Login">
+                <i class="fa-solid fa-user"></i>
+            </a>
+            {% else %}
+            <a href="{% url 'profile' %}" class="profile-icon" title="Profile">
+                <i class="fa-solid fa-user"></i>
+            </a>
+            {% endif %}
+        </div>
+        <div class="track-section">
+            <div class="track-text">
+                <i class="fa-solid fa-location-crosshairs"></i>
+                Track Your Complaints
+            </div>
+            {% if is_guest %}
+            <button class="track-btn" onclick="showTrackPopup()">
+                <i class="fa-solid fa-list-check"></i>
+                Track
+            </button>
+            {% else %}
+            <a href="{% url 'track_complaints' %}" class="track-btn">
+                <i class="fa-solid fa-list-check"></i>
+                Track
+            </a>
+            {% endif %}
+        </div>
+        <a href="tel:112" class="emergency-btn sos">
+                <div class="emergency-icon">ðŸš¨</div>
+                <div class="emergency-text">
+                    <div class="title">Emergency</div>
+                    <div class="subtitle">Call 112</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = time;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Language translation system
+        const translations = {
+            'hi': {
+                'Guest User': 'à¤…à¤¤à¤¿à¤¥à¤¿ à¤‰à¤ªà¤¯à¥‹à¤—à¤•à¤°à¥à¤¤à¤¾',
+                'Guest Mode': 'à¤…à¤¤à¤¿à¤¥à¤¿ à¤®à¥‹à¤¡',
+                'Track Your Complaints': 'à¤…à¤ªà¤¨à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤à¥‹à¤‚ à¤•à¥‹ à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚',
+                'Track': 'à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚',
+                'Emergency': 'à¤†à¤ªà¤¾à¤¤à¤•à¤¾à¤²',
+                'Call 112': '112 à¤ªà¤° à¤•à¥‰à¤² à¤•à¤°à¥‡à¤‚',
+                'Total Cases': 'à¤•à¥à¤² à¤®à¤¾à¤®à¤²à¥‡',
+                'Active': 'à¤¸à¤•à¥à¤°à¤¿à¤¯',
+                'Police': 'à¤ªà¥à¤²à¤¿à¤¸',
+                'Traffic': 'à¤¯à¤¾à¤¤à¤¾à¤¯à¤¾à¤¤',
+                'Construction': 'à¤¨à¤¿à¤°à¥à¤®à¤¾à¤£',
+                'Water Supply': 'à¤œà¤² à¤†à¤ªà¥‚à¤°à¥à¤¤à¤¿',
+                'Electricity': 'à¤¬à¤¿à¤œà¤²à¥€',
+                'Garbage': 'à¤•à¤šà¤°à¤¾',
+                'Road/Pothole': 'à¤¸à¤¡à¤¼à¤•/à¤—à¤¡à¥à¤¢à¤¾',
+                'Drainage': 'à¤œà¤² à¤¨à¤¿à¤•à¤¾à¤¸à¥€',
+                'Illegal Activity': 'à¤…à¤µà¥ˆà¤§ à¤—à¤¤à¤¿à¤µà¤¿à¤§à¤¿',
+                'Transportation': 'à¤ªà¤°à¤¿à¤µà¤¹à¤¨',
+                'Cyber Fraud': 'à¤¸à¤¾à¤‡à¤¬à¤° à¤§à¥‹à¤–à¤¾à¤§à¤¡à¤¼à¥€',
+                'Other': 'à¤…à¤¨à¥à¤¯',
+                'Recent Complaints': 'à¤¹à¤¾à¤² à¤•à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤à¥‡à¤‚',
+                'View Details': 'à¤µà¤¿à¤µà¤°à¤£ à¤¦à¥‡à¤–à¥‡à¤‚',
+                'No complaints yet. Start by filing your first complaint.': 'à¤…à¤­à¥€ à¤¤à¤• à¤•à¥‹à¤ˆ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤ à¤¨à¤¹à¥€à¤‚à¥¤ à¤…à¤ªà¤¨à¥€ à¤ªà¤¹à¤²à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤ à¤¦à¤°à¥à¤œ à¤•à¤°à¤•à¥‡ à¤¶à¥à¤°à¥à¤†à¤¤ à¤•à¤°à¥‡à¤‚à¥¤',
+                'New Complaint': 'à¤¨à¤ˆ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤'
+            },
+            'gu': {
+                'Guest User': 'àª®àª¹à«‡àª®àª¾àª¨ àªµàªªàª°àª¾àª¶àª•àª°à«àª¤àª¾',
+                'Guest Mode': 'àª®àª¹à«‡àª®àª¾àª¨ àª®à«‹àª¡',
+                'Track Your Complaints': 'àª¤àª®àª¾àª°à«€ àª«àª°àª¿àª¯àª¾àª¦à«‹àª¨à«‡ àªŸà«àª°à«‡àª• àª•àª°à«‹',
+                'Track': 'àªŸà«àª°à«‡àª• àª•àª°à«‹',
+                'Emergency': 'àª•àªŸà«‹àª•àªŸà«€',
+                'Call 112': '112 àªªàª° àª•à«‰àª² àª•àª°à«‹',
+                'Total Cases': 'àª•à«àª² àª•à«‡àª¸à«‹',
+                'Active': 'àª¸àª•à«àª°àª¿àª¯',
+                'Police': 'àªªà«‹àª²à«€àª¸',
+                'Traffic': 'àªŸà«àª°àª¾àª«àª¿àª•',
+                'Construction': 'àª¬àª¾àª‚àª§àª•àª¾àª®',
+                'Water Supply': 'àªªàª¾àª£à«€ àªªà«àª°àªµàª à«‹',
+                'Electricity': 'àªµà«€àªœàª³à«€',
+                'Garbage': 'àª•àªšàª°à«‹',
+                'Road/Pothole': 'àª°àª¸à«àª¤à«‹/àª–àª¾àª¡à«‹',
+                'Drainage': 'àª¡à«àª°à«‡àª¨à«‡àªœ',
+                'Illegal Activity': 'àª—à«‡àª°àª•àª¾àª¯àª¦à«‡àª¸àª° àªªà«àª°àªµà«ƒàª¤à«àª¤àª¿',
+                'Transportation': 'àªªàª°àª¿àªµàª¹àª¨',
+                'Cyber Fraud': 'àª¸àª¾àª¯àª¬àª° àª›à«‡àª¤àª°àªªàª¿àª‚àª¡à«€',
+                'Other': 'àª…àª¨à«àª¯',
+                'Recent Complaints': 'àª¤àª¾àªœà«‡àª¤àª°àª¨à«€ àª«àª°àª¿àª¯àª¾àª¦à«‹',
+                'View Details': 'àªµàª¿àª—àª¤à«‹ àªœà«àª“',
+                'No complaints yet. Start by filing your first complaint.': 'àª¹àªœà« àª¸à«àª§à«€ àª•à«‹àªˆ àª«àª°àª¿àª¯àª¾àª¦ àª¨àª¥à«€. àª¤àª®àª¾àª°à«€ àªªà«àª°àª¥àª® àª«àª°àª¿àª¯àª¾àª¦ àª¦àª¾àª–àª² àª•àª°à«€àª¨à«‡ àª¶àª°à«‚àª†àª¤ àª•àª°à«‹.',
+                'New Complaint': 'àª¨àªµà«€ àª«àª°àª¿àª¯àª¾àª¦'
+            },
+            'bn': {
+                'Guest User': 'à¦…à¦¤à¦¿à¦¥à¦¿ à¦¬à§à¦¯à¦¬à¦¹à¦¾à¦°à¦•à¦¾à¦°à§€',
+                'Guest Mode': 'à¦…à¦¤à¦¿à¦¥à¦¿ à¦®à§‹à¦¡',
+                'Track Your Complaints': 'à¦†à¦ªà¦¨à¦¾à¦° à¦…à¦­à¦¿à¦¯à§‹à¦— à¦Ÿà§à¦°à§à¦¯à¦¾à¦• à¦•à¦°à§à¦¨',
+                'Track': 'à¦Ÿà§à¦°à§à¦¯à¦¾à¦• à¦•à¦°à§à¦¨',
+                'Emergency': 'à¦œà¦°à§à¦°à¦¿',
+                'Call 112': 'à§§à§§à§¨ à¦ à¦•à¦² à¦•à¦°à§à¦¨',
+                'Total Cases': 'à¦®à§‹à¦Ÿ à¦®à¦¾à¦®à¦²à¦¾',
+                'Active': 'à¦¸à¦•à§à¦°à¦¿à¦¯à¦¼',
+                'Police': 'à¦ªà§à¦²à¦¿à¦¶',
+                'Traffic': 'à¦Ÿà§à¦°à¦¾à¦«à¦¿à¦•',
+                'Construction': 'à¦¨à¦¿à¦°à§à¦®à¦¾à¦£',
+                'Water Supply': 'à¦ªà¦¾à¦¨à¦¿ à¦¸à¦°à¦¬à¦°à¦¾à¦¹',
+                'Electricity': 'à¦¬à¦¿à¦¦à§à¦¯à§à§Ž',
+                'Garbage': 'à¦†à¦¬à¦°à§à¦œà¦¨à¦¾',
+                'Road/Pothole': 'à¦°à¦¾à¦¸à§à¦¤à¦¾/à¦—à¦°à§à¦¤',
+                'Drainage': 'à¦¨à¦¿à¦•à¦¾à¦¶à§€',
+                'Illegal Activity': 'à¦…à¦¬à§ˆà¦§ à¦•à¦¾à¦°à§à¦¯à¦•à¦²à¦¾à¦ª',
+                'Transportation': 'à¦ªà¦°à¦¿à¦¬à¦¹à¦¨',
+                'Cyber Fraud': 'à¦¸à¦¾à¦‡à¦¬à¦¾à¦° à¦œà¦¾à¦²à¦¿à¦¯à¦¼à¦¾à¦¤à¦¿',
+                'Other': 'à¦…à¦¨à§à¦¯à¦¾à¦¨à§à¦¯',
+                'Recent Complaints': 'à¦¸à¦¾à¦®à§à¦ªà§à¦°à¦¤à¦¿à¦• à¦…à¦­à¦¿à¦¯à§‹à¦—',
+                'View Details': 'à¦¬à¦¿à¦¸à§à¦¤à¦¾à¦°à¦¿à¦¤ à¦¦à§‡à¦–à§à¦¨',
+                'No complaints yet. Start by filing your first complaint.': 'à¦à¦–à¦¨à¦“ à¦•à§‹à¦¨à§‹ à¦…à¦­à¦¿à¦¯à§‹à¦— à¦¨à§‡à¦‡à¥¤ à¦†à¦ªà¦¨à¦¾à¦° à¦ªà§à¦°à¦¥à¦® à¦…à¦­à¦¿à¦¯à§‹à¦— à¦¦à¦¾à¦–à¦¿à¦² à¦•à¦°à§‡ à¦¶à§à¦°à§ à¦•à¦°à§à¦¨à¥¤',
+                'New Complaint': 'à¦¨à¦¤à§à¦¨ à¦…à¦­à¦¿à¦¯à§‹à¦—'
+            },
+            'ta': {
+                'Guest User': 'à®µà®¿à®°à¯à®¨à¯à®¤à®¿à®©à®°à¯ à®ªà®¯à®©à®°à¯',
+                'Guest Mode': 'à®µà®¿à®°à¯à®¨à¯à®¤à®¿à®©à®°à¯ à®ªà®¯à®©à¯à®®à¯à®±à¯ˆ',
+                'Track Your Complaints': 'à®‰à®™à¯à®•à®³à¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯ˆà®•à¯ à®•à®£à¯à®•à®¾à®£à®¿à®•à¯à®•à®µà¯à®®à¯',
+                'Track': 'à®•à®£à¯à®•à®¾à®£à®¿à®•à¯à®•à®µà¯à®®à¯',
+                'Emergency': 'à®…à®µà®šà®°à®¨à®¿à®²à¯ˆ',
+                'Call 112': '112 à® à®…à®´à¯ˆà®•à¯à®•à®µà¯à®®à¯',
+                'Total Cases': 'à®®à¯Šà®¤à¯à®¤ à®µà®´à®•à¯à®•à¯à®•à®³à¯',
+                'Active': 'à®šà¯†à®¯à®²à®¿à®²à¯',
+                'Police': 'à®•à®¾à®µà®²à¯à®¤à¯à®±à¯ˆ',
+                'Traffic': 'à®ªà¯‹à®•à¯à®•à¯à®µà®°à®¤à¯à®¤à¯',
+                'Construction': 'à®•à®Ÿà¯à®Ÿà¯à®®à®¾à®©à®®à¯',
+                'Water Supply': 'à®¨à¯€à®°à¯ à®µà®´à®™à¯à®•à®²à¯',
+                'Electricity': 'à®®à®¿à®©à¯à®šà®¾à®°à®®à¯',
+                'Garbage': 'à®•à¯à®ªà¯à®ªà¯ˆ',
+                'Road/Pothole': 'à®šà®¾à®²à¯ˆ/à®•à¯à®´à®¿',
+                'Drainage': 'à®µà®Ÿà®¿à®•à®¾à®²à¯',
+                'Illegal Activity': 'à®šà®Ÿà¯à®Ÿà®µà®¿à®°à¯‹à®¤ à®šà¯†à®¯à®²à¯à®ªà®¾à®Ÿà¯',
+                'Transportation': 'à®ªà¯‹à®•à¯à®•à¯à®µà®°à®¤à¯à®¤à¯',
+                'Cyber Fraud': 'à®‡à®£à¯ˆà®¯ à®®à¯‹à®šà®Ÿà®¿',
+                'Other': 'à®®à®±à¯à®±à®µà¯ˆ',
+                'Recent Complaints': 'à®šà®®à¯€à®ªà®¤à¯à®¤à®¿à®¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯',
+                'View Details': 'à®µà®¿à®µà®°à®™à¯à®•à®³à¯ˆà®ªà¯ à®ªà®¾à®°à¯à®•à¯à®•à®µà¯à®®à¯',
+                'No complaints yet. Start by filing your first complaint.': 'à®‡à®©à¯à®©à¯à®®à¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯ à®‡à®²à¯à®²à¯ˆ. à®‰à®™à¯à®•à®³à¯ à®®à¯à®¤à®²à¯ à®ªà¯à®•à®¾à®°à¯ˆà®ªà¯ à®ªà®¤à®¿à®µà¯ à®šà¯†à®¯à¯à®¤à¯ à®¤à¯Šà®Ÿà®™à¯à®•à®µà¯à®®à¯.',
+                'New Complaint': 'à®ªà¯à®¤à®¿à®¯ à®ªà¯à®•à®¾à®°à¯'
+            }
+        };
+
+        function translatePage(lang) {
+            if (lang === 'en') return;
+            
+            const langTranslations = translations[lang];
+            if (!langTranslations) return;
+
+            // Translate all text content
+            document.querySelectorAll('*').forEach(element => {
+                if (element.children.length === 0) {
+                    const text = element.textContent.trim();
+                    if (langTranslations[text]) {
+                        element.textContent = langTranslations[text];
+                    }
+                }
+            });
+
+            // Translate specific elements
+            const elementsToTranslate = [
+                '.track-text', '.emergency-text .title', '.emergency-text .subtitle',
+                '.stat-card .label', '.service-card .title', '.section-title',
+                '.empty-state p', '.empty-state a'
+            ];
+
+            elementsToTranslate.forEach(selector => {
+                document.querySelectorAll(selector).forEach(element => {
+                    const text = element.textContent.trim();
+                    if (langTranslations[text]) {
+                        element.textContent = langTranslations[text];
+                    }
+                });
+            });
+        }
+
+        // Load and apply saved language on page load
+        window.addEventListener('load', () => {
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            translatePage(savedLang);
+        });
+    </script>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="number">{{ complaints.count }}</div>
+            <div class="label">Total Cases</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">
+                {% with pending=0 %}
+                    {% for c in complaints %}
+                        {% if c.status == 'pending' %}
+                            {% with pending=pending|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+                {{ complaints|length }}
+            </div>
+            <div class="label">Active</div>
+        </div>
+    </div>
+
+    <div class="services-grid">
+        {% for card in category_cards %}
+        <a href="{{ card.href }}" class="service-card" style="--color: {{ card.color }};">
+            <div class="icon">
+                {% if card.logo_url %}
+                    <img src="{{ card.logo_url }}" alt="{{ card.name }}" class="service-icon-img">
+                {% else %}
+                    {{ card.emoji }}
+                {% endif %}
+            </div>
+            <div class="title">{{ card.name }}</div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="complaints-section" id="complaints">
+        <div class="section-title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Recent Complaints
+        </div>
+
+        {% if complaints %}
+            {% for complaint in complaints %}
+            <div class="complaint-card" style="--color: {% if complaint.complaint_type == 'police' %}#4361ee{% elif complaint.complaint_type == 'traffic' %}#ffbe0b{% elif complaint.complaint_type == 'construction' %}#f72585{% elif complaint.complaint_type == 'water' %}#06b6d4{% elif complaint.complaint_type == 'electricity' %}#fbbf24{% elif complaint.complaint_type == 'garbage' %}#10b981{% elif complaint.complaint_type == 'road' %}#6366f1{% elif complaint.complaint_type == 'drainage' %}#3b82f6{% elif complaint.complaint_type == 'illegal' %}#ef4444{% elif complaint.complaint_type == 'transportation' %}#8b5cf6{% else %}#06ffa5{% endif %};">
+                <div class="complaint-header">
+                    <div class="complaint-id">#{{ complaint.id|stringformat:"05d" }}</div>
+                    <span class="status-badge status-{{ complaint.work_status }}">
+                        {{ complaint.get_work_status_display }}
+                    </span>
+                </div>
+                <div class="complaint-title">{{ complaint.title }}</div>
+                <div class="complaint-type">{{ complaint.get_complaint_type_display }}</div>
+                <div class="complaint-date">{{ complaint.created_at|date:"M d, Y - H:i" }}</div>
+                <a href="{% url 'view_location' complaint.id %}" class="view-btn">
+                    <i class="fa-solid fa-eye"></i> View Details
+                </a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="icon">ðŸ“‚</div>
+                <p>No complaints yet. Start by filing your first complaint.</p>
+                <a href="{% url 'submit_complaint' %}{% if is_guest %}?guest=true{% endif %}">
+                    <i class="fa-solid fa-plus"></i> New Complaint
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if is_guest %}
+    <div class="popup-overlay" id="trackPopup" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000;">
+        <div class="popup" style="background: #fff; border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; animation: popupSlide 0.3s ease-out;">
+            <h3 style="color: #2d3436; font-size: 20px; margin-bottom: 15px;"><i class="fa-solid fa-info-circle"></i> Login Required</h3>
+            <p style="color: #6c757d; font-size: 14px; margin-bottom: 25px; line-height: 1.5;">To view all your complaints and access full tracking features, please login to your citizen account.</p>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'login' %}" style="flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; background: #667eea; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-sign-in-alt"></i>
+                    Login
+                </a>
+                <button onclick="closeTrackPopup()" style="flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; background: transparent; border: 2px solid #6c757d; color: #6c757d; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</body>
+<script>
+    {% if is_guest %}
+    function showTrackPopup() {
+        document.getElementById('trackPopup').style.display = 'flex';
+    }
+    function closeTrackPopup() {
+        document.getElementById('trackPopup').style.display = 'none';
+    }
+    document.getElementById('trackPopup').addEventListener('click', function(e) {
+        if (e.target === this) closeTrackPopup();
+    });
+    {% endif %}
+</script>
+</html>

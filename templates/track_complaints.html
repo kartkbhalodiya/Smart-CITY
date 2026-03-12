@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Complaints - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .search-box {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .flash-message {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .flash-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .flash-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        .search-icon {
+            position: relative;
+        }
+
+        .search-icon i {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            color: #6c757d;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            background: #ffffff;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .filter-tab.active {
+            background: #2c3e50;
+            color: #ffffff;
+            border-color: #2c3e50;
+        }
+
+        .complaint-card {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .complaint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-container {
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.progress-pending {
+            width: 25%;
+            background: #f59e0b;
+        }
+
+        .progress-fill.progress-confirmed {
+            width: 50%;
+            background: #3b82f6;
+        }
+
+        .progress-fill.progress-process {
+            width: 75%;
+            background: #8b5cf6;
+        }
+
+        .progress-fill.progress-solved {
+            width: 100%;
+            background: #10b981;
+        }
+
+        .progress-fill.progress-reopened {
+            width: 60%;
+            background: #f59e0b;
+        }
+
+        .progress-fill.progress-rejected {
+            width: 25%;
+            background: #ef4444;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #9ca3af;
+        }
+
+        .progress-step {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .progress-step.active {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .complaint-id {
+            font-size: 14px;
+            font-weight: 800;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-confirmed {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-process {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-solved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-reopened {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .complaint-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 5px;
+        }
+
+        .complaint-type {
+            font-size: 12px;
+            color: #636e72;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .complaint-date {
+            font-size: 11px;
+            color: #adb5bd;
+            margin-bottom: 10px;
+        }
+
+        .department-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .department-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .department-name i {
+            color: #3b82f6;
+        }
+
+        .not-assigned {
+            color: #f59e0b;
+            font-style: italic;
+        }
+
+        .department-contact {
+            color: #64748b;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .department-contact i {
+            color: #6b7280;
+            font-size: 10px;
+        }
+
+        .department-address {
+            color: #64748b;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+        }
+
+        .department-address i {
+            color: #ef4444;
+            font-size: 10px;
+        }
+
+        .phone-separator {
+            margin: 0 6px;
+            color: #d1d5db;
+        }
+
+        .estimated-time {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            font-size: 11px;
+        }
+
+        .estimated-time i {
+            color: #8b5cf6;
+        }
+
+        .estimate-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .estimate-date {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .time-status {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .time-status.remaining {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .time-status.overdue {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .view-btn {
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .proof-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .proof-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .proof-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+
+        .proof-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .proof-item img,
+        .proof-item video {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            display: block;
+            background: #0f172a;
+        }
+
+        .proof-meta {
+            font-size: 10px;
+            color: #64748b;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .feedback-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .stars-input {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .stars-input input {
+            display: none;
+        }
+
+        .stars-input label {
+            font-size: 22px;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .stars-input label:hover,
+        .stars-input label:hover ~ label,
+        .stars-input input:checked ~ label {
+            color: #f59e0b;
+        }
+
+        .feedback-textarea {
+            width: 100%;
+            min-height: 72px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+
+        .submit-feedback-btn {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .feedback-show {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .feedback-stars {
+            color: #f59e0b;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .feedback-text {
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .reopen-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .reopen-hint {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+            line-height: 1.45;
+        }
+
+        .reopen-textarea {
+            width: 100%;
+            min-height: 72px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 8px;
+            resize: vertical;
+        }
+
+        .reopen-file {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            background: #ffffff;
+        }
+
+        .reopen-btn {
+            background: #b45309;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: #ffffff;
+            border-radius: 20px;
+        }
+
+        .empty-state .icon {
+            font-size: 80px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+
+        .empty-state p {
+            color: #636e72;
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .back-btn {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fa-solid fa-location-crosshairs"></i> Track Complaints</h1>
+        <a href="{% url 'user_dashboard' %}" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="flash-message {% if message.tags == 'success' %}flash-success{% else %}flash-error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="search-box">
+        <div class="search-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search by ID, title, or type...">
+        </div>
+    </div>
+
+    <div class="filter-tabs">
+        <div class="filter-tab active" data-filter="all">All</div>
+        <div class="filter-tab" data-filter="pending">Pending</div>
+        <div class="filter-tab" data-filter="confirmed">Confirmed</div>
+        <div class="filter-tab" data-filter="process">Process</div>
+        <div class="filter-tab" data-filter="reopened">Reopened</div>
+        <div class="filter-tab" data-filter="solved">Solved</div>
+        <div class="filter-tab" data-filter="rejected">Rejected</div>
+    </div>
+
+    <div id="complaintsContainer">
+        {% if complaints %}
+            {% for complaint in complaints %}
+            <div class="complaint-card" data-status="{{ complaint.work_status }}" style="--color: {% if complaint.complaint_type == 'police' %}#4361ee{% elif complaint.complaint_type == 'traffic' %}#ffbe0b{% elif complaint.complaint_type == 'construction' %}#f72585{% elif complaint.complaint_type == 'water' %}#06b6d4{% elif complaint.complaint_type == 'electricity' %}#fbbf24{% elif complaint.complaint_type == 'garbage' %}#10b981{% elif complaint.complaint_type == 'road' %}#6366f1{% elif complaint.complaint_type == 'drainage' %}#3b82f6{% elif complaint.complaint_type == 'illegal' %}#ef4444{% elif complaint.complaint_type == 'transportation' %}#8b5cf6{% else %}#06ffa5{% endif %};">
+                <div class="complaint-header">
+                    <div class="complaint-id">#{{ complaint.complaint_number }}</div>
+                    <span class="status-badge status-{{ complaint.work_status }}">
+                        {{ complaint.get_work_status_display }}
+                    </span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-{{ complaint.work_status }}"></div>
+                    </div>
+                    <div class="progress-labels">
+                        <span class="progress-step {% if complaint.work_status == 'pending' or complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}active{% endif %}">Submitted</span>
+                        <span class="progress-step {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' %}active{% endif %}">Confirmed</span>
+                        <span class="progress-step {% if complaint.work_status == 'process' or complaint.work_status == 'solved' %}active{% endif %}">In Progress</span>
+                        <span class="progress-step {% if complaint.work_status == 'solved' %}active{% endif %}">Completed</span>
+                    </div>
+                </div>
+                <div class="complaint-title">{{ complaint.title }}</div>
+                <div class="complaint-type">
+                    <i class="fa-solid fa-tag"></i>
+                    {{ complaint.get_complaint_type_display }}
+                </div>
+                <div class="complaint-date">
+                    <i class="fa-solid fa-calendar"></i>
+                    {{ complaint.created_at|date:"M d, Y - H:i" }}
+                </div>
+                
+                {% if complaint.assigned_department %}
+                <div class="department-info">
+                    <div class="department-name">
+                        <i class="fa-solid fa-building"></i>
+                        <strong>{{ complaint.assigned_department.name }}</strong>
+                    </div>
+                    <div class="department-contact">
+                        <i class="fa-solid fa-envelope"></i>
+                        {{ complaint.assigned_department.email }}
+                        {% if complaint.assigned_department.phone %}
+                        <span class="phone-separator">|</span>
+                        <i class="fa-solid fa-phone"></i>
+                        {{ complaint.assigned_department.phone }}
+                        {% endif %}
+                    </div>
+                    {% if complaint.assigned_department.formatted_address %}
+                    <div class="department-address">
+                        <i class="fa-solid fa-map-marker-alt"></i>
+                        {{ complaint.assigned_department.formatted_address }}
+                    </div>
+                    {% endif %}
+                    {% if complaint.work_status != 'solved' and complaint.work_status != 'rejected' %}
+                    <div class="estimated-time">
+                        {% if complaint.estimated_completion_time %}
+                            <i class="fa-solid fa-clock"></i>
+                            <span class="estimate-label">Expected by:</span>
+                            <span class="estimate-date">{{ complaint.estimated_completion_time|date:"M d, Y - H:i" }}</span>
+                            {% if complaint.time_remaining %}
+                                {% if complaint.is_overdue %}
+                                    <span class="time-status overdue">{{ complaint.time_remaining }}</span>
+                                {% else %}
+                                    <span class="time-status remaining">{{ complaint.time_remaining }} left</span>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="department-info">
+                    <div class="department-name">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <span class="not-assigned">Not assigned to department yet</span>
+                    </div>
+                </div>
+                {% endif %}
+                <a href="{% url 'view_location' complaint.id %}" class="view-btn">
+                    <i class="fa-solid fa-eye"></i> View Details
+                </a>
+
+                {% if complaint.work_status == 'solved' %}
+                <div class="proof-section">
+                    <div class="proof-title"><i class="fa-solid fa-clipboard-check"></i> Completion Proof</div>
+                    {% if complaint.resolution_proofs.all %}
+                    <div class="proof-grid">
+                        {% for proof in complaint.resolution_proofs.all %}
+                        <a href="{{ proof.file.url }}" target="_blank" class="proof-item">
+                            {% if proof.file_type == 'image' %}
+                                <img src="{{ proof.file.url }}" alt="Proof">
+                            {% else %}
+                                <video controls>
+                                    <source src="{{ proof.file.url }}" type="video/mp4">
+                                </video>
+                            {% endif %}
+                            <div class="proof-meta">{{ proof.uploaded_at|date:"M d, Y" }}</div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="proof-meta">No proof uploaded yet.</div>
+                    {% endif %}
+                </div>
+
+                <div class="feedback-section">
+                    <div class="proof-title"><i class="fa-solid fa-star"></i> Your Rating & Feedback</div>
+                    {% if complaint.citizen_rating %}
+                    <div class="feedback-show">
+                        <div class="feedback-stars">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= complaint.citizen_rating %}★{% else %}☆{% endif %}
+                            {% endfor %}
+                            <span style="font-size:12px; color:#475569;">{{ complaint.citizen_rating }}/5</span>
+                        </div>
+                        <div class="feedback-text">{{ complaint.citizen_feedback|default:"No written feedback provided." }}</div>
+                    </div>
+                    {% else %}
+                    <form method="POST" action="{% url 'submit_complaint_feedback' complaint.id %}">
+                        {% csrf_token %}
+                        <div class="stars-input">
+                            <input type="radio" id="star5_{{ complaint.id }}" name="rating" value="5" required><label for="star5_{{ complaint.id }}">★</label>
+                            <input type="radio" id="star4_{{ complaint.id }}" name="rating" value="4"><label for="star4_{{ complaint.id }}">★</label>
+                            <input type="radio" id="star3_{{ complaint.id }}" name="rating" value="3"><label for="star3_{{ complaint.id }}">★</label>
+                            <input type="radio" id="star2_{{ complaint.id }}" name="rating" value="2"><label for="star2_{{ complaint.id }}">★</label>
+                            <input type="radio" id="star1_{{ complaint.id }}" name="rating" value="1"><label for="star1_{{ complaint.id }}">★</label>
+                        </div>
+                        <textarea class="feedback-textarea" name="feedback" placeholder="Share your experience about solved work (optional)"></textarea>
+                        <button type="submit" class="submit-feedback-btn">
+                            <i class="fa-solid fa-paper-plane"></i> Submit Feedback
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <div class="reopen-section">
+                    {% if complaint.can_reopen %}
+                    <div class="proof-title"><i class="fa-solid fa-rotate-left"></i> Reopen Complaint</div>
+                    <div class="reopen-hint">If work is not satisfactory, reopen within {{ reopen_window_days }} days of closure with reason and photo proof. Deadline: {{ complaint.reopen_deadline|date:"M d, Y h:i A" }}.</div>
+                    <form method="POST" action="{% url 'reopen_complaint' complaint.id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <textarea name="reopen_reason" class="reopen-textarea" placeholder="Why do you want to reopen this complaint?" required></textarea>
+                        <input type="file" name="reopen_proof" class="reopen-file" accept="image/*" required>
+                        <button type="submit" class="reopen-btn">
+                            <i class="fa-solid fa-rotate-left"></i> Reopen With Proof
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="reopen-hint">Reopen window closed for this complaint.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if complaint.work_status == 'reopened' and complaint.reopen_proofs.all %}
+                <div class="reopen-section">
+                    <div class="proof-title"><i class="fa-solid fa-triangle-exclamation"></i> Reopen Submitted</div>
+                    <div class="reopen-hint">{{ complaint.reopen_reason|default:"Citizen requested reopen." }}</div>
+                    {% with reopen_proof=complaint.reopen_proofs.all.0 %}
+                        {% if reopen_proof %}
+                            <a href="{{ reopen_proof.proof.url }}" target="_blank" class="proof-item" style="display:block; max-width:190px;">
+                                <img src="{{ reopen_proof.proof.url }}" alt="Reopen Proof">
+                                <div class="proof-meta">{{ reopen_proof.created_at|date:"M d, Y h:i A" }}</div>
+                            </a>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="icon">📂</div>
+                <p>No complaints found</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Filter functionality
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const complaintCards = document.querySelectorAll('.complaint-card');
+
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const filter = tab.dataset.filter;
+                
+                complaintCards.forEach(card => {
+                    if (filter === 'all' || card.dataset.status === filter) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            complaintCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

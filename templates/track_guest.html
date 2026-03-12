@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Complaint - Smart City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .complaint-details {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-top: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #212529;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            padding: 10px 0;
+        }
+
+        .back-link:hover {
+            color: #5a67d8;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fa-solid fa-search"></i> Track Your Complaint</h1>
+            <p>Enter your complaint details to check status</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-error">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="form-card">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label><i class="fa-solid fa-hashtag"></i> Complaint Number</label>
+                    <input type="text" name="complaint_number" placeholder="Enter complaint number (e.g., SC123456)" required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-solid fa-phone"></i> Phone Number</label>
+                    <input type="tel" name="phone" placeholder="Enter registered phone number" required>
+                </div>
+
+                <button type="submit" class="btn">
+                    <i class="fa-solid fa-search"></i>
+                    Track Complaint
+                </button>
+            </form>
+        </div>
+
+        {% if complaint %}
+        <div class="complaint-details">
+            <div class="status-badge status-{{ complaint.status }}">
+                {% if complaint.status == 'pending' %}
+                    <i class="fa-solid fa-clock"></i> Pending
+                {% elif complaint.status == 'approved' %}
+                    <i class="fa-solid fa-check-circle"></i> Approved
+                {% else %}
+                    <i class="fa-solid fa-times-circle"></i> Rejected
+                {% endif %}
+            </div>
+
+            <h3 style="margin-bottom: 20px; color: #2d3436;">
+                <i class="fa-solid fa-file-alt"></i> {{ complaint.title }}
+            </h3>
+
+            <div class="detail-row">
+                <span class="detail-label">Complaint Number:</span>
+                <span class="detail-value">{{ complaint.complaint_number }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Category:</span>
+                <span class="detail-value">{{ complaint.get_complaint_type_display }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Submitted Date:</span>
+                <span class="detail-value">{{ complaint.created_at|date:"M d, Y" }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Location:</span>
+                <span class="detail-value">{{ complaint.city }}, {{ complaint.pincode }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Description:</span>
+                <span class="detail-value">{{ complaint.description|truncatewords:20 }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Contact Person:</span>
+                <span class="detail-value">{{ complaint.guest_name }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">{{ complaint.guest_phone }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ complaint.guest_email }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'login' %}" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back to Home
+        </a>
+    </div>
+</body>
+</html>

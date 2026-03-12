@@ -1,0 +1,823 @@
+{% extends 'super_admin_base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    .content-section {
+        margin-bottom: 2rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1200px;
+    }
+
+    th {
+        text-align: left;
+        padding: 1rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.875rem;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background: #f1f5f9;
+    }
+
+    .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .badge-pending { background: #fee2e2; color: #991b1b; }
+    .badge-confirmed { background: #fef3c7; color: #92400e; }
+    .badge-process { background: #dbeafe; color: #1e40af; }
+    .badge-reopened { background: #fef3c7; color: #b45309; }
+    .badge-solved { background: #dcfce7; color: #166534; }
+    .badge-rejected { background: #f1f5f9; color: #475569; }
+    
+    .btn-detail {
+        background: rgba(0, 0, 0, 0.05);
+        color: #ef4444;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-detail:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: #dc2626;
+    }
+
+    .btn-delete {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-delete:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    .status-select {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.75rem;
+        font-weight: 600;
+        outline: none;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .btn-reset {
+        font-weight: 800;
+        color: #ef4444;
+        text-decoration: none;
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.05);
+        white-space: nowrap;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .priority-high {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .priority-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .priority-normal {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .contact-methods {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .contact-chip {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        padding: 0.16rem 0.5rem;
+        font-size: 0.67rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .contact-none {
+        font-size: 0.72rem;
+        color: #94a3b8;
+        font-weight: 700;
+    }
+
+    .solve-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        padding: 1rem;
+    }
+
+    .solve-modal.show {
+        display: flex;
+    }
+
+    .solve-modal-card {
+        width: 100%;
+        max-width: 560px;
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+        padding: 1.25rem;
+    }
+
+    .solve-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.4rem;
+    }
+
+    .solve-subtitle {
+        font-size: 0.88rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+
+    .solve-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .proof-btn {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #0f172a;
+        border-radius: 10px;
+        padding: 0.6rem 0.95rem;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .proof-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0.9rem;
+    }
+
+    .solve-notes {
+        width: 100%;
+        min-height: 88px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 0.7rem 0.8rem;
+        resize: vertical;
+        font-family: inherit;
+        font-size: 0.86rem;
+        margin-bottom: 1rem;
+    }
+
+    .solve-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.7rem;
+    }
+
+    .btn-cancel,
+    .btn-submit-proof {
+        border: none;
+        border-radius: 10px;
+        padding: 0.62rem 1rem;
+        font-weight: 700;
+        font-size: 0.82rem;
+        cursor: pointer;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .btn-submit-proof {
+        background: #059669;
+        color: #ffffff;
+    }
+    
+    .filters-wrapper {
+        margin-bottom: 2.5rem;
+    }
+    
+    .filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: flex-end;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .filter-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .filter-select {
+        width: 100%;
+        padding: 0.9rem 1.25rem;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        font-family: inherit;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(5px);
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-filter {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.9rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-filter:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Checkbox Styling */
+    .custom-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+        .filter-group {
+            min-width: 100%;
+        }
+        .btn-filter {
+            width: 100%;
+        }
+        .filter-actions {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            margin-bottom: 1.5rem !important;
+        }
+
+        .page-title {
+            font-size: 1.65rem !important;
+            line-height: 1.25;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .filters-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-form {
+            gap: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 0.75rem 0.9rem;
+            border-radius: 12px;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.7rem;
+        }
+
+        .btn-filter,
+        .btn-reset {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .table-container {
+            overflow: visible;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+            display: block;
+            width: 100%;
+        }
+
+        table {
+            min-width: 0;
+        }
+
+        thead {
+            display: none;
+        }
+
+        tbody {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        tbody tr {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.85rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+
+        tbody tr td {
+            border-bottom: none;
+            padding: 0.35rem 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            font-size: 0.86rem;
+            line-height: 1.35;
+        }
+
+        tbody tr td::before {
+            content: attr(data-label);
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            flex: 0 0 95px;
+        }
+
+        .status-select {
+            min-width: 125px;
+        }
+
+        .action-buttons {
+            width: 100%;
+            display: flex;
+            gap: 0.45rem;
+        }
+
+        .btn-detail,
+        .btn-delete {
+            flex: 1;
+            justify-content: center;
+            text-align: center;
+            padding: 0.45rem 0.6rem;
+            font-size: 0.72rem;
+        }
+
+        tbody tr td:last-child {
+            margin-top: 0.2rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        tbody tr td:last-child::before {
+            content: "";
+            flex: 0;
+        }
+
+        .empty-row {
+            display: block;
+            padding: 1.5rem 0.5rem;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        .empty-row td {
+            display: block;
+            text-align: center;
+            padding: 1rem !important;
+        }
+
+        .empty-row td::before {
+            content: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        tbody tr td::before {
+            flex-basis: 78px;
+            font-size: 0.68rem;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="page-header" style="margin-bottom: 3rem;">
+        <h2 class="page-title" style="font-size: 2.5rem;">Citizen Problems</h2>
+        <p class="page-subtitle">Centralized oversight of all pending city complaints</p>
+    </div>
+
+    <div class="filters-wrapper">
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-layer-group"></i> Filter by Category</label>
+                <select name="category" class="filter-select">
+                    <option value="">All Categories (12 Main Departments)</option>
+                    {% for cat_id, cat_name in complaint_types %}
+                        <option value="{{ cat_id }}" {% if category_filter == cat_id %}selected{% endif %}>
+                            {{ cat_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-location-dot"></i> Filter by State</label>
+                <select name="state" class="filter-select">
+                    <option value="">All States</option>
+                    {% for state in state_options %}
+                        <option value="{{ state }}" {% if state_filter == state %}selected{% endif %}>
+                            {{ state }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label"><i class="fa-solid fa-city"></i> Filter by City</label>
+                <select name="city" class="filter-select">
+                    <option value="">All Cities</option>
+                    {% for city in city_options %}
+                        <option value="{{ city }}" {% if city_filter == city %}selected{% endif %}>
+                            {{ city }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search Problems
+                </button>
+                <a href="{% url 'super_admin_problems' %}" class="btn-reset">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="content-section">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;"><input type="checkbox" id="selectAll" class="custom-checkbox"></th>
+                        <th style="width: 70px;">INDEX</th>
+                        <th>COMPLAINT ID</th>
+                        <th>SUBJECT</th>
+                        <th>PRIORITY</th>
+                        <th>CONTACT</th>
+                        <th>DEPARTMENT</th>
+                        <th>LOCATION</th>
+                        <th>STATUS</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody id="complaintTable">
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td data-label="Select" style="text-align: center;"><input type="checkbox" class="complaint-check custom-checkbox"></td>
+                        <td data-label="Index" style="color: #94a3b8; font-weight: 800;">{{ forloop.counter }}</td>
+                        <td data-label="Complaint ID" style="font-weight: 800; color: #667eea;">#{{ complaint.complaint_number }}</td>
+                        <td data-label="Subject">{{ complaint.title }}</td>
+                        <td data-label="Priority">
+                            <span class="priority-badge priority-{{ complaint.priority }}">
+                                {{ complaint.priority|title }}
+                            </span>
+                        </td>
+                        <td data-label="Contact">
+                            {% if complaint.preferred_contact_phone or complaint.preferred_contact_email or complaint.preferred_contact_sms %}
+                                <div class="contact-methods">
+                                    {% if complaint.preferred_contact_phone %}
+                                        <span class="contact-chip"><i class="fa-solid fa-phone"></i> Phone</span>
+                                    {% endif %}
+                                    {% if complaint.preferred_contact_email %}
+                                        <span class="contact-chip"><i class="fa-solid fa-envelope"></i> Email</span>
+                                    {% endif %}
+                                    {% if complaint.preferred_contact_sms %}
+                                        <span class="contact-chip"><i class="fa-solid fa-message"></i> SMS</span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="contact-none">Not set</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Department">
+                            <div style="font-weight: 800; font-size: 0.85rem; color: #475569;">{{ complaint.get_complaint_type_display }}</div>
+                        </td>
+                        <td data-label="Location">
+                            <div style="font-weight: 700;">{{ complaint.city }}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">{{ complaint.state }}</div>
+                        </td>
+                        <td data-label="Status">
+                            <form action="{% url 'update_complaint_status' complaint.id %}" method="POST" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="from_page" value="super_admin">
+                                <select name="status" class="status-select badge-{{ complaint.work_status }}">
+                                    {% if complaint.work_status == 'pending' %}
+                                        <option value="pending" selected>Pending</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="rejected">Reject</option>
+                                    {% elif complaint.work_status == 'confirmed' %}
+                                        <option value="confirmed" selected>Confirmed</option>
+                                        <option value="process">Process</option>
+                                    {% elif complaint.work_status == 'process' %}
+                                        <option value="process" selected>Process</option>
+                                        <option value="solved">Solved</option>
+                                    {% elif complaint.work_status == 'reopened' %}
+                                        <option value="reopened" selected>Reopened</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="rejected">Rejected</option>
+                                    {% elif complaint.work_status == 'rejected' %}
+                                        <option value="rejected" selected>Rejected</option>
+                                    {% else %}
+                                        <option value="{{ complaint.work_status }}" selected>{{ complaint.work_status|title }}</option>
+                                    {% endif %}
+                                </select>
+                            </form>
+                        </td>
+                        <td data-label="Action">
+                            <div class="action-buttons">
+                                <a href="{% url 'super_admin_complaint_detail' complaint.id %}" class="btn-detail">
+                                    <i class="fa-solid fa-eye"></i> VIEW DETAILS
+                                </a>
+                                <a href="{% url 'delete_complaint' complaint.id %}" class="btn-delete" onclick="return confirm('Are you sure you want to delete this complaint?')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="empty-row">
+                        <td colspan="10" style="text-align: center; padding: 5rem; color: #94a3b8;">
+                            <i class="fa-solid fa-clipboard-list" style="font-size: 3rem; display: block; margin-bottom: 1.5rem; opacity: 0.3;"></i>
+                            <div style="font-size: 1.1rem; font-weight: 700;">No pending problems found in this category</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="solve-modal" id="solveProofModal">
+        <div class="solve-modal-card">
+            <form method="POST" enctype="multipart/form-data" id="solveProofForm">
+                {% csrf_token %}
+                <input type="hidden" name="from_page" value="super_admin">
+                <input type="hidden" name="status" value="solved">
+                <h3 class="solve-title">Upload Work Completion Proof</h3>
+                <p class="solve-subtitle">Before marking solved, upload photo/video proof from camera or gallery.</p>
+
+                <input type="file" id="proofCameraInput" name="resolution_proofs" accept="image/*,video/*" capture="environment" style="display:none;" multiple>
+                <input type="file" id="proofGalleryInput" name="resolution_proofs" accept="image/*,video/*" style="display:none;" multiple>
+
+                <div class="solve-actions">
+                    <button type="button" class="proof-btn" id="openCameraBtn">
+                        <i class="fa-solid fa-camera"></i> Camera
+                    </button>
+                    <button type="button" class="proof-btn" id="openGalleryBtn">
+                        <i class="fa-solid fa-images"></i> Gallery
+                    </button>
+                </div>
+
+                <div class="proof-meta" id="proofFileInfo">No proof selected.</div>
+                <textarea name="notes" class="solve-notes" placeholder="Optional notes about completed work"></textarea>
+
+                <div class="solve-footer">
+                    <button type="button" class="btn-cancel" id="cancelSolveBtn">Cancel</button>
+                    <button type="submit" class="btn-submit-proof">Upload & Mark Solved</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.complaint-check');
+    const solveProofModal = document.getElementById('solveProofModal');
+    const solveProofForm = document.getElementById('solveProofForm');
+    const proofCameraInput = document.getElementById('proofCameraInput');
+    const proofGalleryInput = document.getElementById('proofGalleryInput');
+    const proofFileInfo = document.getElementById('proofFileInfo');
+    const cancelSolveBtn = document.getElementById('cancelSolveBtn');
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const openGalleryBtn = document.getElementById('openGalleryBtn');
+    let pendingSolveSelect = null;
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    cb.closest('tr').style.background = 'rgba(102, 126, 234, 0.05)';
+                } else {
+                    cb.closest('tr').style.background = '';
+                }
+            });
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (this.checked) {
+                this.closest('tr').style.background = 'rgba(102, 126, 234, 0.05)';
+            } else {
+                this.closest('tr').style.background = '';
+            }
+            
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            selectAll.checked = allChecked;
+        });
+    });
+
+    function selectedProofCount() {
+        return (proofCameraInput.files?.length || 0) + (proofGalleryInput.files?.length || 0);
+    }
+
+    function updateProofMeta() {
+        const total = selectedProofCount();
+        proofFileInfo.textContent = total > 0 ? `${total} file(s) selected` : 'No proof selected.';
+    }
+
+    function closeSolveModal(resetSelect = true) {
+        solveProofModal.classList.remove('show');
+        solveProofForm.reset();
+        updateProofMeta();
+        if (resetSelect && pendingSolveSelect) {
+            pendingSolveSelect.value = pendingSolveSelect.dataset.currentStatus;
+        }
+        pendingSolveSelect = null;
+    }
+
+    openCameraBtn?.addEventListener('click', () => proofCameraInput.click());
+    openGalleryBtn?.addEventListener('click', () => proofGalleryInput.click());
+    proofCameraInput?.addEventListener('change', updateProofMeta);
+    proofGalleryInput?.addEventListener('change', updateProofMeta);
+
+    cancelSolveBtn?.addEventListener('click', () => closeSolveModal(true));
+    solveProofModal?.addEventListener('click', function(e) {
+        if (e.target === solveProofModal) closeSolveModal(true);
+    });
+
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.dataset.currentStatus = select.value;
+        select.addEventListener('change', function() {
+            if (this.value === 'solved') {
+                pendingSolveSelect = this;
+                solveProofForm.action = this.closest('form').action;
+                solveProofModal.classList.add('show');
+                return;
+            }
+
+            this.dataset.currentStatus = this.value;
+            this.form.submit();
+        });
+    });
+
+    solveProofForm?.addEventListener('submit', function(e) {
+        if (selectedProofCount() === 0) {
+            e.preventDefault();
+            alert('Please upload at least one completion proof file.');
+            return;
+        }
+
+        if (pendingSolveSelect) {
+            pendingSolveSelect.dataset.currentStatus = 'solved';
+        }
+    });
+</script>
+{% endblock %}
