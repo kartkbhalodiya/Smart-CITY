@@ -3,85 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Register - Smart City</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Register - JanHelp</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --green-accent: #2ECC71;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background: #ffffff;
-            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #f8fafc;
+            overflow-x: hidden;
+            padding: 20px 10px;
+        }
+
+        /* Background */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease;
+        }
+
+        /* Desktop Background */
+        @media (min-width: 1025px) {
+            .bg-container {
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web");
+                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+        }
+
+        /* Mobile Background */
+        @media (max-width: 1024px) {
+            .bg-container {
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile");
+                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(255, 145, 0, 0.1) 100%);
         }
 
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(248, 249, 250, 0.95);
+            max-width: 480px;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border-radius: 20px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
             padding: 30px 25px;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
-        .header i {
-            font-size: 50px;
-            color: #28a745;
-            margin-bottom: 10px;
+        .logo-img {
+            max-width: 160px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        .brand-subtitle {
+            color: var(--primary-blue);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 6px;
+            font-family: 'Poppins', sans-serif;
         }
 
         .header h1 {
-            color: #2d3436;
-            font-size: 24px;
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-dark);
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            color: #636e72;
-            font-size: 13px;
+            margin-bottom: 20px;
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 0;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 14px;
         }
 
         .form-group label {
             display: block;
-            color: #2d3436;
+            color: var(--text-dark);
             font-size: 12px;
             font-weight: 600;
             margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 12px 15px;
-            background: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            color: #2d3436;
+            padding: 11px 14px 11px 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            color: var(--text-dark);
             font-size: 14px;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', sans-serif;
             transition: all 0.3s;
         }
 
@@ -89,97 +163,220 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--primary-blue);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(30, 102, 245, 0.1);
         }
 
         .form-group textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 70px;
+            padding-left: 14px;
+        }
+
+        .form-group select {
+            padding-left: 14px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .location-section {
+            margin-bottom: 14px;
+        }
+
+        .location-title {
+            color: var(--text-dark);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .location-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .location-divider {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            margin: 10px 0;
         }
 
         .btn {
-            width: 100%;
-            padding: 14px;
-            background: #28a745;
+            flex: 1;
+            padding: 11px;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
             color: #ffffff;
             border: none;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            gap: 6px;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 8px 16px rgba(30, 102, 245, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(30, 102, 245, 0.3);
         }
 
         .btn:active {
-            transform: scale(0.98);
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--green-accent) 0%, #27ae60 100%);
+            box-shadow: 0 8px 16px rgba(46, 204, 113, 0.2);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 12px 20px rgba(46, 204, 113, 0.3);
+        }
+
+        .btn-full {
+            width: 100%;
+            margin-top: 6px;
         }
 
         .footer {
             text-align: center;
             margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .footer p {
-            color: #6c757d;
-            font-size: 13px;
-            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-bottom: 6px;
         }
 
         .footer a {
-            color: #667eea;
+            color: var(--primary-blue);
             font-weight: 600;
             text-decoration: none;
         }
 
-        .alert {
-            padding: 12px;
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .guest-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 10px;
+            background: #fff;
+            border: 1.5px solid #e2e8f0;
             border-radius: 10px;
-            margin-bottom: 20px;
+            color: var(--text-dark);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .guest-link:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .alert {
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .alert-success {
-            background: rgba(40, 167, 69, 0.9);
-            color: #fff;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
         }
 
         .alert-error {
-            background: rgba(220, 53, 69, 0.9);
-            color: #fff;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        #locationDisplay {
+            padding: 10px;
+            background: rgba(30, 102, 245, 0.1);
+            border-radius: 10px;
+            font-size: 12px;
+            color: var(--text-dark);
+            display: none;
+            margin-top: 10px;
+        }
+
+        #mapContainer {
+            display: none;
+            margin-top: 10px;
+        }
+
+        #map {
+            height: 250px;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
         }
 
         @media (max-width: 480px) {
             .form-row {
                 grid-template-columns: 1fr;
-                gap: 0;
             }
 
             .container {
-                padding: 25px 20px;
+                padding: 24px 18px;
             }
 
             .header h1 {
-                font-size: 22px;
+                font-size: 20px;
             }
 
-            .header i {
-                font-size: 45px;
+            .location-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
+    
     <script src="/static/js/translations.js"></script>
     <div class="container">
         {% if messages %}
@@ -189,9 +386,10 @@
         {% endif %}
 
         <div class="header">
-            <i class="fa-solid fa-user-plus"></i>
-            <h1>Citizen Registration</h1>
-            <p>Join Smart City Portal</p>
+            <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" class="logo-img" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div style="display:none; font-size: 40px; margin-bottom: 8px;">🏛️</div>
+            <p class="brand-subtitle">Complaint Management System</p>
+            <h1>Create Account</h1>
         </div>
         
         <form method="post">
@@ -199,29 +397,38 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" name="name" placeholder="John" required>
+                    <label><i class="fa-solid fa-user"></i> First Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" name="name" placeholder="John" required style="padding-left: 14px;">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Surname</label>
-                    <input type="text" name="surname" placeholder="Doe" required>
+                    <label><i class="fa-solid fa-user"></i> Last Name</label>
+                    <div class="input-wrapper">
+                        <input type="text" name="surname" placeholder="Doe" required style="padding-left: 14px;">
+                    </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" name="email" placeholder="john@example.com" required>
+                <label><i class="fa-solid fa-phone"></i> Mobile Number</label>
+                <div class="input-wrapper">
+                    <input type="tel" name="mobile_no" placeholder="+91 98765 43210" required style="padding-left: 14px;">
+                </div>
             </div>
 
             <div class="form-group">
-                <label>Mobile Number</label>
-                <input type="tel" name="mobile_no" placeholder="+91 98765 43210" required>
+                <label><i class="fa-solid fa-envelope"></i> Email Address</label>
+                <div class="input-wrapper">
+                    <input type="email" name="email" placeholder="john@example.com" required style="padding-left: 14px;">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>State</label>
-                <select name="state" id="state" required>
-                    <option value="">Select State</option>
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-map"></i> State</label>
+                    <select name="state" id="state" required>
+                        <option value="">Select State</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Gujarat">Gujarat</option>
                     <option value="Karnataka">Karnataka</option>
@@ -245,68 +452,67 @@
                     <option value="Himachal Pradesh">Himachal Pradesh</option>
                     <option value="Jammu and Kashmir">Jammu and Kashmir</option>
                     <option value="Goa">Goa</option>
-                </select>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-city"></i> City</label>
+                    <select name="district" id="district" required>
+                        <option value="">Select City</option>
+                    </select>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>District</label>
-                <select name="district" id="district" required>
-                    <option value="">Select District</option>
-                </select>
+                <label><i class="fa-solid fa-location-dot"></i> Address</label>
+                <textarea name="address" placeholder="House no, Street, Landmark..." required></textarea>
             </div>
 
             <div class="form-group">
-                <label>Taluka</label>
-                <select name="taluka" id="taluka" required>
-                    <option value="">Select Taluka</option>
-                </select>
+                <label><i class="fa-solid fa-id-card"></i> Aadhaar Number (Optional)</label>
+                <div class="input-wrapper">
+                    <input type="text" name="aadhaar" placeholder="1234 5678 9012" maxlength="14" style="padding-left: 14px;">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Village / City</label>
-                <input type="text" name="city" id="cityInput" placeholder="Enter village or city name" required>
-            </div>
-
-            <div class="form-group">
-                <label>Location (GPS)</label>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <button type="button" class="btn" onclick="getCurrentLocation()" style="flex: 1; background: #28a745; padding: 12px;">
-                        <i class="fa-solid fa-location-crosshairs"></i>
-                        Current Location
-                    </button>
-                    <button type="button" class="btn" onclick="openMap()" style="flex: 1; background: #667eea; padding: 12px;">
-                        <i class="fa-solid fa-map-marked-alt"></i>
-                        Pick on Map
+            <div class="location-section">
+                <div class="location-title"><i class="fa-solid fa-location-crosshairs"></i> Location (GPS)</div>
+                <div class="location-buttons">
+                    <button type="button" class="btn" onclick="getCurrentLocation()">
+                        <i class="fa-solid fa-location-arrow"></i>
+                        Detect Current Location
                     </button>
                 </div>
+                <div class="location-divider">OR</div>
+                <button type="button" class="btn btn-secondary" onclick="openMap()" style="width: 100%;">
+                    <i class="fa-solid fa-map-marked-alt"></i>
+                    Pick Location on Map
+                </button>
                 <input type="hidden" name="latitude" id="latitude">
                 <input type="hidden" name="longitude" id="longitude">
-                <div id="locationDisplay" style="padding: 10px; background: #e9ecef; border-radius: 8px; font-size: 12px; color: #495057; display: none;">
+                <div id="locationDisplay">
                     <i class="fa-solid fa-map-pin"></i> <span id="locationText"></span>
                 </div>
             </div>
 
-            <div id="mapContainer" style="display: none; margin-bottom: 15px;">
-                <div id="map" style="height: 300px; border-radius: 10px; border: 1px solid #dee2e6;"></div>
-                <button type="button" class="btn" onclick="confirmLocation()" style="margin-top: 10px; background: #28a745;">
+            <div id="mapContainer">
+                <div id="map"></div>
+                <button type="button" class="btn btn-full" onclick="confirmLocation()">
                     <i class="fa-solid fa-check"></i> Confirm Location
                 </button>
             </div>
-
-            <div class="form-group">
-                <label>Full Address</label>
-                <textarea name="address" placeholder="House no, Street, Landmark..." required></textarea>
-            </div>
             
-            <button type="submit" class="btn">
-                <i class="fa-solid fa-check-circle"></i>
+            <button type="submit" class="btn btn-full">
+                <i class="fa-solid fa-user-plus"></i>
                 Register Now
             </button>
         </form>
         
         <div class="footer">
-            <p>Already have an account?</p>
-            <a href="{% url 'login' %}">Sign In Here</a>
+            <p>Already have account? <a href="{% url 'login' %}">Login</a></p>
+            <a href="{% url 'track_guest_complaint' %}" class="guest-link">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Track Complaint as Guest
+            </a>
         </div>
     </div>
 
@@ -337,126 +543,28 @@
                 document.getElementById('longitude').value = e.latlng.lng;
             });
         }
-        const locationData = {
-            "Maharashtra": {
-                "Mumbai": ["Andheri", "Borivali", "Kurla", "Bandra", "Dadar"],
-                "Pune": ["Haveli", "Mulshi", "Maval", "Bhor", "Velhe"],
-                "Nagpur": ["Nagpur", "Kamptee", "Hingna", "Umred", "Kuhi"],
-                "Thane": ["Thane", "Kalyan", "Bhiwandi", "Ulhasnagar", "Ambarnath"],
-                "Nashik": ["Nashik", "Igatpuri", "Dindori", "Sinnar", "Niphad"]
-            },
-            "Gujarat": {
-                "Ahmedabad": ["Ahmedabad City", "Daskroi", "Sanand", "Dholka", "Bavla"],
-                "Surat": ["Surat City", "Chorasi", "Palsana", "Mangrol", "Kamrej"],
-                "Vadodara": ["Vadodara", "Karjan", "Savli", "Dabhoi", "Padra"],
-                "Rajkot": ["Rajkot", "Lodhika", "Jasdan", "Kotda Sangani", "Paddhari"],
-                "Gandhinagar": ["Gandhinagar", "Kalol", "Mansa", "Dehgam"]
-            },
-            "Karnataka": {
-                "Bangalore Urban": ["Bangalore North", "Bangalore South", "Anekal"],
-                "Mysore": ["Mysore", "Hunsur", "K.R. Nagar", "Nanjangud", "T. Narasipur"],
-                "Mangalore": ["Mangalore", "Bantwal", "Belthangady", "Puttur", "Sullia"],
-                "Hubli": ["Hubli", "Dharwad", "Kalghatgi", "Kundgol", "Navalgund"]
-            },
-            "Tamil Nadu": {
-                "Chennai": ["Alandur", "Ambattur", "Madhavaram", "Manali", "Perambur"],
-                "Coimbatore": ["Coimbatore North", "Coimbatore South", "Pollachi", "Valparai"],
-                "Madurai": ["Madurai North", "Madurai South", "Melur", "Peraiyur", "Vadipatti"],
-                "Salem": ["Salem", "Attur", "Edappadi", "Mettur", "Omalur"]
-            },
-            "Rajasthan": {
-                "Jaipur": ["Jaipur", "Amber", "Bassi", "Chaksu", "Jamwa Ramgarh"],
-                "Jodhpur": ["Jodhpur", "Bilara", "Osian", "Phalodi", "Shergarh"],
-                "Udaipur": ["Udaipur", "Girwa", "Mavli", "Vallabhnagar", "Kherwara"],
-                "Kota": ["Kota", "Ladpura", "Pipalda", "Sangod"]
-            },
-            "Uttar Pradesh": {
-                "Lucknow": ["Lucknow", "Mohanlalganj", "Malihabad", "Bakshi Ka Talab"],
-                "Kanpur": ["Kanpur Nagar", "Ghatampur", "Bilhaur", "Akbarpur"],
-                "Agra": ["Agra", "Fatehabad", "Kheragarh", "Etmadpur", "Bah"],
-                "Varanasi": ["Varanasi", "Pindra", "Sewapuri"]
-            },
-            "Madhya Pradesh": {
-                "Bhopal": ["Bhopal", "Berasia", "Huzur"],
-                "Indore": ["Indore", "Mhow", "Depalpur", "Sanwer"],
-                "Jabalpur": ["Jabalpur", "Patan", "Sihora", "Kundam"],
-                "Gwalior": ["Gwalior", "Bhitarwar", "Dabra", "Morar"]
-            },
-            "West Bengal": {
-                "Kolkata": ["Kolkata"],
-                "Howrah": ["Howrah", "Bally-Jagachha", "Domjur", "Panchla"],
-                "Darjeeling": ["Darjeeling", "Kalimpong", "Kurseong", "Mirik"],
-                "Durgapur": ["Durgapur", "Faridpur", "Pandabeswar"]
-            },
-            "Bihar": {
-                "Patna": ["Patna Sadar", "Danapur", "Barh", "Masaurhi", "Paliganj"],
-                "Gaya": ["Gaya", "Bodh Gaya", "Manpur", "Sherghati", "Tikari"],
-                "Bhagalpur": ["Bhagalpur", "Kahalgaon", "Naugachhia", "Sultanganj"]
-            },
-            "Andhra Pradesh": {
-                "Visakhapatnam": ["Visakhapatnam", "Anakapalle", "Bheemunipatnam", "Paderu"],
-                "Vijayawada": ["Vijayawada", "Gannavaram", "Kanchikacherla", "Tiruvuru"],
-                "Guntur": ["Guntur", "Tenali", "Mangalagiri", "Sattenapalle"]
-            },
-            "Telangana": {
-                "Hyderabad": ["Hyderabad", "Secunderabad", "Serilingampally", "Rajendranagar"],
-                "Warangal": ["Warangal", "Hanamkonda", "Jangaon", "Parkal"],
-                "Nizamabad": ["Nizamabad", "Armoor", "Bodhan", "Dichpally"]
-            },
-            "Kerala": {
-                "Thiruvananthapuram": ["Thiruvananthapuram", "Neyyattinkara", "Nedumangad", "Varkala"],
-                "Kochi": ["Kochi", "Kanayannur", "Paravur", "Vypeen"],
-                "Kozhikode": ["Kozhikode", "Vatakara", "Koyilandy", "Thamarassery"]
-            },
-            "Punjab": {
-                "Ludhiana": ["Ludhiana East", "Ludhiana West", "Jagraon", "Khanna", "Raikot"],
-                "Amritsar": ["Amritsar", "Ajnala", "Majitha", "Tarn Taran"],
-                "Jalandhar": ["Jalandhar", "Phillaur", "Nakodar", "Shahkot"]
-            },
-            "Haryana": {
-                "Faridabad": ["Faridabad", "Ballabgarh", "Tigaon"],
-                "Gurgaon": ["Gurgaon", "Pataudi", "Sohna", "Manesar"],
-                "Panipat": ["Panipat", "Samalkha", "Israna"]
-            },
-            "Delhi": {
-                "Central Delhi": ["Connaught Place", "Karol Bagh", "Paharganj"],
-                "North Delhi": ["Civil Lines", "Model Town", "Narela"],
-                "South Delhi": ["Hauz Khas", "Saket", "Vasant Vihar"],
-                "East Delhi": ["Preet Vihar", "Mayur Vihar", "Shahdara"],
-                "West Delhi": ["Janakpuri", "Rajouri Garden", "Punjabi Bagh"]
-            }
-        };
-
         const stateSelect = document.getElementById('state');
         const districtSelect = document.getElementById('district');
-        const talukaSelect = document.getElementById('taluka');
+
+        // Build city data from Django context
+        const cityData = {};
+        {% for city in cities %}
+        if (!cityData['{{ city.state.name }}']) {
+            cityData['{{ city.state.name }}'] = [];
+        }
+        cityData['{{ city.state.name }}'].push('{{ city.name }}');
+        {% endfor %}
 
         stateSelect.addEventListener('change', function() {
             const state = this.value;
-            districtSelect.innerHTML = '<option value="">Select District</option>';
-            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
+            districtSelect.innerHTML = '<option value="">Select City</option>';
             
-            if (state && locationData[state]) {
-                Object.keys(locationData[state]).forEach(district => {
+            if (state && cityData[state]) {
+                cityData[state].forEach(city => {
                     const option = document.createElement('option');
-                    option.value = district;
-                    option.textContent = district;
+                    option.value = city;
+                    option.textContent = city;
                     districtSelect.appendChild(option);
-                });
-            }
-        });
-
-        districtSelect.addEventListener('change', function() {
-            const state = stateSelect.value;
-            const district = this.value;
-            talukaSelect.innerHTML = '<option value="">Select Taluka</option>';
-            
-            if (state && district && locationData[state][district]) {
-                locationData[state][district].forEach(taluka => {
-                    const option = document.createElement('option');
-                    option.value = taluka;
-                    option.textContent = taluka;
-                    talukaSelect.appendChild(option);
                 });
             }
         });

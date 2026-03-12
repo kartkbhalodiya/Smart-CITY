@@ -1272,7 +1272,14 @@ def get_active_citizen_category_cards(is_guest=False):
     return cards
 
 def register_view(request):
-    context = {}
+    # Get managed states and cities from database
+    states = ManagedState.objects.all().order_by('name')
+    cities = ManagedCity.objects.select_related('state').all().order_by('name')
+    
+    context = {
+        'states': states,
+        'cities': cities,
+    }
     
     if request.method == 'POST':
         registration_data = {

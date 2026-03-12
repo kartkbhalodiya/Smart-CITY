@@ -84,3 +84,37 @@ git push
 
 ## Recommended: Option 4 (Manual Upload)
 It's the easiest and most reliable method!
+
+
+## Register Page Backgrounds
+
+Upload these additional images to Cloudinary:
+
+1. **register-bg-web.jpg** - Desktop background for registration page (1920x1080px)
+2. **register-bg-mobile.jpg** - Mobile background for registration page (1080x1920px)
+
+### Upload Steps:
+
+1. Go to https://cloudinary.com/console
+2. Click "Media Library" → "Upload"
+3. Upload and rename to:
+   - `register-bg-web`
+   - `register-bg-mobile`
+
+The images will be available at:
+- https://res.cloudinary.com/dk1q50evg/image/upload/register-bg-web
+- https://res.cloudinary.com/dk1q50evg/image/upload/register-bg-mobile
+
+### Current Images Needed:
+
+**Login Page:**
+- login-bg-web.jpg (Desktop)
+- login-bg-mobile.jpg (Mobile)
+- logo.png
+- favicon.png
+
+**Register Page:**
+- register-bg-web.jpg (Desktop)
+- register-bg-mobile.jpg (Mobile)
+
+All images will fallback to gradient background if not uploaded.

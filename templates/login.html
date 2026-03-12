@@ -144,6 +144,22 @@
             display: none; /* Screen reader only */
         }
 
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.3s;
+            z-index: 10;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary-blue);
+        }
+
         .input-icon {
             position: absolute;
             left: 16px;
@@ -340,38 +356,12 @@
             }
         }
         
-        .admin-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 8px 16px;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(5px);
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-            z-index: 100;
-        }
-        
-        .admin-badge:hover {
-            background: #0f172a;
-            transform: scale(1.05);
-        }
+
     </style>
 </head>
 <body>
     <div class="bg-container"></div>
     <div class="bg-overlay"></div>
-
-    <a href="/admin" class="admin-badge">
-        <i class="fa-solid fa-shield-check"></i> ADMIN
-    </a>
 
     <div class="login-wrapper">
         <div class="glass-card">
@@ -401,8 +391,9 @@
                 </div>
 
                 <div class="input-group">
-                    <input type="password" name="password" class="input-field" placeholder="Password" autocomplete="current-password">
+                    <input type="password" name="password" id="password" class="input-field" placeholder="Password" autocomplete="current-password">
                     <i class="fa-solid fa-lock input-icon"></i>
+                    <i class="fa-solid fa-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
                 </div>
 
                 <div class="options-row">
@@ -434,7 +425,7 @@
 
             <!-- Footer -->
             <div class="footer">
-                Powered by <strong>Kanak Infosystems LLP.</strong>
+                Powered by <strong>Design by Kartik Bhalodiya.</strong>
             </div>
         </div>
     </div>
@@ -450,6 +441,22 @@
                 layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
                 autoDisplay: false
             }, 'google_translate_element');
+        }
+        
+        // Password visibility toggle
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('togglePassword');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
         }
     </script>
 </body>
