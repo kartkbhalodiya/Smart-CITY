@@ -194,6 +194,10 @@ LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
 
+# Only add locale path if it exists (prevents warnings on Vercel)
+if not (BASE_DIR / 'locale').exists():
+    LOCALE_PATHS = []
+
 TIME_ZONE = "UTC"
 
 USE_I18N = True
@@ -205,12 +209,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Production Static Storage
 if CLOUDINARY_ENABLED:
     # Use Cloudinary for both static and media files
+    # Don't use STATICFILES_DIRS on serverless (no local filesystem)
+    STATICFILES_DIRS = []
+    STATIC_ROOT = None
+    
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -226,6 +232,9 @@ if CLOUDINARY_ENABLED:
     }
 else:
     # Use Whitenoise for local static files
+    STATICFILES_DIRS = [BASE_DIR / "static"]
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+    
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",

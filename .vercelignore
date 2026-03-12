@@ -4,5 +4,7 @@ db.sqlite3
 __pycache__/
 .git/
 Lib/
+static/
 staticfiles/
 media/
+locale/
