@@ -215,7 +215,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Production Security Settings
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False  # Let the proxy handle SSL redirect to avoid loops
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
