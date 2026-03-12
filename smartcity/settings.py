@@ -30,14 +30,9 @@ SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS')
-if ALLOWED_HOSTS_ENV:
-    ALLOWED_HOSTS = ALLOWED_HOSTS_ENV.split(',')
-else:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'janhelp-mnrqcf3h.b4a.run', '.b4a.run', '*']
-
-USE_X_FORWARDED_HOST = True
-USE_X_FORWARDED_PORT = True
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host.strip()]
+if not DEBUG and os.getenv('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
 
 
 # Application definition
@@ -48,8 +43,8 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
     "cloudinary_storage",
+    "django.contrib.staticfiles",
     "cloudinary",
     "complaints",
 ]
@@ -157,6 +152,7 @@ LOCALE_PATHS = [
 TIME_ZONE = "UTC"
 
 USE_I18N = True
+USE_L10N = True
 
 USE_TZ = True
 
@@ -177,7 +173,10 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# Fallback for libraries like django-cloudinary-storage that don't support STORAGES yet
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
@@ -185,7 +184,6 @@ CLOUDINARY_STORAGE = {
 }
 
 # Media Storage
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage' - Handled in STORAGES
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -226,4 +224,6 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     X_FRAME_OPTIONS = 'DENY'
-    CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://janhelp-mnrqcf3h.b4a.run').split(',')
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True
