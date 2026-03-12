@@ -5574,3 +5574,4 @@ def city_admin_update_password(request):
             return redirect('city_admin_dashboard')
     
     return render(request, 'city_admin_update_password.html', {'city_admin': city_admin})
+

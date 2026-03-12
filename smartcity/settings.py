@@ -192,12 +192,13 @@ LANGUAGES = [
     ('gu', 'ગુજરાતી'),
 ]
 
-LOCALE_PATHS = [
-    BASE_DIR / 'locale',
-]
-
 # Only add locale path if it exists (prevents warnings on Vercel)
-if not (BASE_DIR / 'locale').exists():
+try:
+    if (BASE_DIR / 'locale').exists():
+        LOCALE_PATHS = [BASE_DIR / 'locale']
+    else:
+        LOCALE_PATHS = []
+except Exception:
     LOCALE_PATHS = []
 
 TIME_ZONE = "UTC"
