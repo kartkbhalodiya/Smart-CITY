@@ -93,25 +93,25 @@ if os.getenv('DATABASE_URL'):
     db_url = os.getenv('DATABASE_URL')
     
     # FORCE IPv4 pooler endpoint for Vercel serverless
-    # Replace any Supabase direct connection with pooler
+    # Replace direct connection with pooler endpoint
     if 'db.aaywhmjmsdkjzabtzfpg.supabase.co' in db_url:
+        # Replace with correct pooler endpoint
         db_url = db_url.replace(
             'db.aaywhmjmsdkjzabtzfpg.supabase.co',
-            'aws-0-ap-south-1.pooler.supabase.com'
+            'aws-1-ap-northeast-1.pooler.supabase.com'
         )
     
     # Force connection pooler port (6543) for Vercel serverless
     if ':5432/' in db_url:
         db_url = db_url.replace(':5432/', ':6543/')
     
-    # Fix username format for pooler - use project reference format
-    if 'postgres:' in db_url and 'postgres.' not in db_url:
+    # Ensure correct username format for pooler
+    if '://postgres:' in db_url and 'postgres.aaywhmjmsdkjzabtzfpg' not in db_url:
         db_url = db_url.replace('://postgres:', '://postgres.aaywhmjmsdkjzabtzfpg:')
     
-    # Remove pgbouncer parameter (not valid for psycopg2)
-    db_url = db_url.replace('pgbouncer=true&', '').replace('&pgbouncer=true', '').replace('?pgbouncer=true', '?')
-    if db_url.endswith('?'):
-        db_url = db_url[:-1]
+    # URL encode password if needed (@ symbol)
+    if '@9089361130@' in db_url and 'Kartik@9089361130' in db_url:
+        db_url = db_url.replace('Kartik@9089361130@', 'Kartik%409089361130@')
     
     # Add sslmode if not present
     if '?' not in db_url:
@@ -119,7 +119,7 @@ if os.getenv('DATABASE_URL'):
     elif 'sslmode' not in db_url:
         db_url += '&sslmode=require'
     
-    print(f"[DJANGO] Using DATABASE_URL: {db_url.split('@')[0].split(':')[0]}://***:***@{db_url.split('@')[1]}", file=sys.stderr)
+    print(f"[DJANGO] Using DATABASE_URL: {db_url.split('@')[0].split(':')[0]}://***:***@{db_url.split('@')[-1]}", file=sys.stderr)
     
     db_config = dj_database_url.config(
         default=db_url,
