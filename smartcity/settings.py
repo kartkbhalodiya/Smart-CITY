@@ -51,7 +51,14 @@ USE_X_FORWARDED_PORT = True
 
 # Application definition
 
-if os.getenv('CLOUDINARY_CLOUD_NAME'):
+# Validate Cloudinary credentials (all 3 required)
+CLOUDINARY_ENABLED = all([
+    os.getenv('CLOUDINARY_CLOUD_NAME'),
+    os.getenv('CLOUDINARY_API_KEY'),
+    os.getenv('CLOUDINARY_API_SECRET')
+])
+
+if CLOUDINARY_ENABLED:
     INSTALLED_APPS = [
         "django.contrib.admin",
         "django.contrib.auth",
@@ -63,6 +70,17 @@ if os.getenv('CLOUDINARY_CLOUD_NAME'):
         "cloudinary",
         "complaints",
     ]
+    # Remove Whitenoise when using Cloudinary
+    MIDDLEWARE = [
+        "django.middleware.security.SecurityMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.locale.LocaleMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    ]
 else:
     INSTALLED_APPS = [
         "django.contrib.admin",
@@ -73,18 +91,20 @@ else:
         "django.contrib.staticfiles",
         "complaints",
     ]
+    # Use Whitenoise for local static files
+    MIDDLEWARE = [
+        "django.middleware.security.SecurityMiddleware",
+        "whitenoise.middleware.WhiteNoiseMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.locale.LocaleMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    ]
 
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+
 
 ROOT_URLCONF = "smartcity.urls"
 
@@ -188,8 +208,9 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Production Static Storage (Whitenoise)
-if os.getenv('CLOUDINARY_CLOUD_NAME'):
+# Production Static Storage
+if CLOUDINARY_ENABLED:
+    # Use Cloudinary for both static and media files
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -198,14 +219,13 @@ if os.getenv('CLOUDINARY_CLOUD_NAME'):
             "BACKEND": "cloudinary_storage.storage.StaticHashedCloudinaryStorage",
         },
     }
-    STATICFILES_STORAGE = "cloudinary_storage.storage.StaticHashedCloudinaryStorage"
-    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
         'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
         'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
     }
 else:
+    # Use Whitenoise for local static files
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -214,7 +234,6 @@ else:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_USE_FINDERS = True
