@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,10 +92,29 @@ if os.getenv('DATABASE_URL'):
     import dj_database_url
     db_url = os.getenv('DATABASE_URL')
     
+    # FORCE IPv4 pooler endpoint for Vercel serverless
+    # Replace any Supabase direct connection with pooler
+    if 'db.aaywhmjmsdkjzabtzfpg.supabase.co' in db_url:
+        db_url = db_url.replace(
+            'db.aaywhmjmsdkjzabtzfpg.supabase.co',
+            'aws-0-ap-south-1.pooler.supabase.com'
+        )
+    
     # Force connection pooler port (6543) for Vercel serverless
-    # This avoids IPv6 issues and is optimized for serverless
     if ':5432/' in db_url:
         db_url = db_url.replace(':5432/', ':6543/')
+    
+    # Ensure correct username format for pooler
+    if 'postgres:' in db_url and 'postgres.aaywhmjmsdkjzabtzfpg' not in db_url:
+        db_url = db_url.replace('postgres:', 'postgres.aaywhmjmsdkjzabtzfpg:')
+    
+    # Add sslmode if not present
+    if '?' not in db_url:
+        db_url += '?sslmode=require'
+    elif 'sslmode' not in db_url:
+        db_url += '&sslmode=require'
+    
+    print(f"[DJANGO] Using DATABASE_URL: {db_url.replace(os.getenv('DB_PASSWORD', 'PASSWORD'), '***')}", file=sys.stderr)
     
     db_config = dj_database_url.config(
         default=db_url,
