@@ -225,6 +225,11 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     X_FRAME_OPTIONS = 'DENY'
-    CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://janhelp-mnrqcf3h.b4a.run').split(',')
+    CSRF_TRUSTED_ORIGINS = [
+        'https://janhelp-mnrqcf3h.b4a.run',
+        'http://janhelp-mnrqcf3h.b4a.run',
+        'https://*.back4app.com',
+        'https://*.b4a.run',
+    ]
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
