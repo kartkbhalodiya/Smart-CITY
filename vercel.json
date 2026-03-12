@@ -18,7 +18,7 @@
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "smartcity.settings",
-    "DEBUG": "False",
+    "DEBUG": "True",
     "SECRET_KEY": "p!v^7+h!j= e0#u%7_@1-n*6&z(5)s#4f$j_r!m2%v@9#k8&l5)s1$f4",
     "CLOUDINARY_CLOUD_NAME": "dk1q50evg",
     "CLOUDINARY_API_KEY": "284539188155248",
