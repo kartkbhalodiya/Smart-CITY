@@ -125,10 +125,17 @@ if os.getenv('DATABASE_URL'):
     # Supabase Connection details
     try:
         import dj_database_url
-        db_config = dj_database_url.config(conn_max_age=600, ssl_require=True)
+        db_config = dj_database_url.config(
+            conn_max_age=600, 
+            ssl_require=True,
+            conn_health_checks=True,
+        )
         
-        # If dj_database_url fails, we fall back to manual values from environment
-        if not db_config:
+        # If dj_database_url returns something, use it
+        if db_config:
+            DATABASES = {'default': db_config}
+        else:
+            # Fallback to manual environment variables if dj_database_url returns empty
             DATABASES = {
                 'default': {
                     'ENGINE': 'django.db.backends.postgresql',
@@ -142,11 +149,9 @@ if os.getenv('DATABASE_URL'):
                     },
                 }
             }
-        else:
-            DATABASES = {'default': db_config}
     except Exception as e:
+        # Fallback to SQLite for debugging if DB fails to configure
         print(f"Database configuration error: {e}")
-        # Fallback to SQLite for debugging
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
@@ -218,7 +223,7 @@ if CLOUDINARY_ENABLED:
     # Use Cloudinary for both static and media files
     # Don't use STATICFILES_DIRS on serverless (no local filesystem)
     STATICFILES_DIRS = []
-    STATIC_ROOT = None
+    STATIC_ROOT = BASE_DIR / "staticfiles"  # Always set a path
     
     try:
         STORAGES = {
@@ -238,7 +243,7 @@ if CLOUDINARY_ENABLED:
         print(f"Cloudinary storage configuration error: {e}")
         # Fallback to basic storage
         STATICFILES_DIRS = []
-        STATIC_ROOT = None
+        STATIC_ROOT = BASE_DIR / "staticfiles"
         STORAGES = {
             "default": {
                 "BACKEND": "django.core.files.storage.FileSystemStorage",
