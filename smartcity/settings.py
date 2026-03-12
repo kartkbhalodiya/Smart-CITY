@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 import socket
 
-# Force IPv4 for database connections (Back4App IPv6 compatibility fix)
+# Force IPv4 for database connections (Back4App/Vercel IPv6 compatibility fix)
 # Patch socket at the very beginning
 orig_getaddrinfo = socket.getaddrinfo
 def patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
@@ -41,9 +41,9 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lpw9@ca^itz(&6+*7%5chidrfd")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*'] # Should be restricted to specific domains in production
 
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
@@ -88,7 +88,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            "debug": True,
+            "debug": False,
         },
     },
 ]
@@ -183,12 +183,12 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
 # Fallback for libraries like django-cloudinary-storage that don't support STORAGES yet
-STATICFILES_STORAGE = "whitenoise.storage.StaticFilesStorage"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_MANIFEST_STRICT = False
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 CLOUDINARY_STORAGE = {
@@ -218,8 +218,16 @@ LOGIN_URL = '/login/'
 
 # Session settings - Keep user logged in
 SESSION_COOKIE_AGE = 9999909600  # 2 weeks in seconds
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_SAVE_EVERY_REQUEST = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Caching settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

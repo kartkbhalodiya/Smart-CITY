@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.csrf import csrf_exempt
@@ -1484,7 +1485,7 @@ def user_dashboard(request):
         if not request.user.is_authenticated:
             return redirect('/dashboard/?guest=true')
             
-        complaints = Complaint.objects.filter(user=request.user).order_by('-created_at')
+        complaints = Complaint.objects.select_related('assigned_department').prefetch_related('media').filter(user=request.user).order_by('-created_at')
         return render(request, 'user_dashboard.html', {
             'complaints': complaints,
             'is_guest': False,
@@ -2206,8 +2207,8 @@ def super_admin_dashboard(request):
     total_departments = Department.objects.count()
     total_city_admins = CityAdmin.objects.count()
     
-    recent_complaints = Complaint.objects.order_by('-created_at')[:10]
-    city_admins = CityAdmin.objects.all()
+    recent_complaints = Complaint.objects.select_related('assigned_department', 'user').prefetch_related('media').order_by('-created_at')[:10]
+    city_admins = CityAdmin.objects.select_related('user').all()
     
     context = {
         'total_complaints': total_complaints,
@@ -2257,7 +2258,7 @@ def super_admin_problems(request):
         .order_by('city')
     )
 
-    complaints = base_complaints
+    complaints = base_complaints.select_related('assigned_department', 'user').prefetch_related('media')
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if state_filter:
@@ -2313,7 +2314,7 @@ def super_admin_solved(request):
         .order_by('city')
     )
 
-    complaints = base_complaints
+    complaints = base_complaints.select_related('assigned_department', 'user').prefetch_related('media')
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if state_filter:
@@ -3425,7 +3426,7 @@ def super_admin_total(request):
         .order_by('city')
     )
 
-    complaints = base_complaints
+    complaints = base_complaints.select_related('assigned_department', 'user').prefetch_related('media')
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if state_filter:
@@ -3876,7 +3877,7 @@ def department_dashboard_new(request):
         department = dept_user.department
         
         # Get complaints for this department
-        complaints = Complaint.objects.filter(
+        complaints = Complaint.objects.select_related('user').prefetch_related('media').filter(
             assigned_department=department
         ).order_by('-created_at')
         
@@ -4277,7 +4278,7 @@ def city_admin_problems(request):
             return redirect('user_dashboard')
         
         # Get all complaints for this city admin's city and state
-        complaints = Complaint.objects.filter(
+        complaints = Complaint.objects.select_related('assigned_department', 'user').prefetch_related('media').filter(
             city__iexact=city_admin.city_name,
             state__iexact=city_admin.state
         ).order_by('-created_at')
@@ -4827,7 +4828,7 @@ def city_admin_analytics(request):
     ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
     
     # Get complaints for this city admin
-    complaints = Complaint.objects.filter(
+    complaints = Complaint.objects.select_related('assigned_department').filter(
         city__iexact=city_admin.city_name,
         state__iexact=city_admin.state
     ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
