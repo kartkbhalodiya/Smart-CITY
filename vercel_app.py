@@ -15,7 +15,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smartcity.settings")
 
 # Try to load application
 try:
-    print("Initializing Django WSGI application...", file=sys.stderr)
+    print("Initializing Django...", file=sys.stderr)
+    import django
+    django.setup()
+    
+    print("Getting WSGI application...", file=sys.stderr)
     from django.core.wsgi import get_wsgi_application
     application = get_wsgi_application()
     app = application
@@ -26,10 +30,14 @@ except Exception as e:
     traceback.print_exc(file=sys.stderr)
     print("="*40, file=sys.stderr)
     
-    # Simple fallback to show error in browser if possible
+    # Fallback to show error in browser if possible
     def app(environ, start_response):
         status = '500 Internal Server Error'
-        output = f"<h1>Application Error</h1><pre>{traceback.format_exc()}</pre>".encode('utf-8')
+        # Only show traceback in debug mode
+        if os.environ.get('DEBUG', 'False') == 'True':
+            output = f"<h1>Application Error</h1><pre>{traceback.format_exc()}</pre>".encode('utf-8')
+        else:
+            output = b"<h1>500 Internal Server Error</h1><p>The application failed to start. Check Vercel logs for details.</p>"
         response_headers = [('Content-type', 'text/html'), ('Content-Length', str(len(output)))]
         start_response(status, response_headers)
         return [output]
