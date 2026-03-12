@@ -7,3 +7,4 @@ django-cloudinary-storage
 dj-database-url
 whitenoise
 gunicorn
+reportlab
