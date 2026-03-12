@@ -19,6 +19,6 @@
     "CLOUDINARY_CLOUD_NAME": "dk1q50evg",
     "CLOUDINARY_API_KEY": "284539188155248",
     "CLOUDINARY_API_SECRET": "C1RW6ViwtH4RZspIlRi6LSa-wBw",
-    "DATABASE_URL": "postgresql://postgres.aaywhmjmsdkjzabtzfpg:Kartik%409089361130@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require"
+    "DATABASE_URL": "postgresql://postgres.aaywhmjmsdkjzabtzfpg:Kartik%409089361130@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"
   }
 }

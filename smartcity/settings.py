@@ -104,17 +104,24 @@ if os.getenv('DATABASE_URL'):
     if ':5432/' in db_url:
         db_url = db_url.replace(':5432/', ':6543/')
     
-    # Ensure correct username format for pooler
-    if 'postgres:' in db_url and 'postgres.aaywhmjmsdkjzabtzfpg' not in db_url:
-        db_url = db_url.replace('postgres:', 'postgres.aaywhmjmsdkjzabtzfpg:')
+    # Fix username format for pooler - use project reference format
+    # Pooler expects: postgres.[project-ref] NOT postgres.aaywhmjmsdkjzabtzfpg
+    if 'postgres:' in db_url and 'postgres.' not in db_url:
+        db_url = db_url.replace('://postgres:', '://postgres.aaywhmjmsdkjzabtzfpg:')
+    elif '://postgres.aaywhmjmsdkjzabtzfpg:' in db_url:
+        # Already correct format
+        pass
     
-    # Add sslmode if not present
+    # Add pgbouncer parameter for pooler
     if '?' not in db_url:
-        db_url += '?sslmode=require'
-    elif 'sslmode' not in db_url:
-        db_url += '&sslmode=require'
+        db_url += '?pgbouncer=true&sslmode=require'
+    else:
+        if 'pgbouncer' not in db_url:
+            db_url += '&pgbouncer=true'
+        if 'sslmode' not in db_url:
+            db_url += '&sslmode=require'
     
-    print(f"[DJANGO] Using DATABASE_URL: {db_url.replace(os.getenv('DB_PASSWORD', 'PASSWORD'), '***')}", file=sys.stderr)
+    print(f"[DJANGO] Using DATABASE_URL: {db_url.split('@')[0].split(':')[0]}://***:***@{db_url.split('@')[1]}", file=sys.stderr)
     
     db_config = dj_database_url.config(
         default=db_url,
