@@ -12,19 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-import socket
-
-# Force IPv4 for database connections (Back4App/Vercel IPv6 compatibility fix)
-# Patch socket at the very beginning
-orig_getaddrinfo = socket.getaddrinfo
-def patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    # Force AF_INET (IPv4)
-    return orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-socket.getaddrinfo = patched_getaddrinfo
-
-# Also try to patch psycopg2 connect if possible later or use a different host
-# If you have access to Supabase dashboard, check if they provide an IPv4 only hostname
-# or use the direct IP if it's static (not recommended but for testing)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -52,11 +39,15 @@ USE_X_FORWARDED_PORT = True
 # Application definition
 
 # Validate Cloudinary credentials (all 3 required)
-CLOUDINARY_ENABLED = all([
-    os.getenv('CLOUDINARY_CLOUD_NAME'),
-    os.getenv('CLOUDINARY_API_KEY'),
-    os.getenv('CLOUDINARY_API_SECRET')
-])
+try:
+    CLOUDINARY_ENABLED = all([
+        os.getenv('CLOUDINARY_CLOUD_NAME'),
+        os.getenv('CLOUDINARY_API_KEY'),
+        os.getenv('CLOUDINARY_API_SECRET')
+    ])
+except Exception as e:
+    print(f"Cloudinary validation error: {e}")
+    CLOUDINARY_ENABLED = False
 
 if CLOUDINARY_ENABLED:
     INSTALLED_APPS = [
@@ -132,25 +123,36 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 
 if os.getenv('DATABASE_URL'):
     # Supabase Connection details
-    # We use manual parsing here because dj-database-url is having issues with some passwords
-    # Extracting host from DATABASE_URL or using it directly
-    import dj_database_url
-    db_config = dj_database_url.config(conn_max_age=600)
-    
-    # If dj_database_url fails, we fall back to manual values from environment
-    if not db_config:
+    try:
+        import dj_database_url
+        db_config = dj_database_url.config(conn_max_age=600, ssl_require=True)
+        
+        # If dj_database_url fails, we fall back to manual values from environment
+        if not db_config:
+            DATABASES = {
+                'default': {
+                    'ENGINE': 'django.db.backends.postgresql',
+                    'NAME': os.getenv('DB_NAME', 'postgres'),
+                    'USER': os.getenv('DB_USER', 'postgres'),
+                    'PASSWORD': os.getenv('DB_PASSWORD'),
+                    'HOST': os.getenv('DB_HOST'),
+                    'PORT': os.getenv('DB_PORT', '5432'),
+                    'OPTIONS': {
+                        'sslmode': 'require',
+                    },
+                }
+            }
+        else:
+            DATABASES = {'default': db_config}
+    except Exception as e:
+        print(f"Database configuration error: {e}")
+        # Fallback to SQLite for debugging
         DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.getenv('DB_NAME', 'postgres'),
-                'USER': os.getenv('DB_USER', 'postgres'),
-                'PASSWORD': os.getenv('DB_PASSWORD'),
-                'HOST': os.getenv('DB_HOST'),
-                'PORT': os.getenv('DB_PORT', '5432'),
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
             }
         }
-    else:
-        DATABASES = {'default': db_config}
 else:
     DATABASES = {
         "default": {
@@ -217,22 +219,36 @@ if CLOUDINARY_ENABLED:
     STATICFILES_DIRS = []
     STATIC_ROOT = None
     
-    STORAGES = {
-        "default": {
-            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "cloudinary_storage.storage.StaticHashedCloudinaryStorage",
-        },
-    }
-    CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
-        'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
-        'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
-    }
+    try:
+        STORAGES = {
+            "default": {
+                "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "cloudinary_storage.storage.StaticHashedCloudinaryStorage",
+            },
+        }
+        CLOUDINARY_STORAGE = {
+            'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+            'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+            'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+        }
+    except Exception as e:
+        print(f"Cloudinary storage configuration error: {e}")
+        # Fallback to basic storage
+        STATICFILES_DIRS = []
+        STATIC_ROOT = None
+        STORAGES = {
+            "default": {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            },
+        }
 else:
     # Use Whitenoise for local static files
-    STATICFILES_DIRS = [BASE_DIR / "static"]
+    STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
     STATIC_ROOT = BASE_DIR / "staticfiles"
     
     STORAGES = {
