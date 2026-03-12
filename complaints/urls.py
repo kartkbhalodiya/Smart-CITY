@@ -17,6 +17,7 @@ urlpatterns = [
     path('location/<int:complaint_id>/', views.view_complaint_location, name='view_location'),
     path('guest/complaint/', views.guest_complaint, name='guest_complaint'),
     path('guest/track/', views.track_guest_complaint, name='track_guest_complaint'),
+    path('track/', views.track_complaint_page, name='track_complaint_page'),
     path('super-admin/', views.super_admin_dashboard, name='super_admin_dashboard'),
     path('super-admin/problems/', views.super_admin_problems, name='super_admin_problems'),
     path('super-admin/solved/', views.super_admin_solved, name='super_admin_solved'),

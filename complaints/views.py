@@ -5495,3 +5495,82 @@ If you did not request this password reset, please contact your administrator im
         return redirect('login')
     
     return render(request, 'forgot_password.html')
+
+
+def track_complaint_page(request):
+    """Modern track complaint page"""
+    return render(request, 'track_complaint.html')
+
+def forgot_password(request):
+    """Forgot password view"""
+    return render(request, 'forgot_password.html')
+
+def translation_test(request):
+    """Translation test view"""
+    return render(request, 'translation_test.html')
+
+def dynamic_fields_test(request):
+    """Dynamic fields test view"""
+    return render(request, 'dynamic_fields_test.html')
+
+def super_admin_delete_user(request, user_id):
+    """Delete user view"""
+    if not request.user.is_superuser:
+        return redirect('user_dashboard')
+    user = get_object_or_404(User, id=user_id)
+    user.delete()
+    messages.success(request, 'User deleted successfully!')
+    return redirect('super_admin_users')
+
+def city_admin_department_detail(request, department_id):
+    """City admin department detail view"""
+    try:
+        if request.user.is_superuser:
+            city_admin = CityAdmin.objects.first()
+        else:
+            city_admin = CityAdmin.objects.get(user=request.user)
+        
+        if not city_admin:
+            return redirect('user_dashboard')\n    except CityAdmin.DoesNotExist:
+        return redirect('user_dashboard')
+    
+    department = get_object_or_404(Department, id=department_id, city_admin=city_admin)
+    return render(request, 'city_admin_department_detail.html', {'department': department, 'city_admin': city_admin})
+
+def city_admin_analytics(request):
+    """City admin analytics view"""
+    try:
+        if request.user.is_superuser:
+            city_admin = CityAdmin.objects.first()
+        else:
+            city_admin = CityAdmin.objects.get(user=request.user)
+        
+        if not city_admin:
+            return redirect('user_dashboard')
+    except CityAdmin.DoesNotExist:
+        return redirect('user_dashboard')
+    
+    return render(request, 'city_admin_analytics.html', {'city_admin': city_admin})
+
+def city_admin_update_password(request):
+    """City admin update password view"""
+    try:
+        if request.user.is_superuser:
+            city_admin = CityAdmin.objects.first()
+        else:
+            city_admin = CityAdmin.objects.get(user=request.user)
+        
+        if not city_admin:
+            return redirect('user_dashboard')
+    except CityAdmin.DoesNotExist:
+        return redirect('user_dashboard')
+    
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        if new_password:
+            request.user.set_password(new_password)
+            request.user.save()
+            messages.success(request, 'Password updated successfully!')
+            return redirect('city_admin_dashboard')
+    
+    return render(request, 'city_admin_update_password.html', {'city_admin': city_admin})
