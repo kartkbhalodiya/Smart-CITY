@@ -91,7 +91,7 @@ if os.getenv('DATABASE_URL'):
     # We use manual parsing here because dj-database-url is having issues with some passwords
     # Extracting host from DATABASE_URL or using it directly
     import dj_database_url
-    db_config = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    db_config = dj_database_url.config(conn_max_age=600)
     
     # If dj_database_url fails, we fall back to manual values from environment
     if not db_config:
