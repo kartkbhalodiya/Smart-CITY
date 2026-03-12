@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -209,7 +210,7 @@
             .nav-links { display: none; }
         }
     </style>
-    <script src="/static/js/comprehensive_translations.js"></script>
+    <script src="{% static 'js/comprehensive_translations.js' %}"></script>
     <script>
         // Language switching functionality
         document.addEventListener('DOMContentLoaded', function() {
