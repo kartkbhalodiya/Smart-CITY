@@ -14,6 +14,9 @@
     }
   ],
   "env": {
-    "DJANGO_SETTINGS_MODULE": "smartcity.settings"
+    "DJANGO_SETTINGS_MODULE": "smartcity.settings",
+    "DEBUG": "False",
+    "SECRET_KEY": "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lpw9@ca^itz(&6+*7%5chidrfd",
+    "CLOUDINARY_CLOUD_NAME": "dk1q50evg"
   }
 }
