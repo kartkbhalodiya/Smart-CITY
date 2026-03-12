@@ -91,6 +91,11 @@ if os.getenv('DATABASE_URL'):
     import dj_database_url
     db_url = os.getenv('DATABASE_URL')
     
+    # Force connection pooler port (6543) for Vercel serverless
+    # This avoids IPv6 issues and is optimized for serverless
+    if ':5432/' in db_url:
+        db_url = db_url.replace(':5432/', ':6543/')
+    
     db_config = dj_database_url.config(
         default=db_url,
         conn_max_age=0, # MUST be 0 for serverless (Vercel)
@@ -104,29 +109,18 @@ if os.getenv('DATABASE_URL'):
         if 'OPTIONS' not in DATABASES['default']:
             DATABASES['default']['OPTIONS'] = {}
         
-        # Force IPv4 to avoid IPv6 connection issues on Vercel
-        import socket
-        original_getaddrinfo = socket.getaddrinfo
-        def getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
-            return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-        socket.getaddrinfo = getaddrinfo_ipv4_only
-        
         # Performance and stability tweaks for Supabase + Vercel
-        DATABASES['default']['OPTIONS']['connect_timeout'] = 20
+        DATABASES['default']['OPTIONS']['connect_timeout'] = 10
         DATABASES['default']['OPTIONS']['sslmode'] = 'require'
-        DATABASES['default']['OPTIONS']['keepalives'] = 1
-        DATABASES['default']['OPTIONS']['keepalives_idle'] = 30
-        DATABASES['default']['OPTIONS']['keepalives_interval'] = 10
-        DATABASES['default']['OPTIONS']['keepalives_count'] = 5
         DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
     else:
         # Fallback to manual parsing if dj_database_url fails
-        port = os.getenv('DB_PORT', '6543') # Default to pooler port
+        port = os.getenv('DB_PORT', '6543') # Use pooler port for serverless
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
                 'NAME': os.getenv('DB_NAME', 'postgres'),
-                'USER': os.getenv('DB_USER', 'postgres'),
+                'USER': os.getenv('DB_USER', 'postgres.aaywhmjmsdkjzabtzfpg'),
                 'PASSWORD': os.getenv('DB_PASSWORD'),
                 'HOST': os.getenv('DB_HOST'),
                 'PORT': port,
