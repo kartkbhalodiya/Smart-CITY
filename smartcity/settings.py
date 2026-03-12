@@ -91,12 +91,6 @@ if os.getenv('DATABASE_URL'):
     import dj_database_url
     db_url = os.getenv('DATABASE_URL')
     
-    # CRITICAL: For Vercel/Serverless, port 5432 often fails with "Cannot assign requested address"
-    # because of IPv6 or port exhaustion. We FORCE the use of port 6543 (Supabase Pooler)
-    # if it's not already specified, or ensure parameters are optimal.
-    if "5432" in db_url and "supabase.co" in db_url:
-        db_url = db_url.replace(":5432", ":6543")
-    
     db_config = dj_database_url.config(
         default=db_url,
         conn_max_age=0, # MUST be 0 for serverless
@@ -104,15 +98,21 @@ if os.getenv('DATABASE_URL'):
     )
     
     if db_config:
+        # CRITICAL: For Vercel/Serverless, port 5432 often fails with "Cannot assign requested address"
+        # We FORCE the use of port 6543 (Supabase Transaction Pooler) if a Supabase host is detected
+        # and the user is still trying to use the default port (5432).
+        host = db_config.get('HOST', '')
+        if ("supabase.co" in host or "supabase.com" in host) and (not db_config.get('PORT') or str(db_config.get('PORT')) == "5432"):
+            db_config['PORT'] = 6543
+            
         DATABASES = {'default': db_config}
         DATABASES['default']['CONN_MAX_AGE'] = 0
         if 'OPTIONS' not in DATABASES['default']:
             DATABASES['default']['OPTIONS'] = {}
         
         # Performance and stability tweaks for Supabase + Vercel
-        DATABASES['default']['OPTIONS']['connect_timeout'] = 10
+        DATABASES['default']['OPTIONS']['connect_timeout'] = 20 # Increased timeout
         DATABASES['default']['OPTIONS']['sslmode'] = 'require'
-        # Force the engine to ensure psycopg2 is used correctly
         DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
     else:
         # Fallback to manual parsing if dj_database_url fails
