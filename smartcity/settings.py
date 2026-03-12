@@ -125,37 +125,37 @@ if os.getenv('DATABASE_URL'):
     # Supabase Connection details
     try:
         import dj_database_url
-        db_config = dj_database_url.config(
-            conn_max_age=600, 
-            ssl_require=True,
-            conn_health_checks=True,
-        )
+        database_url = os.getenv('DATABASE_URL')
         
-        # If dj_database_url returns something, use it
+        # Ensure proper SSL for Supabase if not present in URL
+        if 'supabase.co' in database_url and 'sslmode' not in database_url:
+            if '?' in database_url:
+                database_url += '&sslmode=require'
+            else:
+                database_url += '?sslmode=require'
+                
+        db_config = dj_database_url.parse(database_url)
+        db_config['CONN_MAX_AGE'] = 600
+        
         if db_config:
             DATABASES = {'default': db_config}
         else:
-            # Fallback to manual environment variables if dj_database_url returns empty
-            DATABASES = {
-                'default': {
-                    'ENGINE': 'django.db.backends.postgresql',
-                    'NAME': os.getenv('DB_NAME', 'postgres'),
-                    'USER': os.getenv('DB_USER', 'postgres'),
-                    'PASSWORD': os.getenv('DB_PASSWORD'),
-                    'HOST': os.getenv('DB_HOST'),
-                    'PORT': os.getenv('DB_PORT', '5432'),
-                    'OPTIONS': {
-                        'sslmode': 'require',
-                    },
-                }
-            }
+            raise ValueError("Parsed db_config is empty")
+            
     except Exception as e:
-        # Fallback to SQLite for debugging if DB fails to configure
-        print(f"Database configuration error: {e}")
+        print(f"Database configuration error: {e}", file=sys.stderr)
+        # Fallback to manual environment variables
         DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "db.sqlite3",
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.getenv('DB_NAME', 'postgres'),
+                'USER': os.getenv('DB_USER', 'postgres'),
+                'PASSWORD': os.getenv('DB_PASSWORD'),
+                'HOST': os.getenv('DB_HOST'),
+                'PORT': os.getenv('DB_PORT', '5432'),
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
             }
         }
 else:
