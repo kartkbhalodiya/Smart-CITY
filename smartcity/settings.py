@@ -89,16 +89,32 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 if os.getenv('DATABASE_URL'):
     # Supabase Connection details
     import dj_database_url
-    # Use CONN_MAX_AGE=0 for serverless environments to avoid "Cannot assign requested address"
-    # which can happen when trying to reuse connections that the serverless platform has killed
+    # For serverless (Vercel), we MUST use CONN_MAX_AGE=0
+    # and we often need to use the pooler port (6543) if 5432 is failing with "Cannot assign requested address"
+    db_url = os.getenv('DATABASE_URL')
+    
+    # If using direct connection (5432) and getting port exhaustion/IPv6 issues,
+    # it's often better to use the Supabase pooler (port 6543)
     db_config = dj_database_url.config(
-        conn_max_age=0, 
-        ssl_require=True,
-        engine='django.db.backends.postgresql'
+        default=db_url,
+        conn_max_age=0,
+        ssl_require=True
     )
     
-    # If dj_database_url fails, we fall back to manual values from environment
-    if not db_config:
+    if db_config:
+        DATABASES = {'default': db_config}
+        # Force specific settings for Vercel stability
+        DATABASES['default']['CONN_MAX_AGE'] = 0
+        if 'OPTIONS' not in DATABASES['default']:
+            DATABASES['default']['OPTIONS'] = {}
+        
+        # Increase timeout and force sslmode
+        DATABASES['default']['OPTIONS']['connect_timeout'] = 10
+        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
+        
+        # If port is 5432 and we see failures, we might suggest switching to 6543 in env vars
+    else:
+        # Fallback to manual parsing if dj_database_url fails
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
@@ -110,16 +126,10 @@ if os.getenv('DATABASE_URL'):
                 'CONN_MAX_AGE': 0,
                 'OPTIONS': {
                     'sslmode': 'require',
+                    'connect_timeout': 10,
                 }
             }
         }
-    else:
-        DATABASES = {'default': db_config}
-        # Ensure OPTIONS and CONN_MAX_AGE are set even if dj_database_url didn't pick them up perfectly
-        DATABASES['default']['CONN_MAX_AGE'] = 0
-        if 'OPTIONS' not in DATABASES['default']:
-            DATABASES['default']['OPTIONS'] = {}
-        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 else:
     DATABASES = {
         "default": {
