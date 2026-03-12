@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login - JanHelp</title>
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/v1/favicon.png">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -54,14 +54,16 @@
         /* Desktop Background */
         @media (min-width: 1025px) {
             .bg-container {
-                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/v1/login-bg-web.jpg");
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web");
+                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
         }
 
         /* Mobile Background (9:16 aspect ratio focus) */
         @media (max-width: 1024px) {
             .bg-container {
-                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/v1/login-bg-mobile.jpg");
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile");
+                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
         }
 
@@ -373,7 +375,7 @@
 
             <!-- Header -->
             <div class="logo-container">
-                <img src="https://res.cloudinary.com/dk1q50evg/image/upload/v1/logo.png" alt="JanHelp Logo" class="logo-img" onerror="this.style.display='none'">
+                <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" class="logo-img" onerror="this.innerHTML='<div style=font-size:48px>🏛️</div><h1 style=font-size:32px;font-weight:800;color:var(--primary-blue);margin-bottom:8px;font-family:Poppins,sans-serif>JanHelp</h1>'">
                 <p class="brand-subtitle">Complaint Management System</p>
                 <h2 class="heading">Login to Your Account</h2>
             </div>
