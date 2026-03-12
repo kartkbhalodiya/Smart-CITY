@@ -364,7 +364,7 @@
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }}">
-                        <i class="fa-solid fa-circle-{{ 'check' if message.tags == 'success' else 'exclamation' }}"></i>
+                        <i class="fa-solid fa-circle-{% if message.tags == 'success' %}check{% else %}exclamation{% endif %}"></i>
                         {{ message }}
                     </div>
                 {% endfor %}
