@@ -13,6 +13,9 @@ project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
 print(f"Added PROJECT ROOT to path: {project_root}", file=sys.stderr)
 
+# Ensure the app folder is also in path
+sys.path.append(os.path.join(project_root, 'smartcity'))
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smartcity.settings")
 
 # Try to load application
