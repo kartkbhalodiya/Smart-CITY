@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.hashers import check_password
@@ -7,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import (
     OTP, Complaint, Department, DepartmentUser, CityAdmin, CitizenProfile,
     ComplaintMedia, ComplaintResolutionProof, ManagedState, ManagedCity,
@@ -1137,7 +1138,15 @@ def get_managed_category_payload():
     if not categories:
         return [], {}, {}
 
-    category_options = [{'key': c.key, 'name': c.name, 'logo_url': c.logo.url if c.logo else ''} for c in categories]
+    category_options = []
+    for c in categories:
+        logo_url = ''
+        if c.logo:
+            try:
+                logo_url = c.logo.url
+            except Exception:
+                logo_url = ''
+        category_options.append({'key': c.key, 'name': c.name, 'logo_url': logo_url})
 
     sub_map = {}
     field_map = {}
@@ -1244,12 +1253,19 @@ def get_active_citizen_category_cards(is_guest=False):
             if is_guest:
                 href += '&guest=true'
 
+        logo_url = ''
+        if category.logo:
+            try:
+                logo_url = category.logo.url
+            except Exception:
+                logo_url = ''
+
         cards.append({
             'key': category.key,
             'name': category.name,
             'emoji': category.emoji or emoji_map.get(category.key, ''),
             'color': color_map.get(category.key, '#06ffa5'),
-            'logo_url': category.logo.url if category.logo else '',
+            'logo_url': logo_url,
             'href': href,
         })
     return cards
@@ -1451,28 +1467,36 @@ def logout_view(request):
     return redirect('login')
 
 def user_dashboard(request):
-    # Check if guest mode
-    is_guest = request.GET.get('guest') == 'true'
-    category_cards = get_active_citizen_category_cards(is_guest=is_guest)
-    
-    if is_guest:
+    try:
+        # Check if guest mode
+        is_guest = request.GET.get('guest') == 'true'
+        category_cards = get_active_citizen_category_cards(is_guest=is_guest)
+        
+        if is_guest:
+            return render(request, 'user_dashboard.html', {
+                'complaints': [],
+                'is_guest': True,
+                'user': {'first_name': 'Guest', 'last_name': 'User'},
+                'category_cards': category_cards,
+            })
+        
+        # Regular user dashboard (requires login)
+        if not request.user.is_authenticated:
+            return redirect('/dashboard/?guest=true')
+            
+        complaints = Complaint.objects.filter(user=request.user).order_by('-created_at')
         return render(request, 'user_dashboard.html', {
-            'complaints': [],
-            'is_guest': True,
-            'user': {'first_name': 'Guest', 'last_name': 'User'},
+            'complaints': complaints,
+            'is_guest': False,
             'category_cards': category_cards,
         })
-    
-    # Regular user dashboard (requires login)
-    if not request.user.is_authenticated:
-        return redirect('/dashboard/?guest=true')
-        
-    complaints = Complaint.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'user_dashboard.html', {
-        'complaints': complaints,
-        'is_guest': False,
-        'category_cards': category_cards,
-    })
+    except Exception as e:
+        import traceback
+        print(f"Error in user_dashboard: {str(e)}")
+        print(traceback.format_exc())
+        if settings.DEBUG:
+            raise e
+        return HttpResponse("A server error occurred. Please try again later.", status=500)
 
 def track_complaints(request):
     if not request.user.is_authenticated:
