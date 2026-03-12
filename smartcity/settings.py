@@ -14,6 +14,18 @@ from pathlib import Path
 import os
 import socket
 
+# Force IPv4 for database connections (Back4App/Vercel IPv6 compatibility fix)
+# Patch socket at the very beginning
+orig_getaddrinfo = socket.getaddrinfo
+def patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    # Force AF_INET (IPv4)
+    return orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+socket.getaddrinfo = patched_getaddrinfo
+
+# Also try to patch psycopg2 connect if possible later or use a different host
+# If you have access to Supabase dashboard, check if they provide an IPv4 only hostname
+# or use the direct IP if it's static (not recommended but for testing)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
