@@ -15,12 +15,5 @@
       "src": "/(.*)",
       "dest": "vercel_app.py"
     }
-  ],
-  "functions": {
-    "vercel_app.py": {
-      "memory": 1024,
-      "maxDuration": 15
-    }
-  }
-  
+  ]
 }
