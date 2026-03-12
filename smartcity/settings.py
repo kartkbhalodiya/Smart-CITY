@@ -104,9 +104,20 @@ if os.getenv('DATABASE_URL'):
         if 'OPTIONS' not in DATABASES['default']:
             DATABASES['default']['OPTIONS'] = {}
         
+        # Force IPv4 to avoid IPv6 connection issues on Vercel
+        import socket
+        original_getaddrinfo = socket.getaddrinfo
+        def getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+            return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+        socket.getaddrinfo = getaddrinfo_ipv4_only
+        
         # Performance and stability tweaks for Supabase + Vercel
         DATABASES['default']['OPTIONS']['connect_timeout'] = 20
         DATABASES['default']['OPTIONS']['sslmode'] = 'require'
+        DATABASES['default']['OPTIONS']['keepalives'] = 1
+        DATABASES['default']['OPTIONS']['keepalives_idle'] = 30
+        DATABASES['default']['OPTIONS']['keepalives_interval'] = 10
+        DATABASES['default']['OPTIONS']['keepalives_count'] = 5
         DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
     else:
         # Fallback to manual parsing if dj_database_url fails
