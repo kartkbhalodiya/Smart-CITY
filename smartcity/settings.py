@@ -91,25 +91,16 @@ if os.getenv('DATABASE_URL'):
     import dj_database_url
     db_url = os.getenv('DATABASE_URL')
     
-    # CRITICAL: For Vercel/Serverless, port 5432 often fails with "Cannot assign requested address"
-    # We FORCE the use of port 6543 (Supabase Transaction Pooler)
-    if "supabase.co" in db_url:
-        if ":5432" in db_url:
-            db_url = db_url.replace(":5432", ":6543")
-        elif ":6543" not in db_url:
-            # Use regex to insert port 6543 if no port exists
-            import re
-            db_url = re.sub(r'(@[^/:]+)(/|$)', r'\1:6543\2', db_url)
-    
     db_config = dj_database_url.config(
         default=db_url,
-        conn_max_age=0, # MUST be 0 for serverless
+        conn_max_age=0, # MUST be 0 for serverless (Vercel)
         ssl_require=True
     )
     
     if db_config:
         DATABASES = {'default': db_config}
         DATABASES['default']['CONN_MAX_AGE'] = 0
+        
         if 'OPTIONS' not in DATABASES['default']:
             DATABASES['default']['OPTIONS'] = {}
         
