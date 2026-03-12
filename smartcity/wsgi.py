@@ -13,9 +13,16 @@ import traceback
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smartcity.settings")
 
+# Debug prints for Vercel logs
+print(f"Python Version: {sys.version}", file=sys.stderr)
+print(f"Working Directory: {os.getcwd()}", file=sys.stderr)
+print(f"Settings Module: {os.environ.get('DJANGO_SETTINGS_MODULE')}", file=sys.stderr)
+
 try:
     from django.core.wsgi import get_wsgi_application
+    print("Attempting to get WSGI application...", file=sys.stderr)
     application = get_wsgi_application()
+    print("WSGI application loaded successfully.", file=sys.stderr)
     app = application
 except Exception as e:
     # Print full error to Vercel logs

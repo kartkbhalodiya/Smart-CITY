@@ -2,18 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "smartcity/wsgi.py",
+      "src": "vercel_app.py",
       "use": "@vercel/python",
       "config": { 
         "maxLambdaSize": "50mb", 
-        "runtime": "python3.11"
+        "runtime": "python3.12"
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "smartcity/wsgi.py"
+      "dest": "vercel_app.py"
     }
   ],
   "env": {
