@@ -88,10 +88,14 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 
 if os.getenv('DATABASE_URL'):
     # Supabase Connection details
-    # We use manual parsing here because dj-database-url is having issues with some passwords
-    # Extracting host from DATABASE_URL or using it directly
     import dj_database_url
-    db_config = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    # Use CONN_MAX_AGE=0 for serverless environments to avoid "Cannot assign requested address"
+    # which can happen when trying to reuse connections that the serverless platform has killed
+    db_config = dj_database_url.config(
+        conn_max_age=0, 
+        ssl_require=True,
+        engine='django.db.backends.postgresql'
+    )
     
     # If dj_database_url fails, we fall back to manual values from environment
     if not db_config:
@@ -103,10 +107,19 @@ if os.getenv('DATABASE_URL'):
                 'PASSWORD': os.getenv('DB_PASSWORD'),
                 'HOST': os.getenv('DB_HOST'),
                 'PORT': os.getenv('DB_PORT', '5432'),
+                'CONN_MAX_AGE': 0,
+                'OPTIONS': {
+                    'sslmode': 'require',
+                }
             }
         }
     else:
         DATABASES = {'default': db_config}
+        # Ensure OPTIONS and CONN_MAX_AGE are set even if dj_database_url didn't pick them up perfectly
+        DATABASES['default']['CONN_MAX_AGE'] = 0
+        if 'OPTIONS' not in DATABASES['default']:
+            DATABASES['default']['OPTIONS'] = {}
+        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
 else:
     DATABASES = {
         "default": {
