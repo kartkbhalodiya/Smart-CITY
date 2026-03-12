@@ -16,6 +16,12 @@
       "dest": "vercel_app.py"
     }
   ],
+  "functions": {
+    "vercel_app.py": {
+      "memory": 1024,
+      "maxDuration": 15
+    }
+  },
   "env": {
     "DJANGO_SETTINGS_MODULE": "smartcity.settings",
     "DEBUG": "True",

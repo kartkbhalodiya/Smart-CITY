@@ -25,10 +25,11 @@ import sys
 
 def health_check(request):
     """Simple health check endpoint for debugging"""
+    import django
     return JsonResponse({
         'status': 'ok',
         'python_version': sys.version,
-        'django_version': settings.VERSION if hasattr(settings, 'VERSION') else 'unknown',
+        'django_version': django.get_version(),
         'debug': settings.DEBUG,
         'cloudinary_enabled': getattr(settings, 'CLOUDINARY_ENABLED', False),
         'database_engine': settings.DATABASES['default']['ENGINE'],
