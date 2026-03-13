@@ -90,36 +90,53 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 if os.getenv('DATABASE_URL'):
     # Supabase Connection details
     import dj_database_url
+    import sys
     db_url = os.getenv('DATABASE_URL')
     
-    # FORCE IPv4 pooler endpoint for Vercel serverless
-    # Replace direct connection with pooler endpoint
+    # Standardize project ref and ensure pooler port 6543 for Vercel
+    project_ref = "aaywhmjmsdkjzabtzfpg"
+    
+    # FORCE IPv4 pooler endpoint for Vercel serverless (ap-south-1 Mumbai)
     if 'db.aaywhmjmsdkjzabtzfpg.supabase.co' in db_url:
-        # Replace with correct pooler endpoint
         db_url = db_url.replace(
             'db.aaywhmjmsdkjzabtzfpg.supabase.co',
-            'aws-1-ap-northeast-1.pooler.supabase.com'
+            'aws-0-ap-south-1.pooler.supabase.com'
         )
+    # Correct Tokyo pooler if accidentally present
+    if 'aws-1-ap-northeast-1.pooler.supabase.com' in db_url:
+        db_url = db_url.replace(
+            'aws-1-ap-northeast-1.pooler.supabase.com',
+            'aws-0-ap-south-1.pooler.supabase.com'
+        )
+
+    # 1. Ensure the port is 6543 (Transaction Pooler) instead of 5432
+    if ":5432" in db_url:
+        db_url = db_url.replace(":5432", ":6543")
+    elif ":6543" not in db_url:
+        # Add port 6543 if no port is specified
+        if "@" in db_url and "/" in db_url.split("@")[1]:
+            parts = db_url.split("@")
+            host_part = parts[1].split("/")
+            if ":" not in host_part[0]:
+                host_part[0] = f"{host_part[0]}:6543"
+                parts[1] = "/".join(host_part)
+                db_url = "@".join(parts)
+
+    # 2. Ensure username format is postgres.[project_ref] for pooler
+    if "supabase.com" in db_url or "supabase.co" in db_url:
+        import re
+        # This matches postgres://postgres: or postgresql://postgres:
+        pattern = r'(postgre(?:s|sql)://)postgres(?=[:])'
+        if re.search(pattern, db_url):
+            db_url = re.sub(pattern, rf'\1postgres.{project_ref}', db_url)
+        # Also check for "://[project_ref]:" if that's being used as username
+        elif f"://{project_ref}:" in db_url:
+             db_url = db_url.replace(f"://{project_ref}:", f"://postgres.{project_ref}:")
     
-    # Force connection pooler port (6543) for Vercel serverless
-    if ':5432/' in db_url:
-        db_url = db_url.replace(':5432/', ':6543/')
-    
-    # Ensure correct username format for pooler
-    if '://postgres:' in db_url and 'postgres.aaywhmjmsdkjzabtzfpg' not in db_url:
-        db_url = db_url.replace('://postgres:', '://postgres.aaywhmjmsdkjzabtzfpg:')
-    
-    # URL encode password if needed (@ symbol)
-    if '@9089361130@' in db_url and 'Kartik@9089361130' in db_url:
-        db_url = db_url.replace('Kartik@9089361130@', 'Kartik%409089361130@')
-    
-    # Add sslmode if not present
-    if '?' not in db_url:
-        db_url += '?sslmode=require'
-    elif 'sslmode' not in db_url:
-        db_url += '&sslmode=require'
-    
-    print(f"[DJANGO] Using DATABASE_URL: {db_url.split('@')[0].split(':')[0]}://***:***@{db_url.split('@')[-1]}", file=sys.stderr)
+    # 3. Ensure sslmode=require
+    if 'sslmode' not in db_url:
+        separator = '&' if '?' in db_url else '?'
+        db_url += f'{separator}sslmode=require'
     
     db_config = dj_database_url.config(
         default=db_url,
@@ -130,12 +147,9 @@ if os.getenv('DATABASE_URL'):
     if db_config:
         DATABASES = {'default': db_config}
         DATABASES['default']['CONN_MAX_AGE'] = 0
-        
         if 'OPTIONS' not in DATABASES['default']:
             DATABASES['default']['OPTIONS'] = {}
-        
-        # Performance and stability tweaks for Supabase + Vercel
-        DATABASES['default']['OPTIONS']['connect_timeout'] = 10
+        DATABASES['default']['OPTIONS']['connect_timeout'] = 20
         DATABASES['default']['OPTIONS']['sslmode'] = 'require'
         DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
     else:

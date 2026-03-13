@@ -55,7 +55,7 @@
         @media (min-width: 1025px) {
             .bg-container {
                 background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web");
-                background-color: #667eea;
+                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
         }
 
@@ -63,7 +63,7 @@
         @media (max-width: 1024px) {
             .bg-container {
                 background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile");
-                background-color: #667eea;
+                background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
         }
 
@@ -245,10 +245,6 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             box-shadow: 0 8px 16px rgba(30, 102, 245, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
         }
 
         .btn-login:hover {
@@ -328,30 +324,6 @@
             border: 1px solid #bbf7d0;
         }
 
-        .admin-link {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: #34495e;
-            color: #fff;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-
-        .admin-link:hover {
-            background: #2c3e50;
-            transform: translateY(-2px);
-        }
-
         /* Mobile Specific Layout (9:16) */
         @media (max-width: 480px) {
             .glass-card {
@@ -382,72 +354,14 @@
             .footer {
                 font-size: 10px;
             }
-
-            .admin-link {
-                top: 10px;
-                right: 10px;
-                padding: 8px 15px;
-                font-size: 12px;
-            }
         }
         
-        .language-selector {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .language-selector select {
-            padding: 8px 15px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            font-size: 13px;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        .divider {
-            text-align: center;
-            margin: 15px 0;
-            color: #6c757d;
-            font-size: 12px;
-            font-weight: 500;
-            position: relative;
-        }
-
-        .divider::before, .divider::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            width: 30%;
-            height: 1px;
-            background: #e2e8f0;
-        }
-
-        .divider::before { left: 0; }
-        .divider::after { right: 0; }
-
-        .info-text {
-            text-align: center;
-            color: #6c757d;
-            font-size: 11px;
-            margin-top: 8px;
-            line-height: 1.4;
-        }
 
     </style>
 </head>
 <body>
-    <script src="/static/js/translations.js"></script>
-    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    <div id="google_translate_element" style="display:none;"></div>
-
     <div class="bg-container"></div>
     <div class="bg-overlay"></div>
-
-    <a href="/admin" class="admin-link">
-        <i class="fa-solid fa-shield-halved"></i>
-        Admin
-    </a>
 
     <div class="login-wrapper">
         <div class="glass-card">
@@ -463,17 +377,9 @@
 
             <!-- Header -->
             <div class="logo-container">
-                <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" class="logo-img" onerror="this.src='https://res.cloudinary.com/dk1q50evg/image/upload/v1/logo'; this.onerror=null;">
+                <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" class="logo-img" onerror="this.innerHTML='<div style=font-size:48px>🏛️</div><h1 style=font-size:32px;font-weight:800;color:var(--primary-blue);margin-bottom:8px;font-family:Poppins,sans-serif>JanHelp</h1>'">
                 <p class="brand-subtitle">Complaint Management System</p>
                 <h2 class="heading">Login to Your Account</h2>
-            </div>
-
-            <div class="language-selector">
-                <select onchange="changeLanguage(this.value)">
-                    <option value="en">English</option>
-                    <option value="hi">हिंदी (Hindi)</option>
-                    <option value="gu">ગુજરાતી (Gujarati)</option>
-                </select>
             </div>
 
             <!-- Login Form -->
@@ -485,53 +391,59 @@
                 </div>
 
                 <div class="input-group">
-                    <input type="password" name="password" id="password" class="input-field" placeholder="Password (Optional)" autocomplete="current-password">
+                    <input type="password" name="password" id="password" class="input-field" placeholder="Password" autocomplete="current-password">
                     <i class="fa-solid fa-lock input-icon"></i>
                     <i class="fa-solid fa-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
                 </div>
 
                 <div class="options-row">
                     <label class="remember-me">
-                        <input type="checkbox" name="remember" class="custom-checkbox"> Remember me
+                        <input type="checkbox" name="remember" class="custom-checkbox">
+                        Remember Me
                     </label>
                     <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot Password?</a>
                 </div>
 
-                <button type="submit" class="btn-login">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    Sign In
-                </button>
-                
-                <p class="info-text">Citizens: Leave password blank to receive OTP via email</p>
-
-                <div class="divider">New User?</div>
-                
-                <a href="{% url 'register' %}" class="btn-guest" style="margin-bottom: 12px; border-color: var(--primary-blue); color: var(--primary-blue);">
-                    <i class="fa-solid fa-user-plus"></i>
-                    Create Account
-                </a>
-
-                <div class="divider">Guest Mode</div>
-
-                <div class="guest-track-container">
-                    <a href="{% url 'guest_complaint' %}?from=citizen" class="btn-guest">
-                        <i class="fa-solid fa-file-circle-plus"></i>
-                        Guest Report
-                    </a>
-                    <a href="{% url 'track_guest_complaint' %}" class="btn-guest" style="border-color: #10b981; color: #10b981;">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        Track Guest
-                    </a>
-                </div>
+                <button type="submit" class="btn-login">Login</button>
             </form>
 
+            <!-- Guest & Track -->
+            <div class="guest-track-container">
+                <a href="{% url 'submit_complaint' %}" class="btn-guest">
+                    <i class="fa-solid fa-user"></i>
+                    Guest
+                </a>
+                <a href="{% url 'track_guest_complaint' %}" class="btn-guest">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Track
+                </a>
+            </div>
+                
+            <p style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                Don't have an account? <a href="{% url 'register' %}" style="color: var(--primary-blue); font-weight: 600; text-decoration: none;">Register Now</a>
+            </p>
+
+            <!-- Footer -->
             <div class="footer">
-                Developed by <strong>JanHelp Team</strong>
+                Powered by <strong>Design by Kartik Bhalodiya.</strong>
             </div>
         </div>
     </div>
 
+    <!-- Google Translate (Hidden but functional) -->
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <div id="google_translate_element" style="display:none;"></div>
     <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'hi,gu,en',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+        
+        // Password visibility toggle
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('password');
             const toggleIcon = document.getElementById('togglePassword');
@@ -545,30 +457,6 @@
                 toggleIcon.classList.remove('fa-eye-slash');
                 toggleIcon.classList.add('fa-eye');
             }
-        }
-
-        function changeLanguage(lang) {
-            localStorage.setItem('selectedLanguage', lang);
-            
-            // Use Google Translate API
-            setTimeout(() => {
-                const translateSelect = document.querySelector('.goog-te-combo');
-                if (translateSelect) {
-                    translateSelect.value = lang;
-                    translateSelect.dispatchEvent(new Event('change'));
-                } else {
-                    location.reload();
-                }
-            }, 500);
-        }
-        
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'hi,gu,en',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-            }, 'google_translate_element');
         }
     </script>
 </body>
