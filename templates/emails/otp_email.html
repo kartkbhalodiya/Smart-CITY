@@ -1,27 +1,27 @@
 {% extends 'emails/base_email.html' %}
 
-{% block title %}Your OTP Code - JanHelp{% endblock %}
+{% block title %}Authentication Required - JanHelp{% endblock %}
 
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
-    <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
-    <h2 style="font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; font-family: 'Poppins', sans-serif;">Verification Code</h2>
-    <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0; font-family: 'Inter', sans-serif;">Hello {{ user_name }}! Use the code below to login.</p>
+<div style="margin-bottom: 30px;">
+    <h1 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 10px 0;">Authentication Required</h1>
+    <p style="font-size: 15px; color: #475569; margin: 0;">Dear {{ user_name }},</p>
+    <p style="font-size: 15px; color: #475569; margin: 10px 0 0 0;">For security purposes, please use the following one-time password (OTP) to verify your identity and access your JanHelp account.</p>
 </div>
 
-<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px;">
-    <div style="font-size: 11px; color: #1E66F5; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; font-family: 'Poppins', sans-serif;">Your OTP Code</div>
-    <div style="font-size: 36px; font-weight: 800; color: #1E66F5; letter-spacing: 8px; font-family: 'Courier New', monospace; background: #ffffff; padding: 15px; border-radius: 8px; border: 1px dashed #1E66F5; display: inline-block;">{{ otp_code }}</div>
-    <p style="font-size: 12px; color: #ef4444; font-weight: 600; margin: 15px 0 0 0; font-family: 'Inter', sans-serif;">⏰ Expires in 10 minutes</p>
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 30px; text-align: center; margin-bottom: 30px;">
+    <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Verification Code</div>
+    <div style="font-size: 42px; font-weight: 800; color: #1E66F5; letter-spacing: 10px; font-family: 'Courier New', monospace; margin-bottom: 10px;">{{ otp_code }}</div>
+    <p style="font-size: 13px; color: #ef4444; font-weight: 600; margin: 10px 0 0 0;">This code will expire in 10 minutes.</p>
 </div>
 
-<div style="background-color: #f0f7ff; border-left: 4px solid #1E66F5; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-    <p style="font-size: 13px; color: #1e40af; font-weight: 500; margin: 0; font-family: 'Inter', sans-serif;">
-        🔒 **Security Tip:** Never share this code with anyone. Our team will never ask for your OTP.
+<div style="border-left: 4px solid #1E66F5; background-color: #f0f7ff; padding: 20px; margin-bottom: 30px;">
+    <p style="font-size: 14px; color: #1e40af; margin: 0; font-weight: 500;">
+        <strong>Security Notice:</strong> Do not share this code with anyone. JanHelp officials will never ask for your OTP over the phone or via email.
     </p>
 </div>
 
-<p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0; font-family: 'Inter', sans-serif;">
-    Didn't request this? Please ignore this email.
+<p style="font-size: 13px; color: #94a3b8; margin: 0;">
+    If you did not request this code, please ignore this email or contact support if you suspect unauthorized access.
 </p>
 {% endblock %}

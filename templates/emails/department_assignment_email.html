@@ -1,40 +1,40 @@
 {% extends 'emails/base_email.html' %}
 
-{% block title %}Department Access Granted - JanHelp{% endblock %}
+{% block title %}Official Assignment Notification - JanHelp{% endblock %}
 
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
-    <div style="font-size: 40px; margin-bottom: 10px;">🎯</div>
-    <h2 style="font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; font-family: 'Poppins', sans-serif;">Access Granted</h2>
-    <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0; font-family: 'Inter', sans-serif;">Congratulations {{ user_name }}! You've been assigned.</p>
+<div style="margin-bottom: 30px;">
+    <h1 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 10px 0;">Official Departmental Assignment</h1>
+    <p style="font-size: 15px; color: #475569; margin: 0;">Dear {{ user_name }},</p>
+    <p style="font-size: 15px; color: #475569; margin: 10px 0 0 0;">This is an official notification to inform you that you have been formally assigned to a department within the JanHelp Smart City Portal. Your role and department details are listed below.</p>
 </div>
 
-<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; margin-bottom: 30px;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-            <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">🏢 Dept:</span>
-                <span style="font-size: 14px; color: #1e293b; font-weight: 700; float: right;">{{ department_name }}</span>
+            <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                <span style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase;">🏢 Assigned Department</span>
+                <div style="font-size: 15px; color: #1e293b; font-weight: 700; margin-top: 5px;">{{ department_name }}</div>
             </td>
         </tr>
         <tr>
-            <td style="padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
-                <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">👤 Role:</span>
-                <span style="font-size: 14px; color: #1e293b; font-weight: 700; float: right;">{{ user_role }}</span>
+            <td style="padding: 10px 0;">
+                <span style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase;">👤 Assigned Role</span>
+                <div style="font-size: 15px; color: #1e293b; font-weight: 700; margin-top: 5px;">{{ user_role }}</div>
             </td>
         </tr>
     </table>
 </div>
 
-<div style="text-align: center; margin-bottom: 25px;">
-    <a href="{{ login_url }}" style="display: inline-block; background-color: #1E66F5; color: #ffffff; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; font-family: 'Poppins', sans-serif;">
-        🔐 Login to Dashboard
+<div style="text-align: center; margin-bottom: 30px;">
+    <a href="{{ login_url }}" style="display: inline-block; background-color: #1E66F5; color: #ffffff; padding: 14px 35px; text-decoration: none; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Access My Account
     </a>
 </div>
 
-<div style="background-color: #f0f7ff; border-left: 4px solid #1E66F5; padding: 15px; border-radius: 6px;">
-    <p style="font-size: 13px; color: #1e40af; font-weight: 500; margin: 0; font-family: 'Inter', sans-serif;">
-        💡 **Note:** Keep your login credentials secure at all times.
+<div style="border-left: 4px solid #1E66F5; background-color: #f0f7ff; padding: 20px;">
+    <p style="font-size: 14px; color: #1e40af; margin: 0; font-weight: 500;">
+        <strong>Notice:</strong> Please ensure that all departmental activities are conducted in accordance with official guidelines and security protocols.
     </p>
 </div>
 {% endblock %}

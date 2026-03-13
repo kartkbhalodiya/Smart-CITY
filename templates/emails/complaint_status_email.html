@@ -3,44 +3,62 @@
 {% block title %}Complaint Status Update - JanHelp{% endblock %}
 
 {% block content %}
-<div style="text-align: center; margin-bottom: 25px;">
-    <div style="font-size: 40px; margin-bottom: 10px;">📢</div>
-    <h2 style="font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; font-family: 'Poppins', sans-serif;">Status Updated</h2>
-    <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0; font-family: 'Inter', sans-serif;">Hello {{ user_name }}! Your complaint progress has been updated.</p>
+<div style="margin-bottom: 30px;">
+    <h1 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0- 10px 0;">Official Update: Complaint Status</h1>
+    <p style="font-size: 15px; color: #475569; margin: 0;">Dear {{ user_name }},</p>
+    <p style="font-size: 15px; color: #475569; margin: 10px 0 0 0;">This is to inform you that there has been an update regarding your registered complaint on the JanHelp Smart City Portal.</p>
 </div>
 
-<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-    <div style="font-size: 12px; color: #1E66F5; font-weight: 700; margin-bottom: 5px; font-family: 'Poppins', sans-serif;">COMPLAINT #{{ complaint_number }}</div>
-    <div style="font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 15px; font-family: 'Poppins', sans-serif;">{{ complaint_title }}</div>
-    
-    <div style="display: inline-block; padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; {% if status_class == 'submitted' %}background: #FEF3C7; color: #92400E;{% elif status_class == 'assigned' %}background: #FFEDD5; color: #9A3412;{% elif status_class == 'in-progress' %}background: #DBEAFE; color: #1E40AF;{% elif status_class == 'resolved' %}background: #D1FAE5; color: #065F46;{% elif status_class == 'reopened' %}background: #FEE2E2; color: #991B1B;{% else %}background: #F1F5F9; color: #475569;{% endif %}">
-        {{ status_icon }} {{ status_text }}
-    </div>
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; margin-bottom: 30px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td style="padding-bottom: 15px;">
+                <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">Complaint ID</div>
+                <div style="font-size: 16px; color: #1e293b; font-weight: 800;">#{{ complaint_number }}</div>
+            </td>
+            <td style="padding-bottom: 15px; text-align: right;">
+                <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">Current Status</div>
+                <div style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 700; font-size: 12px; text-transform: uppercase; {% if status_class == 'submitted' %}background: #FEF3C7; color: #92400E;{% elif status_class == 'assigned' %}background: #FFEDD5; color: #9A3412;{% elif status_class == 'in-progress' %}background: #DBEAFE; color: #1E40AF;{% elif status_class == 'resolved' %}background: #D1FAE5; color: #065F46;{% elif status_class == 'reopened' %}background: #FEE2E2; color: #991B1B;{% else %}background: #F1F5F9; color: #475569;{% endif %}">
+                    {{ status_text }}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">Complaint Title</div>
+                <div style="font-size: 15px; color: #1e293b; font-weight: 600;">{{ complaint_title }}</div>
+            </td>
+        </tr>
+    </table>
 </div>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
     <tr>
-        <td width="50%" style="padding-right: 10px;">
-            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 3px;">🏢 Department</div>
+        <td width="50%" style="padding-right: 15px;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">🏢 Assigned Department</div>
             <div style="font-size: 14px; color: #1e293b; font-weight: 600;">{{ department_name }}</div>
         </td>
-        <td width="50%" style="padding-left: 10px;">
-            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 3px;">📅 Updated</div>
+        <td width="50%" style="padding-left: 15px;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">📅 Date of Update</div>
             <div style="font-size: 14px; color: #1e293b; font-weight: 600;">{{ updated_date }}</div>
         </td>
     </tr>
 </table>
 
 {% if status_message %}
-<div style="background-color: #f0f7ff; border-left: 4px solid #1E66F5; padding: 15px; border-radius: 6px; margin-bottom: 25px;">
-    <div style="font-size: 12px; color: #1E66F5; font-weight: 700; margin-bottom: 5px;">💬 Update Message:</div>
-    <div style="font-size: 14px; color: #1e40af; line-height: 1.5;">{{ status_message }}</div>
+<div style="background-color: #f0f7ff; border-left: 4px solid #1E66F5; padding: 20px; margin-bottom: 30px;">
+    <div style="font-size: 12px; color: #1e40af; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Official Remarks</div>
+    <div style="font-size: 14px; color: #1e40af; line-height: 1.6;">{{ status_message }}</div>
 </div>
 {% endif %}
 
-<div style="text-align: center;">
-    <a href="{{ complaint_url }}" style="display: inline-block; background-color: #1E66F5; color: #ffffff; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; font-family: 'Poppins', sans-serif;">
-        👁️ View Full Details
+<div style="text-align: center; margin-bottom: 20px;">
+    <a href="{{ complaint_url }}" style="display: inline-block; background-color: #1E66F5; color: #ffffff; padding: 14px 30px; border: 1px solid #1e40af; text-decoration: none; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Track Complaint Progress
     </a>
 </div>
+
+<p style="font-size: 13px; color: #94a3b8; margin: 0; text-align: center;">
+    You can view the full history and upload supporting documents through the portal.
+</p>
 {% endblock %}
