@@ -1775,12 +1775,32 @@ def track_guest_complaint(request):
             messages.error(request, 'Please enter both complaint ID and mobile number!')
             return render(request, 'track_guest.html', {'complaint': None})
         
+        # Try guest complaint first
         try:
-            complaint = Complaint.objects.get(
+            complaint = Complaint.objects.select_related('assigned_department').prefetch_related('resolution_proofs', 'reopen_proofs').get(
                 complaint_number=complaint_number,
                 guest_phone=phone
             )
         except Complaint.DoesNotExist:
+            pass
+        
+        # If not found, try registered user complaint
+        if not complaint:
+            try:
+                possible_complaints = Complaint.objects.filter(
+                    complaint_number=complaint_number,
+                    user__isnull=False
+                ).select_related('assigned_department', 'user__citizenprofile').prefetch_related('resolution_proofs', 'reopen_proofs')
+                
+                for comp in possible_complaints:
+                    if comp.user and hasattr(comp.user, 'citizenprofile'):
+                        if comp.user.citizenprofile.mobile_no == phone:
+                            complaint = comp
+                            break
+            except Exception:
+                pass
+        
+        if not complaint:
             messages.error(request, 'Invalid complaint ID or mobile number. Please check and try again!')
     
     return render(request, 'track_guest.html', {'complaint': complaint})
