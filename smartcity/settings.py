@@ -125,13 +125,13 @@ if os.getenv('DATABASE_URL'):
     # 2. Ensure username format is postgres.[project_ref] for pooler
     if "supabase.com" in db_url or "supabase.co" in db_url:
         import re
-        # This matches postgres://postgres: or postgresql://postgres:
-        pattern = r'(postgre(?:s|sql)://)postgres(?=[:])'
-        if re.search(pattern, db_url):
-            db_url = re.sub(pattern, rf'\1postgres.{project_ref}', db_url)
-        # Also check for "://[project_ref]:" if that's being used as username
-        elif f"://{project_ref}:" in db_url:
-             db_url = db_url.replace(f"://{project_ref}:", f"://postgres.{project_ref}:")
+        # Check if project ref is already in the username
+        if f".{project_ref}" not in db_url.split('@')[0]:
+            # This matches postgres://[user]: or postgresql://[user]:
+            pattern = r'(postgre(?:s|sql)://)([^:@/]+)(?=[:@])'
+            # If the user is 'postgres', change it to 'postgres.[project_ref]'
+            # If it's something else but not [project_ref], we might still need the prefix
+            db_url = re.sub(pattern, rf'\1\2.{project_ref}', db_url)
     
     # 3. Ensure sslmode=require
     if 'sslmode' not in db_url:
