@@ -38,6 +38,7 @@ def admin_dashboard_redirect(request):
 urlpatterns = [
     path("admin/", admin_dashboard_redirect, name="admin_dashboard_redirect"),
     path("admin/", admin.site.urls),
+    path("api/", include('complaints.api_urls')),  # API endpoints for Flutter app
     path("", include('complaints.urls')),
 ]
 

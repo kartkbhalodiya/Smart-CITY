@@ -1,0 +1,75 @@
+import 'dart:io';
+import '../config/api_config.dart';
+import '../models/complaint.dart';
+import 'api_service.dart';
+
+class ComplaintService {
+  static Future<Map<String, dynamic>> getDashboardStats() async {
+    return await ApiService.get(ApiConfig.dashboardStats);
+  }
+
+  static Future<Map<String, dynamic>> getComplaints({
+    String? workStatus,
+    String? complaintType,
+    String? search,
+  }) async {
+    String url = ApiConfig.complaints;
+    List<String> params = [];
+
+    if (workStatus != null) params.add('work_status=$workStatus');
+    if (complaintType != null) params.add('complaint_type=$complaintType');
+    if (search != null) params.add('search=$search');
+
+    if (params.isNotEmpty) {
+      url += '?${params.join('&')}';
+    }
+
+    return await ApiService.get(url);
+  }
+
+  static Future<Map<String, dynamic>> getComplaintDetail(int id) async {
+    return await ApiService.get(ApiConfig.complaintDetail(id));
+  }
+
+  static Future<Map<String, dynamic>> createComplaint(
+    Map<String, String> data,
+    List<File> files,
+  ) async {
+    return await ApiService.postMultipart(
+      ApiConfig.complaints,
+      data,
+      files,
+    );
+  }
+
+  static Future<Map<String, dynamic>> rateComplaint(
+    int id,
+    int rating,
+    String feedback,
+  ) async {
+    return await ApiService.post(
+      ApiConfig.rateComplaint(id),
+      {'rating': rating, 'feedback': feedback},
+    );
+  }
+
+  static Future<Map<String, dynamic>> reopenComplaint(
+    int id,
+    String reason,
+    File proofImage,
+  ) async {
+    return await ApiService.postMultipart(
+      ApiConfig.reopenComplaint(id),
+      {'reason': reason},
+      [proofImage],
+    );
+  }
+
+  static Future<Map<String, dynamic>> getCategories() async {
+    return await ApiService.get(ApiConfig.categories);
+  }
+
+  static Future<Map<String, dynamic>> getSubcategories(String categoryKey) async {
+    return await ApiService.get(ApiConfig.subcategories(categoryKey));
+  }
+}
