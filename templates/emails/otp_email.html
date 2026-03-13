@@ -3,63 +3,26 @@
 {% block title %}Your OTP Code - JanHelp{% endblock %}
 
 {% block content %}
-<!-- Header Banner -->
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
-    <tr>
-        <td style="background: linear-gradient(135deg, rgba(30, 102, 245, 0.08) 0%, rgba(46, 204, 113, 0.06) 50%, rgba(118, 75, 162, 0.04) 100%); border: 2px solid #1E66F5; border-radius: 12px; padding: 30px 20px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
-            <h2 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; font-family: 'Poppins', sans-serif;">Login Verification</h2>
-            <p style="color: #64748b; font-size: 13px; margin: 0; font-family: 'Inter', sans-serif; font-weight: 500;">Your secure one-time password is ready</p>
-        </td>
-    </tr>
-</table>
+<div style="text-align: center; margin-bottom: 25px;">
+    <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+    <h2 style="font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; font-family: 'Poppins', sans-serif;">Verification Code</h2>
+    <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0; font-family: 'Inter', sans-serif;">Hello {{ user_name }}! Use the code below to login.</p>
+</div>
 
-<!-- Greeting -->
-<h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 18px 0; font-family: 'Poppins', sans-serif;">👋 Hello {{ user_name }}!</h2>
+<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px;">
+    <div style="font-size: 11px; color: #1E66F5; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; font-family: 'Poppins', sans-serif;">Your OTP Code</div>
+    <div style="font-size: 36px; font-weight: 800; color: #1E66F5; letter-spacing: 8px; font-family: 'Courier New', monospace; background: #ffffff; padding: 15px; border-radius: 8px; border: 1px dashed #1E66F5; display: inline-block;">{{ otp_code }}</div>
+    <p style="font-size: 12px; color: #ef4444; font-weight: 600; margin: 15px 0 0 0; font-family: 'Inter', sans-serif;">⏰ Expires in 10 minutes</p>
+</div>
 
-<p style="font-size: 15px; color: #475569; margin: 0 0 25px 0; line-height: 1.7; font-family: 'Inter', sans-serif; font-weight: 400;">
-    You requested a One-Time Password (OTP) to securely access your JanHelp account. 
-    Use the code below to complete your login verification:
+<div style="background-color: #f0f7ff; border-left: 4px solid #1E66F5; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+    <p style="font-size: 13px; color: #1e40af; font-weight: 500; margin: 0; font-family: 'Inter', sans-serif;">
+        🔒 **Security Tip:** Never share this code with anyone. Our team will never ask for your OTP.
+    </p>
+</div>
+
+<p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0; font-family: 'Inter', sans-serif;">
+    Didn't request this? Please ignore this email.
 </p>
-
-<!-- OTP Box -->
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
-    <tr>
-        <td style="background: linear-gradient(135deg, #1E66F5 0%, #2ECC71 50%, #764ba2 100%); border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 4px 15px rgba(30, 102, 245, 0.25);">
-            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.95); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; font-family: 'Poppins', sans-serif;">🔑 YOUR OTP CODE</div>
-            <div style="background: rgba(255, 255, 255, 0.98); border-radius: 10px; padding: 20px 15px; margin: 0 auto; max-width: 280px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                <div style="font-size: 42px; font-weight: 800; color: #1E66F5; letter-spacing: 10px; font-family: 'Courier New', monospace;">{{ otp_code }}</div>
-            </div>
-            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.95); font-weight: 600; margin-top: 15px; font-family: 'Inter', sans-serif;">
-                <span style="background: rgba(239, 68, 68, 0.3); padding: 6px 14px; border-radius: 6px; display: inline-block;">
-                    ⏰ Valid for 10 minutes only
-                </span>
-            </div>
-        </td>
-    </tr>
-</table>
-
-<!-- Instructions Box -->
-<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-    <h3 style="font-size: 15px; font-weight: 700; color: #1e293b; margin: 0 0 12px 0; font-family: 'Poppins', sans-serif;">📋 How to Use Your OTP</h3>
-    <ol style="margin: 0; padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.8; font-family: 'Inter', sans-serif; font-weight: 400;">
-        <li style="margin-bottom: 6px;">Return to the JanHelp login page</li>
-        <li style="margin-bottom: 6px;">Enter the 6-digit OTP code shown above</li>
-        <li style="margin-bottom: 0;">Click "Verify" to access your dashboard</li>
-    </ol>
-</div>
-
-<!-- Security Warning -->
-<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 8px; margin-bottom: 15px;">
-    <p style="font-size: 13px; color: #92400e; font-weight: 600; margin: 0; font-family: 'Inter', sans-serif;">
-        🔒 <strong>Security Tip:</strong> Never share your OTP with anyone. JanHelp staff will never ask for your OTP via phone, email, or any other method.
-    </p>
-</div>
-
-<!-- Info Notice -->
-<div style="background-color: #dbeafe; border-left: 4px solid #1E66F5; padding: 14px 18px; border-radius: 8px;">
-    <p style="font-size: 13px; color: #1e40af; font-weight: 600; margin: 0; font-family: 'Inter', sans-serif;">
-        ℹ️ <strong>Didn't request this?</strong> If you didn't attempt to log in, please ignore this email. Your account remains secure.
-    </p>
-</div>
+{% endblock %}
 {% endblock %}

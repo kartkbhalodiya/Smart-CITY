@@ -10,14 +10,14 @@
         <tr>
             <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); overflow: hidden;">
-                    <!-- Header with Medium Size Navbar -->
+                    <!-- Header -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #1E66F5 0%, #2ECC71 50%, #764ba2 100%); padding: 30px 20px; text-align: center;">
+                        <td style="background-color: #ffffff; padding: 25px 20px; text-align: center; border-bottom: 1px solid #f1f5f9;">
                             <!-- Logo -->
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                     <td align="center">
-                                        <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" style="width: 80px; height: 80px; border-radius: 16px; background-color: rgba(255, 255, 255, 0.95); padding: 10px; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);" />
+                                        <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" style="width: 80px; height: 80px; display: block;" />
                                     </td>
                                 </tr>
                             </table>
@@ -26,40 +26,23 @@
                     
                     <!-- Body -->
                     <tr>
-                        <td style="padding: 35px 25px; color: #1e293b;">
+                        <td style="padding: 30px 25px; color: #1e293b; background-color: #ffffff;">
                             {% block content %}{% endblock %}
                         </td>
                     </tr>
                     
                     <!-- Footer -->
                     <tr>
-                        <td style="background-color: #f8fafc; padding: 25px 20px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="font-size: 13px; color: #475569; margin-bottom: 12px; font-family: 'Inter', sans-serif; font-weight: 500;">
-                                <strong style="color: #1E66F5; font-weight: 700;">JanHelp</strong> - Making cities smarter, one complaint at a time.
-                            </p>
-                            
-                            <div style="margin: 15px 0;">
-                                <a href="{{ base_url }}" style="color: #1E66F5; text-decoration: none; margin: 0 8px; font-weight: 600; font-size: 12px;">Home</a>
-                                <span style="color: #cbd5e1;">•</span>
-                                <a href="{{ base_url }}/track" style="color: #1E66F5; text-decoration: none; margin: 0 8px; font-weight: 600; font-size: 12px;">Track</a>
-                                <span style="color: #cbd5e1;">•</span>
-                                <a href="{{ base_url }}/help" style="color: #1E66F5; text-decoration: none; margin: 0 8px; font-weight: 600; font-size: 12px;">Help</a>
+                        <td style="background-color: #f8fafc; padding: 30px 20px; text-align: center; border-top: 1px solid #f1f5f9;">
+                            <div style="margin-bottom: 20px;">
+                                <a href="{{ base_url }}" style="color: #1E66F5; text-decoration: none; margin: 0 10px; font-weight: 600; font-size: 13px;">Home</a>
+                                <a href="{{ base_url }}/track" style="color: #1E66F5; text-decoration: none; margin: 0 10px; font-weight: 600; font-size: 13px;">Track</a>
+                                <a href="{{ base_url }}/help" style="color: #1E66F5; text-decoration: none; margin: 0 10px; font-weight: 600; font-size: 13px;">Help</a>
                             </div>
                             
-                            <div style="margin-top: 15px;">
-                                <a href="#" style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%); border-radius: 8px; margin: 0 4px; line-height: 32px; color: #1E66F5; text-decoration: none; font-size: 14px;">📘</a>
-                                <a href="#" style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%); border-radius: 8px; margin: 0 4px; line-height: 32px; color: #1E66F5; text-decoration: none; font-size: 14px;">🐦</a>
-                                <a href="#" style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%); border-radius: 8px; margin: 0 4px; line-height: 32px; color: #1E66F5; text-decoration: none; font-size: 14px;">📷</a>
-                                <a href="#" style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(46, 204, 113, 0.1) 100%); border-radius: 8px; margin: 0 4px; line-height: 32px; color: #1E66F5; text-decoration: none; font-size: 14px;">💼</a>
-                            </div>
-                            
-                            <p style="font-size: 11px; color: #94a3b8; margin-top: 15px; font-family: 'Inter', sans-serif;">
-                                © 2024 JanHelp. All rights reserved.<br>
-                                Designed by <strong style="color: #1E66F5;">Kartik Bhalodiya</strong>
-                            </p>
-                            
-                            <p style="font-size: 10px; color: #94a3b8; margin-top: 12px; font-family: 'Inter', sans-serif;">
-                                This is an automated email. Please do not reply to this message.
+                            <p style="font-size: 12px; color: #64748b; margin-top: 15px; font-family: 'Inter', sans-serif; line-height: 1.5;">
+                                © 2024 **JanHelp**. Making cities smarter.<br>
+                                Designed by <span style="color: #1E66F5; font-weight: 600;">Kartik Bhalodiya</span>
                             </p>
                         </td>
                     </tr>
