@@ -312,6 +312,49 @@
             accent-color: var(--primary-blue);
         }
 
+        /* Map Loading Animation */
+        .map-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            z-index: 1000;
+        }
+
+        .map-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(30, 102, 245, 0.1);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .map-loading-text {
+            margin-top: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #mapContainer {
+            position: relative;
+        }
+
         @media (max-width: 480px) {
             .container { padding: 15px; padding-bottom: 30px; }
             .form-card { padding: 20px; }
@@ -421,7 +464,13 @@
                 </div>
 
                 <div id="mapContainer" style="display: none; margin-bottom: 20px;">
-                    <div id="map" style="height: 400px; width: 100%; border-radius: 10px; border: 1px solid #dee2e6;"></div>
+                    <div style="position: relative;">
+                        <div id="mapLoading" class="map-loading">
+                            <div class="map-spinner"></div>
+                            <div class="map-loading-text">Loading Map...</div>
+                        </div>
+                        <div id="map" style="height: 400px; width: 100%; border-radius: 12px; border: 1.5px solid #e2e8f0;"></div>
+                    </div>
                     <button type="button" class="btn location-btn" onclick="confirmMapLocation()" style="margin-top: 10px;">
                         <i class="fa-solid fa-check"></i>
                         Confirm Location
@@ -643,6 +692,9 @@
 
         function initMap() {
             try {
+                // Show loading animation
+                document.getElementById('mapLoading').style.display = 'flex';
+                
                 // Get user's current location first
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition((position) => {
@@ -659,6 +711,13 @@
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             attribution: '© OpenStreetMap contributors'
                         }).addTo(map);
+                        
+                        // Hide loading when tiles are loaded
+                        map.whenReady(function() {
+                            setTimeout(() => {
+                                document.getElementById('mapLoading').style.display = 'none';
+                            }, 500);
+                        });
                         
                         marker = L.marker([lat, lng], {
                             draggable: true
@@ -695,6 +754,13 @@
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                             attribution: '© OpenStreetMap contributors'
                         }).addTo(map);
+                        
+                        // Hide loading when tiles are loaded
+                        map.whenReady(function() {
+                            setTimeout(() => {
+                                document.getElementById('mapLoading').style.display = 'none';
+                            }, 500);
+                        });
                         
                         marker = L.marker([defaultLat, defaultLng], {
                             draggable: true
@@ -733,6 +799,13 @@
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(map);
                     
+                    // Hide loading when tiles are loaded
+                    map.whenReady(function() {
+                        setTimeout(() => {
+                            document.getElementById('mapLoading').style.display = 'none';
+                        }, 500);
+                    });
+                    
                     marker = L.marker([fallbackLat, fallbackLng], {
                         draggable: true
                     }).addTo(map);
@@ -761,6 +834,7 @@
                 }
             } catch (error) {
                 console.error('Map initialization error:', error);
+                document.getElementById('mapLoading').style.display = 'none';
                 alert('Failed to load map: ' + error.message);
             }
         }
