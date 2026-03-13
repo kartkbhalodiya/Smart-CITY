@@ -21,8 +21,49 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg-light);
+            background: #f8fafc;
             padding-bottom: 80px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background Image */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(4px);
+            -webkit-filter: blur(4px);
+        }
+
+        @media (min-width: 1025px) {
+            .bg-container {
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web");
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .bg-container {
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile");
+            }
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(30, 102, 245, 0.2) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(118, 75, 162, 0.1) 100%);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
         /* Top Navigation Bar */
@@ -31,12 +72,15 @@
             top: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--glass-border);
             padding: 12px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 20px rgba(30, 102, 245, 0.1);
             z-index: 1000;
         }
 
@@ -152,19 +196,21 @@
             display: flex;
             gap: 0;
             margin-bottom: 20px;
-            background: white;
-            padding: 0;
-            border-radius: 0;
-            box-shadow: none;
-            border-bottom: 2px solid #e2e8f0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 4px;
+            box-shadow: 0 8px 25px rgba(30, 102, 245, 0.1);
         }
 
         .tab-btn {
             flex: 1;
-            padding: 14px 16px;
+            padding: 12px 16px;
             background: transparent;
             border: none;
-            border-radius: 0;
+            border-radius: 12px;
             font-size: 14px;
             font-weight: 600;
             color: var(--text-muted);
@@ -175,18 +221,9 @@
         }
 
         .tab-btn.active {
-            background: transparent;
-            color: var(--primary-blue);
-        }
-
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--primary-blue);
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(30, 102, 245, 0.3);
         }
 
         /* Stats Grid */
@@ -198,26 +235,31 @@
         }
 
         .stat-card {
-            background: white;
-            padding: 16px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(30, 102, 245, 0.1);
+            transition: all 0.3s;
         }
 
         .stat-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(30, 102, 245, 0.15);
         }
 
         .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             font-size: 24px;
+            color: white;
         }
 
         .stat-card:nth-child(1) .stat-icon {
@@ -276,10 +318,13 @@
 
         /* Recent Complaints */
         .complaints-list {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(30, 102, 245, 0.1);
             margin-bottom: 24px;
         }
 
@@ -367,10 +412,13 @@
         }
 
         .dept-card {
-            background: white;
-            padding: 16px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(30, 102, 245, 0.1);
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
@@ -378,19 +426,20 @@
         }
 
         .dept-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(30, 102, 245, 0.15);
         }
 
         .dept-icon {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 12px;
-            border-radius: 16px;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 28px;
+            color: white;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
@@ -426,11 +475,14 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid var(--glass-border);
             padding: 12px 16px;
             display: flex;
             justify-content: space-around;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 -2px 20px rgba(30, 102, 245, 0.1);
             z-index: 1000;
         }
 
@@ -469,10 +521,13 @@
         }
 
         .category-card {
-            background: white;
-            padding: 20px 16px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            padding: 24px 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(30, 102, 245, 0.1);
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
@@ -481,25 +536,24 @@
         }
 
         .category-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(30, 102, 245, 0.15);
         }
 
         .category-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 12px;
-            border-radius: 16px;
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 16px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 32px;
+            color: white;
         }
 
-        .category-icon img {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
+        .category-icon i {
+            font-size: 32px;
         }
 
         .category-card:nth-child(1) .category-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
@@ -932,6 +986,8 @@
     </style>
 </head>
 <body>
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
     <!-- Top Navigation -->
     <nav class="top-nav">
         <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp" class="logo-img">
@@ -966,22 +1022,30 @@
             <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">📊</div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
                     <div class="stat-number">{{ total_complaints }}</div>
                     <div class="stat-label">Total Complaints</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">⏳</div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
                     <div class="stat-number">{{ pending_complaints }}</div>
                     <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🔄</div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);">
+                        <i class="fa-solid fa-spinner"></i>
+                    </div>
                     <div class="stat-number">{{ progress_complaints }}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">✅</div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
                     <div class="stat-number">{{ solved_complaints }}</div>
                     <div class="stat-label">Solved</div>
                 </div>
@@ -1020,27 +1084,39 @@
 
             <div class="departments-grid">
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">🚔</div>
+                    <div class="dept-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
                     <div class="dept-name">Police</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">🚦</div>
+                    <div class="dept-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fa-solid fa-traffic-light"></i>
+                    </div>
                     <div class="dept-name">Traffic</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">🏗️</div>
+                    <div class="dept-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fa-solid fa-hammer"></i>
+                    </div>
                     <div class="dept-name">Construction</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">💧</div>
+                    <div class="dept-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fa-solid fa-droplet"></i>
+                    </div>
                     <div class="dept-name">Water Supply</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">💡</div>
+                    <div class="dept-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
                     <div class="dept-name">Electricity</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">🗑️</div>
+                    <div class="dept-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                        <i class="fa-solid fa-trash"></i>
+                    </div>
                     <div class="dept-name">Garbage</div>
                 </a>
             </div>
@@ -1054,51 +1130,75 @@
 
             <div class="categories-grid">
                 <a href="{% url 'submit_complaint' %}?type=police" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" alt="Police"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
                     <div class="category-name">Police</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=traffic" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917995.png" alt="Traffic"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fa-solid fa-traffic-light"></i>
+                    </div>
                     <div class="category-name">Traffic</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=construction" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2910/2910769.png" alt="Construction"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fa-solid fa-hammer"></i>
+                    </div>
                     <div class="category-name">Construction</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=water" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Water"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fa-solid fa-droplet"></i>
+                    </div>
                     <div class="category-name">Water Supply</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=electricity" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Electricity"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
                     <div class="category-name">Electricity</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=garbage" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Garbage"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                        <i class="fa-solid fa-trash"></i>
+                    </div>
                     <div class="category-name">Garbage</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=road" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Road"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                        <i class="fa-solid fa-road"></i>
+                    </div>
                     <div class="category-name">Road/Pothole</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=drainage" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Drainage"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);">
+                        <i class="fa-solid fa-water"></i>
+                    </div>
                     <div class="category-name">Drainage</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=illegal" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Illegal"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%);">
+                        <i class="fa-solid fa-ban"></i>
+                    </div>
                     <div class="category-name">Illegal Activity</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=transportation" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Transportation"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);">
+                        <i class="fa-solid fa-bus"></i>
+                    </div>
                     <div class="category-name">Transportation</div>
                 </a>
                 <a href="tel:1930" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Cyber"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
+                        <i class="fa-solid fa-laptop"></i>
+                    </div>
                     <div class="category-name">Cyber Crime</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=other" class="category-card">
-                    <div class="category-icon"><img src="https://cdn-icons-png.flaticon.com/512/2917/2917242.png" alt="Other"></div>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </div>
                     <div class="category-name">Other</div>
                 </a>
             </div>
@@ -1408,7 +1508,7 @@
                     <h3 style="margin-bottom: 12px; color: var(--text-dark); font-family: 'Poppins', sans-serif;">Login Required</h3>
                     <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">Please login to access all features and view your complaints</p>
                     <div style="display: flex; gap: 12px;">
-                        <button onclick="window.location.href='https://janhelp.vercel.app/login'" style="
+                        <button onclick="window.location.href='https://janhelp.vercel.app/'" style="
                             flex: 1;
                             background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%);
                             color: white;
