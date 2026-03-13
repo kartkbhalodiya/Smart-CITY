@@ -53,6 +53,34 @@
             gap: 12px;
         }
 
+        .nav-track-btn {
+            display: none;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .nav-track-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(30, 102, 245, 0.3);
+        }
+
+        @media (min-width: 768px) {
+            .nav-track-btn {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+        }
+
         .nav-icon {
             width: 40px;
             height: 40px;
@@ -205,7 +233,6 @@
         .stat-icon {
             width: 56px;
             height: 56px;
-            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -379,7 +406,6 @@
             width: 64px;
             height: 64px;
             margin: 0 auto 16px;
-            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -481,7 +507,6 @@
             width: 72px;
             height: 72px;
             margin: 0 auto 16px;
-            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -930,6 +955,10 @@
             </form>
         </div>
         <div class="nav-right">
+            <a href="{% url 'track_complaints' %}" class="nav-track-btn">
+                <i class="fa-solid fa-list-check"></i>
+                Track
+            </a>
             <div class="nav-icon" onclick="showNotifications()">
                 <i class="fa-solid fa-bell"></i>
                 <span class="notification-badge"></span>
@@ -1022,7 +1051,7 @@
                     <div class="dept-name">Water Supply</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">⚡</div>
+                    <div class="dept-icon">💡</div>
                     <div class="dept-name">Electricity</div>
                 </a>
                 <a href="#" class="dept-card">
@@ -1056,7 +1085,7 @@
                     <div class="category-name">Water Supply</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=electricity" class="category-card">
-                    <div class="category-icon">⚡</div>
+                    <div class="category-icon">💡</div>
                     <div class="category-name">Electricity</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=garbage" class="category-card">
@@ -1064,11 +1093,11 @@
                     <div class="category-name">Garbage</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=road" class="category-card">
-                    <div class="category-icon">🛸️</div>
+                    <div class="category-icon">🚧</div>
                     <div class="category-name">Road/Pothole</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=drainage" class="category-card">
-                    <div class="category-icon">🌊</div>
+                    <div class="category-icon">🫇</div>
                     <div class="category-name">Drainage</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=illegal" class="category-card">
