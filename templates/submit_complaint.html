@@ -2,83 +2,136 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Complaint - Smart City</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Submit Complaint - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --green-accent: #2ECC71;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
             min-height: 100vh;
+            padding: 0;
         }
 
         .container {
-            max-width: 700px;
+            max-width: 650px;
             margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 40px;
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 24px rgba(30, 102, 245, 0.08);
             padding: 20px;
             margin-bottom: 20px;
-            color: #fff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
+            position: relative;
         }
 
         .header h1 {
-            font-size: 20px;
-            font-weight: 800;
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header h1 i {
+            color: var(--primary-blue);
         }
 
         .back-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            padding: 8px 15px;
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(30, 102, 245, 0.1);
+            color: var(--primary-blue);
+            padding: 8px 14px;
             border-radius: 10px;
             text-decoration: none;
             font-size: 13px;
             font-weight: 600;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 1.5px solid rgba(30, 102, 245, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-blue);
+            color: #fff;
+            transform: translateY(-50%) translateY(-2px);
         }
 
         .form-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 24px rgba(30, 102, 245, 0.08);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .form-card h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-card h3 i {
+            color: var(--primary-blue);
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            color: #2d3436;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: 'Poppins', sans-serif;
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            color: var(--text-dark);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
             transition: all 0.3s;
         }
 
@@ -86,8 +139,9 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #2c3e50;
-            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+            border-color: var(--primary-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(30, 102, 245, 0.1);
         }
 
         .form-group textarea {
@@ -103,33 +157,45 @@
         }
 
         .subcategory-card {
-            padding: 15px;
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
+            color: var(--text-dark);
         }
 
         .subcategory-card:hover {
-            background: #e9ecef;
+            border-color: var(--primary-blue);
+            background: rgba(30, 102, 245, 0.05);
         }
 
         .subcategory-card.active {
-            background: #2c3e50;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
             color: #fff;
-            border-color: #2c3e50;
+            border-color: var(--primary-blue);
+            box-shadow: 0 4px 12px rgba(30, 102, 245, 0.3);
         }
 
         .dynamic-fields {
             display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            margin-top: 16px;
+            padding: 18px;
+            background: rgba(239, 246, 255, 0.5);
+            border-radius: 12px;
+            border: 1.5px solid rgba(30, 102, 245, 0.15);
+        }
+
+        .dynamic-fields h4 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 14px;
         }
 
         .dynamic-fields.show {
@@ -137,9 +203,9 @@
         }
 
         .btn {
-            padding: 14px 25px;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
             border: none;
@@ -149,31 +215,47 @@
             gap: 8px;
             text-decoration: none;
             justify-content: center;
+            font-family: 'Poppins', sans-serif;
         }
 
         .btn-primary {
-            background: #2c3e50;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
             color: #fff;
             width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 16px rgba(30, 102, 245, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(30, 102, 245, 0.3);
         }
 
         .btn-primary:active {
-            transform: scale(0.98);
+            transform: translateY(0);
         }
 
         .location-btn {
-            background: #10b981;
+            background: linear-gradient(135deg, var(--green-accent) 0%, #27ae60 100%);
             color: #fff;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+        }
+
+        .location-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(46, 204, 113, 0.3);
         }
 
         .location-info {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 13px;
+            background: rgba(239, 246, 255, 0.6);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 12px;
             display: none;
+            border: 1.5px solid rgba(30, 102, 245, 0.15);
         }
 
         .location-info.show {
@@ -195,14 +277,48 @@
             width: auto;
         }
 
-        @media (max-width: 480px) {
-            .subcategory-grid {
-                grid-template-columns: 1fr;
-            }
+        .priority-btn {
+            flex: 1;
+            padding: 11px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1.5px solid;
+        }
 
-            .header h1 {
-                font-size: 18px;
-            }
+        .contact-method-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 0;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+
+        .contact-method-label:hover {
+            border-color: var(--primary-blue);
+            background: rgba(30, 102, 245, 0.05);
+        }
+
+        .contact-method-label input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--primary-blue);
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 15px; padding-bottom: 30px; }
+            .form-card { padding: 20px; }
+            .header { padding: 16px; }
+            .header h1 { font-size: 18px; }
+            .back-btn { left: 12px; padding: 6px 10px; font-size: 12px; }
+            .subcategory-grid { grid-template-columns: 1fr; }
         }
 
         .spinner {
@@ -226,10 +342,10 @@
     <script src="/static/js/comprehensive_translations.js"></script>
     <div class="container">
         <div class="header">
-            <h1 id="pageTitle">Submit Complaint</h1>
             <a href="{% url 'user_dashboard' %}" class="back-btn">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </a>
+            <h1 id="pageTitle"><i class="fa-solid fa-file-circle-plus"></i> Submit Complaint</h1>
         </div>
 
         <form method="post" enctype="multipart/form-data" id="complaintForm">
@@ -267,7 +383,7 @@
             </div>
 
             <div class="form-card">
-                <h3 style="margin-bottom: 15px; font-size: 16px;">Common Details</h3>
+                <h3><i class="fa-solid fa-circle-info"></i> Common Details</h3>
                 
                 <div class="form-group">
                     <label>Complaint Title</label>
@@ -287,20 +403,20 @@
             </div>
 
             <div class="form-card">
-                <h3 style="margin-bottom: 15px; font-size: 16px;">Location Details</h3>
+                <h3><i class="fa-solid fa-location-dot"></i> Location Details</h3>
                 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-                    <button type="button" class="btn" style="background: #10b981; color: #fff; padding: 12px;" onclick="autoDetectLocation()">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;">
+                    <button type="button" class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; padding: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);" onclick="autoDetectLocation()">
                         <i class="fa-solid fa-location-crosshairs"></i>
-                        Auto Detect
+                        <span style="font-size: 11px;">Auto Detect</span>
                     </button>
-                    <button type="button" class="btn" style="background: #3b82f6; color: #fff; padding: 12px;" onclick="selectOnMap()">
+                    <button type="button" class="btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; padding: 10px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);" onclick="selectOnMap()">
                         <i class="fa-solid fa-map-marked-alt"></i>
-                        Select on Map
+                        <span style="font-size: 11px;">Map</span>
                     </button>
-                    <button type="button" class="btn" style="background: #6366f1; color: #fff; padding: 12px;" onclick="manualEntry()">
+                    <button type="button" class="btn" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #fff; padding: 10px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);" onclick="manualEntry()">
                         <i class="fa-solid fa-pen"></i>
-                        Manual Entry
+                        <span style="font-size: 11px;">Manual</span>
                     </button>
                 </div>
 
@@ -366,7 +482,7 @@
             </div>
 
             <div class="form-card">
-                <h3 style="margin-bottom: 15px; font-size: 16px;">Your Information</h3>
+                <h3><i class="fa-solid fa-user-circle"></i> Your Information</h3>
                 
                 <div class="form-group">
                     <label>Full Name</label>
@@ -385,14 +501,14 @@
 
                 <div class="form-group">
                     <label>Complaint Priority</label>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button type="button" class="priority-btn" data-priority="high" onclick="setPriority('high')" style="flex: 1; padding: 12px; border: 2px solid #ef4444; background: #fee2e2; color: #dc2626; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="button" class="priority-btn" data-priority="high" onclick="setPriority('high')" style="border-color: #ef4444; background: #fee2e2; color: #dc2626;">
                             <i class="fa-solid fa-circle-exclamation"></i> HIGH
                         </button>
-                        <button type="button" class="priority-btn" data-priority="medium" onclick="setPriority('medium')" style="flex: 1; padding: 12px; border: 2px solid #f59e0b; background: #fef3c7; color: #d97706; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        <button type="button" class="priority-btn" data-priority="medium" onclick="setPriority('medium')" style="border-color: #f59e0b; background: #fef3c7; color: #d97706;">
                             <i class="fa-solid fa-triangle-exclamation"></i> MEDIUM
                         </button>
-                        <button type="button" class="priority-btn" data-priority="normal" onclick="setPriority('normal')" style="flex: 1; padding: 12px; border: 2px solid #10b981; background: #d1fae5; color: #059669; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        <button type="button" class="priority-btn" data-priority="normal" onclick="setPriority('normal')" style="border-color: #10b981; background: #d1fae5; color: #059669;">
                             <i class="fa-solid fa-circle-check"></i> NORMAL
                         </button>
                     </div>
@@ -401,17 +517,17 @@
 
                 <div class="form-group">
                     <label>Preferred Contact Method</label>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; cursor: pointer; margin: 0;">
-                            <input type="checkbox" name="contact_phone" value="phone" style="width: auto;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                        <label class="contact-method-label">
+                            <input type="checkbox" name="contact_phone" value="phone">
                             <span><i class="fa-solid fa-phone"></i> Phone</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; cursor: pointer; margin: 0;">
-                            <input type="checkbox" name="contact_email" value="email" style="width: auto;">
+                        <label class="contact-method-label">
+                            <input type="checkbox" name="contact_email" value="email">
                             <span><i class="fa-solid fa-envelope"></i> Email</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; cursor: pointer; margin: 0;">
-                            <input type="checkbox" name="contact_sms" value="sms" style="width: auto;">
+                        <label class="contact-method-label">
+                            <input type="checkbox" name="contact_sms" value="sms">
                             <span><i class="fa-solid fa-message"></i> SMS</span>
                         </label>
                     </div>
