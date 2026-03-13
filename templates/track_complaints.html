@@ -204,28 +204,28 @@
         }
 
         .status-pending {
-            background: #FFF4E6;
-            color: var(--warning-color);
+            background: #9333EA;
+            color: white;
         }
 
         .status-confirmed {
-            background: #E3F2FD;
-            color: var(--primary-color);
+            background: #2B6CF6;
+            color: white;
         }
 
         .status-process {
-            background: #FFF4E6;
-            color: var(--warning-color);
+            background: #F39C12;
+            color: white;
         }
 
         .status-solved {
-            background: #E8F8F0;
-            color: var(--success-color);
+            background: #2ECC71;
+            color: white;
         }
 
         .status-reopened {
-            background: #FFEBEE;
-            color: var(--danger-color);
+            background: #8B0000;
+            color: white;
         }
 
         /* Progress Timeline */
@@ -273,6 +273,26 @@
             color: var(--text-muted);
         }
 
+        .timeline-node.pending-node {
+            background: #9333EA;
+            color: white;
+        }
+
+        .timeline-node.process-node {
+            background: #F39C12;
+            color: white;
+        }
+
+        .timeline-node.solved-node {
+            background: #2ECC71;
+            color: white;
+        }
+
+        .timeline-node.reopened-node {
+            background: #8B0000;
+            color: white;
+        }
+
         .timeline-label {
             font-size: 10px;
             color: var(--text-muted);
@@ -295,8 +315,27 @@
             top: 0;
             left: 0;
             height: 100%;
-            background: var(--primary-color);
             transition: width 0.5s ease;
+        }
+
+        .timeline-line-progress.pending-line {
+            background: #9333EA;
+        }
+
+        .timeline-line-progress.confirmed-line {
+            background: #2B6CF6;
+        }
+
+        .timeline-line-progress.process-line {
+            background: #F39C12;
+        }
+
+        .timeline-line-progress.solved-line {
+            background: #2ECC71;
+        }
+
+        .timeline-line-progress.reopened-line {
+            background: #8B0000;
         }
 
         /* Complaint Details */
@@ -522,16 +561,16 @@
                     <!-- Progress Timeline -->
                     <div class="progress-timeline">
                         <div class="timeline-line">
-                            <div class="timeline-line-progress" style="width: {% if complaint.work_status == 'pending' %}25%{% elif complaint.work_status == 'confirmed' %}50%{% elif complaint.work_status == 'process' %}75%{% elif complaint.work_status == 'solved' %}100%{% else %}25%{% endif %};"></div>
+                            <div class="timeline-line-progress {% if complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}pending-line{% elif complaint.work_status == 'confirmed' %}confirmed-line{% elif complaint.work_status == 'process' %}process-line{% elif complaint.work_status == 'solved' %}solved-line{% endif %}" style="width: {% if complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}25%{% elif complaint.work_status == 'confirmed' %}50%{% elif complaint.work_status == 'process' %}75%{% elif complaint.work_status == 'solved' %}100%{% endif %};"></div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node completed">
+                            <div class="timeline-node pending-node">
                                 <i class="fa-solid fa-check"></i>
                             </div>
                             <div class="timeline-label">Submitted</div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'pending' %}upcoming{% else %}upcoming{% endif %}">
+                            <div class="timeline-node {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}upcoming{% endif %}">
                                 {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' %}
                                 <i class="fa-solid fa-check"></i>
                                 {% else %}
@@ -541,9 +580,11 @@
                             <div class="timeline-label">Confirmed</div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'process' or complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'confirmed' %}current{% else %}upcoming{% endif %}">
-                                {% if complaint.work_status == 'process' or complaint.work_status == 'solved' %}
+                            <div class="timeline-node {% if complaint.work_status == 'process' %}process-node{% elif complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'confirmed' %}upcoming{% else %}upcoming{% endif %}">
+                                {% if complaint.work_status == 'solved' %}
                                 <i class="fa-solid fa-check"></i>
+                                {% elif complaint.work_status == 'process' %}
+                                <i class="fa-solid fa-spinner"></i>
                                 {% else %}
                                 3
                                 {% endif %}
@@ -551,7 +592,7 @@
                             <div class="timeline-label">In Progress</div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'process' %}current{% else %}upcoming{% endif %}">
+                            <div class="timeline-node {% if complaint.work_status == 'solved' %}solved-node{% elif complaint.work_status == 'process' %}upcoming{% else %}upcoming{% endif %}">
                                 {% if complaint.work_status == 'solved' %}
                                 <i class="fa-solid fa-check"></i>
                                 {% else %}

@@ -1756,9 +1756,21 @@ def reject_complaint(request, complaint_id):
 
 @login_required
 def view_complaint_location(request, complaint_id):
-    complaint = get_object_or_404(Complaint, id=complaint_id)
-    return render(request, 'view_complaint_map.html', {
+    complaint = get_object_or_404(
+        Complaint.objects.select_related('assigned_department')
+        .prefetch_related('media', 'resolution_proofs', 'reopen_proofs'),
+        id=complaint_id
+    )
+    
+    # Check if user owns this complaint or is authorized
+    if not request.user.is_superuser:
+        if complaint.user != request.user:
+            messages.error(request, 'Access denied!')
+            return redirect('user_dashboard')
+    
+    return render(request, 'complaint_detail.html', {
         'complaint': complaint,
+        'reopen_window_days': Complaint.REOPEN_WINDOW_DAYS,
     })
 
 def guest_complaint(request):
