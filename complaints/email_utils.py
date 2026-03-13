@@ -11,24 +11,33 @@ def send_email_template(template_name, context, recipient_email, subject):
         template_name: Name of the email template (without .html)
         context: Dictionary of context variables for the template
         recipient_email: Recipient's email address
-        subject: Email subject lin
+        subject: Email subject line
     """
-    # Add base URL to context
-    context['base_url'] = settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://127.0.0.1:8000'
-    
-    # Render HTML content
-    html_content = render_to_string(f'emails/{template_name}.html', context)
-    
-    # Create email
-    email = EmailMultiAlternatives(
-        subject=subject,
-        body=f"Please view this email in an HTML-compatible email client.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[recipient_email]
-    )
-    
-    email.attach_alternative(html_content, "text/html")
-    email.send()
+    try:
+        # Add base URL to context
+        context['base_url'] = settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://127.0.0.1:8000'
+        
+        # Render HTML content
+        html_content = render_to_string(f'emails/{template_name}.html', context)
+        
+        # Create email
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=f"Please view this email in an HTML-compatible email client.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient_email]
+        )
+        
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"[Email] Successfully sent '{subject}' to {recipient_email}")
+        return True
+    except Exception as e:
+        print(f"[Email] Error sending email to {recipient_email}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def send_otp_email(user_email, otp_code, user_name='User'):

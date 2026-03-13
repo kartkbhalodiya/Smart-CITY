@@ -4708,18 +4708,22 @@ def forgot_password(request):
                 # Check if email belongs to a department user or city admin
                 user = User.objects.filter(email__iexact=email).first()
                 if not user:
+                    print(f"[Forgot Password] No user found with email: {email}")
                     return
                 
                 dept_user = DepartmentUser.objects.filter(user=user).select_related('department').first()
                 city_admin = CityAdmin.objects.filter(user=user).first()
                 
                 if not dept_user and not city_admin:
+                    print(f"[Forgot Password] User {email} is not a department user or city admin")
                     return
                 
                 # Generate a new password
                 new_password = generate_strong_password(12)
                 user.set_password(new_password)
                 user.save()
+                
+                print(f"[Forgot Password] Password reset for {email}, sending email...")
                 
                 # Import the new email function
                 from .email_utils import send_password_reset_credentials_email
@@ -4728,6 +4732,7 @@ def forgot_password(request):
                 
                 if dept_user:
                     # Send email with department details and new password
+                    print(f"[Forgot Password] Sending department reset email to {email}")
                     send_password_reset_credentials_email(
                         email=email,
                         user_name=user_name,
@@ -4737,6 +4742,7 @@ def forgot_password(request):
                     )
                 elif city_admin:
                     # Send email with city admin details and new password
+                    print(f"[Forgot Password] Sending city admin reset email to {email}")
                     city_admin_info = {
                         'full_name': user_name,
                         'city': city_admin.city_name,
@@ -4752,8 +4758,12 @@ def forgot_password(request):
                         city_admin_info=city_admin_info
                     )
                 
-            except Exception:
-                pass  # Silently fail for security
+                print(f"[Forgot Password] Email sent successfully to {email}")
+                
+            except Exception as e:
+                print(f"[Forgot Password] Error sending email: {str(e)}")
+                import traceback
+                traceback.print_exc()
         
         Thread(target=send_reset_email, daemon=True).start()
         return redirect('login')
