@@ -46,7 +46,7 @@ def send_otp_email(user_email, otp_code, user_name='User'):
         'user_name': user_name,
         'otp_code': otp_code,
     }
-    send_email_template(
+    return send_email_template(
         'otp_email',
         context,
         user_email,
@@ -61,7 +61,7 @@ def send_password_reset_email(user_email, user_name, reset_link, reset_code=None
         'reset_link': reset_link,
         'reset_code': reset_code,
     }
-    send_email_template(
+    return send_email_template(
         'password_reset_email',
         context,
         user_email,
@@ -79,7 +79,7 @@ def send_welcome_email(user_email, user_name, user_mobile, join_date, user_role=
         'user_role': user_role,
         'dashboard_url': f"{settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://127.0.0.1:8000'}/dashboard/",
     }
-    send_email_template(
+    return send_email_template(
         'welcome_email',
         context,
         user_email,
@@ -90,19 +90,6 @@ def send_welcome_email(user_email, user_name, user_mobile, join_date, user_role=
 def send_complaint_status_email(user_email, user_name, complaint_data):
     """
     Send complaint status update email
-    
-    complaint_data should include:
-    - complaint_number
-    - complaint_title
-    - status_text
-    - status_class (submitted, assigned, in-progress, resolved, reopened, rejected)
-    - status_icon
-    - submitted_date
-    - department_name
-    - location
-    - updated_date
-    - status_message (optional)
-    - timeline_events (optional list)
     """
     base_url = settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://127.0.0.1:8000'
     
@@ -113,7 +100,7 @@ def send_complaint_status_email(user_email, user_name, complaint_data):
         'track_url': f"{base_url}/track/",
     }
     
-    send_email_template(
+    return send_email_template(
         'complaint_status_email',
         context,
         user_email,
@@ -124,16 +111,6 @@ def send_complaint_status_email(user_email, user_name, complaint_data):
 def send_complaint_resolved_email(user_email, user_name, complaint_data):
     """
     Send complaint resolved email
-    
-    complaint_data should include:
-    - complaint_number
-    - complaint_title
-    - department_name
-    - submitted_date
-    - resolved_date
-    - resolution_time
-    - resolution_notes (optional)
-    - proof_images (optional list)
     """
     base_url = settings.BASE_URL if hasattr(settings, 'BASE_URL') else 'http://127.0.0.1:8000'
     
@@ -145,7 +122,7 @@ def send_complaint_resolved_email(user_email, user_name, complaint_data):
         'dashboard_url': f"{base_url}/dashboard/",
     }
     
-    send_email_template(
+    return send_email_template(
         'complaint_resolved_email',
         context,
         user_email,
@@ -166,7 +143,7 @@ def send_department_assignment_email(user_email, user_name, department_name, use
         'login_url': f"{base_url}/login/",
     }
     
-    send_email_template(
+    return send_email_template(
         'department_assignment_email',
         context,
         user_email,
@@ -181,7 +158,7 @@ def send_department_credentials_email(email, department, login_password):
         'department': department,
         'login_password': login_password,
     }
-    send_email_template(
+    return send_email_template(
         'department_credentials',
         context,
         email,
@@ -200,7 +177,7 @@ def send_city_admin_credentials_email(email, full_name, state, city, login_passw
         'pincode': pincode,
         'contact_address': contact_address,
     }
-    send_email_template(
+    return send_email_template(
         'city_admin_credentials',
         context,
         email,
@@ -217,7 +194,7 @@ def send_password_reset_credentials_email(email, user_name, new_password, depart
         'department': department,
         'city_admin_info': city_admin_info,
     }
-    send_email_template(
+    return send_email_template(
         'password_reset_credentials',
         context,
         email,
