@@ -209,32 +209,6 @@
             .nav-links { display: none; }
         }
     </style>
-    <script src="/static/js/comprehensive_translations.js"></script>
-    <script>
-        // Language switching functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const languageSelect = document.getElementById('languageSelect');
-            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
-            
-            if (languageSelect) {
-                languageSelect.value = savedLang;
-                
-                languageSelect.addEventListener('change', function() {
-                    const selectedLang = this.value;
-                    localStorage.setItem('selectedLanguage', selectedLang);
-                    translatePageComprehensive(selectedLang);
-                    
-                    // Also translate any dynamic content
-                    if (typeof translateDynamicContent === 'function') {
-                        setTimeout(translateDynamicContent, 100);
-                    }
-                });
-            }
-            
-            // Apply translation on page load
-            translatePageComprehensive(savedLang);
-        });
-    </script>
 </head>
 <body>
     <div class="navbar">
@@ -243,15 +217,6 @@
             SMART CITY
         </a>
         <div class="nav-links">
-            <!-- Language Selector -->
-            <div class="language-selector" style="display: inline-block; margin-right: 1rem;">
-                <select id="languageSelect" style="padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: white; font-size: 0.85rem;">
-                    <option value="en">English</option>
-                    <option value="hi">हिन्दी</option>
-                    <option value="gu">ગુજરાતી</option>
-                </select>
-            </div>
-            
             {% if user.is_authenticated %}
                 {% if user.department %}
                     <a href="{% url 'department_dashboard' %}">Dashboard</a>

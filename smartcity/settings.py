@@ -57,7 +57,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -136,20 +135,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-LANGUAGES = [
-    ('en', 'English'),
-    ('hi', 'हिन्दी'),
-    ('gu', 'ગુજરાતી'),
-]
-
-LOCALE_PATHS = [
-    BASE_DIR / 'locale',
-]
-
-TIME_ZONE = "UTC"
-
-USE_I18N = True
-USE_L10N = True
+USE_I18N = False
+USE_L10N = False
 
 USE_TZ = True
 
@@ -206,6 +193,9 @@ MAPMYINDIA_API_KEY = os.getenv('MAPPLE_API_KEY', '')  # Alias
 
 # Login URL
 LOGIN_URL = '/login/'
+
+# Base URL for emails and links
+BASE_URL = os.getenv('BASE_URL', 'https://janhelp.vercel.app')
 
 # Session settings - Keep user logged in
 SESSION_COOKIE_AGE = 1209600  # 2 weeks

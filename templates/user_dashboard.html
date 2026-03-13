@@ -350,18 +350,6 @@
             position: relative;
         }
 
-        .dept-card.locked {
-            opacity: 0.6;
-        }
-
-        .dept-card.locked::after {
-            content: '🔒';
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 16px;
-        }
-
         .dept-card:active {
             transform: scale(0.97);
         }
@@ -786,32 +774,32 @@
         <div class="departments-section">
             <div class="section-header">
                 <h2 class="section-title">Departments</h2>
-                <a href="{% if is_guest %}#{% else %}{% url 'view_all_departments' %}{% endif %}" class="view-all" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'view_all_departments' %}" class="view-all">
                     View All <i class="fa-solid fa-chevron-right"></i>
                 </a>
             </div>
             <div class="departments-grid">
-                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'police' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'user_view_department' 'police' %}" class="dept-card">
                     <div class="dept-icon">🚓</div>
                     <div class="dept-name">Police</div>
                 </a>
-                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'traffic' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'user_view_department' 'traffic' %}" class="dept-card">
                     <div class="dept-icon">🚦</div>
                     <div class="dept-name">Traffic</div>
                 </a>
-                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'water' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'user_view_department' 'water' %}" class="dept-card">
                     <div class="dept-icon">💧</div>
                     <div class="dept-name">Water Supply</div>
                 </a>
-                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'garbage' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'user_view_department' 'garbage' %}" class="dept-card">
                     <div class="dept-icon">🗑</div>
                     <div class="dept-name">Garbage</div>
                 </a>
-                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'electricity' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'user_view_department' 'electricity' %}" class="dept-card">
                     <div class="dept-icon">⚡</div>
                     <div class="dept-name">Electricity</div>
                 </a>
-                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'construction' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
+                <a href="{% url 'user_view_department' 'construction' %}" class="dept-card">
                     <div class="dept-icon">🏗</div>
                     <div class="dept-name">Construction</div>
                 </a>
