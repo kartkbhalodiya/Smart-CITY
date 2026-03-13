@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Departments - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --green-accent: #2ECC71;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-img {
+            max-width: 120px;
+            height: auto;
+            margin-bottom: 16px;
+        }
+
+        .page-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f5f5f5;
+            color: var(--text-dark);
+            padding: 10px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .stats-bar {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-bar h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 4px;
+        }
+
+        .stats-bar p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .map-container {
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .departments-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .dept-card {
+            background: #f5f5f5;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .dept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .dept-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .dept-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            background: none;
+        }
+
+        .dept-info h4 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .dept-info .dept-type {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dept-details {
+            margin-bottom: 16px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .detail-item i {
+            width: 16px;
+            color: var(--primary-blue);
+        }
+
+        .dept-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-view {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 102, 245, 0.3);
+        }
+
+        .btn-contact {
+            background: #f1f5f9;
+            color: var(--text-dark);
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .btn-contact:hover {
+            background: #e2e8f0;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .filter-tab:hover {
+            background: #e2e8f0;
+        }
+
+        .filter-tab.active:hover {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
+        }
+
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+
+            .map-container {
+                height: 350px;
+            }
+
+            .departments-list {
+                grid-template-columns: 1fr;
+            }
+
+            .dept-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .dept-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Custom Leaflet popup styles */
+        .custom-popup {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-popup h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-dark);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .custom-popup p {
+            margin: 4px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .popup-btn {
+            background: var(--primary-blue);
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp Logo" class="logo-img">
+            <h1 class="page-title">All Departments</h1>
+            <p class="page-subtitle">Find and connect with government departments</p>
+        </div>
+
+        <a href="{% url 'user_dashboard' %}" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+
+        <div class="stats-bar">
+            <h3>{{ total_departments }}</h3>
+            <p>Active Departments Available</p>
+        </div>
+
+        <div class="map-container" id="departmentsMap"></div>
+
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterDepartments('all')">All Departments</button>
+            <button class="filter-tab" onclick="filterDepartments('police')">🚔 Police</button>
+            <button class="filter-tab" onclick="filterDepartments('traffic')">🚦 Traffic</button>
+            <button class="filter-tab" onclick="filterDepartments('construction')">🏗️ Construction</button>
+            <button class="filter-tab" onclick="filterDepartments('water')">💧 Water</button>
+            <button class="filter-tab" onclick="filterDepartments('electricity')">💡 Electricity</button>
+            <button class="filter-tab" onclick="filterDepartments('garbage')">🗑️ Garbage</button>
+        </div>
+
+        <div class="departments-list" id="departmentsList">
+            {% for dept in departments %}
+            <div class="dept-card" data-type="{{ dept.department_type }}">
+                <div class="dept-header">
+                    <div class="dept-icon">
+                        {% if dept.department_type == 'police' %}🚔
+                        {% elif dept.department_type == 'traffic' %}🚦
+                        {% elif dept.department_type == 'construction' %}🏗️
+                        {% elif dept.department_type == 'water' %}💧
+                        {% elif dept.department_type == 'electricity' %}💡
+                        {% elif dept.department_type == 'garbage' %}🗑️
+                        {% elif dept.department_type == 'road' %}🚧
+                        {% elif dept.department_type == 'drainage' %}💧
+                        {% elif dept.department_type == 'illegal' %}🚫
+                        {% elif dept.department_type == 'transportation' %}🚌
+                        {% elif dept.department_type == 'cyber' %}💻
+                        {% else %}🏛️
+                        {% endif %}
+                    </div>
+                    <div class="dept-info">
+                        <h4>{{ dept.name }}</h4>
+                        <div class="dept-type">{{ dept.get_department_type_display }}</div>
+                    </div>
+                </div>
+
+                <div class="dept-details">
+                    <div class="detail-item">
+                        <i class="fa-solid fa-map-marker-alt"></i>
+                        <span>{{ dept.city }}, {{ dept.state }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>{{ dept.phone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>{{ dept.email }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>{{ dept.sla_hours }}h SLA</span>
+                    </div>
+                </div>
+
+                <div class="dept-actions">
+                    <button class="btn-view" onclick="showDepartmentDetails({{ dept.id }})">
+                        <i class="fa-solid fa-eye"></i>
+                        View Details
+                    </button>
+                    <a href="tel:{{ dept.phone }}" class="btn-contact">
+                        <i class="fa-solid fa-phone"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let markers = [];
+        const departmentData = {{ department_data|safe }};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+        });
+
+        function initializeMap() {
+            // Initialize map centered on India
+            map = L.map('departmentsMap').setView([20.5937, 78.9629], 5);
+
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add department markers
+            addDepartmentMarkers();
+
+            // Fit map to show all markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        function addDepartmentMarkers() {
+            departmentData.forEach(dept => {
+                const icon = getDepartmentIcon(dept.type_key);
+                
+                const marker = L.marker([dept.latitude, dept.longitude], {icon: icon}).addTo(map);
+                
+                const popupContent = `
+                    <div class="custom-popup">
+                        <h4>${dept.name}</h4>
+                        <p><strong>Type:</strong> ${dept.type}</p>
+                        <p><strong>Location:</strong> ${dept.city}, ${dept.state}</p>
+                        <p><strong>Phone:</strong> ${dept.phone}</p>
+                        <p><strong>SLA:</strong> ${dept.sla_hours} hours</p>
+                        <button class="popup-btn" onclick="showDepartmentDetails(${dept.id})">View Details</button>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                markers.push(marker);
+            });
+        }
+
+        function getDepartmentIcon(type) {
+            const iconMap = {
+                'police': '🚔',
+                'traffic': '🚦',
+                'construction': '🏗️',
+                'water': '💧',
+                'electricity': '💡',
+                'garbage': '🗑️',
+                'road': '🚧',
+                'drainage': '💧',
+                'illegal': '🚫',
+                'transportation': '🚌',
+                'cyber': '💻',
+                'other': '🏛️'
+            };
+
+            const emoji = iconMap[type] || '🏛️';
+            
+            return L.divIcon({
+                html: `<div style="background: var(--primary-blue); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); font-size: 20px;">${emoji}</div>`,
+                className: '',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+        }
+
+        function filterDepartments(type) {
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter department cards
+            const cards = document.querySelectorAll('.dept-card');
+            cards.forEach(card => {
+                if (type === 'all' || card.dataset.type === type) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Filter map markers
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            markers = [];
+            const filteredData = type === 'all' ? departmentData : departmentData.filter(dept => dept.type_key === type);
+            
+            filteredData.forEach(dept => {
+                const icon = getDepartmentIcon(dept.type_key);
+                const marker = L.marker([dept.latitude, dept.longitude], {icon: icon}).addTo(map);
+                
+                const popupContent = `
+                    <div class="custom-popup">
+                        <h4>${dept.name}</h4>
+                        <p><strong>Type:</strong> ${dept.type}</p>
+                        <p><strong>Location:</strong> ${dept.city}, ${dept.state}</p>
+                        <p><strong>Phone:</strong> ${dept.phone}</p>
+                        <p><strong>SLA:</strong> ${dept.sla_hours} hours</p>
+                        <button class="popup-btn" onclick="showDepartmentDetails(${dept.id})">View Details</button>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                markers.push(marker);
+            });
+
+            // Fit map to filtered markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        function showDepartmentDetails(deptId) {
+            const dept = departmentData.find(d => d.id === deptId);
+            if (!dept) return;
+
+            // Create modal popup with department details
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                backdrop-filter: blur(5px);
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 20px;
+                    max-width: 500px;
+                    margin: 20px;
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+                    max-height: 80vh;
+                    overflow-y: auto;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: var(--text-dark); font-family: 'Poppins', sans-serif;">${dept.name}</h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                            background: none;
+                            border: none;
+                            font-size: 24px;
+                            cursor: pointer;
+                            color: var(--text-muted);
+                        ">&times;</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>Department Type:</strong> ${dept.type}</p>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>Location:</strong> ${dept.location_name}</p>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>Address:</strong> ${dept.address}</p>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>City:</strong> ${dept.city}, ${dept.state}</p>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>Phone:</strong> ${dept.phone}</p>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>Email:</strong> ${dept.email}</p>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;"><strong>Service Level Agreement:</strong> ${dept.sla_hours} hours</p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <a href="tel:${dept.phone}" style="
+                            flex: 1;
+                            background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 10px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            font-family: 'Inter', sans-serif;
+                            text-decoration: none;
+                            text-align: center;
+                        ">📞 Call</a>
+                        <a href="mailto:${dept.email}" style="
+                            flex: 1;
+                            background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%);
+                            color: white;
+                            padding: 12px;
+                            border-radius: 10px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            font-family: 'Inter', sans-serif;
+                            text-decoration: none;
+                            text-align: center;
+                        ">✉️ Email</a>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+    </script>
+</body>
+</html>

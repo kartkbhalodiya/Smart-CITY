@@ -4181,6 +4181,49 @@ def super_admin_user_detail(request, user_id):
     }
     return render(request, 'super_admin_user_detail.html', context)
 
+def view_all_departments(request):
+    """View all departments with map showing all locations"""
+    # Get all active departments
+    departments = Department.objects.filter(
+        is_active=True
+    ).select_related('city_admin').order_by('department_type', 'name')
+    
+    # Group departments by type
+    departments_by_type = {}
+    for dept in departments:
+        dept_type = dept.get_department_type_display()
+        if dept_type not in departments_by_type:
+            departments_by_type[dept_type] = []
+        departments_by_type[dept_type].append(dept)
+    
+    # Prepare department data for map
+    department_data = []
+    for dept in departments:
+        department_data.append({
+            'id': dept.id,
+            'name': dept.name,
+            'type': dept.get_department_type_display(),
+            'type_key': dept.department_type,
+            'latitude': float(dept.latitude) if dept.latitude else 20.5937,
+            'longitude': float(dept.longitude) if dept.longitude else 78.9629,
+            'address': dept.address,
+            'phone': dept.phone,
+            'email': dept.email,
+            'city': dept.city,
+            'state': dept.state,
+            'location_name': dept.location_name,
+            'sla_hours': dept.sla_hours,
+        })
+    
+    context = {
+        'departments': departments,
+        'departments_by_type': departments_by_type,
+        'department_data': department_data,
+        'total_departments': departments.count(),
+    }
+    
+    return render(request, 'view_all_departments.html', context)
+
 def user_view_department(request, department_type):
     """View all departments of a specific type with map and personal details"""
     # Get all active departments of the specified type
