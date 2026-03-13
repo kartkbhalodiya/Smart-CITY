@@ -260,6 +260,27 @@
             text-align: center;
             transition: all 0.3s;
             border: 1px solid #BAE6FD;
+            position: relative;
+        }
+
+        .stat-card.locked {
+            opacity: 0.6;
+            cursor: pointer;
+        }
+
+        .stat-card.locked::before {
+            content: '🔒';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        .stat-card.locked .stat-value,
+        .stat-card.locked .stat-icon {
+            filter: blur(4px);
         }
 
         .stat-card:nth-child(1) {
@@ -326,6 +347,19 @@
             transition: all 0.3s;
             text-decoration: none;
             color: var(--text-dark);
+            position: relative;
+        }
+
+        .dept-card.locked {
+            opacity: 0.6;
+        }
+
+        .dept-card.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 16px;
         }
 
         .dept-card:active {
@@ -356,6 +390,27 @@
             margin-bottom: 12px;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
+        }
+
+        .complaint-card.locked {
+            opacity: 0.6;
+        }
+
+        .complaint-card.locked::before {
+            content: '🔒';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            z-index: 1;
+        }
+
+        .complaint-card.locked .complaint-header,
+        .complaint-card.locked .complaint-title,
+        .complaint-card.locked .complaint-meta {
+            filter: blur(3px);
         }
 
         .complaint-card:active {
@@ -447,6 +502,15 @@
             transition: all 0.3s;
             padding: 6px 12px;
             border-radius: 12px;
+            position: relative;
+        }
+
+        .nav-item.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 10px;
         }
 
         .nav-item.active {
@@ -522,6 +586,97 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Login Modal */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10001;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .login-modal.show {
+            display: flex;
+        }
+
+        .login-modal-content {
+            background: var(--bg-white);
+            border-radius: 24px;
+            padding: 32px 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .login-modal-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .login-modal h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+        }
+
+        .login-modal p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .login-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            color: white;
+        }
+
+        .modal-btn-secondary {
+            background: var(--bg-section);
+            color: var(--text-dark);
+        }
+
+        .modal-btn:active {
+            transform: scale(0.97);
+        }
+
         /* Responsive */
         @media (min-width: 768px) {
             .main-content {
@@ -553,9 +708,11 @@
         <div class="header-right">
             <div class="notification-btn" onclick="showNotifications()">
                 <i class="fa-solid fa-bell"></i>
+                {% if not is_guest %}
                 <span class="notification-badge"></span>
+                {% endif %}
             </div>
-            <div class="user-avatar" onclick="window.location.href='{% url 'profile' %}'">
+            <div class="user-avatar" onclick="{% if is_guest %}showLoginModal(){% else %}window.location.href='{% url 'profile' %}'{% endif %}">
                 {{ user.first_name.0|default:'G' }}{{ user.last_name.0|default:'U' }}
             </div>
         </div>
@@ -585,7 +742,7 @@
                 <i class="fa-solid fa-plus-circle"></i>
                 <span>Submit Complaint</span>
             </a>
-            <a href="{% url 'track_complaints' %}" class="action-btn action-btn-secondary">
+            <a href="{% if is_guest %}#{% else %}{% url 'track_complaints' %}{% endif %}" class="action-btn action-btn-secondary" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                 <i class="fa-solid fa-list-check"></i>
                 <span>Track Complaint</span>
             </a>
@@ -595,29 +752,31 @@
         <div class="stats-section">
             <div class="section-header">
                 <h2 class="section-title">Statistics</h2>
+                {% if not is_guest %}
                 <a href="{% url 'track_complaints' %}" class="view-all">
                     View All <i class="fa-solid fa-chevron-right"></i>
                 </a>
+                {% endif %}
             </div>
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal()"{% endif %}>
                     <div class="stat-icon">📊</div>
-                    <div class="stat-value">{{ total_complaints }}</div>
+                    <div class="stat-value">{{ total_complaints|default:"0" }}</div>
                     <div class="stat-label">Total Complaints</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal()"{% endif %}>
                     <div class="stat-icon">⏳</div>
-                    <div class="stat-value">{{ pending_complaints }}</div>
+                    <div class="stat-value">{{ pending_complaints|default:"0" }}</div>
                     <div class="stat-label">Pending</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal()"{% endif %}>
                     <div class="stat-icon">🔄</div>
-                    <div class="stat-value">{{ progress_complaints }}</div>
+                    <div class="stat-value">{{ progress_complaints|default:"0" }}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal()"{% endif %}>
                     <div class="stat-icon">✅</div>
-                    <div class="stat-value">{{ solved_complaints }}</div>
+                    <div class="stat-value">{{ solved_complaints|default:"0" }}</div>
                     <div class="stat-label">Solved</div>
                 </div>
             </div>
@@ -627,32 +786,32 @@
         <div class="departments-section">
             <div class="section-header">
                 <h2 class="section-title">Departments</h2>
-                <a href="{% url 'view_all_departments' %}" class="view-all">
+                <a href="{% if is_guest %}#{% else %}{% url 'view_all_departments' %}{% endif %}" class="view-all" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     View All <i class="fa-solid fa-chevron-right"></i>
                 </a>
             </div>
             <div class="departments-grid">
-                <a href="{% url 'user_view_department' 'police' %}" class="dept-card">
+                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'police' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     <div class="dept-icon">🚓</div>
                     <div class="dept-name">Police</div>
                 </a>
-                <a href="{% url 'user_view_department' 'traffic' %}" class="dept-card">
+                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'traffic' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     <div class="dept-icon">🚦</div>
                     <div class="dept-name">Traffic</div>
                 </a>
-                <a href="{% url 'user_view_department' 'water' %}" class="dept-card">
+                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'water' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     <div class="dept-icon">💧</div>
                     <div class="dept-name">Water Supply</div>
                 </a>
-                <a href="{% url 'user_view_department' 'garbage' %}" class="dept-card">
+                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'garbage' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     <div class="dept-icon">🗑</div>
                     <div class="dept-name">Garbage</div>
                 </a>
-                <a href="{% url 'user_view_department' 'electricity' %}" class="dept-card">
+                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'electricity' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     <div class="dept-icon">⚡</div>
                     <div class="dept-name">Electricity</div>
                 </a>
-                <a href="{% url 'user_view_department' 'construction' %}" class="dept-card">
+                <a href="{% if is_guest %}#{% else %}{% url 'user_view_department' 'construction' %}{% endif %}" class="dept-card {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
                     <div class="dept-icon">🏗</div>
                     <div class="dept-name">Construction</div>
                 </a>
@@ -663,12 +822,37 @@
         <div class="complaints-section">
             <div class="section-header">
                 <h2 class="section-title">Recent Complaints</h2>
+                {% if not is_guest %}
                 <a href="{% url 'track_complaints' %}" class="view-all">
                     View All <i class="fa-solid fa-chevron-right"></i>
                 </a>
+                {% endif %}
             </div>
 
-            {% if recent_complaints %}
+            {% if is_guest %}
+                <div class="complaint-card locked" onclick="showLoginModal()">
+                    <div class="complaint-header">
+                        <div class="complaint-id">#SC123456</div>
+                        <span class="status-badge status-pending">pending</span>
+                    </div>
+                    <div class="complaint-title">Sample Complaint</div>
+                    <div class="complaint-meta">
+                        <span>Your City</span>
+                        <span>Today</span>
+                    </div>
+                </div>
+                <div class="complaint-card locked" onclick="showLoginModal()">
+                    <div class="complaint-header">
+                        <div class="complaint-id">#SC789012</div>
+                        <span class="status-badge status-process">process</span>
+                    </div>
+                    <div class="complaint-title">Sample Complaint</div>
+                    <div class="complaint-meta">
+                        <span>Your City</span>
+                        <span>Yesterday</span>
+                    </div>
+                </div>
+            {% elif recent_complaints %}
                 {% for complaint in recent_complaints %}
                 <div class="complaint-card" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
                     <div class="complaint-header">
@@ -694,7 +878,7 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <a href="{% url 'user_dashboard' %}" class="nav-item active">
+        <a href="{% url 'user_dashboard' %}{% if is_guest %}?guest=true{% endif %}" class="nav-item active">
             <i class="fa-solid fa-house"></i>
             <span>Dashboard</span>
         </a>
@@ -702,15 +886,28 @@
             <i class="fa-solid fa-plus-circle"></i>
             <span>Submit</span>
         </a>
-        <a href="{% url 'track_complaints' %}" class="nav-item">
+        <a href="{% if is_guest %}#{% else %}{% url 'track_complaints' %}{% endif %}" class="nav-item {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
             <i class="fa-solid fa-list-check"></i>
             <span>Track</span>
         </a>
-        <a href="{% url 'profile' %}" class="nav-item">
+        <a href="{% if is_guest %}#{% else %}{% url 'profile' %}{% endif %}" class="nav-item {% if is_guest %}locked{% endif %}" {% if is_guest %}onclick="showLoginModal(); return false;"{% endif %}>
             <i class="fa-solid fa-user"></i>
             <span>Profile</span>
         </a>
     </nav>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-content">
+            <div class="login-modal-icon">🔐</div>
+            <h3>Login Required</h3>
+            <p>Please login or register to access this feature and track your complaints.</p>
+            <div class="login-modal-buttons">
+                <button class="modal-btn modal-btn-secondary" onclick="closeLoginModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="window.location.href='{% url 'login' %}'">Login</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
@@ -767,8 +964,28 @@
         });
 
         function showNotifications() {
+            {% if is_guest %}
+            showLoginModal();
+            {% else %}
             alert('You have 3 new notifications:\n\n1. Your complaint is now in progress\n2. Department responded to your complaint\n3. New update on your complaint');
+            {% endif %}
         }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('show');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('show');
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeLoginModal();
+            }
+        });
     </script>
 </body>
 </html>
