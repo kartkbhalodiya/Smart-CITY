@@ -3,149 +3,129 @@
 {% block title %}Complaint Resolved - JanHelp{% endblock %}
 
 {% block content %}
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+<!-- Header Banner -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
     <tr>
-        <td style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%); border: 2px solid #34d399; border-radius: 16px; padding: 40px 30px; text-align: center;">
-            <div style="font-size: 80px; margin-bottom: 20px;">✅</div>
-            <div style="font-size: 28px; font-weight: 800; color: #065f46; margin-bottom: 10px;">Complaint Resolved!</div>
-            <div style="font-size: 16px; color: #059669; font-weight: 600;">Your issue has been successfully addressed</div>
+        <td style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.08) 0%, rgba(16, 185, 129, 0.06) 50%, rgba(30, 102, 245, 0.04) 100%); border: 2px solid #2ECC71; border-radius: 12px; padding: 40px 20px; text-align: center;">
+            <div style="font-size: 64px; margin-bottom: 12px;">✅</div>
+            <h2 style="font-size: 26px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; font-family: 'Poppins', sans-serif;">Complaint Resolved</h2>
+            <p style="color: #059669; font-size: 14px; margin: 0; font-family: 'Inter', sans-serif; font-weight: 600;">Great news! Your issue has been successfully addressed.</p>
         </td>
     </tr>
 </table>
 
-<h2 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">Great News, {{ user_name }}! 🎉</h2>
+<!-- Greeting -->
+<h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 18px 0; font-family: 'Poppins', sans-serif;">🎉 Hello {{ user_name }}!</h2>
 
-<p style="font-size: 16px; color: #64748b; margin-bottom: 30px; line-height: 1.8;">
-    We're pleased to inform you that your complaint has been resolved. 
-    Thank you for your patience and for helping us improve our city services.
+<p style="font-size: 15px; color: #475569; margin: 0 0 25px 0; line-height: 1.7; font-family: 'Inter', sans-serif; font-weight: 400;">
+    We're pleased to inform you that your complaint has been resolved. Thank you for your patience and for helping us improve our city services.
 </p>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 16px; margin: 25px 0;">
-    <tr>
-        <td style="padding: 25px;">
-            <table width="100%" cellpadding="10" cellspacing="0" border="0">
-                <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">🆔 Complaint ID</td>
-                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">#{{ complaint_number }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">📝 Title</td>
-                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ complaint_title }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">🏢 Department</td>
-                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ department_name }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">📅 Submitted</td>
-                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ submitted_date }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
-                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">✅ Resolved</td>
-                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ resolved_date }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px 0;">
-                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">⏱️ Resolution Time</td>
-                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ resolution_time }}</td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
+<!-- Complaint Details Card -->
+<div style="background-color: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+    <h3 style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0 0 15px 0; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">📋 Resolution Summary</h3>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="font-size: 13px; color: #64748b; font-weight: 600;">🆔 Complaint ID</td>
+                        <td align="right" style="font-size: 14px; color: #1e293b; font-weight: 700;">#{{ complaint_number }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="font-size: 13px; color: #64748b; font-weight: 600;">📝 Title</td>
+                        <td align="right" style="font-size: 14px; color: #1e293b; font-weight: 700;">{{ complaint_title }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="font-size: 13px; color: #64748b; font-weight: 600;">🏢 Department</td>
+                        <td align="right" style="font-size: 14px; color: #1e293b; font-weight: 700;">{{ department_name }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="font-size: 13px; color: #64748b; font-weight: 600;">📅 Submitted</td>
+                        <td align="right" style="font-size: 14px; color: #1e293b; font-weight: 700;">{{ submitted_date }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td style="font-size: 13px; color: #64748b; font-weight: 600;">⏱️ Resolution Time</td>
+                        <td align="right" style="font-size: 14px; color: #1e293b; font-weight: 700;">{{ resolution_time }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
 
 {% if resolution_notes %}
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 25px 0;">
-    <tr>
-        <td style="background-color: #f8fafc; border-left: 4px solid #34d399; padding: 20px; border-radius: 8px;">
-            <div style="font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 10px;">📋 Resolution Details</div>
-            <div style="font-size: 14px; color: #64748b; line-height: 1.8;">{{ resolution_notes }}</div>
-        </td>
-    </tr>
-</table>
+<!-- Resolution Notes -->
+<div style="background-color: #f0fdf4; border-left: 4px solid #2ECC71; padding: 18px; border-radius: 8px; margin-bottom: 25px;">
+    <div style="font-size: 13px; color: #166534; font-weight: 700; margin-bottom: 8px; font-family: 'Poppins', sans-serif;">📝 Resolution Details:</div>
+    <div style="font-size: 14px; color: #166534; font-weight: 500; font-family: 'Inter', sans-serif; line-height: 1.6;">{{ resolution_notes }}</div>
+</div>
 {% endif %}
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+<!-- Rating Section -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
     <tr>
-        <td style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1.5px solid #fbbf24; border-radius: 16px; padding: 30px; text-align: center;">
-            <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 15px;">How was your experience?</div>
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 20px;">Your feedback helps us serve you better</div>
-            <div style="font-size: 40px; margin: 20px 0; letter-spacing: 10px;">⭐⭐⭐⭐⭐</div>
-            <a href="{{ rating_url }}" style="display: inline-block; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 16px; margin: 15px 0; box-shadow: 0 8px 16px rgba(251, 191, 36, 0.3);">
+        <td style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%); border: 2px solid #F1C40F; border-radius: 12px; padding: 30px 20px; text-align: center;">
+            <div style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 12px; font-family: 'Poppins', sans-serif;">How was your experience?</div>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 15px; font-family: 'Inter', sans-serif;">Your feedback helps us serve you better</p>
+            <div style="font-size: 32px; margin-bottom: 20px;">⭐⭐⭐⭐⭐</div>
+            <a href="{{ rating_url }}" style="display: inline-block; background: linear-gradient(135deg, #F1C40F 0%, #E67E22 100%); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.25); font-family: 'Poppins', sans-serif;">
                 ⭐ Rate This Service
             </a>
         </td>
     </tr>
 </table>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+<!-- Action Buttons -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
     <tr>
         <td align="center">
-            <a href="{{ complaint_url }}" style="display: inline-block; background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%); color: white; padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; margin: 10px 5px; box-shadow: 0 8px 16px rgba(30, 102, 245, 0.3);">
-                👁️ View Full Details
+            <a href="{{ complaint_url }}" style="display: inline-block; background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; margin: 8px 4px; box-shadow: 0 4px 12px rgba(30, 102, 245, 0.25); font-family: 'Poppins', sans-serif;">
+                👁️ View Details
             </a>
-            <a href="{{ dashboard_url }}" style="display: inline-block; background-color: white; color: #1E66F5; padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; margin: 10px 5px; border: 2px solid #1E66F5;">
+            <a href="{{ dashboard_url }}" style="display: inline-block; background-color: white; color: #1E66F5; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; margin: 8px 4px; border: 2px solid #1E66F5; font-family: 'Poppins', sans-serif;">
                 🏠 Go to Dashboard
             </a>
         </td>
     </tr>
 </table>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
-    <tr>
-        <td style="background-color: #dbeafe; border-left: 4px solid #1E66F5; padding: 15px 20px; border-radius: 8px;">
-            <p style="font-size: 14px; color: #1e40af; font-weight: 600; margin: 0;">
-                💡 <strong>Not Satisfied?</strong> If the issue persists or you're not satisfied with the resolution, you can reopen this complaint from your dashboard.
-            </p>
-        </td>
-    </tr>
-</table>
+<!-- Not Satisfied Box -->
+<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+    <p style="font-size: 13px; color: #475569; font-weight: 600; margin: 0; font-family: 'Inter', sans-serif;">
+        💡 <strong>Not Satisfied?</strong> If the issue persists, you can reopen this complaint from your dashboard.
+    </p>
+</div>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
-    <tr>
-        <td style="background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="font-size: 14px; color: #64748b; margin-bottom: 10px;">
-                Thank you for using JanHelp to make our city better! 🏙️
-            </p>
-            <p style="font-size: 13px; color: #94a3b8; margin: 0;">
-                Together, we're building smarter, more responsive communities.
-            </p>
-        </td>
-    </tr>
-</table>
+<!-- Footer Note -->
+<div style="text-align: center; padding: 10px;">
+    <p style="font-size: 14px; color: #64748b; font-family: 'Inter', sans-serif;">
+        Thank you for helping us make our city better! 🏙️
+    </p>
+</div>
 {% endblock %}

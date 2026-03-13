@@ -3,107 +3,97 @@
 {% block title %}Complaint Status Update - JanHelp{% endblock %}
 
 {% block content %}
-<h2 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">Complaint Status Update 📢</h2>
+<!-- Header Banner -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
+    <tr>
+        <td style="background: linear-gradient(135deg, rgba(30, 102, 245, 0.08) 0%, rgba(46, 204, 113, 0.06) 50%, rgba(118, 75, 162, 0.04) 100%); border: 2px solid #1E66F5; border-radius: 12px; padding: 30px 20px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 12px;">📢</div>
+            <h2 style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; font-family: 'Poppins', sans-serif;">Status Updated</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 0; font-family: 'Inter', sans-serif; font-weight: 500;">Your complaint progress has been updated</p>
+        </td>
+    </tr>
+</table>
 
-<p style="font-size: 16px; color: #64748b; margin-bottom: 30px; line-height: 1.8;">
-    Hello <strong>{{ user_name }}</strong>,<br><br>
-    Your complaint status has been updated. Here are the details:
+<!-- Greeting -->
+<h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 18px 0; font-family: 'Poppins', sans-serif;">👋 Hello {{ user_name }}!</h2>
+
+<p style="font-size: 15px; color: #475569; margin: 0 0 25px 0; line-height: 1.7; font-family: 'Inter', sans-serif; font-weight: 400;">
+    Your complaint status has been updated. Here are the latest details regarding your report:
 </p>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+<!-- Complaint Box -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 25px 0;">
     <tr>
-        <td style="background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(21, 78, 199, 0.05) 100%); border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 30px;">
-            <div style="font-size: 18px; font-weight: 800; color: #1E66F5; margin-bottom: 15px;">Complaint #{{ complaint_number }}</div>
-            <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 10px;">{{ complaint_title }}</div>
-            <div style="display: inline-block; padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; margin: 15px 0; {% if status_class == 'submitted' %}background: #FEF3C7; color: #92400E; border: 2px solid #FCD34D;{% elif status_class == 'assigned' %}background: #FFEDD5; color: #9A3412; border: 2px solid #FB923C;{% elif status_class == 'in-progress' %}background: #DBEAFE; color: #1E40AF; border: 2px solid #60A5FA;{% elif status_class == 'resolved' %}background: #D1FAE5; color: #065F46; border: 2px solid #34D399;{% elif status_class == 'reopened' %}background: #FEE2E2; color: #991B1B; border: 2px solid #F87171;{% else %}background: #F1F5F9; color: #475569; border: 2px solid #CBD5E1;{% endif %}">
-                {{ status_icon }} {{ status_text }}
+        <td style="background: linear-gradient(135deg, #1E66F5 0%, #2ECC71 50%, #764ba2 100%); border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 4px 15px rgba(30, 102, 245, 0.25);">
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.95); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; font-family: 'Poppins', sans-serif;">🔢 COMPLAINT #{{ complaint_number }}</div>
+            <div style="background: rgba(255, 255, 255, 0.98); border-radius: 10px; padding: 20px 15px; margin: 0 auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                <div style="font-size: 20px; font-weight: 800; color: #1e293b; font-family: 'Poppins', sans-serif; margin-bottom: 12px;">{{ complaint_title }}</div>
+                <div style="display: inline-block; padding: 8px 24px; border-radius: 20px; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; {% if status_class == 'submitted' %}background: #FEF3C7; color: #92400E; border: 2px solid #FCD34D;{% elif status_class == 'assigned' %}background: #FFEDD5; color: #9A3412; border: 2px solid #FB923C;{% elif status_class == 'in-progress' %}background: #DBEAFE; color: #1E40AF; border: 2px solid #60A5FA;{% elif status_class == 'resolved' %}background: #D1FAE5; color: #065F46; border: 2px solid #34D399;{% elif status_class == 'reopened' %}background: #FEE2E2; color: #991B1B; border: 2px solid #F87171;{% else %}background: #F1F5F9; color: #475569; border: 2px solid #CBD5E1;{% endif %}">
+                    {{ status_icon }} {{ status_text }}
+                </div>
             </div>
         </td>
     </tr>
 </table>
 
+<!-- Details Grid -->
 <table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-        <td width="48%" style="vertical-align: top; padding: 10px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
-                <tr>
-                    <td style="padding: 15px;">
-                        <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">📅 Submitted On</div>
-                        <div style="font-size: 16px; font-weight: 700; color: #0f172a;">{{ submitted_date }}</div>
-                    </td>
-                </tr>
-            </table>
+        <td width="48%" style="vertical-align: top; padding: 0 10px 20px 0;">
+            <div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-family: 'Poppins', sans-serif;">📅 Submitted On</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e293b; font-family: 'Inter', sans-serif;">{{ submitted_date }}</div>
+            </div>
         </td>
-        <td width="4%"></td>
-        <td width="48%" style="vertical-align: top; padding: 10px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
-                <tr>
-                    <td style="padding: 15px;">
-                        <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">🏢 Department</div>
-                        <div style="font-size: 16px; font-weight: 700; color: #0f172a;">{{ department_name }}</div>
-                    </td>
-                </tr>
-            </table>
+        <td width="48%" style="vertical-align: top; padding: 0 0 20px 10px;">
+            <div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-family: 'Poppins', sans-serif;">🏢 Department</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e293b; font-family: 'Inter', sans-serif;">{{ department_name }}</div>
+            </div>
         </td>
     </tr>
     <tr>
-        <td width="48%" style="vertical-align: top; padding: 10px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
-                <tr>
-                    <td style="padding: 15px;">
-                        <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">📍 Location</div>
-                        <div style="font-size: 16px; font-weight: 700; color: #0f172a;">{{ location }}</div>
-                    </td>
-                </tr>
-            </table>
+        <td width="48%" style="vertical-align: top; padding: 0 10px 20px 0;">
+            <div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-family: 'Poppins', sans-serif;">📍 Location</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e293b; font-family: 'Inter', sans-serif;">{{ location }}</div>
+            </div>
         </td>
-        <td width="4%"></td>
-        <td width="48%" style="vertical-align: top; padding: 10px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
-                <tr>
-                    <td style="padding: 15px;">
-                        <div style="font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">⏱️ Last Updated</div>
-                        <div style="font-size: 16px; font-weight: 700; color: #0f172a;">{{ updated_date }}</div>
-                    </td>
-                </tr>
-            </table>
+        <td width="48%" style="vertical-align: top; padding: 0 0 20px 10px;">
+            <div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-family: 'Poppins', sans-serif;">⏱️ Last Updated</div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e293b; font-family: 'Inter', sans-serif;">{{ updated_date }}</div>
+            </div>
         </td>
     </tr>
 </table>
 
 {% if status_message %}
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
-    <tr>
-        <td style="background-color: #dbeafe; border-left: 4px solid #1E66F5; padding: 15px 20px; border-radius: 8px;">
-            <p style="font-size: 14px; color: #1e40af; font-weight: 600; margin: 0;">
-                💬 <strong>Update Message:</strong><br>
-                {{ status_message }}
-            </p>
-        </td>
-    </tr>
-</table>
+<!-- Message Box -->
+<div style="background-color: #f0f7ff; border-left: 4px solid #1E66F5; padding: 18px; border-radius: 8px; margin: 10px 0 25px 0;">
+    <div style="font-size: 13px; color: #1e40af; font-weight: 700; margin-bottom: 8px; font-family: 'Poppins', sans-serif;">💬 Update Message:</div>
+    <div style="font-size: 14px; color: #1e40af; font-weight: 500; font-family: 'Inter', sans-serif; line-height: 1.6;">{{ status_message }}</div>
+</div>
 {% endif %}
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+<!-- Action Buttons -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 10px 0 25px 0;">
     <tr>
         <td align="center">
-            <a href="{{ complaint_url }}" style="display: inline-block; background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%); color: white; padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; margin: 10px 5px; box-shadow: 0 8px 16px rgba(30, 102, 245, 0.3);">
+            <a href="{{ complaint_url }}" style="display: inline-block; background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; margin: 8px 4px; box-shadow: 0 4px 12px rgba(30, 102, 245, 0.25); font-family: 'Poppins', sans-serif;">
                 👁️ View Full Details
             </a>
-            <a href="{{ track_url }}" style="display: inline-block; background-color: white; color: #1E66F5; padding: 14px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; margin: 10px 5px; border: 2px solid #1E66F5;">
+            <a href="{{ track_url }}" style="display: inline-block; background-color: white; color: #1E66F5; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; margin: 8px 4px; border: 2px solid #1E66F5; font-family: 'Poppins', sans-serif;">
                 📍 Track Complaint
             </a>
         </td>
     </tr>
 </table>
 
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
-    <tr>
-        <td style="background-color: #dbeafe; border-left: 4px solid #1E66F5; padding: 15px 20px; border-radius: 8px;">
-            <p style="font-size: 14px; color: #1e40af; font-weight: 600; margin: 0;">
-                ℹ️ <strong>Need Help?</strong> If you have any questions about this update, please contact our support team or visit the help center.
-            </p>
-        </td>
-    </tr>
-</table>
+<!-- Help Notice -->
+<div style="background-color: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+    <p style="font-size: 13px; color: #475569; font-weight: 600; margin: 0; font-family: 'Inter', sans-serif;">
+        ℹ️ <strong>Need Help?</strong> If you have any questions about this update, please visit our help center or contact our support team.
+    </p>
+</div>
 {% endblock %}
