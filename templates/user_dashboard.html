@@ -1368,6 +1368,52 @@
     </div>
 
     <script>
+        // Comprehensive fix for back button loader issue
+        (function() {
+            // Hide all loaders immediately on page show (handles back button)
+            window.addEventListener('pageshow', function(event) {
+                const pageLoader = document.getElementById('pageLoadingOverlay');
+                const loader = document.getElementById('loadingOverlay');
+                
+                // If page is loaded from cache (back/forward button)
+                if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                    if (pageLoader) {
+                        pageLoader.classList.add('hide');
+                        pageLoader.style.display = 'none';
+                    }
+                    if (loader) {
+                        loader.classList.remove('show');
+                        loader.style.display = 'none';
+                    }
+                    // Ensure page is visible
+                    document.body.style.opacity = '1';
+                    document.body.style.pointerEvents = 'auto';
+                }
+            });
+
+            // Hide loaders before page unload
+            window.addEventListener('beforeunload', function() {
+                const pageLoader = document.getElementById('pageLoadingOverlay');
+                const loader = document.getElementById('loadingOverlay');
+                if (pageLoader) pageLoader.style.display = 'none';
+                if (loader) loader.style.display = 'none';
+            });
+
+            // Fallback: Hide loaders after maximum time
+            setTimeout(function() {
+                const pageLoader = document.getElementById('pageLoadingOverlay');
+                const loader = document.getElementById('loadingOverlay');
+                if (pageLoader) {
+                    pageLoader.classList.add('hide');
+                    pageLoader.style.display = 'none';
+                }
+                if (loader) {
+                    loader.classList.remove('show');
+                    loader.style.display = 'none';
+                }
+            }, 10000); // 10 seconds maximum
+        })();
+
         // Check if guest mode
         const isGuest = new URLSearchParams(window.location.search).get('guest') === 'true';
 
@@ -1375,7 +1421,12 @@
         window.addEventListener('load', function() {
             const pageLoader = document.getElementById('pageLoadingOverlay');
             setTimeout(() => {
-                pageLoader.classList.add('hide');
+                if (pageLoader) {
+                    pageLoader.classList.add('hide');
+                    setTimeout(() => {
+                        pageLoader.style.display = 'none';
+                    }, 500);
+                }
             }, 1500); // Show for 1.5 seconds
         });
 
@@ -1401,6 +1452,11 @@
                     }
                     
                     showLoader();
+                    
+                    // Hide loader after 5 seconds as fallback
+                    setTimeout(() => {
+                        hideLoader();
+                    }, 5000);
                 });
             });
             
@@ -1409,13 +1465,31 @@
             if (searchForm) {
                 searchForm.addEventListener('submit', function() {
                     showLoader();
+                    
+                    // Hide loader after 5 seconds as fallback
+                    setTimeout(() => {
+                        hideLoader();
+                    }, 5000);
                 });
             }
         }
 
         function showLoader() {
             const overlay = document.getElementById('loadingOverlay');
-            overlay.classList.add('show');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                overlay.classList.add('show');
+            }
+        }
+
+        function hideLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.remove('show');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300);
+            }
         }
 
         function initGuestMode() {

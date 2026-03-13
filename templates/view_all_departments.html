@@ -405,6 +405,15 @@
     </div>
 
     <script>
+        // Fix for back button - hide loader on page show (bfcache)
+        window.addEventListener('pageshow', function(event) {
+            // If page is loaded from cache (back button), ensure everything is visible
+            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                document.body.style.opacity = '1';
+                document.body.style.pointerEvents = 'auto';
+            }
+        });
+
         let map;
         let markers = [];
         const departmentData = {{ department_data|safe }};
