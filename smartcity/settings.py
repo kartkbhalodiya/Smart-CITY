@@ -90,75 +90,19 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 if os.getenv('DATABASE_URL'):
-    # Supabase Connection details
     import dj_database_url
-    import sys
-    db_url = os.getenv('DATABASE_URL')
-    
-    # Standardize project ref and ensure pooler port 6543 for Vercel
-    project_ref = "aaywhmjmsdkjzabtzfpg"
-    
-    # FORCE standardized pooler configuration for Vercel
-    if "supabase" in db_url:
-        # Extract components from DATABASE_URL
-        import re
-        try:
-            # Handle standard postgres://user:password@host:port/dbname
-            match = re.match(r'postgre(?:s|sql)://([^:]+):([^@]+)@([^:/]+)(?::(\d+))?/(.+)', db_url)
-            if match:
-                user, pwd, host, port, dbname = match.groups()
-                # Clean dbname from any ?sslmode...
-                dbname = dbname.split('?')[0]
-                
-                # FORCE POOLER SETTINGS
-                # Use project-ref.host as username for pooler
-                new_user = f"postgres.{project_ref}"
-                new_host = f"aws-1-ap-northeast-1.pooler.supabase.com"
-                new_port = "6543"
-                
-                db_url = f"postgresql://{new_user}:{pwd}@{new_host}:{new_port}/{dbname}?sslmode=require"
-        except Exception as e:
-            print(f"[Supabase] Forced URL reconstruction failed: {e}", file=sys.stderr)
-
-    # DEBUG: Print (redacted) URL to Vercel logs to see what's happening
-    try:
-        url_for_log = db_url.split('@')[0].split(':')[0] + "://***:***@" + db_url.split('@')[1]
-        print(f"[Supabase] FINAL DB URL: {url_for_log}", file=sys.stderr)
-    except:
-        print(f"[Supabase] DATABASE_URL parsing failed for logging", file=sys.stderr)
-    
     db_config = dj_database_url.config(
-        default=db_url,
-        conn_max_age=0, # MUST be 0 for serverless (Vercel)
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=0,
         ssl_require=True
     )
-    
-    if db_config:
-        DATABASES = {'default': db_config}
-        DATABASES['default']['CONN_MAX_AGE'] = 0
-        if 'OPTIONS' not in DATABASES['default']:
-            DATABASES['default']['OPTIONS'] = {}
-        DATABASES['default']['OPTIONS']['connect_timeout'] = 20
-        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
-        DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
-    else:
-        # Fallback to manual parsing if dj_database_url fails
-        port = os.getenv('DB_PORT', '6543') # Use pooler port for serverless
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.getenv('DB_NAME', 'postgres'),
-                'USER': os.getenv('DB_USER', 'postgres.aaywhmjmsdkjzabtzfpg'),
-                'PASSWORD': os.getenv('DB_PASSWORD'),
-                'HOST': os.getenv('DB_HOST'),
-                'PORT': port,
-                'CONN_MAX_AGE': 0,
-                'OPTIONS': {
-                    'sslmode': 'require',
-                    'connect_timeout': 10,
-                }
-            }
-        }
+    DATABASES = {'default': db_config}
+    DATABASES['default']['CONN_MAX_AGE'] = 0
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+        'connect_timeout': 5,
+        'options': '-c statement_timeout=10000'
+    }
 else:
     DATABASES = {
         "default": {
@@ -264,9 +208,22 @@ MAPMYINDIA_API_KEY = os.getenv('MAPPLE_API_KEY', '')  # Alias
 LOGIN_URL = '/login/'
 
 # Session settings - Keep user logged in
-SESSION_COOKIE_AGE = 9999909600  # 2 weeks in seconds
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_SAVE_EVERY_REQUEST = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# Caching for Vercel
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'smart-city-cache',
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

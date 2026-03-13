@@ -262,6 +262,16 @@ class Complaint(models.Model):
         if not self.estimated_completion_time or self.work_status == 'solved':
             return False
         return timezone.now() > self.estimated_completion_time
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['work_status']),
+            models.Index(fields=['complaint_type']),
+            models.Index(fields=['assigned_department', '-created_at']),
+            models.Index(fields=['city', 'state']),
+            models.Index(fields=['complaint_number']),
+        ]
 
 class ComplaintMedia(models.Model):
     complaint = models.ForeignKey(Complaint, related_name='media', on_delete=models.CASCADE)

@@ -796,8 +796,10 @@ def user_dashboard(request):
     # Get search query
     search_query = request.GET.get('search', '').strip()
     
-    # Get all user complaints
-    complaints = Complaint.objects.filter(user=request.user).select_related('assigned_department').order_by('-created_at')
+    # Get all user complaints with optimized query
+    complaints = Complaint.objects.filter(user=request.user).select_related('assigned_department').only(
+        'id', 'complaint_number', 'title', 'work_status', 'created_at', 'assigned_department__name'
+    ).order_by('-created_at')
     
     # Apply search filter
     if search_query:
@@ -810,11 +812,13 @@ def user_dashboard(request):
             Q(assigned_department__name__icontains=search_query)
         )
     
-    # Calculate stats
-    total_complaints = complaints.count()
-    pending_complaints = complaints.filter(work_status='pending').count()
-    progress_complaints = complaints.filter(work_status='process').count()
-    solved_complaints = complaints.filter(work_status='solved').count()
+    # Calculate stats using aggregation
+    stats = complaints.aggregate(
+        total=Count('id'),
+        pending=Count('id', filter=Q(work_status='pending')),
+        progress=Count('id', filter=Q(work_status='process')),
+        solved=Count('id', filter=Q(work_status='solved'))
+    )
     
     # Get recent complaints (last 5)
     recent_complaints = complaints[:5]
@@ -823,10 +827,10 @@ def user_dashboard(request):
         'complaints': complaints,
         'is_guest': False,
         'category_cards': category_cards,
-        'total_complaints': total_complaints,
-        'pending_complaints': pending_complaints,
-        'progress_complaints': progress_complaints,
-        'solved_complaints': solved_complaints,
+        'total_complaints': stats['total'],
+        'pending_complaints': stats['pending'],
+        'progress_complaints': stats['progress'],
+        'solved_complaints': stats['solved'],
         'recent_complaints': recent_complaints,
         'all_complaints': complaints,
         'search_query': search_query,
