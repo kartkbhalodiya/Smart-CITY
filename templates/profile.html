@@ -2,252 +2,252 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Smart City</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profile - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --green-accent: #2ECC71;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            padding: 0;
-            padding-bottom: 80px;
+            position: relative;
+            background: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(4px);
+            -webkit-filter: blur(4px);
+        }
+
+        @media (min-width: 1025px) {
+            .bg-container {
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web");
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .bg-container {
+                background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile");
+            }
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(30, 102, 245, 0.2) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(118, 75, 162, 0.1) 100%);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 20px;
+            padding-bottom: 40px;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(30, 102, 245, 0.15), 0 0 100px rgba(30, 102, 245, 0.05);
+            padding: 30px;
+            margin-bottom: 20px;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1a202c;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .header h1 i {
-            color: #2B6CF6;
+            text-align: center;
+            margin-bottom: 25px;
         }
 
         .back-btn {
-            background: #2B6CF6;
-            color: #fff;
-            padding: 10px 20px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-blue);
+            padding: 10px 16px;
             border-radius: 12px;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.3s ease;
+            border: 1.5px solid rgba(30, 102, 245, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .back-btn:hover {
-            background: #1e4fd6;
+            background: #fff;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(43, 108, 246, 0.3);
-        }
-
-        .profile-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-            margin-bottom: 20px;
-        }
-
-        .profile-header {
-            text-align: center;
-            padding: 30px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .profile-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
-            opacity: 0.3;
+            box-shadow: 0 6px 16px rgba(30, 102, 245, 0.2);
         }
 
         .avatar {
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border: 4px solid rgba(255, 255, 255, 0.3);
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 48px;
+            font-size: 40px;
             margin-bottom: 15px;
-            position: relative;
-            z-index: 1;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 24px rgba(30, 102, 245, 0.25);
         }
 
         .profile-name {
-            font-size: 28px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
             font-weight: 700;
-            color: #fff;
-            margin-bottom: 8px;
-            position: relative;
-            z-index: 1;
+            color: var(--text-dark);
+            margin-bottom: 6px;
         }
 
         .profile-email {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 15px;
-            position: relative;
-            z-index: 1;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 8px;
         }
 
         .role-badge {
             display: inline-block;
-            padding: 6px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
             color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .info-section {
-            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(30, 102, 245, 0.2);
         }
 
         .section-title {
-            font-size: 18px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
             font-weight: 700;
-            color: #1a202c;
-            margin-bottom: 20px;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+            margin-top: 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f0f0f0;
+            gap: 8px;
         }
 
         .section-title i {
-            color: #2B6CF6;
-            font-size: 20px;
+            color: var(--primary-blue);
+            font-size: 16px;
         }
 
-        .info-grid {
-            display: grid;
-            gap: 16px;
+        .input-group {
+            margin-bottom: 14px;
+            position: relative;
         }
 
-        .info-item {
-            background: #F7F9FC;
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid #e8ecf1;
-            transition: all 0.3s ease;
-        }
-
-        .info-item:hover {
-            border-color: #2B6CF6;
-            box-shadow: 0 4px 12px rgba(43, 108, 246, 0.1);
-        }
-
-        .info-label {
+        .input-label {
+            display: block;
+            font-size: 12px;
             font-weight: 600;
-            color: #64748b;
-            font-size: 13px;
-            margin-bottom: 8px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .info-label i {
-            font-size: 12px;
-            color: #2B6CF6;
+        .input-label i {
+            font-size: 11px;
+            color: var(--primary-blue);
         }
 
-        .info-input {
+        .input-field {
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: 'Poppins', sans-serif;
-            color: #1a202c;
-            background: #fff;
-            transition: all 0.3s ease;
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            color: var(--text-dark);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
         }
 
-        .info-input:focus {
+        .input-field:focus {
             outline: none;
-            border-color: #2B6CF6;
-            box-shadow: 0 0 0 3px rgba(43, 108, 246, 0.1);
+            border-color: var(--primary-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(30, 102, 245, 0.1);
         }
 
-        textarea.info-input {
+        textarea.input-field {
             resize: vertical;
-            min-height: 80px;
+            min-height: 70px;
         }
 
         .info-value {
-            color: #1a202c;
-            font-size: 14px;
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            color: var(--text-dark);
+            font-size: 13px;
             font-weight: 500;
-            padding: 10px 12px;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
         }
 
         .language-section {
-            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            background: rgba(239, 246, 255, 0.6);
             border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #BFDBFE;
+            padding: 16px;
+            border: 1.5px solid rgba(30, 102, 245, 0.15);
         }
 
         .language-selector {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #2B6CF6;
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: 'Poppins', sans-serif;
+            padding: 11px 14px;
+            border: 1.5px solid var(--primary-blue);
+            border-radius: 12px;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
             background: #fff;
-            color: #1a202c;
+            color: var(--text-dark);
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -255,156 +255,179 @@
 
         .language-selector:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(43, 108, 246, 0.2);
+            box-shadow: 0 0 0 4px rgba(30, 102, 245, 0.1);
         }
 
         .btn-group {
             display: flex;
-            gap: 12px;
-            margin-top: 30px;
+            gap: 10px;
+            margin-top: 24px;
         }
 
         .save-btn {
             flex: 1;
-            background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%);
             color: #fff;
-            padding: 14px 24px;
+            padding: 12px;
             border: none;
             border-radius: 12px;
-            font-weight: 600;
-            font-size: 15px;
+            font-weight: 700;
+            font-size: 13px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 16px rgba(30, 102, 245, 0.2);
         }
 
         .save-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
+            box-shadow: 0 15px 25px rgba(30, 102, 245, 0.3);
         }
 
         .logout-btn {
             flex: 1;
-            background: linear-gradient(135deg, #E74C3C 0%, #c0392b 100%);
-            color: #fff;
-            padding: 14px 24px;
+            background: #fff;
+            color: #dc2626;
+            padding: 12px;
+            border: 1.5px solid #fecaca;
             border-radius: 12px;
             text-decoration: none;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .logout-btn:hover {
+            background: #fef2f2;
+            border-color: #dc2626;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
         }
 
-        @media (max-width: 768px) {
-            .container { padding: 15px; }
-            .header h1 { font-size: 20px; }
-            .profile-name { font-size: 24px; }
-            .avatar { width: 100px; height: 100px; font-size: 40px; }
-            .btn-group { flex-direction: column; }
+        .footer {
+            text-align: center;
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .footer strong {
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 15px; padding-bottom: 30px; }
+            .glass-card { padding: 24px 20px; }
+            .back-btn { top: 15px; left: 15px; padding: 8px 12px; font-size: 12px; }
+            .profile-name { font-size: 20px; }
+            .avatar { width: 90px; height: 90px; font-size: 36px; }
         }
     </style>
 </head>
 <body>
-    <script src="/static/js/translations.js"></script>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fa-solid fa-user"></i> Profile</h1>
-            <a href="{% url 'user_dashboard' %}" class="back-btn">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </a>
-        </div>
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
 
-        <div class="profile-card">
-                <div class="profile-header">
-                    <div class="avatar">
-                        <i class="fa-solid fa-{% if is_city_admin %}user-shield{% elif is_dept_user %}user-tie{% else %}user{% endif %}"></i>
-                    </div>
-                    <div class="profile-name">{{ user.first_name }} {{ user.last_name }}</div>
-                    <div class="profile-email">{{ user.email }}</div>
-                    {% if is_city_admin %}
-                    <div class="role-badge"><i class="fa-solid fa-shield-halved"></i> CITY ADMIN</div>
-                    {% elif is_dept_user %}
-                    <div class="role-badge"><i class="fa-solid fa-user-tie"></i> DEPARTMENT OFFICER</div>
-                    {% endif %}
+    <a href="{% url 'user_dashboard' %}" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+
+    <div class="container">
+        <div class="glass-card">
+            <div class="header">
+                <div class="avatar">
+                    <i class="fa-solid fa-{% if is_city_admin %}user-shield{% elif is_dept_user %}user-tie{% else %}user{% endif %}"></i>
                 </div>
+                <div class="profile-name">{{ user.first_name }} {{ user.last_name }}</div>
+                <div class="profile-email">{{ user.email }}</div>
+                {% if is_city_admin %}
+                <div class="role-badge"><i class="fa-solid fa-shield-halved"></i> City Admin</div>
+                {% elif is_dept_user %}
+                <div class="role-badge"><i class="fa-solid fa-user-tie"></i> Department Officer</div>
+                {% endif %}
+            </div>
 
                 <form method="post">
                     {% csrf_token %}
-                    <div class="info-section">
-                        <div class="section-title">
-                            <i class="fa-solid fa-user-circle"></i>
-                            Personal Information
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-signature"></i> Full Name</div>
-                                <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" class="info-input">
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-envelope"></i> Email</div>
-                                <input type="email" name="email" value="{{ user.email }}" class="info-input">
-                            </div>
-                            
-                            {% if not is_city_admin and not is_dept_user and not user.is_superuser %}
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-mobile-screen"></i> Mobile</div>
-                                <input type="text" name="mobile" value="{% if user.citizenprofile %}{{ user.citizenprofile.mobile_no|default:'' }}{% endif %}" class="info-input" placeholder="Enter mobile number">
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-map"></i> State</div>
-                                <input type="text" name="state" value="{% if user.citizenprofile %}{{ user.citizenprofile.state|default:'' }}{% endif %}" class="info-input" placeholder="Enter state">
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-map-pin"></i> District</div>
-                                <input type="text" name="district" value="{% if user.citizenprofile %}{{ user.citizenprofile.district|default:'' }}{% endif %}" class="info-input" placeholder="Enter district">
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-city"></i> City</div>
-                                <input type="text" name="city" value="{% if user.citizenprofile %}{{ user.citizenprofile.city|default:'' }}{% endif %}" class="info-input" placeholder="Enter city">
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-location-dot"></i> Address</div>
-                                <textarea name="address" class="info-input" placeholder="Enter full address">{% if user.citizenprofile %}{{ user.citizenprofile.address|default:'' }}{% endif %}</textarea>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-id-card"></i> Aadhaar Number (Optional)</div>
-                                <input type="text" name="aadhaar" value="{% if user.citizenprofile %}{{ user.citizenprofile.aadhaar_number|default:'' }}{% endif %}" class="info-input" placeholder="XXXX XXXX XXXX">
-                            </div>
-                            {% endif %}
+                    
+                    <div class="section-title">
+                        <i class="fa-solid fa-user-circle"></i>
+                        Personal Information
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-signature"></i> Full Name</label>
+                        <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" class="input-field">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-envelope"></i> Email</label>
+                        <input type="email" name="email" value="{{ user.email }}" class="input-field">
+                    </div>
+                    
+                    {% if not is_city_admin and not is_dept_user and not user.is_superuser %}
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-mobile-screen"></i> Mobile</label>
+                        <input type="text" name="mobile" value="{% if user.citizenprofile %}{{ user.citizenprofile.mobile_no|default:'' }}{% endif %}" class="input-field" placeholder="Enter mobile number">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-map"></i> State</label>
+                        <input type="text" name="state" value="{% if user.citizenprofile %}{{ user.citizenprofile.state|default:'' }}{% endif %}" class="input-field" placeholder="Enter state">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-map-pin"></i> District</label>
+                        <input type="text" name="district" value="{% if user.citizenprofile %}{{ user.citizenprofile.district|default:'' }}{% endif %}" class="input-field" placeholder="Enter district">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-city"></i> City</label>
+                        <input type="text" name="city" value="{% if user.citizenprofile %}{{ user.citizenprofile.city|default:'' }}{% endif %}" class="input-field" placeholder="Enter city">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-location-dot"></i> Address</label>
+                        <textarea name="address" class="input-field" placeholder="Enter full address">{% if user.citizenprofile %}{{ user.citizenprofile.address|default:'' }}{% endif %}</textarea>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-id-card"></i> Aadhaar Number (Optional)</label>
+                        <input type="text" name="aadhaar" value="{% if user.citizenprofile %}{{ user.citizenprofile.aadhaar_number|default:'' }}{% endif %}" class="input-field" placeholder="XXXX XXXX XXXX">
+                    </div>
+                    {% endif %}
 
-                            {% if is_city_admin %}
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-building"></i> Managed City</div>
-                                <div class="info-value">{{ user.cityadmin.city_name }}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-map-location"></i> Managed State</div>
-                                <div class="info-value">{{ user.cityadmin.state }}</div>
-                            </div>
-                            {% endif %}
+                    {% if is_city_admin %}
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-building"></i> Managed City</label>
+                        <div class="info-value">{{ user.cityadmin.city_name }}</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-map-location"></i> Managed State</label>
+                        <div class="info-value">{{ user.cityadmin.state }}</div>
+                    </div>
+                    {% endif %}
 
-                            <div class="info-item">
-                                <div class="info-label"><i class="fa-solid fa-calendar-check"></i> Member Since</div>
-                                <div class="info-value">{{ user.date_joined|date:"M d, Y" }}</div>
-                            </div>
-                        </div>
+                    <div class="input-group">
+                        <label class="input-label"><i class="fa-solid fa-calendar-check"></i> Member Since</label>
+                        <div class="info-value">{{ user.date_joined|date:"M d, Y" }}</div>
                     </div>
 
-                <div class="info-section">
                     <div class="section-title">
                         <i class="fa-solid fa-language"></i>
                         Language Settings
@@ -416,19 +439,23 @@
                             <option value="gu">ગુજરાતી (Gujarati)</option>
                         </select>
                     </div>
-                </div>
 
-                <div class="btn-group">
-                    <button type="submit" class="save-btn">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                        Save Changes
-                    </button>
-                    <a href="{% url 'logout' %}" class="logout-btn">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        Logout
-                    </a>
+                    <div class="btn-group">
+                        <button type="submit" class="save-btn">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            Save
+                        </button>
+                        <a href="{% url 'logout' %}" class="logout-btn">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            Logout
+                        </a>
+                    </div>
+                </form>
+
+                <div class="footer">
+                    Designed by <strong>Kartik Bhalodiya.</strong>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
