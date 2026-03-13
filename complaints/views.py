@@ -5362,18 +5362,23 @@ def forgot_password(request):
             messages.error(request, 'Please enter a valid email address.')
             return render(request, 'forgot_password.html')
         
-        # Always show success message immediately for security (don't reveal if email exists)
-        messages.success(request, f'If {email} is registered as a department account, a password reset email will be sent shortly.')
+        # Always show success message immediately for security
+        messages.success(request, f'If {email} is registered as a department account, a password reset email with your department details will be sent shortly.')
         
         # Send email in background thread
         from threading import Thread
-        from django.core.mail import EmailMultiAlternatives
         
         def send_reset_email():
             try:
                 # Check if email belongs to a department user
-                user = User.objects.get(email__iexact=email)
-                dept_user = DepartmentUser.objects.get(user=user)
+                user = User.objects.filter(email__iexact=email).first()
+                if not user:
+                    return
+                
+                dept_user = DepartmentUser.objects.filter(user=user).first()
+                if not dept_user:
+                    return
+                
                 department = dept_user.department
                 
                 # Generate a new password
@@ -5381,8 +5386,12 @@ def forgot_password(request):
                 user.set_password(new_password)
                 user.save()
                 
-                # Send email with department details and new password
-                subject = 'Smart City Department Password Reset'
+                # Send email with department details and new password using new template
+                send_department_credentials_email(
+                    email=email,
+                    department=department,
+                    login_password=new_password
+                )
                 
                 # HTML email content with glassmorphism design
                 html_content = f"""
@@ -5656,12 +5665,8 @@ If you did not request this password reset, please contact your administrator im
                 msg.attach_alternative(html_content, "text/html")
                 msg.send(fail_silently=True)
                 
-            except (User.DoesNotExist, DepartmentUser.DoesNotExist):
-                # Silently fail for security - don't reveal if email exists or not
-                pass
             except Exception:
-                # Silently fail - don't reveal errors
-                pass
+                pass  # Silently fail for security
         
         # Start background thread
         Thread(target=send_reset_email, daemon=True).start()
