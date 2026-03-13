@@ -502,14 +502,78 @@
 
         /* Responsive */
         @media (min-width: 768px) {
+            .header {
+                max-width: 1200px;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 20px 32px;
+            }
+
             .main-content {
-                max-width: 768px;
+                max-width: 1200px;
+                margin-left: auto;
+                margin-right: auto;
+                padding: 0 32px;
+                margin-top: 88px;
+            }
+
+            .search-bar {
+                max-width: 600px;
                 margin-left: auto;
                 margin-right: auto;
             }
 
+            .welcome-card {
+                padding: 32px;
+            }
+
+            .quick-actions {
+                max-width: 600px;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 16px;
+            }
+
+            .action-btn {
+                height: 140px;
+            }
+
+            .action-btn i {
+                font-size: 40px;
+            }
+
+            .action-btn span {
+                font-size: 18px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+
+            .stat-card {
+                padding: 24px;
+            }
+
             .departments-grid {
                 grid-template-columns: repeat(6, 1fr);
+                gap: 16px;
+            }
+
+            .dept-card {
+                padding: 24px 16px;
+            }
+
+            .dept-icon {
+                font-size: 40px;
+            }
+
+            .dept-name {
+                font-size: 14px;
+            }
+
+            .complaint-card {
+                padding: 20px;
             }
 
             .bottom-nav {
