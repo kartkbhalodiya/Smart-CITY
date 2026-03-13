@@ -234,6 +234,7 @@
             align-items: center;
             margin-bottom: 20px;
             position: relative;
+            padding: 20px 0;
         }
 
         .timeline-step {
@@ -242,87 +243,117 @@
             flex-direction: column;
             align-items: center;
             position: relative;
+            z-index: 2;
         }
 
         .timeline-node {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 20px;
             font-weight: 700;
-            z-index: 2;
-            background: var(--bg-white);
+            z-index: 3;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
             border: 3px solid #E2E8F0;
-            color: var(--text-muted);
+            color: #94A3B8;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
         }
 
-        .timeline-node.completed {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
+        .timeline-node::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            filter: blur(8px);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
         }
 
-        .timeline-node.current {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
+        .timeline-node.active::before {
+            opacity: 0.4;
+        }
+
+        /* Step 1: Submitted - Yellow */
+        .timeline-node.step-submitted {
+            background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+            border-color: #F59E0B;
             color: white;
-            box-shadow: 0 0 0 4px rgba(43, 108, 246, 0.2);
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Step 2: Assigned - Orange */
+        .timeline-node.step-assigned {
+            background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+            border-color: #EA580C;
+            color: white;
+            box-shadow: 0 4px 16px rgba(234, 88, 12, 0.3);
+        }
+
+        /* Step 3: In Progress - Blue */
+        .timeline-node.step-progress {
+            background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+            border-color: #2563EB;
+            color: white;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Step 4: Resolved - Green */
+        .timeline-node.step-resolved {
+            background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+            border-color: #10B981;
+            color: white;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Step 5: Reopened - Red */
+        .timeline-node.step-reopened {
+            background: linear-gradient(135deg, #F87171 0%, #DC2626 100%);
+            border-color: #DC2626;
+            color: white;
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
         }
 
         .timeline-node.upcoming {
-            background: var(--bg-white);
+            background: rgba(255, 255, 255, 0.6);
             border-color: #E2E8F0;
-            color: var(--text-muted);
-        }
-
-        .timeline-node.pending-node {
-            background: #9333EA;
-            border-color: #9333EA;
-            color: white;
-        }
-
-        .timeline-node.confirmed-node {
-            background: #2B6CF6;
-            border-color: #2B6CF6;
-            color: white;
-        }
-
-        .timeline-node.process-node {
-            background: #F39C12;
-            border-color: #F39C12;
-            color: white;
-        }
-
-        .timeline-node.solved-node {
-            background: #2ECC71;
-            border-color: #2ECC71;
-            color: white;
-        }
-
-        .timeline-node.reopened-node {
-            background: #8B0000;
-            border-color: #8B0000;
-            color: white;
+            color: #CBD5E1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .timeline-label {
-            font-size: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 9px;
+            font-weight: 600;
             color: var(--text-muted);
             margin-top: 8px;
             text-align: center;
+            line-height: 1.2;
+            max-width: 60px;
+        }
+
+        .timeline-label.active {
+            color: var(--text-dark);
+            font-weight: 700;
         }
 
         .timeline-line {
             position: absolute;
-            top: 16px;
+            top: 44px;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 4px;
             background: #E2E8F0;
             z-index: 1;
+            border-radius: 2px;
         }
 
         .timeline-line-progress {
@@ -330,27 +361,30 @@
             top: 0;
             left: 0;
             height: 100%;
-            transition: width 0.5s ease;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .timeline-line-progress.pending-line {
-            background: linear-gradient(to right, #9333EA 0%, #9333EA 50%, #5E4FD6 100%);
+        /* Progress line gradients based on status */
+        .timeline-line-progress.line-submitted {
+            background: linear-gradient(to right, #FCD34D 0%, #F59E0B 100%);
         }
 
-        .timeline-line-progress.confirmed-line {
-            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 25%, #2B6CF6 50%, #2B6CF6 100%);
+        .timeline-line-progress.line-assigned {
+            background: linear-gradient(to right, #FCD34D 0%, #F59E0B 25%, #FB923C 50%, #EA580C 100%);
         }
 
-        .timeline-line-progress.process-line {
-            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 16.66%, #2B6CF6 33.33%, #5E8BF6 41.66%, #F39C12 50%, #F39C12 100%);
+        .timeline-line-progress.line-progress {
+            background: linear-gradient(to right, #FCD34D 0%, #F59E0B 16.66%, #FB923C 33.33%, #EA580C 41.66%, #60A5FA 58.33%, #2563EB 100%);
         }
 
-        .timeline-line-progress.solved-line {
-            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 12.5%, #2B6CF6 25%, #5E8BF6 31.25%, #F39C12 37.5%, #A9B957 43.75%, #2ECC71 50%, #2ECC71 100%);
+        .timeline-line-progress.line-resolved {
+            background: linear-gradient(to right, #FCD34D 0%, #F59E0B 12.5%, #FB923C 25%, #EA580C 31.25%, #60A5FA 43.75%, #2563EB 56.25%, #34D399 75%, #10B981 100%);
         }
 
-        .timeline-line-progress.reopened-line {
-            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 10%, #2B6CF6 20%, #5E8BF6 25%, #F39C12 30%, #A9B957 35%, #2ECC71 40%, #5E9B51 45%, #8B0000 50%, #8B0000 100%);
+        .timeline-line-progress.line-reopened {
+            background: linear-gradient(to right, #FCD34D 0%, #F59E0B 10%, #FB923C 20%, #EA580C 25%, #60A5FA 35%, #2563EB 45%, #34D399 60%, #10B981 70%, #F87171 85%, #DC2626 100%);
         }
 
         /* Complaint Details */
@@ -456,22 +490,24 @@
             display: flex;
             gap: 8px;
             margin-top: 12px;
+            margin-bottom: 12px;
         }
 
         .quick-btn {
-            flex: 1;
-            padding: 8px 12px;
+            width: 60px;
+            padding: 6px 8px;
             border: none;
-            border-radius: 8px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 10px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             font-family: 'Inter', sans-serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
             text-decoration: none;
         }
 
@@ -491,39 +527,39 @@
         }
 
         .quick-btn:active {
-            transform: scale(0.97);
+            transform: scale(0.95);
         }
 
         .quick-btn i {
-            font-size: 11px;
+            font-size: 12px;
         }
 
         .reopen-info {
             background: #FFF4E6;
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 6px 8px;
             margin-bottom: 8px;
-            font-size: 11px;
+            font-size: 10px;
             color: var(--warning-color);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             font-weight: 600;
         }
 
         .reopen-info i {
-            font-size: 14px;
+            font-size: 12px;
         }
 
         /* Action Button */
         .action-btn {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: var(--primary-color);
             color: white;
             border: none;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
@@ -533,6 +569,7 @@
             gap: 8px;
             font-family: 'Inter', sans-serif;
             text-decoration: none;
+            margin-top: 12px;
         }
 
         .action-btn:active {
@@ -665,31 +702,60 @@
                     <!-- Progress Timeline -->
                     <div class="progress-timeline">
                         <div class="timeline-line">
-                            <div class="timeline-line-progress {% if complaint.work_status == 'pending' %}pending-line{% elif complaint.work_status == 'confirmed' %}confirmed-line{% elif complaint.work_status == 'process' %}process-line{% elif complaint.work_status == 'solved' %}solved-line{% elif complaint.work_status == 'reopened' %}reopened-line{% endif %}" style="width: {% if complaint.work_status == 'pending' %}25%{% elif complaint.work_status == 'confirmed' %}50%{% elif complaint.work_status == 'process' %}75%{% elif complaint.work_status == 'solved' %}100%{% elif complaint.work_status == 'reopened' %}100%{% endif %};"></div>
+                            <div class="timeline-line-progress 
+                                {% if complaint.work_status == 'pending' %}line-submitted
+                                {% elif complaint.work_status == 'confirmed' %}line-assigned
+                                {% elif complaint.work_status == 'process' %}line-progress
+                                {% elif complaint.work_status == 'solved' %}line-resolved
+                                {% elif complaint.work_status == 'reopened' %}line-reopened
+                                {% endif %}" 
+                                style="width: 
+                                {% if complaint.work_status == 'pending' %}20%
+                                {% elif complaint.work_status == 'confirmed' %}40%
+                                {% elif complaint.work_status == 'process' %}60%
+                                {% elif complaint.work_status == 'solved' %}80%
+                                {% elif complaint.work_status == 'reopened' %}100%
+                                {% endif %};"></div>
                         </div>
+                        
+                        <!-- Step 1: Submitted -->
                         <div class="timeline-step">
-                            <div class="timeline-node pending-node">
-                                1
+                            <div class="timeline-node step-submitted active">
+                                <i class="fa-solid fa-paper-plane"></i>
                             </div>
-                            <div class="timeline-label">Submitted</div>
+                            <div class="timeline-label active">Submitted</div>
                         </div>
+                        
+                        <!-- Step 2: Assigned -->
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}confirmed-node{% else %}upcoming{% endif %}">
-                                2
+                            <div class="timeline-node {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}step-assigned active{% else %}upcoming{% endif %}">
+                                <i class="fa-solid fa-user-check"></i>
                             </div>
-                            <div class="timeline-label">Confirmed</div>
+                            <div class="timeline-label {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}active{% endif %}">Assigned</div>
                         </div>
+                        
+                        <!-- Step 3: In Progress -->
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'process' %}process-node{% elif complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}process-node{% else %}upcoming{% endif %}">
-                                3
+                            <div class="timeline-node {% if complaint.work_status == 'process' %}step-progress active{% elif complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}step-progress active{% else %}upcoming{% endif %}">
+                                <i class="fa-solid fa-spinner"></i>
                             </div>
-                            <div class="timeline-label">In Progress</div>
+                            <div class="timeline-label {% if complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}active{% endif %}">In Progress</div>
                         </div>
+                        
+                        <!-- Step 4: Resolved -->
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'solved' %}solved-node{% elif complaint.work_status == 'reopened' %}reopened-node{% else %}upcoming{% endif %}">
-                                4
+                            <div class="timeline-node {% if complaint.work_status == 'solved' %}step-resolved active{% elif complaint.work_status == 'reopened' %}step-resolved active{% else %}upcoming{% endif %}">
+                                <i class="fa-solid fa-circle-check"></i>
                             </div>
-                            <div class="timeline-label">{% if complaint.work_status == 'reopened' %}Reopened{% else %}Completed{% endif %}</div>
+                            <div class="timeline-label {% if complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}active{% endif %}">Resolved</div>
+                        </div>
+                        
+                        <!-- Step 5: Reopened -->
+                        <div class="timeline-step">
+                            <div class="timeline-node {% if complaint.work_status == 'reopened' %}step-reopened active{% else %}upcoming{% endif %}">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </div>
+                            <div class="timeline-label {% if complaint.work_status == 'reopened' %}active{% endif %}">Reopened</div>
                         </div>
                     </div>
 
