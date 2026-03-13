@@ -114,6 +114,7 @@
         /* Search Bar */
         .search-bar {
             margin: var(--spacing) 0;
+            display: none;
         }
 
         .search-input {
@@ -252,12 +253,33 @@
         }
 
         .stat-card {
-            background: var(--bg-white);
+            background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
             border-radius: var(--border-radius);
             padding: 20px;
             box-shadow: var(--card-shadow);
             text-align: center;
             transition: all 0.3s;
+            border: 1px solid #BAE6FD;
+        }
+
+        .stat-card:nth-child(1) {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-color: #BFDBFE;
+        }
+
+        .stat-card:nth-child(2) {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border-color: #FCD34D;
+        }
+
+        .stat-card:nth-child(3) {
+            background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%);
+            border-color: #FDBA74;
+        }
+
+        .stat-card:nth-child(4) {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border-color: #6EE7B7;
         }
 
         .stat-card:active {
@@ -408,7 +430,7 @@
             left: 0;
             right: 0;
             background: var(--bg-white);
-            padding: 12px 16px;
+            padding: 8px 12px;
             display: flex;
             justify-content: space-around;
             box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
@@ -419,11 +441,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             text-decoration: none;
             color: var(--text-muted);
             transition: all 0.3s;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 12px;
         }
 
@@ -433,11 +455,11 @@
         }
 
         .nav-item i {
-            font-size: 24px;
+            font-size: 20px;
         }
 
         .nav-item span {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
         }
 
