@@ -1461,17 +1461,55 @@ def user_dashboard(request):
             'is_guest': True,
             'user': {'first_name': 'Guest', 'last_name': 'User'},
             'category_cards': category_cards,
+            'total_complaints': 0,
+            'pending_complaints': 0,
+            'progress_complaints': 0,
+            'solved_complaints': 0,
+            'recent_complaints': [],
+            'all_complaints': [],
         })
     
     # Regular user dashboard (requires login)
     if not request.user.is_authenticated:
         return redirect('/dashboard/?guest=true')
-        
-    complaints = Complaint.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Get search query
+    search_query = request.GET.get('search', '').strip()
+    
+    # Get all user complaints
+    complaints = Complaint.objects.filter(user=request.user).select_related('assigned_department').order_by('-created_at')
+    
+    # Apply search filter
+    if search_query:
+        complaints = complaints.filter(
+            Q(complaint_number__icontains=search_query) |
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(complaint_type__icontains=search_query) |
+            Q(city__icontains=search_query) |
+            Q(assigned_department__name__icontains=search_query)
+        )
+    
+    # Calculate stats
+    total_complaints = complaints.count()
+    pending_complaints = complaints.filter(work_status='pending').count()
+    progress_complaints = complaints.filter(work_status='process').count()
+    solved_complaints = complaints.filter(work_status='solved').count()
+    
+    # Get recent complaints (last 5)
+    recent_complaints = complaints[:5]
+    
     return render(request, 'user_dashboard.html', {
         'complaints': complaints,
         'is_guest': False,
         'category_cards': category_cards,
+        'total_complaints': total_complaints,
+        'pending_complaints': pending_complaints,
+        'progress_complaints': progress_complaints,
+        'solved_complaints': solved_complaints,
+        'recent_complaints': recent_complaints,
+        'all_complaints': complaints,
+        'search_query': search_query,
     })
 
 def track_complaints(request):

@@ -64,6 +64,51 @@
             position: relative;
         }
 
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+            margin: 0 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 40px 10px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(30, 102, 245, 0.1);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            background: #1557d8;
+        }
+
         .nav-icon:hover {
             background: #e2e8f0;
         }
@@ -517,10 +562,15 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
         <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp" class="logo-img">
+        <div class="search-container">
+            <form method="GET" action="{% url 'user_dashboard' %}">
+                <input type="text" name="search" class="search-input" placeholder="Search complaints, departments..." value="{{ search_query }}">
+                <button type="submit" class="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+        </div>
         <div class="nav-right">
-            <div class="nav-icon" onclick="alert('Search feature coming soon!')">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
             <div class="nav-icon" onclick="showNotifications()">
                 <i class="fa-solid fa-bell"></i>
                 <span class="notification-badge"></span>
@@ -544,22 +594,22 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">📊</div>
-                    <div class="stat-number">{{ complaints.count|default:0 }}</div>
+                    <div class="stat-number">{{ total_complaints }}</div>
                     <div class="stat-label">Total Complaints</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">⏳</div>
-                    <div class="stat-number">{% with pending=complaints|length %}{% for c in complaints %}{% if c.work_status == 'pending' %}{{ forloop.counter }}{% endif %}{% endfor %}{% endwith %}{{ complaints|length }}</div>
+                    <div class="stat-number">{{ pending_complaints }}</div>
                     <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">🔄</div>
-                    <div class="stat-number">{% with progress=0 %}{% for c in complaints %}{% if c.work_status == 'process' %}{{ forloop.counter }}{% endif %}{% endfor %}{% endwith %}0</div>
+                    <div class="stat-number">{{ progress_complaints }}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">✅</div>
-                    <div class="stat-number">{% with solved=0 %}{% for c in complaints %}{% if c.work_status == 'solved' %}{{ forloop.counter }}{% endif %}{% endfor %}{% endwith %}0</div>
+                    <div class="stat-number">{{ solved_complaints }}</div>
                     <div class="stat-label">Solved</div>
                 </div>
             </div>
@@ -573,13 +623,13 @@
             </div>
 
             <div class="complaints-list">
-                {% if complaints %}
-                    {% for complaint in complaints|slice:":5" %}
+                {% if recent_complaints %}
+                    {% for complaint in recent_complaints %}
                     <div class="complaint-item" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
                         <div class="complaint-id">#{{ complaint.complaint_number }}</div>
                         <div class="complaint-details">
                             <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
-                            <div class="complaint-city">{{ complaint.city }}</div>
+                            <div class="complaint-city">{{ complaint.city }} • {{ complaint.created_at|date:"d M Y" }}</div>
                         </div>
                         <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
                     </div>
@@ -688,8 +738,8 @@
             </div>
 
             <div class="complaints-list">
-                {% if complaints %}
-                    {% for complaint in complaints %}
+                {% if all_complaints %}
+                    {% for complaint in all_complaints %}
                     <div class="complaint-item" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
                         <div class="complaint-id">#{{ complaint.complaint_number }}</div>
                         <div class="complaint-details">
