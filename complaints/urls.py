@@ -8,6 +8,7 @@ urlpatterns = [
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.user_dashboard, name='user_dashboard'),
+    path('select-category/', views.select_category, name='select_category'),
     path('departments/', views.view_all_departments, name='view_all_departments'),
     path('department/<str:department_type>/', views.user_view_department, name='user_view_department'),
     path('track-complaints/', views.track_complaints, name='track_complaints'),

@@ -52,7 +52,7 @@
         }
 
         .logo {
-            width: 60px;
+            width: 100px;
             height: 48px;
             border-radius: 8px;
         }
@@ -559,7 +559,7 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <a href="{% url 'submit_complaint' %}" class="action-btn action-btn-primary">
+            <a href="{% url 'select_category' %}{% if is_guest %}?guest=true{% endif %}" class="action-btn action-btn-primary">
                 <i class="fa-solid fa-plus-circle"></i>
                 <span>Submit Complaint</span>
             </a>
@@ -676,7 +676,7 @@
             <i class="fa-solid fa-house"></i>
             <span>Dashboard</span>
         </a>
-        <a href="{% url 'submit_complaint' %}" class="nav-item">
+        <a href="{% url 'select_category' %}{% if is_guest %}?guest=true{% endif %}" class="nav-item">
             <i class="fa-solid fa-plus-circle"></i>
             <span>Submit</span>
         </a>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Category - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2B6CF6;
+            --bg-white: #FFFFFF;
+            --bg-section: #F7F9FC;
+            --text-dark: #1a202c;
+            --text-muted: #718096;
+            --border-radius: 16px;
+            --card-shadow: 0 6px 20px rgba(0,0,0,0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-section);
+            color: var(--text-dark);
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-white);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            z-index: 1000;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-section);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            color: var(--text-dark);
+            font-size: 18px;
+        }
+
+        .header-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 72px;
+            padding: 24px 16px;
+        }
+
+        .page-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        /* Categories Grid */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .category-card {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
+            padding: 24px 16px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text-dark);
+            border: 2px solid transparent;
+        }
+
+        .category-card:active {
+            transform: scale(0.97);
+        }
+
+        .category-card:hover {
+            border-color: var(--primary-color);
+        }
+
+        .category-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .category-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-white);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .nav-item.active {
+            color: var(--primary-color);
+            background: #E3F2FD;
+        }
+
+        .nav-item i {
+            font-size: 24px;
+        }
+
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (min-width: 768px) {
+            .main-content {
+                max-width: 1200px;
+                margin-left: auto;
+                margin-right: auto;
+                padding: 32px;
+                margin-top: 88px;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 24px;
+            }
+
+            .category-card {
+                padding: 32px 20px;
+            }
+
+            .category-icon {
+                font-size: 56px;
+            }
+
+            .category-name {
+                font-size: 16px;
+            }
+
+            .bottom-nav {
+                display: none;
+            }
+
+            body {
+                padding-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <button class="back-btn" onclick="window.history.back()">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <h1 class="header-title">Select Category</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <h2 class="page-title">What do you want to report?</h2>
+        <p class="page-subtitle">Choose a category to submit your complaint</p>
+
+        <div class="categories-grid">
+            <a href="{% url 'submit_complaint' %}?type=police{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🚔</div>
+                <div class="category-name">Police</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=traffic{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🚦</div>
+                <div class="category-name">Traffic</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=water{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">💧</div>
+                <div class="category-name">Water Supply</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=garbage{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🗑️</div>
+                <div class="category-name">Garbage</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=electricity{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">⚡</div>
+                <div class="category-name">Electricity</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=construction{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🏗️</div>
+                <div class="category-name">Construction</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=road{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🚧</div>
+                <div class="category-name">Road</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=drainage{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">💧</div>
+                <div class="category-name">Drainage</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=illegal{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🏪</div>
+                <div class="category-name">Illegal Activity</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=transportation{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">🚌</div>
+                <div class="category-name">Transportation</div>
+            </a>
+
+            <a href="tel:1930" class="category-card">
+                <div class="category-icon">🛡️</div>
+                <div class="category-name">Cyber Crime</div>
+            </a>
+
+            <a href="{% url 'submit_complaint' %}?type=other{% if is_guest %}&guest=true{% endif %}" class="category-card">
+                <div class="category-icon">📋</div>
+                <div class="category-name">Other</div>
+            </a>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="{% url 'user_dashboard' %}" class="nav-item">
+            <i class="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'select_category' %}" class="nav-item active">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>Submit</span>
+        </a>
+        <a href="{% url 'track_complaints' %}" class="nav-item">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Track</span>
+        </a>
+        <a href="{% url 'profile' %}" class="nav-item">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+</body>
+</html>

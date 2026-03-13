@@ -4262,6 +4262,16 @@ def user_view_department(request, department_type):
     
     return render(request, 'user_view_department.html', context)
 
+def select_category(request):
+    """Category selection page for submitting complaints"""
+    is_guest = request.GET.get('guest') == 'true'
+    
+    context = {
+        'is_guest': is_guest,
+    }
+    
+    return render(request, 'select_category.html', context)
+
 def profile_view(request):
     if not request.user.is_authenticated:
         return redirect('/dashboard/?guest=true')
