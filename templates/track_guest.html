@@ -302,11 +302,31 @@
             top: 28px;
             bottom: 0;
             width: 2px;
-            background: rgba(30, 102, 245, 0.2);
+            background: rgba(203, 213, 225, 0.5);
         }
 
         .timeline-item.completed:not(:last-child)::before {
-            background: linear-gradient(180deg, #2ECC71, #1E66F5);
+            background: linear-gradient(180deg, currentColor, currentColor);
+        }
+
+        .timeline-item.status-pending.completed:not(:last-child)::before {
+            background: linear-gradient(180deg, #ef4444, #f97316);
+        }
+
+        .timeline-item.status-confirmed.completed:not(:last-child)::before {
+            background: linear-gradient(180deg, #f97316, #eab308);
+        }
+
+        .timeline-item.status-progress.completed:not(:last-child)::before {
+            background: linear-gradient(180deg, #eab308, #22c55e);
+        }
+
+        .timeline-item.status-resolved.completed:not(:last-child)::before {
+            background: #22c55e;
+        }
+
+        .timeline-item.status-reopened.completed:not(:last-child)::before {
+            background: #991b1b;
         }
 
         .timeline-dot {
@@ -314,21 +334,61 @@
             height: 28px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.6);
-            border: 2px solid rgba(30, 102, 245, 0.3);
+            border: 2px solid #cbd5e1;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
         }
 
-        .timeline-item.completed .timeline-dot {
-            background: linear-gradient(135deg, #2ECC71, #1E66F5);
+        .timeline-item.status-pending .timeline-dot {
+            border-color: #ef4444;
+        }
+
+        .timeline-item.status-pending.completed .timeline-dot {
+            background: #ef4444;
+            border-color: transparent;
+        }
+
+        .timeline-item.status-confirmed .timeline-dot {
+            border-color: #f97316;
+        }
+
+        .timeline-item.status-confirmed.completed .timeline-dot {
+            background: #f97316;
+            border-color: transparent;
+        }
+
+        .timeline-item.status-progress .timeline-dot {
+            border-color: #eab308;
+        }
+
+        .timeline-item.status-progress.completed .timeline-dot {
+            background: #eab308;
+            border-color: transparent;
+        }
+
+        .timeline-item.status-resolved .timeline-dot {
+            border-color: #22c55e;
+        }
+
+        .timeline-item.status-resolved.completed .timeline-dot {
+            background: #22c55e;
+            border-color: transparent;
+        }
+
+        .timeline-item.status-reopened .timeline-dot {
+            border-color: #991b1b;
+        }
+
+        .timeline-item.status-reopened.completed .timeline-dot {
+            background: #991b1b;
             border-color: transparent;
         }
 
         .timeline-dot i {
             font-size: 12px;
-            color: var(--primary-blue);
+            color: #94a3b8;
         }
 
         .timeline-item.completed .timeline-dot i {
@@ -427,8 +487,13 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="search-box">
-                    <i class="fa-solid fa-search search-icon"></i>
+                    <i class="fa-solid fa-hashtag search-icon"></i>
                     <input type="text" name="complaint_number" class="input-field" placeholder="Enter Complaint ID" required>
+                </div>
+
+                <div class="search-box" style="margin-bottom: 16px;">
+                    <i class="fa-solid fa-phone search-icon"></i>
+                    <input type="tel" name="phone" class="input-field" placeholder="Enter Mobile Number" required>
                 </div>
 
                 <button type="submit" class="btn-track">Track Complaint</button>
@@ -448,7 +513,7 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label">Complaint ID:</span>
-                        <span class="info-value">{{ complaint.complaint_number }}</span>
+                        <span class="info-value">#{{ complaint.complaint_number }}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Category:</span>
@@ -462,46 +527,62 @@
                         <span class="info-label">Date Submitted:</span>
                         <span class="info-value">{{ complaint.created_at|date:"d M Y" }}</span>
                     </div>
+                    <div class="info-item">
+                        <span class="info-label">Contact Person:</span>
+                        <span class="info-value">{{ complaint.guest_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Mobile:</span>
+                        <span class="info-value">{{ complaint.guest_phone }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ complaint.guest_email }}</span>
+                    </div>
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <span class="info-label">Description:</span>
+                        <span class="info-value" style="text-align: left; display: block; margin-top: 6px;">{{ complaint.description }}</span>
+                    </div>
                 </div>
 
                 <div class="timeline">
-                    <div class="timeline-item completed">
+                    <div class="timeline-item {% if complaint.status == 'pending' or complaint.status == 'approved' or complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}completed{% endif %} status-pending">
                         <div class="timeline-dot">
-                            <i class="fa-solid fa-check"></i>
+                            <i class="fa-solid fa-{% if complaint.status == 'pending' or complaint.status == 'approved' or complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}check{% else %}circle{% endif %}"></i>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Submitted</div>
+                            <div class="timeline-title">Pending</div>
                             <div class="timeline-date">{{ complaint.created_at|date:"d M Y, h:i A" }}</div>
                         </div>
                     </div>
 
-                    <div class="timeline-item {% if complaint.status != 'pending' %}completed{% endif %}">
+                    <div class="timeline-item {% if complaint.status == 'approved' or complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}completed{% endif %} status-confirmed">
                         <div class="timeline-dot">
-                            <i class="fa-solid fa-{% if complaint.status != 'pending' %}check{% else %}circle{% endif %}"></i>
+                            <i class="fa-solid fa-{% if complaint.status == 'approved' or complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}check{% else %}circle{% endif %}"></i>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Assigned to Officer</div>
-                            <div class="timeline-date">{% if complaint.status != 'pending' %}{{ complaint.updated_at|date:"d M Y, h:i A" }}{% else %}Pending{% endif %}</div>
+                            <div class="timeline-title">Confirmed</div>
+                            <div class="timeline-date">{% if complaint.status == 'approved' or complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}{{ complaint.updated_at|date:"d M Y, h:i A" }}{% else %}Pending{% endif %}</div>
                         </div>
                     </div>
 
-                    <div class="timeline-item {% if complaint.status == 'approved' %}completed{% endif %}">
+                    <div class="timeline-item {% if complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}completed{% endif %} status-progress">
                         <div class="timeline-dot">
-                            <i class="fa-solid fa-{% if complaint.status == 'approved' %}check{% else %}circle{% endif %}"></i>
+                            <i class="fa-solid fa-{% if complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}check{% else %}circle{% endif %}"></i>
                         </div>
                         <div class="timeline-content">
                             <div class="timeline-title">In Progress</div>
-                            <div class="timeline-date">{% if complaint.status == 'approved' %}{{ complaint.updated_at|date:"d M Y, h:i A" }}{% else %}Pending{% endif %}</div>
+                            <div class="timeline-date">{% if complaint.status == 'in_progress' or complaint.status == 'resolved' or complaint.status == 'reopened' %}{{ complaint.updated_at|date:"d M Y, h:i A" }}{% else %}Pending{% endif %}</div>
                         </div>
                     </div>
 
-                    <div class="timeline-item">
+                    <div class="timeline-item {% if complaint.status == 'resolved' %}completed{% endif %} {% if complaint.status == 'reopened' %}completed{% endif %} {% if complaint.status == 'resolved' %}status-resolved{% elif complaint.status == 'reopened' %}status-reopened{% endif %}">
                         <div class="timeline-dot">
-                            <i class="fa-solid fa-circle"></i>
+                            <i class="fa-solid fa-{% if complaint.status == 'resolved' %}check{% elif complaint.status == 'reopened' %}exclamation{% else %}circle{% endif %}"></i>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Resolved</div>
-                            <div class="timeline-date">Pending</div>
+                            <div class="timeline-title">{% if complaint.status == 'reopened' %}Reopened{% else %}Resolved{% endif %}</div>
+                            <div class="timeline-date">{% if complaint.status == 'resolved' or complaint.status == 'reopened' %}{{ complaint.updated_at|date:"d M Y, h:i A" }}{% else %}Pending{% endif %}</div>
                         </div>
                     </div>
                 </div>
