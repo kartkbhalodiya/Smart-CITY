@@ -111,7 +111,7 @@ if os.getenv('DATABASE_URL'):
                 # FORCE POOLER SETTINGS
                 # Use project-ref.host as username for pooler
                 new_user = f"postgres.{project_ref}"
-                new_host = f"aws-0-ap-south-1.pooler.supabase.com"
+                new_host = f"aws-1-ap-northeast-1.pooler.supabase.com"
                 new_port = "6543"
                 
                 db_url = f"postgresql://{new_user}:{pwd}@{new_host}:{new_port}/{dbname}?sslmode=require"
