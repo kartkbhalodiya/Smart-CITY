@@ -170,15 +170,103 @@
         .complaint-card {
             background: var(--bg-white);
             border-radius: var(--border-radius);
-            padding: 20px;
+            padding: 0;
             box-shadow: var(--card-shadow);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             transition: all 0.3s;
+            overflow: hidden;
         }
 
         .complaint-card:active {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        /* Card Header - Always Visible */
+        .card-header-compact {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            cursor: pointer;
+            user-select: none;
+            background: var(--bg-white);
+            transition: background 0.3s;
+        }
+
+        .card-header-compact:hover {
+            background: var(--bg-section);
+        }
+
+        .card-header-compact:active {
+            background: #E8EDF3;
+        }
+
+        .complaint-header-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .complaint-id-compact {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .complaint-title-compact {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            line-height: 1.3;
+        }
+
+        .card-header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .expand-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-section);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .expand-icon i {
+            transition: transform 0.3s;
+        }
+
+        .complaint-card.expanded .expand-icon {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .complaint-card.expanded .expand-icon i {
+            transform: rotate(180deg);
+        }
+
+        /* Card Content - Collapsible */
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .complaint-card.expanded .card-content {
+            max-height: 3000px;
+        }
+
+        .card-content-inner {
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid #E8EDF3;
         }
 
         /* Card Header */
@@ -187,12 +275,6 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
-        }
-
-        .complaint-id {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--primary-color);
         }
 
         .status-badge {
@@ -697,20 +779,32 @@
         <div id="complaintsList">
             {% if complaints %}
                 {% for complaint in complaints %}
-                <div class="complaint-card" data-status="{{ complaint.work_status }}">
-                    <!-- Card Header -->
-                    <div class="card-header">
-                        <div class="complaint-id">#{{ complaint.complaint_number }}</div>
-                        <span class="status-badge status-{{ complaint.work_status }}">
-                            {% if complaint.work_status == 'pending' %}Submitted
-                            {% elif complaint.work_status == 'confirmed' %}Assigned
-                            {% elif complaint.work_status == 'process' %}In Progress
-                            {% elif complaint.work_status == 'solved' %}Resolved
-                            {% elif complaint.work_status == 'reopened' %}Reopened
-                            {% else %}{{ complaint.work_status }}
-                            {% endif %}
-                        </span>
+                <div class="complaint-card" data-status="{{ complaint.work_status }}" id="complaint-{{ complaint.id }}">
+                    <!-- Compact Header - Always Visible -->
+                    <div class="card-header-compact" onclick="toggleComplaint({{ complaint.id }})">
+                        <div class="complaint-header-left">
+                            <div class="complaint-id-compact">#{{ complaint.complaint_number }}</div>
+                            <div class="complaint-title-compact">{{ complaint.title }}</div>
+                        </div>
+                        <div class="card-header-right">
+                            <span class="status-badge status-{{ complaint.work_status }}">
+                                {% if complaint.work_status == 'pending' %}Submitted
+                                {% elif complaint.work_status == 'confirmed' %}Assigned
+                                {% elif complaint.work_status == 'process' %}In Progress
+                                {% elif complaint.work_status == 'solved' %}Resolved
+                                {% elif complaint.work_status == 'reopened' %}Reopened
+                                {% else %}{{ complaint.work_status }}
+                                {% endif %}
+                            </span>
+                            <div class="expand-icon">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Collapsible Content -->
+                    <div class="card-content">
+                        <div class="card-content-inner">
 
                     <!-- Progress Timeline -->
                     <div class="progress-timeline">
@@ -870,6 +964,8 @@
                         <i class="fa-solid fa-eye"></i>
                         View Details
                     </a>
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
             {% else %}
@@ -903,6 +999,12 @@
     </nav>
 
     <script>
+        // Toggle complaint card expansion
+        function toggleComplaint(complaintId) {
+            const card = document.getElementById('complaint-' + complaintId);
+            card.classList.toggle('expanded');
+        }
+
         // Filter complaints by status
         function filterComplaints(status) {
             // Update active tab
@@ -928,9 +1030,9 @@
             const cards = document.querySelectorAll('.complaint-card');
             
             cards.forEach(card => {
-                const id = card.querySelector('.complaint-id').textContent.toLowerCase();
-                const title = card.querySelector('.complaint-title').textContent.toLowerCase();
-                const type = card.querySelector('.detail-row span').textContent.toLowerCase();
+                const id = card.querySelector('.complaint-id-compact').textContent.toLowerCase();
+                const title = card.querySelector('.complaint-title-compact').textContent.toLowerCase();
+                const type = card.querySelector('.detail-row span')?.textContent.toLowerCase() || '';
                 
                 if (id.includes(searchTerm) || title.includes(searchTerm) || type.includes(searchTerm)) {
                     card.style.display = 'block';
