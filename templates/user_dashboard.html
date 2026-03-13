@@ -773,7 +773,7 @@
             <i class="fa-solid fa-list-check"></i>
             <span>Track</span>
         </a>
-        <a href="{% url 'profile' %}" class="bottom-nav-item">
+        <a href="#" class="bottom-nav-item" id="profile-nav-btn">
             <i class="fa-solid fa-user"></i>
             <span>Profile</span>
         </a>
@@ -802,7 +802,8 @@
                 '.nav-icon',
                 '.profile-pic',
                 '.tab-btn:nth-child(3)', // My Complaints tab
-                '.view-all-btn'
+                '.view-all-btn',
+                '#profile-nav-btn' // Bottom nav profile button
             ];
 
             restrictedElements.forEach(selector => {
@@ -816,9 +817,13 @@
                 });
             });
 
-            // For non-guest users, add profile click handler
+            // For non-guest users, add profile click handlers
             if (!isGuest) {
                 document.querySelector('.profile-pic').addEventListener('click', function() {
+                    window.location.href = '{% url "profile" %}';
+                });
+                document.querySelector('#profile-nav-btn').addEventListener('click', function(e) {
+                    e.preventDefault();
                     window.location.href = '{% url "profile" %}';
                 });
             }
@@ -828,7 +833,7 @@
 
             // Update bottom nav for guest
             const trackBtn = document.querySelector('.bottom-nav-item[href*="track"]');
-            const profileBtn = document.querySelector('.bottom-nav-item[href*="profile"]');
+            const profileBtn = document.querySelector('#profile-nav-btn');
             
             if (trackBtn) {
                 trackBtn.innerHTML = '<i class="fa-solid fa-lock"></i><span>Track</span>';
