@@ -529,15 +529,15 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Contact Person:</span>
-                        <span class="info-value">{{ complaint.guest_name }}</span>
+                        <span class="info-value">{% if complaint.user %}{{ complaint.user.get_full_name }}{% else %}{{ complaint.guest_name }}{% endif %}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Mobile:</span>
-                        <span class="info-value">{{ complaint.guest_phone }}</span>
+                        <span class="info-value">{% if complaint.user and complaint.user.citizenprofile %}{{ complaint.user.citizenprofile.mobile_no }}{% else %}{{ complaint.guest_phone }}{% endif %}</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Email:</span>
-                        <span class="info-value">{{ complaint.guest_email }}</span>
+                        <span class="info-value">{% if complaint.user %}{{ complaint.user.email }}{% else %}{{ complaint.guest_email }}{% endif %}</span>
                     </div>
                     <div class="info-item" style="grid-column: 1 / -1;">
                         <span class="info-label">Description:</span>
