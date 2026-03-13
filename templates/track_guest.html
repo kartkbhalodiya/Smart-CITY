@@ -7,6 +7,10 @@
     <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
         :root {
             --primary-blue: #1E66F5;
@@ -604,15 +608,7 @@
                         <i class="fa-solid fa-route"></i>
                         <span>Route: Department to Complaint Location</span>
                     </div>
-                    <iframe
-                        width="100%"
-                        height="250"
-                        frameborder="0"
-                        style="border:0; border-radius: 10px;"
-                        referrerpolicy="no-referrer-when-downgrade"
-                        src="https://www.google.com/maps/embed/v1/directions?key=YOUR_API_KEY&origin={{ complaint.assigned_department.latitude }},{{ complaint.assigned_department.longitude }}&destination={{ complaint.latitude }},{{ complaint.longitude }}&mode=driving"
-                        allowfullscreen>
-                    </iframe>
+                    <div id="routeMap" style="height: 250px; border-radius: 10px; overflow: hidden;"></div>
                     <div class="map-info">
                         <div class="map-point">
                             <i class="fa-solid fa-building" style="color: #1E66F5;"></i>
@@ -627,6 +623,65 @@
                         </div>
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const deptLat = {{ complaint.assigned_department.latitude }};
+                        const deptLng = {{ complaint.assigned_department.longitude }};
+                        const complaintLat = {{ complaint.latitude }};
+                        const complaintLng = {{ complaint.longitude }};
+
+                        const map = L.map('routeMap').setView([(deptLat + complaintLat) / 2, (deptLng + complaintLng) / 2], 13);
+
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap contributors',
+                            maxZoom: 19
+                        }).addTo(map);
+
+                        const deptIcon = L.divIcon({
+                            html: '<div style="background: #1E66F5; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-building" style="color: white; font-size: 14px;"></i></div>',
+                            className: '',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        const complaintIcon = L.divIcon({
+                            html: '<div style="background: #ef4444; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-location-dot" style="color: white; font-size: 14px;"></i></div>',
+                            className: '',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        L.marker([deptLat, deptLng], {icon: deptIcon})
+                            .addTo(map)
+                            .bindPopup('<b>{{ complaint.assigned_department.name }}</b><br>{{ complaint.assigned_department.location_name }}');
+
+                        L.marker([complaintLat, complaintLng], {icon: complaintIcon})
+                            .addTo(map)
+                            .bindPopup('<b>Complaint Location</b><br>{{ complaint.city }}');
+
+                        L.Routing.control({
+                            waypoints: [
+                                L.latLng(deptLat, deptLng),
+                                L.latLng(complaintLat, complaintLng)
+                            ],
+                            routeWhileDragging: false,
+                            showAlternatives: false,
+                            lineOptions: {
+                                styles: [{color: '#1E66F5', opacity: 0.8, weight: 5}]
+                            },
+                            createMarker: function() { return null; },
+                            addWaypoints: false,
+                            draggableWaypoints: false,
+                            fitSelectedRoutes: true,
+                            show: false
+                        }).addTo(map);
+
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);
+                    });
+                </script>
                 {% endif %}
 
                 <div class="timeline">
