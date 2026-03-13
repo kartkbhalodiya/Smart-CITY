@@ -581,6 +581,30 @@
             visibility: visible;
         }
 
+        /* Page Load Animation - Shows on initial page load */
+        .page-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            opacity: 1;
+            visibility: visible;
+            transition: all 0.5s ease;
+        }
+
+        .page-loading.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+
         .loader-container {
             position: relative;
             width: 128px;
@@ -1110,6 +1134,63 @@
         </a>
     </nav>
 
+    <!-- Page Load Animation -->
+    <div class="page-loading" id="pageLoadingOverlay">
+        <div class="loader-container">
+            <div class="loader-blur"></div>
+            <svg viewBox="0 0 120 120" class="loader-svg">
+                <g class="spin-slow">
+                    <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3" opacity="0.25"></circle>
+                    <g stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6">
+                        <g>
+                            <line x1="60" y1="6" x2="60" y2="12"></line>
+                            <line x1="60" y1="108" x2="60" y2="114"></line>
+                            <line x1="6" y1="60" x2="12" y2="60"></line>
+                            <line x1="108" y1="60" x2="114" y2="60"></line>
+                        </g>
+                        <g>
+                            <line x1="60" y1="8" x2="60" y2="12"></line>
+                            <g style="transform: rotate(45deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                            <g style="transform: rotate(90deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                            <g style="transform: rotate(135deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                            <g style="transform: rotate(22.5deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                            <g style="transform: rotate(67.5deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                            <g style="transform: rotate(112.5deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                            <g style="transform: rotate(157.5deg); transform-origin: center;">
+                                <line x1="60" y1="8" x2="60" y2="12"></line>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+                <g class="spin-reverse">
+                    <polygon points="60,22 66,60 60,98 54,60" fill="#C9910D" opacity="0.95"></polygon>
+                    <polygon points="22,60 60,66 98,60 60,54" fill="#0892A5" opacity="0.9"></polygon>
+                    <circle cx="60" cy="60" r="6" fill="white" stroke="currentColor" stroke-width="2"></circle>
+                </g>
+                <g class="swing">
+                    <line x1="60" y1="60" x2="60" y2="18" stroke="#C9910D" stroke-width="3" stroke-linecap="round"></line>
+                    <circle cx="60" cy="60" r="3" fill="#C9910D"></circle>
+                </g>
+                <g>
+                    <path d="M12 82 Q 24 76 36 82 T 60 82 T 84 82 T 108 82" fill="none" stroke="#0892A5" stroke-width="3" class="wave-dash"></path>
+                    <path d="M12 90 Q 24 84 36 90 T 60 90 T 84 90 T 108 90" fill="none" stroke="#4E3822" stroke-width="2" opacity="0.4" class="wave-dash-slow"></path>
+                </g>
+            </svg>
+        </div>
+    </div>
+
     <!-- Loading Overlay with Modern SVG Animation -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader-container">
@@ -1170,6 +1251,14 @@
     <script>
         // Check if guest mode
         const isGuest = new URLSearchParams(window.location.search).get('guest') === 'true';
+
+        // Show page loading animation on initial load
+        window.addEventListener('load', function() {
+            const pageLoader = document.getElementById('pageLoadingOverlay');
+            setTimeout(() => {
+                pageLoader.classList.add('hide');
+            }, 1500); // Show for 1.5 seconds
+        });
 
         // Initialize guest mode on page load
         document.addEventListener('DOMContentLoaded', function() {
