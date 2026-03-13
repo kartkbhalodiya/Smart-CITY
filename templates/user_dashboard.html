@@ -1,347 +1,294 @@
-﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Smart City</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Dashboard - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --green-accent: #2ECC71;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --bg-light: #f8fafc;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-light);
+            padding-bottom: 80px;
         }
 
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .user-info h1 {
-            font-size: 20px;
-            color: #ffffff;
-            font-weight: 800;
-            margin-bottom: 3px;
-        }
-
-        .user-info .location {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 3px;
-        }
-
-        .user-info .time {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .profile-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .profile-icon:active {
-            transform: scale(0.95);
-        }
-
-        .track-section {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 15px;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 15px;
-        }
-
-        .emergency-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .emergency-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 15px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .emergency-btn:active {
-            transform: scale(0.95);
-        }
-
-        .emergency-btn.cyber {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.4);
-        }
-
-        .emergency-btn.sos {
-            background: rgba(220, 38, 38, 0.3);
-            border-color: rgba(220, 38, 38, 0.5);
-        }
-
-        .emergency-icon {
-            width: 45px;
-            height: 45px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-        }
-
-        .emergency-text {
-            flex: 1;
-        }
-
-        .emergency-text .title {
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 3px;
-        }
-
-        .emergency-text .subtitle {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 11px;
-        }
-
-        .track-text {
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .track-btn {
-            background: rgba(255, 255, 255, 0.95);
-            color: #2c3e50;
-            padding: 8px 20px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-
-        .track-btn:active {
-            transform: scale(0.95);
-        }
-
-        .scroll-to-complaints {
-            scroll-behavior: smooth;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 25px 20px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-            transition: all 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        }
-
-        .stat-card .number {
-            font-size: 48px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-        }
-
-        .stat-card .label {
-            color: #636e72;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .service-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 30px 20px;
-            text-align: center;
-            text-decoration: none;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #e9ecef;
-        }
-
-        .service-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .service-card:active {
-            transform: scale(0.95);
-        }
-
-        .service-card::before {
-            content: '';
-            position: absolute;
+        /* Top Navigation Bar */
+        .top-nav {
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 5px;
-            background: var(--color);
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
         }
 
-        .service-card .icon {
-            font-size: 60px;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        .logo-img {
+            height: 36px;
+            width: auto;
         }
 
-        .service-icon-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 14px;
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-icon:hover {
+            background: #e2e8f0;
+        }
+
+        .nav-icon i {
+            font-size: 18px;
+            color: var(--text-dark);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             object-fit: cover;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
+            border: 2px solid var(--primary-blue);
+            cursor: pointer;
         }
 
-        .service-card .title {
-            color: #2d3436;
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            padding: 16px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
             font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
         }
 
-        .complaints-section {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
+        .tab-btn.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        .stat-card:nth-child(1) .stat-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card:nth-child(2) .stat-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card:nth-child(3) .stat-icon {
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+        }
+
+        .stat-card:nth-child(4) .stat-icon {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Section Header */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
         .section-title {
             font-size: 18px;
-            font-weight: 800;
-            color: #2d3436;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-family: 'Poppins', sans-serif;
         }
 
-        .complaint-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--color);
+        .view-all-btn {
+            font-size: 13px;
+            color: var(--primary-blue);
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .complaint-header {
+        /* Recent Complaints */
+        .complaints-list {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .complaint-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+
+        .complaint-item:hover {
+            background: var(--bg-light);
+        }
+
+        .complaint-item:last-child {
+            margin-bottom: 0;
         }
 
         .complaint-id {
-            font-size: 14px;
-            font-weight: 800;
-            color: #2c3e50;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            min-width: 70px;
+        }
+
+        .complaint-details {
+            flex: 1;
+        }
+
+        .complaint-category {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .complaint-city {
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 8px;
             font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
+            font-weight: 600;
+            text-transform: capitalize;
         }
 
         .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-approved {
-            background: #d4edda;
-            color: #155724;
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .status-confirmed {
-            background: #fef3c7;
-            color: #92400e;
+            background: #fed7aa;
+            color: #9a3412;
         }
 
         .status-process {
-            background: #dbeafe;
-            color: #1e40af;
+            background: #fef3c7;
+            color: #854d0e;
         }
 
         .status-solved {
@@ -349,432 +296,417 @@
             color: #166534;
         }
 
-        .status-rejected {
-            background: #f8d7da;
-            color: #721c24;
+        .status-reopened {
+            background: #fce7f3;
+            color: #831843;
         }
 
-        .complaint-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #2d3436;
-            margin-bottom: 5px;
+        /* Departments Grid */
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
-        .complaint-type {
-            font-size: 12px;
-            color: #636e72;
-            margin-bottom: 10px;
-        }
-
-        .complaint-date {
-            font-size: 11px;
-            color: #adb5bd;
-        }
-
-        .view-btn {
-            background: #2c3e50;
-            color: #fff;
-            padding: 8px 15px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 10px;
-        }
-
-        .empty-state {
+        .dept-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             text-align: center;
-            padding: 40px 20px;
-        }
-
-        .empty-state .icon {
-            font-size: 80px;
-            opacity: 0.3;
-            margin-bottom: 20px;
-        }
-
-        .empty-state p {
-            color: #636e72;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-
-        .empty-state a {
-            background: #667eea;
-            color: #fff;
-            padding: 12px 25px;
-            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
             text-decoration: none;
-            font-weight: 600;
-            display: inline-block;
         }
 
-        @media (max-width: 480px) {
-            .header-top {
-                margin-bottom: 12px;
+        .dept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .dept-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .dept-card:nth-child(2) .dept-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .dept-card:nth-child(3) .dept-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .dept-card:nth-child(4) .dept-icon {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .dept-card:nth-child(5) .dept-icon {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .dept-card:nth-child(6) .dept-icon {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+
+        .dept-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: all 0.3s;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary-blue);
+            background: rgba(30, 102, 245, 0.1);
+        }
+
+        .bottom-nav-item i {
+            font-size: 22px;
+        }
+
+        .bottom-nav-item span {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Submit Complaint Categories */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .category-card {
+            background: white;
+            padding: 20px 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .category-card:nth-child(1) .category-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .category-card:nth-child(2) .category-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .category-card:nth-child(3) .category-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .category-card:nth-child(4) .category-icon { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .category-card:nth-child(5) .category-icon { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .category-card:nth-child(6) .category-icon { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .category-card:nth-child(7) .category-icon { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .category-card:nth-child(8) .category-icon { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); }
+        .category-card:nth-child(9) .category-icon { background: linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%); }
+        .category-card:nth-child(10) .category-icon { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); }
+        .category-card:nth-child(11) .category-icon { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); }
+        .category-card:nth-child(12) .category-icon { background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); }
+
+        .category-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Desktop View */
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
 
-            .user-info h1 {
-                font-size: 18px;
+            .departments-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
 
-            .profile-icon {
-                width: 45px;
-                height: 45px;
-                font-size: 20px;
+            .categories-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
 
-            .track-text {
-                font-size: 13px;
+            .bottom-nav {
+                display: none;
             }
 
-            .track-btn {
-                padding: 7px 15px;
-                font-size: 12px;
+            body {
+                padding-bottom: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .departments-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
 
-            .emergency-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 20px;
+            .categories-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
+        }
 
-            .emergency-text .title {
-                font-size: 13px;
-            }
-
-            .emergency-text .subtitle {
-                font-size: 10px;
-            }
-
-            .stat-card .number {
-                font-size: 40px;
-            }
-
-            .service-card .icon {
-                font-size: 50px;
-            }
+        .hidden {
+            display: none;
         }
     </style>
-    <script src="/static/js/translations.js"></script>
 </head>
 <body>
-    <div class="header">
-        <div class="header-top">
-            <div class="user-info">
-                {% if is_guest %}
-                <h1>Guest User</h1>
-                <div class="location">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>Guest Mode</span>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp" class="logo-img">
+        <div class="nav-right">
+            <div class="nav-icon" onclick="alert('Search feature coming soon!')">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div class="nav-icon" onclick="showNotifications()">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notification-badge"></span>
+            </div>
+            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:'User' }}&background=1E66F5&color=fff&size=128" alt="Profile" class="profile-pic" onclick="window.location.href='{% url 'profile' %}'">
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="showTab('submit')">Submit Complaint</button>
+            <button class="tab-btn" onclick="showTab('my-complaints')">My Complaints</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-number">{{ complaints.count|default:0 }}</div>
+                    <div class="stat-label">Total Complaints</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-number">{% with pending=complaints|length %}{% for c in complaints %}{% if c.work_status == 'pending' %}{{ forloop.counter }}{% endif %}{% endfor %}{% endwith %}{{ complaints|length }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-number">{% with progress=0 %}{% for c in complaints %}{% if c.work_status == 'process' %}{{ forloop.counter }}{% endif %}{% endfor %}{% endwith %}0</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-number">{% with solved=0 %}{% for c in complaints %}{% if c.work_status == 'solved' %}{{ forloop.counter }}{% endif %}{% endfor %}{% endwith %}0</div>
+                    <div class="stat-label">Solved</div>
+                </div>
+            </div>
+
+            <!-- Recent Complaints -->
+            <div class="section-header">
+                <h2 class="section-title">Recent Complaints</h2>
+                <a href="#" class="view-all-btn" onclick="showTab('my-complaints'); return false;">
+                    View All <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+
+            <div class="complaints-list">
+                {% if complaints %}
+                    {% for complaint in complaints|slice:":5" %}
+                    <div class="complaint-item" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
+                        <div class="complaint-id">#{{ complaint.complaint_number }}</div>
+                        <div class="complaint-details">
+                            <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
+                            <div class="complaint-city">{{ complaint.city }}</div>
+                        </div>
+                        <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
+                    </div>
+                    {% endfor %}
                 {% else %}
-                <h1>{{ user.first_name }} {{ user.last_name }}</h1>
-                <div class="location">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>{% if user.citizenprofile.city %}{{ user.citizenprofile.city }}{% else %}India{% endif %}</span>
-                </div>
+                    <p style="text-align: center; color: var(--text-muted); padding: 20px;">No complaints yet</p>
                 {% endif %}
-                <div class="time">
-                    <i class="fa-solid fa-clock"></i>
-                    <span id="currentTime"></span>
-                </div>
             </div>
-            {% if is_guest %}
-            <a href="{% url 'login' %}" class="profile-icon" title="Login">
-                <i class="fa-solid fa-user"></i>
-            </a>
-            {% else %}
-            <a href="{% url 'profile' %}" class="profile-icon" title="Profile">
-                <i class="fa-solid fa-user"></i>
-            </a>
-            {% endif %}
-        </div>
-        <div class="track-section">
-            <div class="track-text">
-                <i class="fa-solid fa-location-crosshairs"></i>
-                Track Your Complaints
+
+            <!-- Departments -->
+            <div class="section-header">
+                <h2 class="section-title">Departments</h2>
+                <a href="#" class="view-all-btn">View All <i class="fa-solid fa-chevron-right"></i></a>
             </div>
-            {% if is_guest %}
-            <button class="track-btn" onclick="showTrackPopup()">
-                <i class="fa-solid fa-list-check"></i>
-                Track
-            </button>
-            {% else %}
-            <a href="{% url 'track_complaints' %}" class="track-btn">
-                <i class="fa-solid fa-list-check"></i>
-                Track
-            </a>
-            {% endif %}
+
+            <div class="departments-grid">
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🚔</div>
+                    <div class="dept-name">Police</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🚦</div>
+                    <div class="dept-name">Traffic</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🏗️</div>
+                    <div class="dept-name">Construction</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">💧</div>
+                    <div class="dept-name">Water Supply</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">💡</div>
+                    <div class="dept-name">Electricity</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🗑️</div>
+                    <div class="dept-name">Garbage</div>
+                </a>
+            </div>
         </div>
-        <a href="tel:112" class="emergency-btn sos">
-                <div class="emergency-icon">ðŸš¨</div>
-                <div class="emergency-text">
-                    <div class="title">Emergency</div>
-                    <div class="subtitle">Call 112</div>
-                </div>
-            </a>
+
+        <!-- Submit Complaint Tab -->
+        <div id="submit-tab" class="tab-content hidden">
+            <div class="section-header">
+                <h2 class="section-title">Select Complaint Category</h2>
+            </div>
+
+            <div class="categories-grid">
+                {% for card in category_cards %}
+                <a href="{{ card.href }}" class="category-card">
+                    <div class="category-icon">{{ card.emoji }}</div>
+                    <div class="category-name">{{ card.name }}</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- My Complaints Tab -->
+        <div id="my-complaints-tab" class="tab-content hidden">
+            <div class="section-header">
+                <h2 class="section-title">My Complaints</h2>
+            </div>
+
+            <div class="complaints-list">
+                {% if complaints %}
+                    {% for complaint in complaints %}
+                    <div class="complaint-item" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
+                        <div class="complaint-id">#{{ complaint.complaint_number }}</div>
+                        <div class="complaint-details">
+                            <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
+                            <div class="complaint-city">{{ complaint.city }} • {{ complaint.created_at|date:"d M Y" }}</div>
+                        </div>
+                        <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                        No complaints found<br>
+                        <a href="#" onclick="showTab('submit'); return false;" style="color: var(--primary-blue); font-weight: 600; margin-top: 8px; display: inline-block;">Submit your first complaint</a>
+                    </p>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="bottom-nav-item active" onclick="showTab('dashboard'); return false;">
+            <i class="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="showTab('submit'); return false;">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>Submit</span>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="showNotifications(); return false;">
+            <i class="fa-solid fa-bell"></i>
+            <span>Notifications</span>
+        </a>
+        <a href="{% url 'profile' %}" class="bottom-nav-item">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
 
     <script>
-        function updateTime() {
-            const now = new Date();
-            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('currentTime').textContent = time;
-        }
-        updateTime();
-        setInterval(updateTime, 1000);
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
 
-        // Language translation system
-        const translations = {
-            'hi': {
-                'Guest User': 'à¤…à¤¤à¤¿à¤¥à¤¿ à¤‰à¤ªà¤¯à¥‹à¤—à¤•à¤°à¥à¤¤à¤¾',
-                'Guest Mode': 'à¤…à¤¤à¤¿à¤¥à¤¿ à¤®à¥‹à¤¡',
-                'Track Your Complaints': 'à¤…à¤ªà¤¨à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤à¥‹à¤‚ à¤•à¥‹ à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚',
-                'Track': 'à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚',
-                'Emergency': 'à¤†à¤ªà¤¾à¤¤à¤•à¤¾à¤²',
-                'Call 112': '112 à¤ªà¤° à¤•à¥‰à¤² à¤•à¤°à¥‡à¤‚',
-                'Total Cases': 'à¤•à¥à¤² à¤®à¤¾à¤®à¤²à¥‡',
-                'Active': 'à¤¸à¤•à¥à¤°à¤¿à¤¯',
-                'Police': 'à¤ªà¥à¤²à¤¿à¤¸',
-                'Traffic': 'à¤¯à¤¾à¤¤à¤¾à¤¯à¤¾à¤¤',
-                'Construction': 'à¤¨à¤¿à¤°à¥à¤®à¤¾à¤£',
-                'Water Supply': 'à¤œà¤² à¤†à¤ªà¥‚à¤°à¥à¤¤à¤¿',
-                'Electricity': 'à¤¬à¤¿à¤œà¤²à¥€',
-                'Garbage': 'à¤•à¤šà¤°à¤¾',
-                'Road/Pothole': 'à¤¸à¤¡à¤¼à¤•/à¤—à¤¡à¥à¤¢à¤¾',
-                'Drainage': 'à¤œà¤² à¤¨à¤¿à¤•à¤¾à¤¸à¥€',
-                'Illegal Activity': 'à¤…à¤µà¥ˆà¤§ à¤—à¤¤à¤¿à¤µà¤¿à¤§à¤¿',
-                'Transportation': 'à¤ªà¤°à¤¿à¤µà¤¹à¤¨',
-                'Cyber Fraud': 'à¤¸à¤¾à¤‡à¤¬à¤° à¤§à¥‹à¤–à¤¾à¤§à¤¡à¤¼à¥€',
-                'Other': 'à¤…à¤¨à¥à¤¯',
-                'Recent Complaints': 'à¤¹à¤¾à¤² à¤•à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤à¥‡à¤‚',
-                'View Details': 'à¤µà¤¿à¤µà¤°à¤£ à¤¦à¥‡à¤–à¥‡à¤‚',
-                'No complaints yet. Start by filing your first complaint.': 'à¤…à¤­à¥€ à¤¤à¤• à¤•à¥‹à¤ˆ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤ à¤¨à¤¹à¥€à¤‚à¥¤ à¤…à¤ªà¤¨à¥€ à¤ªà¤¹à¤²à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤ à¤¦à¤°à¥à¤œ à¤•à¤°à¤•à¥‡ à¤¶à¥à¤°à¥à¤†à¤¤ à¤•à¤°à¥‡à¤‚à¥¤',
-                'New Complaint': 'à¤¨à¤ˆ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤'
-            },
-            'gu': {
-                'Guest User': 'àª®àª¹à«‡àª®àª¾àª¨ àªµàªªàª°àª¾àª¶àª•àª°à«àª¤àª¾',
-                'Guest Mode': 'àª®àª¹à«‡àª®àª¾àª¨ àª®à«‹àª¡',
-                'Track Your Complaints': 'àª¤àª®àª¾àª°à«€ àª«àª°àª¿àª¯àª¾àª¦à«‹àª¨à«‡ àªŸà«àª°à«‡àª• àª•àª°à«‹',
-                'Track': 'àªŸà«àª°à«‡àª• àª•àª°à«‹',
-                'Emergency': 'àª•àªŸà«‹àª•àªŸà«€',
-                'Call 112': '112 àªªàª° àª•à«‰àª² àª•àª°à«‹',
-                'Total Cases': 'àª•à«àª² àª•à«‡àª¸à«‹',
-                'Active': 'àª¸àª•à«àª°àª¿àª¯',
-                'Police': 'àªªà«‹àª²à«€àª¸',
-                'Traffic': 'àªŸà«àª°àª¾àª«àª¿àª•',
-                'Construction': 'àª¬àª¾àª‚àª§àª•àª¾àª®',
-                'Water Supply': 'àªªàª¾àª£à«€ àªªà«àª°àªµàª à«‹',
-                'Electricity': 'àªµà«€àªœàª³à«€',
-                'Garbage': 'àª•àªšàª°à«‹',
-                'Road/Pothole': 'àª°àª¸à«àª¤à«‹/àª–àª¾àª¡à«‹',
-                'Drainage': 'àª¡à«àª°à«‡àª¨à«‡àªœ',
-                'Illegal Activity': 'àª—à«‡àª°àª•àª¾àª¯àª¦à«‡àª¸àª° àªªà«àª°àªµà«ƒàª¤à«àª¤àª¿',
-                'Transportation': 'àªªàª°àª¿àªµàª¹àª¨',
-                'Cyber Fraud': 'àª¸àª¾àª¯àª¬àª° àª›à«‡àª¤àª°àªªàª¿àª‚àª¡à«€',
-                'Other': 'àª…àª¨à«àª¯',
-                'Recent Complaints': 'àª¤àª¾àªœà«‡àª¤àª°àª¨à«€ àª«àª°àª¿àª¯àª¾àª¦à«‹',
-                'View Details': 'àªµàª¿àª—àª¤à«‹ àªœà«àª“',
-                'No complaints yet. Start by filing your first complaint.': 'àª¹àªœà« àª¸à«àª§à«€ àª•à«‹àªˆ àª«àª°àª¿àª¯àª¾àª¦ àª¨àª¥à«€. àª¤àª®àª¾àª°à«€ àªªà«àª°àª¥àª® àª«àª°àª¿àª¯àª¾àª¦ àª¦àª¾àª–àª² àª•àª°à«€àª¨à«‡ àª¶àª°à«‚àª†àª¤ àª•àª°à«‹.',
-                'New Complaint': 'àª¨àªµà«€ àª«àª°àª¿àª¯àª¾àª¦'
-            },
-            'bn': {
-                'Guest User': 'à¦…à¦¤à¦¿à¦¥à¦¿ à¦¬à§à¦¯à¦¬à¦¹à¦¾à¦°à¦•à¦¾à¦°à§€',
-                'Guest Mode': 'à¦…à¦¤à¦¿à¦¥à¦¿ à¦®à§‹à¦¡',
-                'Track Your Complaints': 'à¦†à¦ªà¦¨à¦¾à¦° à¦…à¦­à¦¿à¦¯à§‹à¦— à¦Ÿà§à¦°à§à¦¯à¦¾à¦• à¦•à¦°à§à¦¨',
-                'Track': 'à¦Ÿà§à¦°à§à¦¯à¦¾à¦• à¦•à¦°à§à¦¨',
-                'Emergency': 'à¦œà¦°à§à¦°à¦¿',
-                'Call 112': 'à§§à§§à§¨ à¦ à¦•à¦² à¦•à¦°à§à¦¨',
-                'Total Cases': 'à¦®à§‹à¦Ÿ à¦®à¦¾à¦®à¦²à¦¾',
-                'Active': 'à¦¸à¦•à§à¦°à¦¿à¦¯à¦¼',
-                'Police': 'à¦ªà§à¦²à¦¿à¦¶',
-                'Traffic': 'à¦Ÿà§à¦°à¦¾à¦«à¦¿à¦•',
-                'Construction': 'à¦¨à¦¿à¦°à§à¦®à¦¾à¦£',
-                'Water Supply': 'à¦ªà¦¾à¦¨à¦¿ à¦¸à¦°à¦¬à¦°à¦¾à¦¹',
-                'Electricity': 'à¦¬à¦¿à¦¦à§à¦¯à§à§Ž',
-                'Garbage': 'à¦†à¦¬à¦°à§à¦œà¦¨à¦¾',
-                'Road/Pothole': 'à¦°à¦¾à¦¸à§à¦¤à¦¾/à¦—à¦°à§à¦¤',
-                'Drainage': 'à¦¨à¦¿à¦•à¦¾à¦¶à§€',
-                'Illegal Activity': 'à¦…à¦¬à§ˆà¦§ à¦•à¦¾à¦°à§à¦¯à¦•à¦²à¦¾à¦ª',
-                'Transportation': 'à¦ªà¦°à¦¿à¦¬à¦¹à¦¨',
-                'Cyber Fraud': 'à¦¸à¦¾à¦‡à¦¬à¦¾à¦° à¦œà¦¾à¦²à¦¿à¦¯à¦¼à¦¾à¦¤à¦¿',
-                'Other': 'à¦…à¦¨à§à¦¯à¦¾à¦¨à§à¦¯',
-                'Recent Complaints': 'à¦¸à¦¾à¦®à§à¦ªà§à¦°à¦¤à¦¿à¦• à¦…à¦­à¦¿à¦¯à§‹à¦—',
-                'View Details': 'à¦¬à¦¿à¦¸à§à¦¤à¦¾à¦°à¦¿à¦¤ à¦¦à§‡à¦–à§à¦¨',
-                'No complaints yet. Start by filing your first complaint.': 'à¦à¦–à¦¨à¦“ à¦•à§‹à¦¨à§‹ à¦…à¦­à¦¿à¦¯à§‹à¦— à¦¨à§‡à¦‡à¥¤ à¦†à¦ªà¦¨à¦¾à¦° à¦ªà§à¦°à¦¥à¦® à¦…à¦­à¦¿à¦¯à§‹à¦— à¦¦à¦¾à¦–à¦¿à¦² à¦•à¦°à§‡ à¦¶à§à¦°à§ à¦•à¦°à§à¦¨à¥¤',
-                'New Complaint': 'à¦¨à¦¤à§à¦¨ à¦…à¦­à¦¿à¦¯à§‹à¦—'
-            },
-            'ta': {
-                'Guest User': 'à®µà®¿à®°à¯à®¨à¯à®¤à®¿à®©à®°à¯ à®ªà®¯à®©à®°à¯',
-                'Guest Mode': 'à®µà®¿à®°à¯à®¨à¯à®¤à®¿à®©à®°à¯ à®ªà®¯à®©à¯à®®à¯à®±à¯ˆ',
-                'Track Your Complaints': 'à®‰à®™à¯à®•à®³à¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯ˆà®•à¯ à®•à®£à¯à®•à®¾à®£à®¿à®•à¯à®•à®µà¯à®®à¯',
-                'Track': 'à®•à®£à¯à®•à®¾à®£à®¿à®•à¯à®•à®µà¯à®®à¯',
-                'Emergency': 'à®…à®µà®šà®°à®¨à®¿à®²à¯ˆ',
-                'Call 112': '112 à® à®…à®´à¯ˆà®•à¯à®•à®µà¯à®®à¯',
-                'Total Cases': 'à®®à¯Šà®¤à¯à®¤ à®µà®´à®•à¯à®•à¯à®•à®³à¯',
-                'Active': 'à®šà¯†à®¯à®²à®¿à®²à¯',
-                'Police': 'à®•à®¾à®µà®²à¯à®¤à¯à®±à¯ˆ',
-                'Traffic': 'à®ªà¯‹à®•à¯à®•à¯à®µà®°à®¤à¯à®¤à¯',
-                'Construction': 'à®•à®Ÿà¯à®Ÿà¯à®®à®¾à®©à®®à¯',
-                'Water Supply': 'à®¨à¯€à®°à¯ à®µà®´à®™à¯à®•à®²à¯',
-                'Electricity': 'à®®à®¿à®©à¯à®šà®¾à®°à®®à¯',
-                'Garbage': 'à®•à¯à®ªà¯à®ªà¯ˆ',
-                'Road/Pothole': 'à®šà®¾à®²à¯ˆ/à®•à¯à®´à®¿',
-                'Drainage': 'à®µà®Ÿà®¿à®•à®¾à®²à¯',
-                'Illegal Activity': 'à®šà®Ÿà¯à®Ÿà®µà®¿à®°à¯‹à®¤ à®šà¯†à®¯à®²à¯à®ªà®¾à®Ÿà¯',
-                'Transportation': 'à®ªà¯‹à®•à¯à®•à¯à®µà®°à®¤à¯à®¤à¯',
-                'Cyber Fraud': 'à®‡à®£à¯ˆà®¯ à®®à¯‹à®šà®Ÿà®¿',
-                'Other': 'à®®à®±à¯à®±à®µà¯ˆ',
-                'Recent Complaints': 'à®šà®®à¯€à®ªà®¤à¯à®¤à®¿à®¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯',
-                'View Details': 'à®µà®¿à®µà®°à®™à¯à®•à®³à¯ˆà®ªà¯ à®ªà®¾à®°à¯à®•à¯à®•à®µà¯à®®à¯',
-                'No complaints yet. Start by filing your first complaint.': 'à®‡à®©à¯à®©à¯à®®à¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯ à®‡à®²à¯à®²à¯ˆ. à®‰à®™à¯à®•à®³à¯ à®®à¯à®¤à®²à¯ à®ªà¯à®•à®¾à®°à¯ˆà®ªà¯ à®ªà®¤à®¿à®µà¯ à®šà¯†à®¯à¯à®¤à¯ à®¤à¯Šà®Ÿà®™à¯à®•à®µà¯à®®à¯.',
-                'New Complaint': 'à®ªà¯à®¤à®¿à®¯ à®ªà¯à®•à®¾à®°à¯'
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Remove active class from all bottom nav items
+            document.querySelectorAll('.bottom-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected tab
+            if (tabName === 'dashboard') {
+                document.getElementById('dashboard-tab').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.querySelectorAll('.bottom-nav-item')[0].classList.add('active');
+            } else if (tabName === 'submit') {
+                document.getElementById('submit-tab').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.querySelectorAll('.bottom-nav-item')[1].classList.add('active');
+            } else if (tabName === 'my-complaints') {
+                document.getElementById('my-complaints-tab').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
             }
-        };
 
-        function translatePage(lang) {
-            if (lang === 'en') return;
-            
-            const langTranslations = translations[lang];
-            if (!langTranslations) return;
-
-            // Translate all text content
-            document.querySelectorAll('*').forEach(element => {
-                if (element.children.length === 0) {
-                    const text = element.textContent.trim();
-                    if (langTranslations[text]) {
-                        element.textContent = langTranslations[text];
-                    }
-                }
-            });
-
-            // Translate specific elements
-            const elementsToTranslate = [
-                '.track-text', '.emergency-text .title', '.emergency-text .subtitle',
-                '.stat-card .label', '.service-card .title', '.section-title',
-                '.empty-state p', '.empty-state a'
-            ];
-
-            elementsToTranslate.forEach(selector => {
-                document.querySelectorAll(selector).forEach(element => {
-                    const text = element.textContent.trim();
-                    if (langTranslations[text]) {
-                        element.textContent = langTranslations[text];
-                    }
-                });
-            });
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Load and apply saved language on page load
-        window.addEventListener('load', () => {
-            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
-            translatePage(savedLang);
-        });
+        function showNotifications() {
+            alert('You have 3 new notifications:\n\n1. Your complaint is now in progress\n2. Department responded to your complaint\n3. New update on your complaint');
+        }
     </script>
-
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="number">{{ complaints.count }}</div>
-            <div class="label">Total Cases</div>
-        </div>
-        <div class="stat-card">
-            <div class="number">
-                {% with pending=0 %}
-                    {% for c in complaints %}
-                        {% if c.status == 'pending' %}
-                            {% with pending=pending|add:1 %}{% endwith %}
-                        {% endif %}
-                    {% endfor %}
-                {% endwith %}
-                {{ complaints|length }}
-            </div>
-            <div class="label">Active</div>
-        </div>
-    </div>
-
-    <div class="services-grid">
-        {% for card in category_cards %}
-        <a href="{{ card.href }}" class="service-card" style="--color: {{ card.color }};">
-            <div class="icon">
-                {% if card.logo_url %}
-                    <img src="{{ card.logo_url }}" alt="{{ card.name }}" class="service-icon-img">
-                {% else %}
-                    {{ card.emoji }}
-                {% endif %}
-            </div>
-            <div class="title">{{ card.name }}</div>
-        </a>
-        {% endfor %}
-    </div>
-
-    <div class="complaints-section" id="complaints">
-        <div class="section-title">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            Recent Complaints
-        </div>
-
-        {% if complaints %}
-            {% for complaint in complaints %}
-            <div class="complaint-card" style="--color: {% if complaint.complaint_type == 'police' %}#4361ee{% elif complaint.complaint_type == 'traffic' %}#ffbe0b{% elif complaint.complaint_type == 'construction' %}#f72585{% elif complaint.complaint_type == 'water' %}#06b6d4{% elif complaint.complaint_type == 'electricity' %}#fbbf24{% elif complaint.complaint_type == 'garbage' %}#10b981{% elif complaint.complaint_type == 'road' %}#6366f1{% elif complaint.complaint_type == 'drainage' %}#3b82f6{% elif complaint.complaint_type == 'illegal' %}#ef4444{% elif complaint.complaint_type == 'transportation' %}#8b5cf6{% else %}#06ffa5{% endif %};">
-                <div class="complaint-header">
-                    <div class="complaint-id">#{{ complaint.id|stringformat:"05d" }}</div>
-                    <span class="status-badge status-{{ complaint.work_status }}">
-                        {{ complaint.get_work_status_display }}
-                    </span>
-                </div>
-                <div class="complaint-title">{{ complaint.title }}</div>
-                <div class="complaint-type">{{ complaint.get_complaint_type_display }}</div>
-                <div class="complaint-date">{{ complaint.created_at|date:"M d, Y - H:i" }}</div>
-                <a href="{% url 'view_location' complaint.id %}" class="view-btn">
-                    <i class="fa-solid fa-eye"></i> View Details
-                </a>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state">
-                <div class="icon">ðŸ“‚</div>
-                <p>No complaints yet. Start by filing your first complaint.</p>
-                <a href="{% url 'submit_complaint' %}{% if is_guest %}?guest=true{% endif %}">
-                    <i class="fa-solid fa-plus"></i> New Complaint
-                </a>
-            </div>
-        {% endif %}
-    </div>
-
-    {% if is_guest %}
-    <div class="popup-overlay" id="trackPopup" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 1000;">
-        <div class="popup" style="background: #fff; border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; animation: popupSlide 0.3s ease-out;">
-            <h3 style="color: #2d3436; font-size: 20px; margin-bottom: 15px;"><i class="fa-solid fa-info-circle"></i> Login Required</h3>
-            <p style="color: #6c757d; font-size: 14px; margin-bottom: 25px; line-height: 1.5;">To view all your complaints and access full tracking features, please login to your citizen account.</p>
-            <div style="display: flex; gap: 10px;">
-                <a href="{% url 'login' %}" style="flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; background: #667eea; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fa-solid fa-sign-in-alt"></i>
-                    Login
-                </a>
-                <button onclick="closeTrackPopup()" style="flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; background: transparent; border: 2px solid #6c757d; color: #6c757d; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fa-solid fa-times"></i>
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </body>
-<script>
-    {% if is_guest %}
-    function showTrackPopup() {
-        document.getElementById('trackPopup').style.display = 'flex';
-    }
-    function closeTrackPopup() {
-        document.getElementById('trackPopup').style.display = 'none';
-    }
-    document.getElementById('trackPopup').addEventListener('click', function(e) {
-        if (e.target === this) closeTrackPopup();
-    });
-    {% endif %}
-</script>
 </html>
