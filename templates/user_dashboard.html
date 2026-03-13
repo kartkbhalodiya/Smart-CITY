@@ -210,8 +210,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 16px;
-            font-size: 24px;
-            color: white;
+            font-size: 36px;
         }
 
         .stat-card:nth-child(1) .stat-icon {
@@ -384,9 +383,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 40px;
         }
 
         .dept-card:nth-child(2) .dept-icon {
@@ -488,12 +485,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            color: white;
-        }
-
-        .category-icon i {
-            font-size: 32px;
+            font-size: 44px;
         }
 
         .category-card:nth-child(1) .category-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
@@ -960,30 +952,22 @@
             <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <i class="fa-solid fa-chart-line"></i>
-                    </div>
+                    <div class="stat-icon">📊</div>
                     <div class="stat-number">{{ total_complaints }}</div>
                     <div class="stat-label">Total Complaints</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <i class="fa-solid fa-clock"></i>
-                    </div>
+                    <div class="stat-icon">⏳</div>
                     <div class="stat-number">{{ pending_complaints }}</div>
                     <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);">
-                        <i class="fa-solid fa-spinner"></i>
-                    </div>
+                    <div class="stat-icon">🔄</div>
                     <div class="stat-number">{{ progress_complaints }}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
-                        <i class="fa-solid fa-check-circle"></i>
-                    </div>
+                    <div class="stat-icon">✅</div>
                     <div class="stat-number">{{ solved_complaints }}</div>
                     <div class="stat-label">Solved</div>
                 </div>
@@ -1022,39 +1006,27 @@
 
             <div class="departments-grid">
                 <a href="#" class="dept-card">
-                    <div class="dept-icon">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
+                    <div class="dept-icon">🚔</div>
                     <div class="dept-name">Police</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <i class="fa-solid fa-traffic-light"></i>
-                    </div>
+                    <div class="dept-icon">🚦</div>
                     <div class="dept-name">Traffic</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <i class="fa-solid fa-hammer"></i>
-                    </div>
+                    <div class="dept-icon">🏗️</div>
                     <div class="dept-name">Construction</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                        <i class="fa-solid fa-droplet"></i>
-                    </div>
+                    <div class="dept-icon">💧</div>
                     <div class="dept-name">Water Supply</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                        <i class="fa-solid fa-bolt"></i>
-                    </div>
+                    <div class="dept-icon">⚡</div>
                     <div class="dept-name">Electricity</div>
                 </a>
                 <a href="#" class="dept-card">
-                    <div class="dept-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
-                        <i class="fa-solid fa-trash"></i>
-                    </div>
+                    <div class="dept-icon">🗑️</div>
                     <div class="dept-name">Garbage</div>
                 </a>
             </div>
@@ -1068,75 +1040,51 @@
 
             <div class="categories-grid">
                 <a href="{% url 'submit_complaint' %}?type=police" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
+                    <div class="category-icon">🚔</div>
                     <div class="category-name">Police</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=traffic" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <i class="fa-solid fa-traffic-light"></i>
-                    </div>
+                    <div class="category-icon">🚦</div>
                     <div class="category-name">Traffic</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=construction" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <i class="fa-solid fa-hammer"></i>
-                    </div>
+                    <div class="category-icon">🏗️</div>
                     <div class="category-name">Construction</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=water" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                        <i class="fa-solid fa-droplet"></i>
-                    </div>
+                    <div class="category-icon">💧</div>
                     <div class="category-name">Water Supply</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=electricity" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                        <i class="fa-solid fa-bolt"></i>
-                    </div>
+                    <div class="category-icon">⚡</div>
                     <div class="category-name">Electricity</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=garbage" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
-                        <i class="fa-solid fa-trash"></i>
-                    </div>
+                    <div class="category-icon">🗑️</div>
                     <div class="category-name">Garbage</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=road" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
-                        <i class="fa-solid fa-road"></i>
-                    </div>
+                    <div class="category-icon">🛸️</div>
                     <div class="category-name">Road/Pothole</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=drainage" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);">
-                        <i class="fa-solid fa-water"></i>
-                    </div>
+                    <div class="category-icon">🌊</div>
                     <div class="category-name">Drainage</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=illegal" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%);">
-                        <i class="fa-solid fa-ban"></i>
-                    </div>
+                    <div class="category-icon">🚫</div>
                     <div class="category-name">Illegal Activity</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=transportation" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);">
-                        <i class="fa-solid fa-bus"></i>
-                    </div>
+                    <div class="category-icon">🚌</div>
                     <div class="category-name">Transportation</div>
                 </a>
                 <a href="tel:1930" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
-                        <i class="fa-solid fa-laptop"></i>
-                    </div>
+                    <div class="category-icon">💻</div>
                     <div class="category-name">Cyber Crime</div>
                 </a>
                 <a href="{% url 'submit_complaint' %}?type=other" class="category-card">
-                    <div class="category-icon" style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);">
-                        <i class="fa-solid fa-ellipsis"></i>
-                    </div>
+                    <div class="category-icon">📝</div>
                     <div class="category-name">Other</div>
                 </a>
             </div>
