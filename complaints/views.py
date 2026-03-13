@@ -4181,6 +4181,44 @@ def super_admin_user_detail(request, user_id):
     }
     return render(request, 'super_admin_user_detail.html', context)
 
+def user_view_department(request, department_type):
+    """View all departments of a specific type with map and personal details"""
+    # Get all active departments of the specified type
+    departments = Department.objects.filter(
+        department_type=department_type,
+        is_active=True
+    ).select_related('city_admin').order_by('name')
+    
+    # Get department type display name
+    dept_display_name = dict(Department.DEPARTMENT_TYPES).get(department_type, department_type.title())
+    
+    # Prepare department data for map
+    department_data = []
+    for dept in departments:
+        department_data.append({
+            'id': dept.id,
+            'name': dept.name,
+            'latitude': float(dept.latitude) if dept.latitude else 20.5937,
+            'longitude': float(dept.longitude) if dept.longitude else 78.9629,
+            'address': dept.address,
+            'phone': dept.phone,
+            'email': dept.email,
+            'city': dept.city,
+            'state': dept.state,
+            'location_name': dept.location_name,
+            'sla_hours': dept.sla_hours,
+        })
+    
+    context = {
+        'departments': departments,
+        'department_data': department_data,
+        'department_type': department_type,
+        'dept_display_name': dept_display_name,
+        'total_departments': departments.count(),
+    }
+    
+    return render(request, 'user_view_department.html', context)
+
 def profile_view(request):
     if not request.user.is_authenticated:
         return redirect('/dashboard/?guest=true')
