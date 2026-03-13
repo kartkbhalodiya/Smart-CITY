@@ -96,47 +96,34 @@ if os.getenv('DATABASE_URL'):
     # Standardize project ref and ensure pooler port 6543 for Vercel
     project_ref = "aaywhmjmsdkjzabtzfpg"
     
-    # FORCE IPv4 pooler endpoint for Vercel serverless (ap-south-1 Mumbai)
-    if 'db.aaywhmjmsdkjzabtzfpg.supabase.co' in db_url:
-        db_url = db_url.replace(
-            'db.aaywhmjmsdkjzabtzfpg.supabase.co',
-            'aws-0-ap-south-1.pooler.supabase.com'
-        )
-    # Correct Tokyo pooler if accidentally present
-    if 'aws-1-ap-northeast-1.pooler.supabase.com' in db_url:
-        db_url = db_url.replace(
-            'aws-1-ap-northeast-1.pooler.supabase.com',
-            'aws-0-ap-south-1.pooler.supabase.com'
-        )
-
-    # 1. Ensure the port is 6543 (Transaction Pooler) instead of 5432
-    if ":5432" in db_url:
-        db_url = db_url.replace(":5432", ":6543")
-    elif ":6543" not in db_url:
-        # Add port 6543 if no port is specified
-        if "@" in db_url and "/" in db_url.split("@")[1]:
-            parts = db_url.split("@")
-            host_part = parts[1].split("/")
-            if ":" not in host_part[0]:
-                host_part[0] = f"{host_part[0]}:6543"
-                parts[1] = "/".join(host_part)
-                db_url = "@".join(parts)
-
-    # 2. Ensure username format is postgres.[project_ref] for pooler
-    if "supabase.com" in db_url or "supabase.co" in db_url:
+    # FORCE standardized pooler configuration for Vercel
+    if "supabase" in db_url:
+        # Extract components from DATABASE_URL
         import re
-        # Check if project ref is already in the username
-        if f".{project_ref}" not in db_url.split('@')[0]:
-            # This matches postgres://[user]: or postgresql://[user]:
-            pattern = r'(postgre(?:s|sql)://)([^:@/]+)(?=[:@])'
-            # If the user is 'postgres', change it to 'postgres.[project_ref]'
-            # If it's something else but not [project_ref], we might still need the prefix
-            db_url = re.sub(pattern, rf'\1\2.{project_ref}', db_url)
-    
-    # 3. Ensure sslmode=require
-    if 'sslmode' not in db_url:
-        separator = '&' if '?' in db_url else '?'
-        db_url += f'{separator}sslmode=require'
+        try:
+            # Handle standard postgres://user:password@host:port/dbname
+            match = re.match(r'postgre(?:s|sql)://([^:]+):([^@]+)@([^:/]+)(?::(\d+))?/(.+)', db_url)
+            if match:
+                user, pwd, host, port, dbname = match.groups()
+                # Clean dbname from any ?sslmode...
+                dbname = dbname.split('?')[0]
+                
+                # FORCE POOLER SETTINGS
+                # Use project-ref.host as username for pooler
+                new_user = f"postgres.{project_ref}"
+                new_host = f"aws-0-ap-south-1.pooler.supabase.com"
+                new_port = "6543"
+                
+                db_url = f"postgresql://{new_user}:{pwd}@{new_host}:{new_port}/{dbname}?sslmode=require"
+        except Exception as e:
+            print(f"[Supabase] Forced URL reconstruction failed: {e}", file=sys.stderr)
+
+    # DEBUG: Print (redacted) URL to Vercel logs to see what's happening
+    try:
+        url_for_log = db_url.split('@')[0].split(':')[0] + "://***:***@" + db_url.split('@')[1]
+        print(f"[Supabase] FINAL DB URL: {url_for_log}", file=sys.stderr)
+    except:
+        print(f"[Supabase] DATABASE_URL parsing failed for logging", file=sys.stderr)
     
     db_config = dj_database_url.config(
         default=db_url,
