@@ -5,129 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - JanHelp</title>
     <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-blue: #1E66F5;
-            --green-accent: #2ECC71;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --bg-light: #f8fafc;
-            --glass-bg: rgba(255, 255, 255, 0.95);
+            --primary-color: #2B6CF6;
+            --success-color: #2ECC71;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --bg-white: #FFFFFF;
+            --bg-section: #F7F9FC;
+            --text-dark: #1a202c;
+            --text-muted: #718096;
+            --border-radius: 16px;
+            --card-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            --spacing: 24px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Inter', sans-serif;
-            background: #ffffff;
+            background: var(--bg-white);
             padding-bottom: 80px;
-            position: relative;
-            overflow-x: hidden;
+            color: var(--text-dark);
         }
 
-        /* Top Navigation Bar */
-        .top-nav {
+        /* Header */
+        .header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: #f5f5f5;
-            padding: 12px 16px;
+            background: var(--bg-white);
+            padding: 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             z-index: 1000;
         }
 
-        .logo-img {
-            height: 48px;
-            width: auto;
-        }
-
-        .nav-right {
+        .header-left {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .nav-track-btn {
-            display: none;
-            padding: 8px 16px;
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            font-family: 'Inter', sans-serif;
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
         }
 
-        .nav-track-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(30, 102, 245, 0.3);
+        .logo-text h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
         }
 
-        @media (min-width: 768px) {
-            .nav-track-btn {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }
+        .logo-text p {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
         }
 
-        .nav-icon {
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notification-btn {
+            position: relative;
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: var(--bg-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .search-container {
-            position: relative;
-            flex: 1;
-            max-width: 400px;
-            margin: 0 12px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 10px 40px 10px 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 3px rgba(30, 102, 245, 0.1);
-        }
-
-        .search-btn {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            background: var(--bg-section);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -135,164 +92,143 @@
             transition: all 0.3s;
         }
 
-        .search-btn:hover {
-            background: #1557d8;
-        }
-
-        /* Mobile Search */
-        @media (max-width: 768px) {
-            .search-container {
-                display: none;
-            }
-            
-            .mobile-search {
-                display: block;
-                width: 100%;
-                padding: 16px;
-                background: #f5f5f5;
-                margin-bottom: 20px;
-                border-radius: 16px;
-            }
-            
-            .mobile-search input {
-                width: 100%;
-                padding: 12px 16px;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
-                font-size: 14px;
-                font-family: 'Inter', sans-serif;
-            }
-            
-            .mobile-search input:focus {
-                outline: none;
-                border-color: var(--primary-blue);
-                box-shadow: 0 0 0 3px rgba(30, 102, 245, 0.1);
-            }
-        }
-
-        @media (min-width: 769px) {
-            .mobile-search {
-                display: none;
-            }
-        }
-
-        .nav-icon:hover {
-            background: #e2e8f0;
-        }
-
-        .nav-icon i {
-            font-size: 18px;
-            color: var(--text-dark);
+        .notification-btn:active {
+            transform: scale(0.95);
         }
 
         .notification-badge {
             position: absolute;
-            top: 6px;
-            right: 6px;
+            top: 8px;
+            right: 8px;
             width: 8px;
             height: 8px;
-            background: #ef4444;
+            background: var(--danger-color);
             border-radius: 50%;
-            border: 2px solid white;
+            border: 2px solid var(--bg-white);
         }
 
-        .profile-pic {
+        .user-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--primary-blue);
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
         }
 
         /* Main Content */
         .main-content {
-            margin-top: 70px;
-            padding: 16px;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
+            margin-top: 72px;
+            padding: 0 16px;
         }
 
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            gap: 0;
-            margin-bottom: 20px;
-            background: #f5f5f5;
-            border-radius: 16px;
-            padding: 4px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        /* Search Bar */
+        .search-bar {
+            margin: var(--spacing) 0;
         }
 
-        .tab-btn {
-            flex: 1;
-            padding: 12px 16px;
-            background: transparent;
+        .search-input {
+            width: 100%;
+            height: 48px;
+            background: #F1F4F9;
             border: none;
             border-radius: 12px;
+            padding: 0 16px 0 48px;
             font-size: 14px;
-            font-weight: 600;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: all 0.3s;
             font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-container {
             position: relative;
         }
 
-        .tab-btn.active {
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #2563eb 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(30, 102, 245, 0.3);
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
         }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: #f5f5f5;
+        /* Welcome Card */
+        .welcome-card {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
             padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s;
+            box-shadow: var(--card-shadow);
+            margin-bottom: var(--spacing);
         }
 
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .stat-icon {
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-            font-size: 32px;
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-
-
-        .stat-number {
-            font-size: 28px;
+        .welcome-card h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
             font-weight: 700;
             color: var(--text-dark);
             margin-bottom: 4px;
         }
 
-        .stat-label {
-            font-size: 13px;
+        .welcome-card p {
+            font-size: 14px;
             color: var(--text-muted);
-            font-weight: 500;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: var(--spacing);
+        }
+
+        .action-btn {
+            height: 120px;
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .action-btn:active {
+            transform: scale(0.97);
+        }
+
+        .action-btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            color: white;
+            box-shadow: 0 8px 20px rgba(43, 108, 246, 0.3);
+        }
+
+        .action-btn-secondary {
+            background: var(--bg-white);
+            color: var(--text-dark);
+            border: 2px solid #E2E8F0;
+            box-shadow: var(--card-shadow);
+        }
+
+        .action-btn i {
+            font-size: 32px;
+        }
+
+        .action-btn span {
+            font-size: 16px;
+            font-weight: 600;
         }
 
         /* Section Header */
@@ -304,15 +240,15 @@
         }
 
         .section-title {
+            font-family: 'Poppins', sans-serif;
             font-size: 18px;
             font-weight: 700;
             color: var(--text-dark);
-            font-family: 'Poppins', sans-serif;
         }
 
-        .view-all-btn {
-            font-size: 13px;
-            color: var(--primary-blue);
+        .view-all {
+            font-size: 14px;
+            color: var(--primary-color);
             font-weight: 600;
             text-decoration: none;
             display: flex;
@@ -320,167 +256,165 @@
             gap: 4px;
         }
 
-        /* Recent Complaints */
-        .complaints-list {
-            background: #f5f5f5;
-            border-radius: 20px;
+        /* Statistics Grid */
+        .stats-section {
+            margin-bottom: var(--spacing);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: all 0.3s;
         }
 
-        .complaint-item {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            transition: background 0.3s;
+        .stat-card:active {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Departments Grid */
+        .departments-section {
+            margin-bottom: var(--spacing);
+        }
+
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .dept-card {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
+            padding: 20px 12px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
             cursor: pointer;
-            border: 1px solid #e5e7eb;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text-dark);
         }
 
-        .complaint-item:hover {
-            background: var(--bg-light);
+        .dept-card:active {
+            transform: scale(0.97);
         }
 
-        .complaint-item:last-child {
-            margin-bottom: 0;
+        .dept-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .dept-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Recent Complaints */
+        .complaints-section {
+            margin-bottom: var(--spacing);
+        }
+
+        .complaint-card {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .complaint-card:active {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
         }
 
         .complaint-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .complaint-id {
             font-size: 14px;
             font-weight: 700;
-            color: var(--primary-blue);
-        }
-
-        .complaint-details {
-            margin-bottom: 8px;
-        }
-
-        .complaint-category {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 4px;
-        }
-
-        .complaint-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .complaint-divider {
-            height: 1px;
-            background: #e5e7eb;
-            margin: 8px 0;
+            color: var(--primary-color);
         }
 
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
             text-transform: capitalize;
         }
 
         .status-pending {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-confirmed {
-            background: #fed7aa;
-            color: #9a3412;
-        }
-
-        .status-process {
-            background: #fef3c7;
-            color: #854d0e;
+            background: #FFF4E6;
+            color: var(--warning-color);
         }
 
         .status-solved {
-            background: #dcfce7;
-            color: #166534;
+            background: #E8F8F0;
+            color: var(--success-color);
         }
 
         .status-reopened {
-            background: #fce7f3;
-            color: #831843;
+            background: #FFEBEE;
+            color: var(--danger-color);
         }
 
-        /* Departments Grid */
-        .departments-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
+        .status-process {
+            background: #E3F2FD;
+            color: var(--primary-color);
         }
 
-        .dept-card {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
+        .status-confirmed {
+            background: #FFF4E6;
+            color: var(--warning-color);
         }
 
-        .dept-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .dept-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 52px;
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        .dept-card:nth-child(2) .dept-icon {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .dept-card:nth-child(3) .dept-icon {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .dept-card:nth-child(4) .dept-icon {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-
-        .dept-card:nth-child(5) .dept-icon {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-
-        .dept-card:nth-child(6) .dept-icon {
-            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
-        }
-
-        .dept-name {
-            font-size: 13px;
+        .complaint-title {
+            font-size: 16px;
             font-weight: 600;
             color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .complaint-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
         }
 
         /* Bottom Navigation */
@@ -489,15 +423,15 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #f5f5f5;
+            background: var(--bg-white);
             padding: 12px 16px;
             display: flex;
             justify-content: space-around;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
             z-index: 1000;
         }
 
-        .bottom-nav-item {
+        .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -505,109 +439,93 @@
             text-decoration: none;
             color: var(--text-muted);
             transition: all 0.3s;
-            padding: 8px 20px;
+            padding: 8px 16px;
             border-radius: 12px;
         }
 
-        .bottom-nav-item.active {
-            color: var(--primary-blue);
-            background: rgba(30, 102, 245, 0.1);
+        .nav-item.active {
+            color: var(--primary-color);
+            background: #E3F2FD;
         }
 
-        .bottom-nav-item i {
+        .nav-item i {
             font-size: 24px;
         }
 
-        .bottom-nav-item span {
+        .nav-item span {
             font-size: 11px;
             font-weight: 600;
         }
 
-        /* Submit Complaint Categories */
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
         }
 
-        .category-card {
-            background: #f5f5f5;
-            padding: 24px 20px;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
             color: var(--text-dark);
         }
 
-        .category-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        .empty-state p {
+            font-size: 14px;
         }
 
-        .category-icon {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 16px;
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 56px;
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
         }
 
-        .stat-card:nth-child(1) .stat-icon,
-        .stat-card:nth-child(2) .stat-icon,
-        .stat-card:nth-child(3) .stat-icon,
-        .stat-card:nth-child(4) .stat-icon {
-            background: none !important;
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
         }
 
-        .dept-card:nth-child(2) .dept-icon,
-        .dept-card:nth-child(3) .dept-icon,
-        .dept-card:nth-child(4) .dept-icon,
-        .dept-card:nth-child(5) .dept-icon,
-        .dept-card:nth-child(6) .dept-icon {
-            background: none !important;
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E3F2FD;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        .category-card:nth-child(1) .category-icon,
-        .category-card:nth-child(2) .category-icon,
-        .category-card:nth-child(3) .category-icon,
-        .category-card:nth-child(4) .category-icon,
-        .category-card:nth-child(5) .category-icon,
-        .category-card:nth-child(6) .category-icon,
-        .category-card:nth-child(7) .category-icon,
-        .category-card:nth-child(8) .category-icon,
-        .category-card:nth-child(9) .category-icon,
-        .category-card:nth-child(10) .category-icon,
-        .category-card:nth-child(11) .category-icon,
-        .category-card:nth-child(12) .category-icon {
-            background: none !important;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .category-name {
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        /* Desktop View */
+        /* Responsive */
         @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
+            .main-content {
+                max-width: 768px;
+                margin-left: auto;
+                margin-right: auto;
             }
 
             .departments-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .categories-grid {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(6, 1fr);
             }
 
             .bottom-nav {
@@ -618,1043 +536,235 @@
                 padding-bottom: 0;
             }
         }
-
-        @media (min-width: 1024px) {
-            .departments-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
-            .categories-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* Modern SVG Loading Animation */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: transparent;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .loading-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Page Load Animation - Shows on initial page load */
-        .page-loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: transparent;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10001;
-            opacity: 1;
-            visibility: visible;
-            transition: all 0.5s ease;
-        }
-
-        .page-loading.hide {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .loader-container {
-            position: relative;
-            width: 128px;
-            height: 128px;
-            color: #002D5A;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .loader-blur {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            filter: blur(12px);
-            opacity: 0.2;
-            background: linear-gradient(135deg, #002D5A 0%, #0892A5 50%, #C9910D 100%);
-        }
-
-        .loader-svg {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .loader-text {
-            font-family: 'Poppins', sans-serif;
-            font-size: 16px;
-            font-weight: 600;
-            color: #002D5A;
-            text-align: center;
-            animation: textPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes textPulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes spin-reverse {
-            from { transform: rotate(360deg); }
-            to { transform: rotate(0deg); }
-        }
-
-        @keyframes swing {
-            0%, 100% { transform: rotate(-15deg); }
-            50% { transform: rotate(15deg); }
-        }
-
-        @keyframes waveDash {
-            0% { stroke-dasharray: 0 100; }
-            50% { stroke-dasharray: 50 50; }
-            100% { stroke-dasharray: 100 0; }
-        }
-
-        @keyframes bob {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
-        }
-
-        .spin-slow {
-            animation: spin 8s linear infinite;
-            transform-origin: center;
-        }
-
-        .spin-reverse {
-            animation: spin-reverse 5s linear infinite;
-            transform-origin: center;
-        }
-
-        .swing {
-            animation: swing 1.8s ease-in-out infinite;
-            transform-origin: center;
-        }
-
-        .wave-dash {
-            animation: waveDash 2.2s linear infinite;
-        }
-
-        .wave-dash-slow {
-            animation: waveDash 3s linear infinite, bob 2.4s ease-in-out infinite;
-        }
-
-        /* Typewriter Loading Animation */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .loading-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .typewriter {
-            --blue: #1E66F5;
-            --blue-dark: #154ec7;
-            --key: #fff;
-            --paper: #EEF0FD;
-            --text: #D3D4EC;
-            --tool: #FBC56C;
-            --duration: 3s;
-            position: relative;
-            -webkit-animation: bounce05 var(--duration) linear infinite;
-            animation: bounce05 var(--duration) linear infinite;
-        }
-
-        .typewriter .slide {
-            width: 92px;
-            height: 20px;
-            border-radius: 3px;
-            margin-left: 14px;
-            transform: translateX(14px);
-            background: linear-gradient(var(--blue), var(--blue-dark));
-            -webkit-animation: slide05 var(--duration) ease infinite;
-            animation: slide05 var(--duration) ease infinite;
-        }
-
-        .typewriter .slide:before, .typewriter .slide:after,
-        .typewriter .slide i:before {
-            content: "";
-            position: absolute;
-            background: var(--tool);
-        }
-
-        .typewriter .slide:before {
-            width: 2px;
-            height: 8px;
-            top: 6px;
-            left: 100%;
-        }
-
-        .typewriter .slide:after {
-            left: 94px;
-            top: 3px;
-            height: 14px;
-            width: 6px;
-            border-radius: 3px;
-        }
-
-        .typewriter .slide i {
-            display: block;
-            position: absolute;
-            right: 100%;
-            width: 6px;
-            height: 4px;
-            top: 4px;
-            background: var(--tool);
-        }
-
-        .typewriter .slide i:before {
-            right: 100%;
-            top: -2px;
-            width: 4px;
-            border-radius: 2px;
-            height: 14px;
-        }
-
-        .typewriter .paper {
-            position: absolute;
-            left: 24px;
-            top: -26px;
-            width: 40px;
-            height: 46px;
-            border-radius: 5px;
-            background: var(--paper);
-            transform: translateY(46px);
-            -webkit-animation: paper05 var(--duration) linear infinite;
-            animation: paper05 var(--duration) linear infinite;
-        }
-
-        .typewriter .paper:before {
-            content: "";
-            position: absolute;
-            left: 6px;
-            right: 6px;
-            top: 7px;
-            border-radius: 2px;
-            height: 4px;
-            transform: scaleY(0.8);
-            background: var(--text);
-            box-shadow: 0 12px 0 var(--text), 0 24px 0 var(--text), 0 36px 0 var(--text);
-        }
-
-        .typewriter .keyboard {
-            width: 120px;
-            height: 56px;
-            margin-top: -10px;
-            z-index: 1;
-            position: relative;
-        }
-
-        .typewriter .keyboard:before, .typewriter .keyboard:after {
-            content: "";
-            position: absolute;
-        }
-
-        .typewriter .keyboard:before {
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 7px;
-            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
-            transform: perspective(10px) rotateX(2deg);
-            transform-origin: 50% 100%;
-        }
-
-        .typewriter .keyboard:after {
-            left: 2px;
-            top: 25px;
-            width: 11px;
-            height: 4px;
-            border-radius: 2px;
-            box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            -webkit-animation: keyboard05 var(--duration) linear infinite;
-            animation: keyboard05 var(--duration) linear infinite;
-        }
-
-        @keyframes bounce05 {
-            85%, 92%, 100% {
-                transform: translateY(0);
-            }
-            89% {
-                transform: translateY(-4px);
-            }
-            95% {
-                transform: translateY(2px);
-            }
-        }
-
-        @keyframes slide05 {
-            5% {
-                transform: translateX(14px);
-            }
-            15%, 30% {
-                transform: translateX(6px);
-            }
-            40%, 55% {
-                transform: translateX(0);
-            }
-            65%, 70% {
-                transform: translateX(-4px);
-            }
-            80%, 89% {
-                transform: translateX(-12px);
-            }
-            100% {
-                transform: translateX(14px);
-            }
-        }
-
-        @keyframes paper05 {
-            5% {
-                transform: translateY(46px);
-            }
-            20%, 30% {
-                transform: translateY(34px);
-            }
-            40%, 55% {
-                transform: translateY(22px);
-            }
-            65%, 70% {
-                transform: translateY(10px);
-            }
-            80%, 85% {
-                transform: translateY(0);
-            }
-            92%, 100% {
-                transform: translateY(46px);
-            }
-        }
-
-        @keyframes keyboard05 {
-            5%, 12%, 21%, 30%, 39%, 48%, 57%, 66%, 75%, 84% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            9% {
-                box-shadow: 15px 2px 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            18% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 2px 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            27% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 12px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            36% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 12px 0 var(--key), 60px 12px 0 var(--key), 68px 12px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            45% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 2px 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            54% {
-                box-shadow: 15px 0 0 var(--key), 30px 2px 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            63% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 12px 0 var(--key);
-            }
-            72% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 2px 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 10px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-            81% {
-                box-shadow: 15px 0 0 var(--key), 30px 0 0 var(--key), 45px 0 0 var(--key), 60px 0 0 var(--key), 75px 0 0 var(--key), 90px 0 0 var(--key), 22px 10px 0 var(--key), 37px 12px 0 var(--key), 52px 10px 0 var(--key), 60px 10px 0 var(--key), 68px 10px 0 var(--key), 83px 10px 0 var(--key);
-            }
-        }
     </style>
 </head>
 <body>
-    <!-- Top Navigation -->
-    <nav class="top-nav">
-        <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp" class="logo-img">
-        <div class="search-container">
-            <form method="GET" action="{% url 'user_dashboard' %}">
-                <input type="text" name="search" class="search-input" placeholder="Search complaints, departments..." value="{{ search_query }}">
-                <button type="submit" class="search-btn">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </button>
-            </form>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp" class="logo">
+            <div class="logo-text">
+                <h1>JanHelp</h1>
+                <p>Civic Technology Platform</p>
+            </div>
         </div>
-        <div class="nav-right">
-            <a href="{% url 'track_complaints' %}" class="nav-track-btn">
-                <i class="fa-solid fa-list-check"></i>
-                Track
-            </a>
-            <div class="nav-icon" onclick="showNotifications()">
+        <div class="header-right">
+            <div class="notification-btn" onclick="showNotifications()">
                 <i class="fa-solid fa-bell"></i>
                 <span class="notification-badge"></span>
             </div>
-            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:'Guest' }}&background=1E66F5&color=fff&size=128" alt="Profile" class="profile-pic">
+            <div class="user-avatar" onclick="window.location.href='{% url 'profile' %}'">
+                {{ user.first_name.0|default:'G' }}{{ user.last_name.0|default:'U' }}
+            </div>
         </div>
-    </nav>
+    </header>
 
     <!-- Main Content -->
-    <div class="main-content">
-        <!-- Mobile Search -->
-        <div class="mobile-search">
+    <main class="main-content">
+        <!-- Search Bar -->
+        <div class="search-bar">
             <form method="GET" action="{% url 'user_dashboard' %}">
-                <input type="text" name="search" placeholder="Search complaints, categories..." value="{{ search_query }}">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="search" class="search-input" placeholder="Search complaints, categories..." value="{{ search_query }}">
+                </div>
             </form>
         </div>
 
-        <!-- Tab Navigation -->
-        <div class="tab-nav">
-            <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
-            <button class="tab-btn" onclick="showTab('submit')">Submit Complaint</button>
-            <button class="tab-btn" onclick="showTab('my-complaints')">My Complaints</button>
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <h2>Hello {{ user.first_name|default:'Guest' }} 👋</h2>
+            <p>Here's your civic complaint dashboard</p>
         </div>
 
-        <!-- Dashboard Tab -->
-        <div id="dashboard-tab" class="tab-content">
-            <!-- Stats Grid -->
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="{% url 'submit_complaint' %}" class="action-btn action-btn-primary">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>Submit Complaint</span>
+            </a>
+            <a href="{% url 'track_complaints' %}" class="action-btn action-btn-secondary">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Track Complaint</span>
+            </a>
+        </div>
+
+        <!-- Statistics Section -->
+        <div class="stats-section">
+            <div class="section-header">
+                <h2 class="section-title">Statistics</h2>
+                <a href="{% url 'track_complaints' %}" class="view-all">
+                    View All <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon">📊</div>
-                    <div class="stat-number">{{ total_complaints }}</div>
+                    <div class="stat-value">{{ total_complaints }}</div>
                     <div class="stat-label">Total Complaints</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">⏳</div>
-                    <div class="stat-number">{{ pending_complaints }}</div>
+                    <div class="stat-value">{{ pending_complaints }}</div>
                     <div class="stat-label">Pending</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">🔄</div>
-                    <div class="stat-number">{{ progress_complaints }}</div>
+                    <div class="stat-value">{{ progress_complaints }}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">✅</div>
-                    <div class="stat-number">{{ solved_complaints }}</div>
+                    <div class="stat-value">{{ solved_complaints }}</div>
                     <div class="stat-label">Solved</div>
                 </div>
             </div>
+        </div>
 
-            <!-- Recent Complaints -->
+        <!-- Departments Section -->
+        <div class="departments-section">
             <div class="section-header">
-                <h2 class="section-title">Recent Complaints</h2>
-                <a href="#" class="view-all-btn" onclick="showTab('my-complaints'); return false;">
+                <h2 class="section-title">Departments</h2>
+                <a href="{% url 'view_all_departments' %}" class="view-all">
                     View All <i class="fa-solid fa-chevron-right"></i>
                 </a>
             </div>
-
-            <div class="complaints-list">
-                {% if recent_complaints %}
-                    {% for complaint in recent_complaints %}
-                    <div class="complaint-item" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
-                        <div class="complaint-header">
-                            <div class="complaint-id">#{{ complaint.complaint_number }}</div>
-                            <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
-                        </div>
-                        <div class="complaint-details">
-                            <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
-                        </div>
-                        <div class="complaint-divider"></div>
-                        <div class="complaint-meta">
-                            <span>{{ complaint.city }}</span>
-                            <span>{{ complaint.created_at|date:"d M Y" }}</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: var(--text-muted); padding: 20px;">No complaints yet</p>
-                {% endif %}
-            </div>
-
-            <!-- Departments -->
-            <div class="section-header">
-                <h2 class="section-title">Departments</h2>
-                <a href="{% url 'view_all_departments' %}" class="view-all-btn">View All <i class="fa-solid fa-chevron-right"></i></a>
-            </div>
-
             <div class="departments-grid">
                 <a href="{% url 'user_view_department' 'police' %}" class="dept-card">
-                    <div class="dept-icon">🚔</div>
+                    <div class="dept-icon">🚓</div>
                     <div class="dept-name">Police</div>
                 </a>
                 <a href="{% url 'user_view_department' 'traffic' %}" class="dept-card">
                     <div class="dept-icon">🚦</div>
                     <div class="dept-name">Traffic</div>
                 </a>
-                <a href="{% url 'user_view_department' 'construction' %}" class="dept-card">
-                    <div class="dept-icon">🏗️</div>
-                    <div class="dept-name">Construction</div>
-                </a>
                 <a href="{% url 'user_view_department' 'water' %}" class="dept-card">
                     <div class="dept-icon">💧</div>
                     <div class="dept-name">Water Supply</div>
                 </a>
-                <a href="{% url 'user_view_department' 'electricity' %}" class="dept-card">
-                    <div class="dept-icon">💡</div>
-                    <div class="dept-name">Electricity</div>
-                </a>
                 <a href="{% url 'user_view_department' 'garbage' %}" class="dept-card">
-                    <div class="dept-icon">🗑️</div>
+                    <div class="dept-icon">🗑</div>
                     <div class="dept-name">Garbage</div>
                 </a>
-            </div>
-        </div>
-
-        <!-- Submit Complaint Tab -->
-        <div id="submit-tab" class="tab-content hidden">
-            <div class="section-header">
-                <h2 class="section-title">Select Complaint Category</h2>
-            </div>
-
-            <div class="categories-grid">
-                <a href="{% url 'submit_complaint' %}?type=police" class="category-card">
-                    <div class="category-icon">🚔</div>
-                    <div class="category-name">Police</div>
+                <a href="{% url 'user_view_department' 'electricity' %}" class="dept-card">
+                    <div class="dept-icon">⚡</div>
+                    <div class="dept-name">Electricity</div>
                 </a>
-                <a href="{% url 'submit_complaint' %}?type=traffic" class="category-card">
-                    <div class="category-icon">🚦</div>
-                    <div class="category-name">Traffic</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=construction" class="category-card">
-                    <div class="category-icon">🏗️</div>
-                    <div class="category-name">Construction</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=water" class="category-card">
-                    <div class="category-icon">💧</div>
-                    <div class="category-name">Water Supply</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=electricity" class="category-card">
-                    <div class="category-icon">💡</div>
-                    <div class="category-name">Electricity</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=garbage" class="category-card">
-                    <div class="category-icon">🗑️</div>
-                    <div class="category-name">Garbage</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=road" class="category-card">
-                    <div class="category-icon">🚧</div>
-                    <div class="category-name">Road/Pothole</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=drainage" class="category-card">
-                    <div class="category-icon">🫇</div>
-                    <div class="category-name">Drainage</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=illegal" class="category-card">
-                    <div class="category-icon">🚫</div>
-                    <div class="category-name">Illegal Activity</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=transportation" class="category-card">
-                    <div class="category-icon">🚌</div>
-                    <div class="category-name">Transportation</div>
-                </a>
-                <a href="tel:1930" class="category-card">
-                    <div class="category-icon">💻</div>
-                    <div class="category-name">Cyber Crime</div>
-                </a>
-                <a href="{% url 'submit_complaint' %}?type=other" class="category-card">
-                    <div class="category-icon">📝</div>
-                    <div class="category-name">Other</div>
+                <a href="{% url 'user_view_department' 'construction' %}" class="dept-card">
+                    <div class="dept-icon">🏗</div>
+                    <div class="dept-name">Construction</div>
                 </a>
             </div>
         </div>
 
-        <!-- My Complaints Tab -->
-        <div id="my-complaints-tab" class="tab-content hidden">
+        <!-- Recent Complaints Section -->
+        <div class="complaints-section">
             <div class="section-header">
-                <h2 class="section-title">My Complaints</h2>
+                <h2 class="section-title">Recent Complaints</h2>
+                <a href="{% url 'track_complaints' %}" class="view-all">
+                    View All <i class="fa-solid fa-chevron-right"></i>
+                </a>
             </div>
 
-            <div class="complaints-list">
-                {% if all_complaints %}
-                    {% for complaint in all_complaints %}
-                    <div class="complaint-item" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
-                        <div class="complaint-header">
-                            <div class="complaint-id">#{{ complaint.complaint_number }}</div>
-                            <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
-                        </div>
-                        <div class="complaint-details">
-                            <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
-                        </div>
-                        <div class="complaint-divider"></div>
-                        <div class="complaint-meta">
-                            <span>{{ complaint.city }}</span>
-                            <span>{{ complaint.created_at|date:"d M Y" }}</span>
-                        </div>
+            {% if recent_complaints %}
+                {% for complaint in recent_complaints %}
+                <div class="complaint-card" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
+                    <div class="complaint-header">
+                        <div class="complaint-id">#{{ complaint.complaint_number }}</div>
+                        <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
-                        No complaints found<br>
-                        <a href="#" onclick="showTab('submit'); return false;" style="color: var(--primary-blue); font-weight: 600; margin-top: 8px; display: inline-block;">Submit your first complaint</a>
-                    </p>
-                {% endif %}
-            </div>
+                    <div class="complaint-title">{{ complaint.get_complaint_type_display }}</div>
+                    <div class="complaint-meta">
+                        <span>{{ complaint.city }}</span>
+                        <span>{{ complaint.created_at|date:"d M Y" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fa-solid fa-inbox"></i>
+                    <h3>No complaints yet</h3>
+                    <p>Submit your first complaint to get started</p>
+                </div>
+            {% endif %}
         </div>
-    </div>
+    </main>
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <a href="#" class="bottom-nav-item active" onclick="showTab('dashboard'); return false;">
+        <a href="{% url 'user_dashboard' %}" class="nav-item active">
             <i class="fa-solid fa-house"></i>
             <span>Dashboard</span>
         </a>
-        <a href="#" class="bottom-nav-item" onclick="showTab('submit'); return false;">
+        <a href="{% url 'submit_complaint' %}" class="nav-item">
             <i class="fa-solid fa-plus-circle"></i>
             <span>Submit</span>
         </a>
-        <a href="{% url 'track_complaints' %}" class="bottom-nav-item">
+        <a href="{% url 'track_complaints' %}" class="nav-item">
             <i class="fa-solid fa-list-check"></i>
             <span>Track</span>
         </a>
-        <a href="#" class="bottom-nav-item" id="profile-nav-btn">
+        <a href="{% url 'profile' %}" class="nav-item">
             <i class="fa-solid fa-user"></i>
             <span>Profile</span>
         </a>
     </nav>
 
-    <!-- Page Load Animation -->
-    <div class="page-loading" id="pageLoadingOverlay">
-        <div class="loader-container">
-            <div class="loader-blur"></div>
-            <svg viewBox="0 0 120 120" class="loader-svg">
-                <g class="spin-slow">
-                    <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3" opacity="0.25"></circle>
-                    <g stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6">
-                        <g>
-                            <line x1="60" y1="6" x2="60" y2="12"></line>
-                            <line x1="60" y1="108" x2="60" y2="114"></line>
-                            <line x1="6" y1="60" x2="12" y2="60"></line>
-                            <line x1="108" y1="60" x2="114" y2="60"></line>
-                        </g>
-                        <g>
-                            <line x1="60" y1="8" x2="60" y2="12"></line>
-                            <g style="transform: rotate(45deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(90deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(135deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(22.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(67.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(112.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(157.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                        </g>
-                    </g>
-                </g>
-                <g class="spin-reverse">
-                    <polygon points="60,22 66,60 60,98 54,60" fill="#C9910D" opacity="0.95"></polygon>
-                    <polygon points="22,60 60,66 98,60 60,54" fill="#0892A5" opacity="0.9"></polygon>
-                    <circle cx="60" cy="60" r="6" fill="white" stroke="currentColor" stroke-width="2"></circle>
-                </g>
-                <g class="swing">
-                    <line x1="60" y1="60" x2="60" y2="18" stroke="#C9910D" stroke-width="3" stroke-linecap="round"></line>
-                    <circle cx="60" cy="60" r="3" fill="#C9910D"></circle>
-                </g>
-                <g>
-                    <path d="M12 82 Q 24 76 36 82 T 60 82 T 84 82 T 108 82" fill="none" stroke="#0892A5" stroke-width="3" class="wave-dash"></path>
-                    <path d="M12 90 Q 24 84 36 90 T 60 90 T 84 90 T 108 90" fill="none" stroke="#4E3822" stroke-width="2" opacity="0.4" class="wave-dash-slow"></path>
-                </g>
-            </svg>
-            <div class="loader-text">Loading Dashboard...</div>
-        </div>
-    </div>
-
-    <!-- Loading Overlay with Modern SVG Animation -->
+    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
-        <div class="loader-container">
-            <div class="loader-blur"></div>
-            <svg viewBox="0 0 120 120" class="loader-svg">
-                <g class="spin-slow">
-                    <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" stroke-width="3" opacity="0.25"></circle>
-                    <g stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6">
-                        <g>
-                            <line x1="60" y1="6" x2="60" y2="12"></line>
-                            <line x1="60" y1="108" x2="60" y2="114"></line>
-                            <line x1="6" y1="60" x2="12" y2="60"></line>
-                            <line x1="108" y1="60" x2="114" y2="60"></line>
-                        </g>
-                        <g>
-                            <line x1="60" y1="8" x2="60" y2="12"></line>
-                            <g style="transform: rotate(45deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(90deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(135deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(22.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(67.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(112.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                            <g style="transform: rotate(157.5deg); transform-origin: center;">
-                                <line x1="60" y1="8" x2="60" y2="12"></line>
-                            </g>
-                        </g>
-                    </g>
-                </g>
-                <g class="spin-reverse">
-                    <polygon points="60,22 66,60 60,98 54,60" fill="#C9910D" opacity="0.95"></polygon>
-                    <polygon points="22,60 60,66 98,60 60,54" fill="#0892A5" opacity="0.9"></polygon>
-                    <circle cx="60" cy="60" r="6" fill="white" stroke="currentColor" stroke-width="2"></circle>
-                </g>
-                <g class="swing">
-                    <line x1="60" y1="60" x2="60" y2="18" stroke="#C9910D" stroke-width="3" stroke-linecap="round"></line>
-                    <circle cx="60" cy="60" r="3" fill="#C9910D"></circle>
-                </g>
-                <g>
-                    <path d="M12 82 Q 24 76 36 82 T 60 82 T 84 82 T 108 82" fill="none" stroke="#0892A5" stroke-width="3" class="wave-dash"></path>
-                    <path d="M12 90 Q 24 84 36 90 T 60 90 T 84 90 T 108 90" fill="none" stroke="#4E3822" stroke-width="2" opacity="0.4" class="wave-dash-slow"></path>
-                </g>
-            </svg>
-            <div class="loader-text">Please wait...</div>
-        </div>
+        <div class="loader"></div>
     </div>
 
     <script>
         // Comprehensive fix for back button loader issue
         (function() {
-            // Hide all loaders immediately on page show (handles back button)
             window.addEventListener('pageshow', function(event) {
-                const pageLoader = document.getElementById('pageLoadingOverlay');
                 const loader = document.getElementById('loadingOverlay');
-                
-                // If page is loaded from cache (back/forward button)
                 if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-                    if (pageLoader) {
-                        pageLoader.classList.add('hide');
-                        pageLoader.style.display = 'none';
-                    }
                     if (loader) {
                         loader.classList.remove('show');
                         loader.style.display = 'none';
                     }
-                    // Ensure page is visible
                     document.body.style.opacity = '1';
                     document.body.style.pointerEvents = 'auto';
                 }
             });
 
-            // Hide loaders before page unload
             window.addEventListener('beforeunload', function() {
-                const pageLoader = document.getElementById('pageLoadingOverlay');
                 const loader = document.getElementById('loadingOverlay');
-                if (pageLoader) pageLoader.style.display = 'none';
                 if (loader) loader.style.display = 'none';
             });
 
-            // Fallback: Hide loaders after maximum time
             setTimeout(function() {
-                const pageLoader = document.getElementById('pageLoadingOverlay');
                 const loader = document.getElementById('loadingOverlay');
-                if (pageLoader) {
-                    pageLoader.classList.add('hide');
-                    pageLoader.style.display = 'none';
-                }
                 if (loader) {
                     loader.classList.remove('show');
                     loader.style.display = 'none';
                 }
-            }, 10000); // 10 seconds maximum
+            }, 10000);
         })();
 
-        // Check if guest mode
-        const isGuest = new URLSearchParams(window.location.search).get('guest') === 'true';
-
-        // Show page loading animation on initial load
-        window.addEventListener('load', function() {
-            const pageLoader = document.getElementById('pageLoadingOverlay');
-            setTimeout(() => {
-                if (pageLoader) {
-                    pageLoader.classList.add('hide');
-                    setTimeout(() => {
-                        pageLoader.style.display = 'none';
-                    }, 500);
-                }
-            }, 1500); // Show for 1.5 seconds
-        });
-
-        // Initialize guest mode on page load
+        // Add loading animation to links
         document.addEventListener('DOMContentLoaded', function() {
-            if (isGuest) {
-                initGuestMode();
-            }
-            
-            // Add loading animation to all links except submit complaint
-            addLoadingToLinks();
-        });
-
-        function addLoadingToLinks() {
-            // Add loader to all navigation links except submit complaint
-            const navLinks = document.querySelectorAll('a[href]:not([href*="submit_complaint"]):not([href="#"]):not([href*="tel:"]):not([onclick*="showTab"])');
-            
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    // Don't show loader for restricted actions in guest mode
-                    if (isGuest && (this.classList.contains('restricted') || this.id === 'profile-nav-btn' || this.querySelector('.fa-bell'))) {
-                        return;
+            const links = document.querySelectorAll('a[href]:not([href="#"])');
+            links.forEach(link => {
+                link.addEventListener('click', function() {
+                    const loader = document.getElementById('loadingOverlay');
+                    if (loader) {
+                        loader.style.display = 'flex';
+                        loader.classList.add('show');
                     }
-                    
-                    showLoader();
-                    
-                    // Hide loader after 5 seconds as fallback
                     setTimeout(() => {
-                        hideLoader();
+                        if (loader) {
+                            loader.classList.remove('show');
+                            loader.style.display = 'none';
+                        }
                     }, 5000);
                 });
             });
-            
-            // Add loader to search form
-            const searchForm = document.querySelector('form[action*="user_dashboard"]');
-            if (searchForm) {
-                searchForm.addEventListener('submit', function() {
-                    showLoader();
-                    
-                    // Hide loader after 5 seconds as fallback
-                    setTimeout(() => {
-                        hideLoader();
-                    }, 5000);
-                });
-            }
-        }
-
-        function showLoader() {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex';
-                overlay.classList.add('show');
-            }
-        }
-
-        function hideLoader() {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                overlay.classList.remove('show');
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                }, 300);
-            }
-        }
-
-        function initGuestMode() {
-            // Hide counts and show eye icons with "hidden" effect
-            document.querySelectorAll('.stat-number').forEach(el => {
-                el.innerHTML = '<i class="fa-solid fa-eye-slash" style="color: #64748b; font-size: 20px;"></i>';
-            });
-
-            // Add restricted click handlers
-            const restrictedElements = [
-                '.bottom-nav-item[href*="track"]',
-                '.nav-icon',
-                '.profile-pic',
-                '.tab-btn:nth-child(3)', // My Complaints tab
-                '.view-all-btn',
-                '#profile-nav-btn' // Bottom nav profile button
-            ];
-
-            restrictedElements.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach(el => {
-                    el.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        showLoginPopup();
-                        return false;
-                    });
-                });
-            });
-
-            // For non-guest users, add profile click handlers
-            if (!isGuest) {
-                document.querySelector('.profile-pic').addEventListener('click', function() {
-                    window.location.href = '{% url "profile" %}';
-                });
-                document.querySelector('#profile-nav-btn').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.location.href = '{% url "profile" %}';
-                });
-            }
-
-            // Hide My Complaints tab
-            document.querySelectorAll('.tab-btn')[2].style.display = 'none';
-
-            // Update bottom nav for guest
-            const trackBtn = document.querySelector('.bottom-nav-item[href*="track"]');
-            const profileBtn = document.querySelector('#profile-nav-btn');
-            
-            if (trackBtn) {
-                trackBtn.innerHTML = '<i class="fa-solid fa-lock"></i><span>Track</span>';
-            }
-            if (profileBtn) {
-                profileBtn.innerHTML = '<i class="fa-solid fa-lock"></i><span>Profile</span>';
-            }
-
-            // Hide recent complaints for guest
-            const complaintsSection = document.querySelector('.complaints-list');
-            if (complaintsSection) {
-                complaintsSection.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 40px 20px;"><i class="fa-solid fa-lock" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>Login to view your complaints<br><button onclick="showLoginPopup()" style="background: var(--primary-blue); color: white; border: none; padding: 8px 16px; border-radius: 8px; margin-top: 12px; cursor: pointer;">Login Now</button></p>';
-            }
-        }
-
-        function showLoginPopup() {
-            const popup = document.createElement('div');
-            popup.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                backdrop-filter: blur(5px);
-            `;
-            
-            popup.innerHTML = `
-                <div style="
-                    background: white;
-                    padding: 30px;
-                    border-radius: 20px;
-                    text-align: center;
-                    max-width: 320px;
-                    margin: 20px;
-                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-                ">
-                    <i class="fa-solid fa-lock" style="font-size: 48px; color: var(--primary-blue); margin-bottom: 16px;"></i>
-                    <h3 style="margin-bottom: 12px; color: var(--text-dark); font-family: 'Poppins', sans-serif;">Login Required</h3>
-                    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">Please login to access all features and view your complaints</p>
-                    <div style="display: flex; gap: 12px;">
-                        <button onclick="window.location.href='https://janhelp.vercel.app/'" style="
-                            flex: 1;
-                            background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%);
-                            color: white;
-                            border: none;
-                            padding: 12px;
-                            border-radius: 10px;
-                            font-weight: 600;
-                            cursor: pointer;
-                            font-family: 'Inter', sans-serif;
-                        ">Login</button>
-                        <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
-                            flex: 1;
-                            background: #f1f5f9;
-                            color: var(--text-dark);
-                            border: none;
-                            padding: 12px;
-                            border-radius: 10px;
-                            font-weight: 600;
-                            cursor: pointer;
-                            font-family: 'Inter', sans-serif;
-                        ">Cancel</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(popup);
-        }
-
-        function showTab(tabName) {
-            // Check if guest trying to access restricted tab
-            if (isGuest && tabName === 'my-complaints') {
-                showLoginPopup();
-                return;
-            }
-
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-
-            // Remove active class from all tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Remove active class from all bottom nav items
-            document.querySelectorAll('.bottom-nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-
-            // Show selected tab
-            if (tabName === 'dashboard') {
-                document.getElementById('dashboard-tab').classList.remove('hidden');
-                document.querySelectorAll('.tab-btn')[0].classList.add('active');
-                document.querySelectorAll('.bottom-nav-item')[0].classList.add('active');
-            } else if (tabName === 'submit') {
-                document.getElementById('submit-tab').classList.remove('hidden');
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
-                document.querySelectorAll('.bottom-nav-item')[1].classList.add('active');
-            } else if (tabName === 'my-complaints') {
-                document.getElementById('my-complaints-tab').classList.remove('hidden');
-                document.querySelectorAll('.tab-btn')[2].classList.add('active');
-            }
-
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        });
 
         function showNotifications() {
-            if (isGuest) {
-                showLoginPopup();
-                return;
-            }
             alert('You have 3 new notifications:\n\n1. Your complaint is now in progress\n2. Department responded to your complaint\n3. New update on your complaint');
         }
     </script>
