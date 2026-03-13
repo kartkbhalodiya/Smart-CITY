@@ -575,7 +575,7 @@
                 <i class="fa-solid fa-bell"></i>
                 <span class="notification-badge"></span>
             </div>
-            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:'Guest' }}&background=1E66F5&color=fff&size=128" alt="Profile" class="profile-pic" onclick="window.location.href='{% url 'profile' %}'">
+            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:'Guest' }}&background=1E66F5&color=fff&size=128" alt="Profile" class="profile-pic">
         </div>
     </nav>
 
@@ -815,6 +815,13 @@
                     });
                 });
             });
+
+            // For non-guest users, add profile click handler
+            if (!isGuest) {
+                document.querySelector('.profile-pic').addEventListener('click', function() {
+                    window.location.href = '{% url "profile" %}';
+                });
+            }
 
             // Hide My Complaints tab
             document.querySelectorAll('.tab-btn')[2].style.display = 'none';
