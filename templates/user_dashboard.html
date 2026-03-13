@@ -565,8 +565,8 @@
             right: 0;
             bottom: 0;
             background: transparent;
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -589,8 +589,8 @@
             right: 0;
             bottom: 0;
             background: transparent;
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -610,6 +610,10 @@
             width: 128px;
             height: 128px;
             color: #002D5A;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
         .loader-blur {
@@ -625,6 +629,20 @@
             position: relative;
             width: 100%;
             height: 100%;
+        }
+
+        .loader-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #002D5A;
+            text-align: center;
+            animation: textPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
         }
 
         @keyframes spin {
@@ -1188,6 +1206,7 @@
                     <path d="M12 90 Q 24 84 36 90 T 60 90 T 84 90 T 108 90" fill="none" stroke="#4E3822" stroke-width="2" opacity="0.4" class="wave-dash-slow"></path>
                 </g>
             </svg>
+            <div class="loader-text">Loading Dashboard...</div>
         </div>
     </div>
 
@@ -1245,6 +1264,7 @@
                     <path d="M12 90 Q 24 84 36 90 T 60 90 T 84 90 T 108 90" fill="none" stroke="#4E3822" stroke-width="2" opacity="0.4" class="wave-dash-slow"></path>
                 </g>
             </svg>
+            <div class="loader-text">Please wait...</div>
         </div>
     </div>
 
