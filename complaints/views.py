@@ -1768,8 +1768,12 @@ def guest_complaint(request):
 def track_guest_complaint(request):
     complaint = None
     if request.method == 'POST':
-        complaint_number = request.POST.get('complaint_number')
-        phone = request.POST.get('phone')
+        complaint_number = request.POST.get('complaint_number', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        
+        if not complaint_number or not phone:
+            messages.error(request, 'Please enter both complaint ID and mobile number!')
+            return render(request, 'track_guest.html', {'complaint': None})
         
         try:
             complaint = Complaint.objects.get(
@@ -1777,7 +1781,7 @@ def track_guest_complaint(request):
                 guest_phone=phone
             )
         except Complaint.DoesNotExist:
-            messages.error(request, 'Invalid complaint number or phone number!')
+            messages.error(request, 'Invalid complaint ID or mobile number. Please check and try again!')
     
     return render(request, 'track_guest.html', {'complaint': complaint})
 
