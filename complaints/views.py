@@ -5203,6 +5203,39 @@ def super_admin_delete_user(request, user_id):
     messages.success(request, f'User {username} and all their associated data have been deleted.')
     return redirect('super_admin_users')
 
+def user_view_department(request, department_type):
+    """View department details page"""
+    # Get departments of the specified type
+    departments = Department.objects.filter(
+        department_type=department_type,
+        is_active=True
+    ).select_related('city_admin')
+    
+    # If no departments found, redirect back to dashboard
+    if not departments.exists():
+        messages.error(request, f'No {department_type} departments found.')
+        return redirect('user_dashboard')
+    
+    # Get the first department for display (you can modify this logic)
+    department = departments.first()
+    
+    # Get complaint statistics for this department type
+    dept_complaints = Complaint.objects.filter(assigned_department__in=departments)
+    total_complaints = dept_complaints.count()
+    pending_complaints = dept_complaints.filter(work_status='pending').count()
+    solved_complaints = dept_complaints.filter(work_status='solved').count()
+    
+    context = {
+        'department': department,
+        'departments': departments,
+        'department_type': department_type,
+        'total_complaints': total_complaints,
+        'pending_complaints': pending_complaints,
+        'solved_complaints': solved_complaints,
+    }
+    
+    return render(request, 'user_view_department.html', context)
+
 def forgot_password(request):
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
