@@ -1522,6 +1522,15 @@ def track_complaints(request):
         .prefetch_related('resolution_proofs', 'reopen_proofs')
         .order_by('-created_at')
     )
+    
+    # Add days_since_resolved for each complaint
+    for complaint in complaints:
+        if complaint.resolved_at:
+            days_diff = (timezone.now() - complaint.resolved_at).days
+            complaint.days_since_resolved = Complaint.REOPEN_WINDOW_DAYS - days_diff
+        else:
+            complaint.days_since_resolved = 0
+    
     return render(request, 'track_complaints.html', {
         'complaints': complaints,
         'reopen_window_days': Complaint.REOPEN_WINDOW_DAYS,

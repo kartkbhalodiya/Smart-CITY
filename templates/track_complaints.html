@@ -305,7 +305,7 @@
             top: 16px;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background: #E2E8F0;
             z-index: 1;
         }
@@ -319,23 +319,23 @@
         }
 
         .timeline-line-progress.pending-line {
-            background: #9333EA;
+            background: linear-gradient(to right, #9333EA 0%, #9333EA 50%, #5E4FD6 100%);
         }
 
         .timeline-line-progress.confirmed-line {
-            background: #2B6CF6;
+            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 25%, #2B6CF6 50%, #2B6CF6 100%);
         }
 
         .timeline-line-progress.process-line {
-            background: #F39C12;
+            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 16.66%, #2B6CF6 33.33%, #5E8BF6 41.66%, #F39C12 50%, #F39C12 100%);
         }
 
         .timeline-line-progress.solved-line {
-            background: #2ECC71;
+            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 12.5%, #2B6CF6 25%, #5E8BF6 31.25%, #F39C12 37.5%, #A9B957 43.75%, #2ECC71 50%, #2ECC71 100%);
         }
 
         .timeline-line-progress.reopened-line {
-            background: #8B0000;
+            background: linear-gradient(to right, #9333EA 0%, #5E4FD6 10%, #2B6CF6 20%, #5E8BF6 25%, #F39C12 30%, #A9B957 35%, #2ECC71 40%, #5E9B51 45%, #8B0000 50%, #8B0000 100%);
         }
 
         /* Complaint Details */
@@ -393,22 +393,106 @@
             color: var(--primary-color);
         }
 
-        /* Time Badge */
-        .time-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: #E8F8F0;
-            color: var(--success-color);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-top: 8px;
+        /* Rating Display */
+        .rating-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #FFF9E6;
+            border-radius: 8px;
         }
 
-        .time-badge.overdue {
-            background: #FFEBEE;
-            color: var(--danger-color);
+        .rating-stars-display {
+            display: flex;
+            gap: 4px;
+        }
+
+        .rating-stars-display i {
+            color: #F39C12;
+            font-size: 16px;
+        }
+
+        .rating-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .feedback-box {
+            background: var(--bg-section);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .feedback-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        /* Quick Action Buttons */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .quick-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .quick-btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .quick-btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .quick-btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .quick-btn:active {
+            transform: scale(0.97);
+        }
+
+        .reopen-info {
+            background: #FFF4E6;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--warning-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reopen-info i {
+            font-size: 16px;
         }
 
         /* Action Button */
@@ -561,7 +645,7 @@
                     <!-- Progress Timeline -->
                     <div class="progress-timeline">
                         <div class="timeline-line">
-                            <div class="timeline-line-progress {% if complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}pending-line{% elif complaint.work_status == 'confirmed' %}confirmed-line{% elif complaint.work_status == 'process' %}process-line{% elif complaint.work_status == 'solved' %}solved-line{% endif %}" style="width: {% if complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}25%{% elif complaint.work_status == 'confirmed' %}50%{% elif complaint.work_status == 'process' %}75%{% elif complaint.work_status == 'solved' %}100%{% endif %};"></div>
+                            <div class="timeline-line-progress {% if complaint.work_status == 'pending' %}pending-line{% elif complaint.work_status == 'confirmed' %}confirmed-line{% elif complaint.work_status == 'process' %}process-line{% elif complaint.work_status == 'solved' %}solved-line{% elif complaint.work_status == 'reopened' %}reopened-line{% endif %}" style="width: {% if complaint.work_status == 'pending' %}25%{% elif complaint.work_status == 'confirmed' %}50%{% elif complaint.work_status == 'process' %}75%{% elif complaint.work_status == 'solved' %}100%{% elif complaint.work_status == 'reopened' %}100%{% endif %};"></div>
                         </div>
                         <div class="timeline-step">
                             <div class="timeline-node pending-node">
@@ -570,8 +654,8 @@
                             <div class="timeline-label">Submitted</div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'pending' or complaint.work_status == 'reopened' %}upcoming{% endif %}">
-                                {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' %}
+                            <div class="timeline-node {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}completed{% else %}upcoming{% endif %}">
+                                {% if complaint.work_status == 'confirmed' or complaint.work_status == 'process' or complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}
                                 <i class="fa-solid fa-check"></i>
                                 {% else %}
                                 2
@@ -580,8 +664,8 @@
                             <div class="timeline-label">Confirmed</div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'process' %}process-node{% elif complaint.work_status == 'solved' %}completed{% elif complaint.work_status == 'confirmed' %}upcoming{% else %}upcoming{% endif %}">
-                                {% if complaint.work_status == 'solved' %}
+                            <div class="timeline-node {% if complaint.work_status == 'process' %}process-node{% elif complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}completed{% else %}upcoming{% endif %}">
+                                {% if complaint.work_status == 'solved' or complaint.work_status == 'reopened' %}
                                 <i class="fa-solid fa-check"></i>
                                 {% elif complaint.work_status == 'process' %}
                                 <i class="fa-solid fa-spinner"></i>
@@ -592,14 +676,16 @@
                             <div class="timeline-label">In Progress</div>
                         </div>
                         <div class="timeline-step">
-                            <div class="timeline-node {% if complaint.work_status == 'solved' %}solved-node{% elif complaint.work_status == 'process' %}upcoming{% else %}upcoming{% endif %}">
+                            <div class="timeline-node {% if complaint.work_status == 'solved' %}solved-node{% elif complaint.work_status == 'reopened' %}reopened-node{% else %}upcoming{% endif %}">
                                 {% if complaint.work_status == 'solved' %}
                                 <i class="fa-solid fa-check"></i>
+                                {% elif complaint.work_status == 'reopened' %}
+                                <i class="fa-solid fa-rotate-left"></i>
                                 {% else %}
                                 4
                                 {% endif %}
                             </div>
-                            <div class="timeline-label">Completed</div>
+                            <div class="timeline-label">{% if complaint.work_status == 'reopened' %}Reopened{% else %}Completed{% endif %}</div>
                         </div>
                     </div>
 
@@ -632,16 +718,66 @@
                             <i class="fa-solid fa-map-marker-alt"></i>
                             <span>{{ complaint.assigned_department.city }}, {{ complaint.assigned_department.state }}</span>
                         </div>
-                        {% if complaint.estimated_completion_time %}
-                        <div class="dept-info">
-                            <i class="fa-solid fa-clock"></i>
-                            <span>Expected: {{ complaint.estimated_completion_time|date:"M d, Y — H:i" }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Rating & Feedback Display (For Solved Complaints) -->
+                    {% if complaint.work_status == 'solved' %}
+                        {% if complaint.citizen_rating %}
+                        <div class="rating-display">
+                            <div class="rating-stars-display">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= complaint.citizen_rating %}
+                                    <i class="fa-solid fa-star"></i>
+                                    {% else %}
+                                    <i class="fa-regular fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="rating-text">{{ complaint.citizen_rating }}/5</span>
                         </div>
-                        {% if complaint.time_remaining %}
-                        <span class="time-badge {% if complaint.is_overdue %}overdue{% endif %}">
-                            {% if complaint.is_overdue %}OVERDUE{% else %}{{ complaint.time_remaining }} LEFT{% endif %}
-                        </span>
+                        {% if complaint.citizen_feedback %}
+                        <div class="feedback-box">
+                            <div class="feedback-label">Your Feedback:</div>
+                            {{ complaint.citizen_feedback }}
+                        </div>
                         {% endif %}
+                        {% endif %}
+
+                        <!-- Reopen Option -->
+                        {% if complaint.can_reopen %}
+                        <div class="reopen-info">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>You can reopen this complaint within {{ complaint.days_since_resolved }} days</span>
+                        </div>
+                        <div class="quick-actions">
+                            {% if not complaint.citizen_rating %}
+                            <a href="{% url 'view_location' complaint.id %}" class="quick-btn quick-btn-warning">
+                                <i class="fa-solid fa-star"></i>
+                                Rate Service
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'view_location' complaint.id %}" class="quick-btn quick-btn-danger">
+                                <i class="fa-solid fa-rotate-left"></i>
+                                Reopen
+                            </a>
+                        </div>
+                        {% elif not complaint.citizen_rating %}
+                        <div class="quick-actions">
+                            <a href="{% url 'view_location' complaint.id %}" class="quick-btn quick-btn-warning" style="grid-column: 1 / -1;">
+                                <i class="fa-solid fa-star"></i>
+                                Rate This Service
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- Reopened Status Info -->
+                    {% if complaint.work_status == 'reopened' %}
+                    <div class="feedback-box" style="border-left-color: var(--danger-color); background: #FFEBEE;">
+                        <div class="feedback-label" style="color: var(--danger-color);">Complaint Reopened</div>
+                        {% if complaint.reopen_proofs.first %}
+                        Reason: {{ complaint.reopen_proofs.first.reason }}
                         {% endif %}
                     </div>
                     {% endif %}

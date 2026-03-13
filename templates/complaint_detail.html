@@ -572,7 +572,7 @@
         </div>
 
         <!-- Reopen Section (Only if within 7 days and not already reopened) -->
-        {% if complaint.can_reopen and not complaint.citizen_rating %}
+        {% if complaint.can_reopen %}
         <div class="section-card">
             <h2 class="section-title">
                 <i class="fa-solid fa-rotate-left"></i>
