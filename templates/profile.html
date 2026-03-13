@@ -11,148 +11,310 @@
         
         body {
             font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
-            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 0;
+            padding-bottom: 80px;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
-            color: #fff;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .header h1 {
-            font-size: 20px;
-            font-weight: 800;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a202c;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 i {
+            color: #2B6CF6;
         }
 
         .back-btn {
-            background: rgba(255, 255, 255, 0.2);
+            background: #2B6CF6;
             color: #fff;
-            padding: 8px 15px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 12px;
             text-decoration: none;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #1e4fd6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(43, 108, 246, 0.3);
         }
 
         .profile-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
             margin-bottom: 20px;
         }
 
-        .profile-avatar {
+        .profile-header {
             text-align: center;
-            margin-bottom: 25px;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
+            opacity: 0.3;
         }
 
         .avatar {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 4px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 40px;
+            font-size: 48px;
             margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         }
 
         .profile-name {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
-            color: #2d3436;
-            margin-bottom: 5px;
+            color: #fff;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
         }
 
         .profile-email {
-            color: #636e72;
-            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .info-section {
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 15px;
+            color: #1a202c;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e9ecef;
+        .section-title i {
+            color: #2B6CF6;
+            font-size: 20px;
         }
 
-        .info-row:last-child {
-            border-bottom: none;
+        .info-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .info-item {
+            background: #F7F9FC;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e8ecf1;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            border-color: #2B6CF6;
+            box-shadow: 0 4px 12px rgba(43, 108, 246, 0.1);
         }
 
         .info-label {
             font-weight: 600;
-            color: #6c757d;
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-label i {
+            font-size: 12px;
+            color: #2B6CF6;
+        }
+
+        .info-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            color: #1a202c;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .info-input:focus {
+            outline: none;
+            border-color: #2B6CF6;
+            box-shadow: 0 0 0 3px rgba(43, 108, 246, 0.1);
+        }
+
+        textarea.info-input {
+            resize: vertical;
+            min-height: 80px;
         }
 
         .info-value {
-            color: #2d3436;
+            color: #1a202c;
             font-size: 14px;
-            text-align: right;
+            font-weight: 500;
+            padding: 10px 12px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
 
         .language-section {
-            background: #f8f9fa;
-            border-radius: 15px;
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-radius: 12px;
             padding: 20px;
+            border: 1px solid #BFDBFE;
         }
 
         .language-selector {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #dee2e6;
+            padding: 12px 16px;
+            border: 1px solid #2B6CF6;
             border-radius: 10px;
             font-size: 14px;
             font-family: 'Poppins', sans-serif;
             background: #fff;
+            color: #1a202c;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .logout-btn {
-            background: #dc3545;
+        .language-selector:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(43, 108, 246, 0.2);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .save-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
             color: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            width: 100%;
-            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
+        }
+
+        .logout-btn {
+            flex: 1;
+            background: linear-gradient(135deg, #E74C3C 0%, #c0392b 100%);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .header h1 { font-size: 20px; }
+            .profile-name { font-size: 24px; }
+            .avatar { width: 100px; height: 100px; font-size: 40px; }
+            .btn-group { flex-direction: column; }
         }
     </style>
 </head>
@@ -167,79 +329,78 @@
         </div>
 
         <div class="profile-card">
-                <div class="profile-avatar">
+                <div class="profile-header">
                     <div class="avatar">
                         <i class="fa-solid fa-{% if is_city_admin %}user-shield{% elif is_dept_user %}user-tie{% else %}user{% endif %}"></i>
                     </div>
                     <div class="profile-name">{{ user.first_name }} {{ user.last_name }}</div>
-                    <div class="profile-email">
-                        {{ user.email }}
-                        {% if is_city_admin %}
-                        <div style="font-size: 12px; color: #6366f1; font-weight: 600; margin-top: 5px;">CITY ADMIN</div>
-                        {% elif is_dept_user %}
-                        <div style="font-size: 12px; color: #10b981; font-weight: 600; margin-top: 5px;">DEPARTMENT OFFICER</div>
-                        {% endif %}
-                    </div>
+                    <div class="profile-email">{{ user.email }}</div>
+                    {% if is_city_admin %}
+                    <div class="role-badge"><i class="fa-solid fa-shield-halved"></i> CITY ADMIN</div>
+                    {% elif is_dept_user %}
+                    <div class="role-badge"><i class="fa-solid fa-user-tie"></i> DEPARTMENT OFFICER</div>
+                    {% endif %}
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
                     <div class="info-section">
                         <div class="section-title">
-                            <i class="fa-solid fa-info-circle"></i>
+                            <i class="fa-solid fa-user-circle"></i>
                             Personal Information
                         </div>
-                        <div class="info-row">
-                            <div class="info-label">Full Name</div>
-                            <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;">
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Email</div>
-                            <input type="email" name="email" value="{{ user.email }}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;">
-                        </div>
-                        
-                        {% if not is_city_admin and not is_dept_user and not user.is_superuser %}
-                        <!-- Citizen Specific Fields -->
-                        <div class="info-row">
-                            <div class="info-label">Mobile</div>
-                            <input type="text" name="mobile" value="{% if user.citizenprofile %}{{ user.citizenprofile.mobile_no|default:'' }}{% endif %}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;">
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">State</div>
-                            <input type="text" name="state" value="{% if user.citizenprofile %}{{ user.citizenprofile.state|default:'' }}{% endif %}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;">
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">District</div>
-                            <input type="text" name="district" value="{% if user.citizenprofile %}{{ user.citizenprofile.district|default:'' }}{% endif %}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;">
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">City</div>
-                            <input type="text" name="city" value="{% if user.citizenprofile %}{{ user.citizenprofile.city|default:'' }}{% endif %}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;">
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Address</div>
-                            <textarea name="address" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px; height: 60px;">{% if user.citizenprofile %}{{ user.citizenprofile.address|default:'' }}{% endif %}</textarea>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Aadhaar Number (Optional)</div>
-                            <input type="text" name="aadhaar" value="{% if user.citizenprofile %}{{ user.citizenprofile.aadhaar_number|default:'' }}{% endif %}" style="width: 200px; padding: 5px; border: 1px solid #dee2e6; border-radius: 5px;" placeholder="XXXX XXXX XXXX">
-                        </div>
-                        {% endif %}
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-signature"></i> Full Name</div>
+                                <input type="text" name="full_name" value="{{ user.first_name }} {{ user.last_name }}" class="info-input">
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-envelope"></i> Email</div>
+                                <input type="email" name="email" value="{{ user.email }}" class="info-input">
+                            </div>
+                            
+                            {% if not is_city_admin and not is_dept_user and not user.is_superuser %}
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-mobile-screen"></i> Mobile</div>
+                                <input type="text" name="mobile" value="{% if user.citizenprofile %}{{ user.citizenprofile.mobile_no|default:'' }}{% endif %}" class="info-input" placeholder="Enter mobile number">
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-map"></i> State</div>
+                                <input type="text" name="state" value="{% if user.citizenprofile %}{{ user.citizenprofile.state|default:'' }}{% endif %}" class="info-input" placeholder="Enter state">
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-map-pin"></i> District</div>
+                                <input type="text" name="district" value="{% if user.citizenprofile %}{{ user.citizenprofile.district|default:'' }}{% endif %}" class="info-input" placeholder="Enter district">
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-city"></i> City</div>
+                                <input type="text" name="city" value="{% if user.citizenprofile %}{{ user.citizenprofile.city|default:'' }}{% endif %}" class="info-input" placeholder="Enter city">
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-location-dot"></i> Address</div>
+                                <textarea name="address" class="info-input" placeholder="Enter full address">{% if user.citizenprofile %}{{ user.citizenprofile.address|default:'' }}{% endif %}</textarea>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-id-card"></i> Aadhaar Number (Optional)</div>
+                                <input type="text" name="aadhaar" value="{% if user.citizenprofile %}{{ user.citizenprofile.aadhaar_number|default:'' }}{% endif %}" class="info-input" placeholder="XXXX XXXX XXXX">
+                            </div>
+                            {% endif %}
 
-                        {% if is_city_admin %}
-                        <div class="info-row">
-                            <div class="info-label">Managed City</div>
-                            <div class="info-value">{{ user.cityadmin.city_name }}</div>
-                        </div>
-                        <div class="info-row">
-                            <div class="info-label">Managed State</div>
-                            <div class="info-value">{{ user.cityadmin.state }}</div>
-                        </div>
-                        {% endif %}
+                            {% if is_city_admin %}
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-building"></i> Managed City</div>
+                                <div class="info-value">{{ user.cityadmin.city_name }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-map-location"></i> Managed State</div>
+                                <div class="info-value">{{ user.cityadmin.state }}</div>
+                            </div>
+                            {% endif %}
 
-                        <div class="info-row">
-                            <div class="info-label">Member Since</div>
-                            <div class="info-value">{{ user.date_joined|date:"M d, Y" }}</div>
+                            <div class="info-item">
+                                <div class="info-label"><i class="fa-solid fa-calendar-check"></i> Member Since</div>
+                                <div class="info-value">{{ user.date_joined|date:"M d, Y" }}</div>
+                            </div>
                         </div>
                     </div>
 
@@ -257,16 +418,17 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn" style="background: #28a745; color: #fff; padding: 12px 20px; border: none; border-radius: 8px; font-weight: 600; margin-top: 15px;">
-                    <i class="fa-solid fa-save"></i>
-                    Save Changes
-                </button>
+                <div class="btn-group">
+                    <button type="submit" class="save-btn">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Changes
+                    </button>
+                    <a href="{% url 'logout' %}" class="logout-btn">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Logout
+                    </a>
+                </div>
             </form>
-
-            <a href="{% url 'logout' %}" class="logout-btn">
-                <i class="fa-solid fa-sign-out-alt"></i>
-                Logout
-            </a>
         </div>
     </div>
 
