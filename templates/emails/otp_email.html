@@ -1,0 +1,37 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Your OTP Code - JanHelp{% endblock %}
+
+{% block content %}
+<h2 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">Hello {{ user_name }}! 👋</h2>
+
+<p style="font-size: 16px; color: #64748b; margin-bottom: 30px; line-height: 1.8;">
+    You requested a One-Time Password (OTP) to access your JanHelp account. 
+    Use the code below to complete your login:
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+    <tr>
+        <td style="background: linear-gradient(135deg, rgba(30, 102, 245, 0.1) 0%, rgba(21, 78, 199, 0.05) 100%); border: 2px dashed #1E66F5; border-radius: 16px; padding: 30px; text-align: center;">
+            <div style="font-size: 14px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Your OTP Code</div>
+            <div style="font-size: 48px; font-weight: 800; color: #1E66F5; letter-spacing: 8px; font-family: 'Courier New', monospace; margin: 10px 0;">{{ otp_code }}</div>
+            <div style="font-size: 13px; color: #ef4444; font-weight: 600; margin-top: 15px;">⏰ Valid for 10 minutes</div>
+        </td>
+    </tr>
+</table>
+
+<p style="font-size: 16px; color: #64748b; margin-bottom: 30px; line-height: 1.8;">
+    Enter this code on the verification page to continue. If you didn't request this code, 
+    please ignore this email or contact support if you have concerns.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
+    <tr>
+        <td style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; border-radius: 8px;">
+            <p style="font-size: 14px; color: #92400e; font-weight: 600; margin: 0;">
+                🔒 <strong>Security Tip:</strong> Never share your OTP with anyone. JanHelp will never ask for your OTP via phone or email.
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Welcome to JanHelp! 🎉{% endblock %}
+
+{% block content %}
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+    <tr>
+        <td style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%); border: 1.5px solid #34d399; border-radius: 16px; padding: 40px 30px; text-align: center;">
+            <div style="font-size: 64px; margin-bottom: 15px;">🎉</div>
+            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">Welcome to JanHelp!</h2>
+            <p style="color: #64748b; font-size: 14px; margin: 0;">Your account has been successfully created</p>
+        </td>
+    </tr>
+</table>
+
+<h2 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">Hello {{ user_name }}! 👋</h2>
+
+<p style="font-size: 16px; color: #64748b; margin-bottom: 30px; line-height: 1.8;">
+    Thank you for joining JanHelp! We're excited to have you as part of our community working towards making our cities better.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; margin: 25px 0;">
+    <tr>
+        <td style="padding: 20px;">
+            <table width="100%" cellpadding="10" cellspacing="0" border="0">
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">📧 Email:</td>
+                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ user_email }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">📱 Mobile:</td>
+                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ user_mobile }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; {% if user_role %}border-bottom: 1px solid #e2e8f0;{% endif %}">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">📅 Joined:</td>
+                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ join_date }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                {% if user_role %}
+                <tr>
+                    <td style="padding: 10px 0;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td style="font-weight: 600; color: #64748b; font-size: 14px;">👤 Role:</td>
+                                <td align="right" style="font-weight: 700; color: #0f172a; font-size: 14px;">{{ user_role }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
+            </table>
+        </td>
+    </tr>
+</table>
+
+<p style="font-size: 16px; color: #0f172a; margin: 25px 0 15px 0; font-weight: 700;">
+    What you can do with JanHelp:
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+        <td width="48%" style="vertical-align: top; padding: 10px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
+                <tr>
+                    <td style="padding: 20px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📝</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 5px;">Submit Complaints</div>
+                        <div style="font-size: 12px; color: #64748b;">Report issues with GPS location</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td width="4%"></td>
+        <td width="48%" style="vertical-align: top; padding: 10px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
+                <tr>
+                    <td style="padding: 20px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📍</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 5px;">Track Status</div>
+                        <div style="font-size: 12px; color: #64748b;">Monitor complaint progress</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td width="48%" style="vertical-align: top; padding: 10px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
+                <tr>
+                    <td style="padding: 20px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⭐</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 5px;">Rate Services</div>
+                        <div style="font-size: 12px; color: #64748b;">Provide feedback on resolutions</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td width="4%"></td>
+        <td width="48%" style="vertical-align: top; padding: 10px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: white; border: 1.5px solid #e2e8f0; border-radius: 12px;">
+                <tr>
+                    <td style="padding: 20px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 5px;">View History</div>
+                        <div style="font-size: 12px; color: #64748b;">Access all your complaints</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+    <tr>
+        <td align="center">
+            <a href="{{ dashboard_url }}" style="display: inline-block; background: linear-gradient(135deg, #1E66F5 0%, #154ec7 100%); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 16px; box-shadow: 0 8px 16px rgba(30, 102, 245, 0.3);">
+                🚀 Go to Dashboard
+            </a>
+        </td>
+    </tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 25px;">
+    <tr>
+        <td style="background-color: #dbeafe; border-left: 4px solid #1E66F5; padding: 15px 20px; border-radius: 8px;">
+            <p style="font-size: 14px; color: #1e40af; font-weight: 600; margin: 0;">
+                💡 <strong>Quick Tip:</strong> Keep your profile updated and enable notifications to stay informed about your complaint status.
+            </p>
+        </td>
+    </tr>
+</table>
+{% endblock %}
