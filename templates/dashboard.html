@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --green-accent: #2ECC71;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --bg-light: #f8fafc;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-light);
+            padding-bottom: 80px;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        .logo-img {
+            height: 36px;
+            width: auto;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-icon:hover {
+            background: #e2e8f0;
+        }
+
+        .nav-icon i {
+            font-size: 18px;
+            color: var(--text-dark);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary-blue);
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 70px;
+            padding: 16px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        .stat-card:nth-child(1) .stat-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card:nth-child(2) .stat-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card:nth-child(3) .stat-icon {
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+        }
+
+        .stat-card:nth-child(4) .stat-icon {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Section Header */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .view-all-btn {
+            font-size: 13px;
+            color: var(--primary-blue);
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Recent Complaints */
+        .complaints-list {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .complaint-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+
+        .complaint-item:hover {
+            background: var(--bg-light);
+        }
+
+        .complaint-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .complaint-id {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            min-width: 70px;
+        }
+
+        .complaint-details {
+            flex: 1;
+        }
+
+        .complaint-category {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .complaint-city {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-pending {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-confirmed {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .status-process {
+            background: #fef3c7;
+            color: #854d0e;
+        }
+
+        .status-solved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-reopened {
+            background: #fce7f3;
+            color: #831843;
+        }
+
+        /* Departments Grid */
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .dept-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .dept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .dept-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .dept-card:nth-child(2) .dept-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .dept-card:nth-child(3) .dept-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .dept-card:nth-child(4) .dept-icon {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .dept-card:nth-child(5) .dept-icon {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .dept-card:nth-child(6) .dept-icon {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+
+        .dept-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: all 0.3s;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary-blue);
+            background: rgba(30, 102, 245, 0.1);
+        }
+
+        .bottom-nav-item i {
+            font-size: 22px;
+        }
+
+        .bottom-nav-item span {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Submit Complaint Categories */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .category-card {
+            background: white;
+            padding: 20px 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .category-card:nth-child(1) .category-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .category-card:nth-child(2) .category-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .category-card:nth-child(3) .category-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .category-card:nth-child(4) .category-icon { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .category-card:nth-child(5) .category-icon { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .category-card:nth-child(6) .category-icon { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .category-card:nth-child(7) .category-icon { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .category-card:nth-child(8) .category-icon { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); }
+        .category-card:nth-child(9) .category-icon { background: linear-gradient(135deg, #fdcbf1 0%, #e6dee9 100%); }
+        .category-card:nth-child(10) .category-icon { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); }
+        .category-card:nth-child(11) .category-icon { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); }
+        .category-card:nth-child(12) .category-icon { background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); }
+
+        .category-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Desktop View */
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .departments-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .bottom-nav {
+                display: none;
+            }
+
+            body {
+                padding-bottom: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .departments-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <img src="https://res.cloudinary.com/dk1q50evg/image/upload/logo" alt="JanHelp" class="logo-img">
+        <div class="nav-right">
+            <div class="nav-icon" onclick="alert('Search feature coming soon!')">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div class="nav-icon" onclick="showNotifications()">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notification-badge"></span>
+            </div>
+            <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:'User' }}&background=1E66F5&color=fff&size=128" alt="Profile" class="profile-pic" onclick="window.location.href='#profile'">
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="tab-btn" onclick="showTab('submit')">Submit Complaint</button>
+            <button class="tab-btn" onclick="showTab('my-complaints')">My Complaints</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-number">{{ total_complaints|default:0 }}</div>
+                    <div class="stat-label">Total Complaints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-number">{{ pending_complaints|default:0 }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-number">{{ progress_complaints|default:0 }}</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-number">{{ solved_complaints|default:0 }}</div>
+                    <div class="stat-label">Solved</div>
+                </div>
+            </div>
+
+            <!-- Recent Complaints -->
+            <div class="section-header">
+                <h2 class="section-title">Recent Complaints</h2>
+                <a href="#" class="view-all-btn" onclick="showTab('my-complaints'); return false;">
+                    View All <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+
+            <div class="complaints-list">
+                {% if recent_complaints %}
+                    {% for complaint in recent_complaints %}
+                    <div class="complaint-item" onclick="window.location.href='{% url 'track_my_complaint' %}?id={{ complaint.complaint_number }}'">
+                        <div class="complaint-id">#{{ complaint.complaint_number }}</div>
+                        <div class="complaint-details">
+                            <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
+                            <div class="complaint-city">{{ complaint.city }}</div>
+                        </div>
+                        <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: var(--text-muted); padding: 20px;">No complaints yet</p>
+                {% endif %}
+            </div>
+
+            <!-- Departments -->
+            <div class="section-header">
+                <h2 class="section-title">Departments</h2>
+                <a href="#" class="view-all-btn">View All <i class="fa-solid fa-chevron-right"></i></a>
+            </div>
+
+            <div class="departments-grid">
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🚔</div>
+                    <div class="dept-name">Police</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🚦</div>
+                    <div class="dept-name">Traffic</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🏗️</div>
+                    <div class="dept-name">Construction</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">💧</div>
+                    <div class="dept-name">Water Supply</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">💡</div>
+                    <div class="dept-name">Electricity</div>
+                </a>
+                <a href="#" class="dept-card">
+                    <div class="dept-icon">🗑️</div>
+                    <div class="dept-name">Garbage</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Submit Complaint Tab -->
+        <div id="submit-tab" class="tab-content hidden">
+            <div class="section-header">
+                <h2 class="section-title">Select Complaint Category</h2>
+            </div>
+
+            <div class="categories-grid">
+                <a href="{% url 'submit_complaint' %}?type=police" class="category-card">
+                    <div class="category-icon">🚔</div>
+                    <div class="category-name">Police</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=traffic" class="category-card">
+                    <div class="category-icon">🚦</div>
+                    <div class="category-name">Traffic</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=construction" class="category-card">
+                    <div class="category-icon">🏗️</div>
+                    <div class="category-name">Construction</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=water" class="category-card">
+                    <div class="category-icon">💧</div>
+                    <div class="category-name">Water Supply</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=electricity" class="category-card">
+                    <div class="category-icon">💡</div>
+                    <div class="category-name">Electricity</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=garbage" class="category-card">
+                    <div class="category-icon">🗑️</div>
+                    <div class="category-name">Garbage</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=road" class="category-card">
+                    <div class="category-icon">🚧</div>
+                    <div class="category-name">Road/Pothole</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=drainage" class="category-card">
+                    <div class="category-icon">🌊</div>
+                    <div class="category-name">Drainage</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=illegal" class="category-card">
+                    <div class="category-icon">⚠️</div>
+                    <div class="category-name">Illegal Activity</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=transportation" class="category-card">
+                    <div class="category-icon">🚌</div>
+                    <div class="category-name">Transportation</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=cyber" class="category-card">
+                    <div class="category-icon">🛡️</div>
+                    <div class="category-name">Cyber Crime</div>
+                </a>
+                <a href="{% url 'submit_complaint' %}?type=other" class="category-card">
+                    <div class="category-icon">📋</div>
+                    <div class="category-name">Other</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- My Complaints Tab -->
+        <div id="my-complaints-tab" class="tab-content hidden">
+            <div class="section-header">
+                <h2 class="section-title">My Complaints</h2>
+            </div>
+
+            <div class="complaints-list">
+                {% if all_complaints %}
+                    {% for complaint in all_complaints %}
+                    <div class="complaint-item" onclick="window.location.href='{% url 'track_my_complaint' %}?id={{ complaint.complaint_number }}'">
+                        <div class="complaint-id">#{{ complaint.complaint_number }}</div>
+                        <div class="complaint-details">
+                            <div class="complaint-category">{{ complaint.get_complaint_type_display }}</div>
+                            <div class="complaint-city">{{ complaint.city }} • {{ complaint.created_at|date:"d M Y" }}</div>
+                        </div>
+                        <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                        No complaints found<br>
+                        <a href="#" onclick="showTab('submit'); return false;" style="color: var(--primary-blue); font-weight: 600; margin-top: 8px; display: inline-block;">Submit your first complaint</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="bottom-nav-item active" onclick="showTab('dashboard'); return false;">
+            <i class="fa-solid fa-house"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="showTab('submit'); return false;">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>Submit</span>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="showNotifications(); return false;">
+            <i class="fa-solid fa-bell"></i>
+            <span>Notifications</span>
+        </a>
+        <a href="#profile" class="bottom-nav-item">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Remove active class from all bottom nav items
+            document.querySelectorAll('.bottom-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected tab
+            if (tabName === 'dashboard') {
+                document.getElementById('dashboard-tab').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.querySelectorAll('.bottom-nav-item')[0].classList.add('active');
+            } else if (tabName === 'submit') {
+                document.getElementById('submit-tab').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.querySelectorAll('.bottom-nav-item')[1].classList.add('active');
+            } else if (tabName === 'my-complaints') {
+                document.getElementById('my-complaints-tab').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showNotifications() {
+            alert('You have 3 new notifications:\n\n1. Your complaint #SC123456 is now in progress\n2. Police Department responded to your complaint\n3. New update on complaint #SC789012');
+        }
+    </script>
+</body>
+</html>
