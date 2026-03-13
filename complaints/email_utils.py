@@ -31,7 +31,7 @@ def send_email_template(template_name, context, recipient_email, subject):
     email.send()
 
 
-def send_otp_email(user_email, user_name, otp_code):
+def send_otp_email(user_email, otp_code, user_name='User'):
     """Send OTP verification email"""
     context = {
         'user_name': user_name,
@@ -162,6 +162,57 @@ def send_department_assignment_email(user_email, user_name, department_name, use
         context,
         user_email,
         f'Department Access Granted: {department_name} - JanHelp'
+    )
+
+
+def send_department_credentials_email(email, department, login_password):
+    """Send department login credentials"""
+    context = {
+        'email': email,
+        'department': department,
+        'login_password': login_password,
+    }
+    send_email_template(
+        'department_credentials',
+        context,
+        email,
+        'Your Smart City Department Account Details - JanHelp'
+    )
+
+
+def send_city_admin_credentials_email(email, full_name, state, city, login_password, pincode='', contact_address=''):
+    """Send city admin login credentials"""
+    context = {
+        'email': email,
+        'full_name': full_name,
+        'state': state,
+        'city': city,
+        'login_password': login_password,
+        'pincode': pincode,
+        'contact_address': contact_address,
+    }
+    send_email_template(
+        'city_admin_credentials',
+        context,
+        email,
+        'Your Smart City City Admin Account Details - JanHelp'
+    )
+
+
+def send_password_reset_credentials_email(email, user_name, new_password, department=None, city_admin_info=None):
+    """Send password reset email with new credentials and account details"""
+    context = {
+        'email': email,
+        'user_name': user_name,
+        'new_password': new_password,
+        'department': department,
+        'city_admin_info': city_admin_info,
+    }
+    send_email_template(
+        'password_reset_credentials',
+        context,
+        email,
+        'Password Reset Successful - JanHelp'
     )
 
 

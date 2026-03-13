@@ -6,6 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.conf import settings
 from django.contrib import messages
 from django.http import JsonResponse
 from .models import (
@@ -28,169 +29,22 @@ import json
 import re
 import string
 import uuid
+from .email_utils import (
+    send_otp_email, 
+    send_password_reset_email, 
+    send_welcome_email, 
+    send_complaint_status_email, 
+    send_complaint_resolved_email, 
+    send_department_assignment_email,
+    send_department_credentials_email,
+    send_city_admin_credentials_email
+)
 from django.utils.text import slugify
 from django.urls import reverse
 from datetime import timedelta, datetime
 
 def generate_otp():
     return str(random.randint(100000, 999999))
-
-def send_otp_email(email, otp):
-    from threading import Thread
-    from django.template.loader import render_to_string
-    from django.core.mail import EmailMultiAlternatives
-    
-    def send():
-        try:
-            subject = 'Your Smart City OTP Code'
-            
-            # HTML email content with glassmorphism design
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Smart City OTP</title>
-                <style>
-                    body {{
-                        margin: 0;
-                        padding: 0;
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        min-height: 100vh;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }}
-                    .email-container {{
-                        max-width: 600px;
-                        margin: 20px;
-                        background: rgba(255, 255, 255, 0.25);
-                        backdrop-filter: blur(20px);
-                        -webkit-backdrop-filter: blur(20px);
-                        border-radius: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                        overflow: hidden;
-                    }}
-                    .header {{
-                        background: rgba(255, 255, 255, 0.1);
-                        padding: 30px;
-                        text-align: center;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-                    }}
-                    .logo {{
-                        font-size: 48px;
-                        color: #ffffff;
-                        margin-bottom: 10px;
-                    }}
-                    .title {{
-                        color: #ffffff;
-                        font-size: 28px;
-                        font-weight: 700;
-                        margin: 0;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    }}
-                    .subtitle {{
-                        color: rgba(255, 255, 255, 0.9);
-                        font-size: 16px;
-                        margin: 5px 0 0 0;
-                    }}
-                    .content {{
-                        padding: 40px 30px;
-                        text-align: center;
-                    }}
-                    .otp-box {{
-                        background: rgba(255, 255, 255, 0.9);
-                        border-radius: 15px;
-                        padding: 30px;
-                        margin: 20px 0;
-                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-                    }}
-                    .otp-label {{
-                        color: #333;
-                        font-size: 18px;
-                        font-weight: 600;
-                        margin-bottom: 15px;
-                    }}
-                    .otp-code {{
-                        font-size: 36px;
-                        font-weight: 800;
-                        color: #667eea;
-                        letter-spacing: 8px;
-                        margin: 10px 0;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    }}
-                    .message {{
-                        color: #ffffff;
-                        font-size: 16px;
-                        line-height: 1.6;
-                        margin: 20px 0;
-                    }}
-                    .footer {{
-                        background: rgba(0, 0, 0, 0.1);
-                        padding: 20px 30px;
-                        text-align: center;
-                        border-top: 1px solid rgba(255, 255, 255, 0.2);
-                    }}
-                    .footer-text {{
-                        color: rgba(255, 255, 255, 0.8);
-                        font-size: 14px;
-                        margin: 0;
-                    }}
-                    .security-note {{
-                        background: rgba(255, 193, 7, 0.2);
-                        border: 1px solid rgba(255, 193, 7, 0.3);
-                        border-radius: 10px;
-                        padding: 15px;
-                        margin: 20px 0;
-                        color: #ffffff;
-                        font-size: 14px;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="email-container">
-                    <div class="header">
-                        <div class="logo">🏛️</div>
-                        <h1 class="title">SMART CITY</h1>
-                        <p class="subtitle">Secure Access Code</p>
-                    </div>
-                    <div class="content">
-                        <div class="otp-box">
-                            <div class="otp-label">Your One-Time Password</div>
-                            <div class="otp-code">{otp}</div>
-                        </div>
-                        <p class="message">
-                            Use this OTP to complete your login to the Smart City portal. 
-                            This code is valid for 10 minutes and can only be used once.
-                        </p>
-                        <div class="security-note">
-                            🔒 <strong>Security Notice:</strong> Never share this OTP with anyone. 
-                            Smart City staff will never ask for your OTP.
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <p class="footer-text">
-                            © 2024 Smart City Portal | Secure Citizen Services
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Plain text fallback
-            text_content = f'Your Smart City OTP is: {otp}. This code is valid for 10 minutes.'
-            
-            msg = EmailMultiAlternatives(subject, text_content, 'noreply@smartcity.com', [email])
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
-            
-        except Exception:
-            pass  # Silently fail
-    Thread(target=send, daemon=True).start()
 
 
 def generate_strong_password(length=14):
@@ -222,610 +76,63 @@ def _is_strong_password(password):
     return has_upper and has_lower and has_digit and has_symbol
 
 
-def send_department_credentials_email(email, department, login_password):
-    """Send department login credentials and department details to department email."""
-    from threading import Thread
-    from django.core.mail import EmailMultiAlternatives
-    
-    def send():
-        try:
-            subject = 'Your Smart City Department Account Details'
-            
-            # HTML email content with glassmorphism design
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Department Account Details</title>
-                <style>
-                    body {{
-                        margin: 0;
-                        padding: 0;
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-                        min-height: 100vh;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }}
-                    .email-container {{
-                        max-width: 650px;
-                        margin: 20px;
-                        background: rgba(255, 255, 255, 0.25);
-                        backdrop-filter: blur(20px);
-                        -webkit-backdrop-filter: blur(20px);
-                        border-radius: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                        overflow: hidden;
-                    }}
-                    .header {{
-                        background: rgba(255, 255, 255, 0.1);
-                        padding: 30px;
-                        text-align: center;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-                    }}
-                    .logo {{
-                        font-size: 48px;
-                        color: #ffffff;
-                        margin-bottom: 10px;
-                    }}
-                    .title {{
-                        color: #ffffff;
-                        font-size: 28px;
-                        font-weight: 700;
-                        margin: 0;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    }}
-                    .subtitle {{
-                        color: rgba(255, 255, 255, 0.9);
-                        font-size: 16px;
-                        margin: 5px 0 0 0;
-                    }}
-                    .content {{
-                        padding: 30px;
-                    }}
-                    .welcome-message {{
-                        color: #ffffff;
-                        font-size: 18px;
-                        text-align: center;
-                        margin-bottom: 30px;
-                        line-height: 1.6;
-                    }}
-                    .info-section {{
-                        background: rgba(255, 255, 255, 0.9);
-                        border-radius: 15px;
-                        padding: 25px;
-                        margin: 20px 0;
-                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-                    }}
-                    .section-title {{
-                        color: #2563eb;
-                        font-size: 20px;
-                        font-weight: 700;
-                        margin-bottom: 15px;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                    }}
-                    .info-grid {{
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 15px;
-                        margin-bottom: 15px;
-                    }}
-                    .info-item {{
-                        display: flex;
-                        flex-direction: column;
-                    }}
-                    .info-label {{
-                        color: #64748b;
-                        font-size: 12px;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        margin-bottom: 5px;
-                    }}
-                    .info-value {{
-                        color: #1e293b;
-                        font-size: 16px;
-                        font-weight: 600;
-                    }}
-                    .credentials-box {{
-                        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                        color: #ffffff;
-                        border-radius: 15px;
-                        padding: 25px;
-                        margin: 20px 0;
-                        text-align: center;
-                        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-                    }}
-                    .credentials-title {{
-                        font-size: 20px;
-                        font-weight: 700;
-                        margin-bottom: 15px;
-                    }}
-                    .credential-item {{
-                        background: rgba(255, 255, 255, 0.2);
-                        border-radius: 10px;
-                        padding: 15px;
-                        margin: 10px 0;
-                        text-align: left;
-                    }}
-                    .credential-label {{
-                        font-size: 12px;
-                        opacity: 0.9;
-                        margin-bottom: 5px;
-                    }}
-                    .credential-value {{
-                        font-size: 16px;
-                        font-weight: 700;
-                        word-break: break-all;
-                    }}
-                    .security-note {{
-                        background: rgba(239, 68, 68, 0.2);
-                        border: 1px solid rgba(239, 68, 68, 0.3);
-                        border-radius: 10px;
-                        padding: 15px;
-                        margin: 20px 0;
-                        color: #ffffff;
-                        font-size: 14px;
-                        text-align: center;
-                    }}
-                    .footer {{
-                        background: rgba(0, 0, 0, 0.1);
-                        padding: 20px 30px;
-                        text-align: center;
-                        border-top: 1px solid rgba(255, 255, 255, 0.2);
-                    }}
-                    .footer-text {{
-                        color: rgba(255, 255, 255, 0.8);
-                        font-size: 14px;
-                        margin: 0;
-                    }}
-                    @media (max-width: 600px) {{
-                        .info-grid {{ grid-template-columns: 1fr; }}
-                        .email-container {{ margin: 10px; }}
-                        .content {{ padding: 20px; }}
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="email-container">
-                    <div class="header">
-                        <div class="logo">🏢</div>
-                        <h1 class="title">SMART CITY</h1>
-                        <p class="subtitle">Department Account Activated</p>
-                    </div>
-                    <div class="content">
-                        <p class="welcome-message">
-                            🎉 <strong>Congratulations!</strong> Your department account is now active and ready to serve citizens.
-                        </p>
-                        
-                        <div class="info-section">
-                            <div class="section-title">
-                                🏢 Department Information
-                            </div>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">Department Name</div>
-                                    <div class="info-value">{department.name}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Department Code</div>
-                                    <div class="info-value">#{department.unique_id}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Category</div>
-                                    <div class="info-value">{department.get_department_type_display()}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">SLA Hours</div>
-                                    <div class="info-value">{department.sla_hours} hours</div>
-                                </div>
-                            </div>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">State</div>
-                                    <div class="info-value">{department.state}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">City</div>
-                                    <div class="info-value">{department.city}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Phone</div>
-                                    <div class="info-value">{department.phone}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Email</div>
-                                    <div class="info-value">{department.email}</div>
-                                </div>
-                            </div>
-                            <div class="info-item" style="grid-column: 1 / -1;">
-                                <div class="info-label">Office Address</div>
-                                <div class="info-value">{department.address}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="credentials-box">
-                            <div class="credentials-title">🔑 Login Credentials</div>
-                            <div class="credential-item">
-                                <div class="credential-label">Login Email</div>
-                                <div class="credential-value">{email}</div>
-                            </div>
-                            <div class="credential-item">
-                                <div class="credential-label">Password</div>
-                                <div class="credential-value">{login_password}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="security-note">
-                            🔒 <strong>Important:</strong> Please log in and change your password immediately after first login. 
-                            Keep your credentials secure and never share them with unauthorized personnel.
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <p class="footer-text">
-                            © 2024 Smart City Portal | Department Management System
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Plain text fallback
-            text_content = f'''
-Your department account is now active.
-
-Department Name: {department.name}
-Department Code: {department.unique_id}
-Department Type: {department.get_department_type_display()}
-State: {department.state}
-City: {department.city}
-Office Address: {department.address}
-Contact Email: {department.email}
-Contact Phone: {department.phone}
-
-Login Email: {email}
-Login Password: {login_password}
-
-Please log in and change your password after first login.
-'''
-            
-            msg = EmailMultiAlternatives(subject, text_content, 'noreply@smartcity.com', [email])
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
-            
-        except Exception:
-            pass  # Silently fail
-    Thread(target=send, daemon=True).start()
-
-
-def send_city_admin_credentials_email(email, full_name, state, city, login_password, pincode='', contact_address=''):
-    """Send city admin login credentials and assignment details."""
-    from threading import Thread
-    from django.core.mail import EmailMultiAlternatives
-    
-    def send():
-        try:
-            subject = 'Your Smart City City Admin Account Details'
-            
-            # HTML email content with glassmorphism design
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>City Admin Account</title>
-                <style>
-                    body {{
-                        margin: 0;
-                        padding: 0;
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                        min-height: 100vh;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }}
-                    .email-container {{
-                        max-width: 650px;
-                        margin: 20px;
-                        background: rgba(255, 255, 255, 0.25);
-                        backdrop-filter: blur(20px);
-                        -webkit-backdrop-filter: blur(20px);
-                        border-radius: 20px;
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                        overflow: hidden;
-                    }}
-                    .header {{
-                        background: rgba(255, 255, 255, 0.1);
-                        padding: 30px;
-                        text-align: center;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-                    }}
-                    .logo {{
-                        font-size: 48px;
-                        color: #ffffff;
-                        margin-bottom: 10px;
-                    }}
-                    .title {{
-                        color: #ffffff;
-                        font-size: 28px;
-                        font-weight: 700;
-                        margin: 0;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                    }}
-                    .subtitle {{
-                        color: rgba(255, 255, 255, 0.9);
-                        font-size: 16px;
-                        margin: 5px 0 0 0;
-                    }}
-                    .content {{
-                        padding: 30px;
-                    }}
-                    .welcome-message {{
-                        color: #ffffff;
-                        font-size: 18px;
-                        text-align: center;
-                        margin-bottom: 30px;
-                        line-height: 1.6;
-                    }}
-                    .info-section {{
-                        background: rgba(255, 255, 255, 0.9);
-                        border-radius: 15px;
-                        padding: 25px;
-                        margin: 20px 0;
-                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-                    }}
-                    .section-title {{
-                        color: #10b981;
-                        font-size: 20px;
-                        font-weight: 700;
-                        margin-bottom: 15px;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                    }}
-                    .info-grid {{
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 15px;
-                        margin-bottom: 15px;
-                    }}
-                    .info-item {{
-                        display: flex;
-                        flex-direction: column;
-                    }}
-                    .info-label {{
-                        color: #64748b;
-                        font-size: 12px;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                        margin-bottom: 5px;
-                    }}
-                    .info-value {{
-                        color: #1e293b;
-                        font-size: 16px;
-                        font-weight: 600;
-                    }}
-                    .credentials-box {{
-                        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-                        color: #ffffff;
-                        border-radius: 15px;
-                        padding: 25px;
-                        margin: 20px 0;
-                        text-align: center;
-                        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-                    }}
-                    .credentials-title {{
-                        font-size: 20px;
-                        font-weight: 700;
-                        margin-bottom: 15px;
-                    }}
-                    .credential-item {{
-                        background: rgba(255, 255, 255, 0.2);
-                        border-radius: 10px;
-                        padding: 15px;
-                        margin: 10px 0;
-                        text-align: left;
-                    }}
-                    .credential-label {{
-                        font-size: 12px;
-                        opacity: 0.9;
-                        margin-bottom: 5px;
-                    }}
-                    .credential-value {{
-                        font-size: 16px;
-                        font-weight: 700;
-                        word-break: break-all;
-                    }}
-                    .security-note {{
-                        background: rgba(59, 130, 246, 0.2);
-                        border: 1px solid rgba(59, 130, 246, 0.3);
-                        border-radius: 10px;
-                        padding: 15px;
-                        margin: 20px 0;
-                        color: #ffffff;
-                        font-size: 14px;
-                        text-align: center;
-                    }}
-                    .footer {{
-                        background: rgba(0, 0, 0, 0.1);
-                        padding: 20px 30px;
-                        text-align: center;
-                        border-top: 1px solid rgba(255, 255, 255, 0.2);
-                    }}
-                    .footer-text {{
-                        color: rgba(255, 255, 255, 0.8);
-                        font-size: 14px;
-                        margin: 0;
-                    }}
-                    @media (max-width: 600px) {{
-                        .info-grid {{ grid-template-columns: 1fr; }}
-                        .email-container {{ margin: 10px; }}
-                        .content {{ padding: 20px; }}
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="email-container">
-                    <div class="header">
-                        <div class="logo">🏢</div>
-                        <h1 class="title">CITY ADMIN</h1>
-                        <p class="subtitle">Account Activated</p>
-                    </div>
-                    <div class="content">
-                        <p class="welcome-message">
-                            🎉 <strong>Welcome {full_name}!</strong><br>
-                            Your City Admin account is now active and ready to manage city services.
-                        </p>
-                        
-                        <div class="info-section">
-                            <div class="section-title">
-                                🏛️ Assignment Details
-                            </div>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">Assigned State</div>
-                                    <div class="info-value">{state}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Assigned City</div>
-                                    <div class="info-value">{city}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Pincode</div>
-                                    <div class="info-value">{pincode or 'Not specified'}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Admin Name</div>
-                                    <div class="info-value">{full_name}</div>
-                                </div>
-                            </div>
-                            <div class="info-item" style="grid-column: 1 / -1;">
-                                <div class="info-label">Contact Address</div>
-                                <div class="info-value">{contact_address or 'Not specified'}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="credentials-box">
-                            <div class="credentials-title">🔑 Login Credentials</div>
-                            <div class="credential-item">
-                                <div class="credential-label">Login Email</div>
-                                <div class="credential-value">{email}</div>
-                            </div>
-                            <div class="credential-item">
-                                <div class="credential-label">Username</div>
-                                <div class="credential-value">{email}</div>
-                            </div>
-                            <div class="credential-item">
-                                <div class="credential-label">Password</div>
-                                <div class="credential-value">{login_password}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="security-note">
-                            🔒 <strong>Important:</strong> Please log in and change your password immediately after first login. 
-                            As a City Admin, you have access to sensitive city data - keep your credentials secure.
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <p class="footer-text">
-                            © 2024 Smart City Portal | City Administration System
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Plain text fallback
-            text_content = f'''
-Hello {full_name},
-
-Your city admin account is now active.
-
-Assigned State: {state}
-Assigned City: {city}
-Pincode: {pincode}
-Contact Address: {contact_address}
-
-Login Email: {email}
-Login Username: {email}
-Login Password: {login_password}
-
-Please log in and change your password after first login.
-'''
-            
-            msg = EmailMultiAlternatives(subject, text_content, 'noreply@smartcity.com', [email])
-            msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=True)
-            
-        except Exception:
-            pass  # Silently fail
-    Thread(target=send, daemon=True).start()
-
-
 def _get_primary_complaint_email(complaint):
     if complaint.user and complaint.user.email:
         return complaint.user.email.strip()
     return (complaint.guest_email or '').strip()
 
 
+def _get_primary_complaint_phone(complaint):
+    if complaint.user and hasattr(complaint.user, 'citizenprofile') and complaint.user.citizenprofile.mobile_no:
+        return complaint.user.citizenprofile.mobile_no.strip()
+    return (complaint.guest_phone or '').strip()
+
+
 def _send_complaint_notification_email(complaint, event, actor_name='System'):
     from threading import Thread
+    from .sms_utils import send_sms
     def send():
         try:
+            # Email Notification
             citizen_email = _get_primary_complaint_email(complaint)
             department_email = (complaint.assigned_department.email if complaint.assigned_department else '').strip()
-            recipients = {email for email in [citizen_email, department_email] if email}
-            if not recipients:
-                return
-
-            current_status = complaint.get_work_status_display()
-            department_name = complaint.assigned_department.name if complaint.assigned_department else 'Not Assigned'
-            complaint_no = complaint.complaint_number
-
-            event_subjects = {
-                'assigned': f'Complaint {complaint_no} assigned to {department_name}',
-                'status_changed': f'Complaint {complaint_no} status changed to {current_status}',
-                'closure': f'Complaint {complaint_no} marked as solved',
-                'reopened': f'Complaint {complaint_no} reopened by citizen',
+            
+            # Use polished templates from email_utils
+            user_name = complaint.user.get_full_name() if complaint.user else (complaint.guest_name or 'Citizen')
+            
+            complaint_data = {
+                'complaint_number': complaint.complaint_number,
+                'complaint_title': complaint.title,
+                'status_text': complaint.get_work_status_display(),
+                'status_class': complaint.work_status,
+                'submitted_date': complaint.created_at.strftime("%Y-%m-%d"),
+                'department_name': complaint.assigned_department.name if complaint.assigned_department else 'Not Assigned',
+                'location': f"{complaint.city}, {complaint.state}",
+                'updated_date': timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'status_message': f"Update by {actor_name}",
             }
-            subject = event_subjects.get(event, f'Complaint {complaint_no} update')
 
-            body = (
-                f'Complaint Number: {complaint_no}\n'
-                f'Title: {complaint.title}\n'
-                f'Category: {complaint.get_complaint_type_display()}\n'
-                f'Current Status: {current_status}\n'
-                f'Department: {department_name}\n'
-                f'City/State: {complaint.city}, {complaint.state}\n'
-                f'Updated By: {actor_name}\n'
-                f'Updated At: {timezone.now().strftime("%Y-%m-%d %H:%M:%S UTC")}\n'
-            )
+            if event == 'closure':
+                if citizen_email:
+                    send_complaint_resolved_email(citizen_email, user_name, complaint_data)
+                if department_email and department_email != citizen_email:
+                    send_complaint_resolved_email(department_email, 'Department Admin', complaint_data)
+            else:
+                if citizen_email:
+                    send_complaint_status_email(citizen_email, user_name, complaint_data)
+                if department_email and department_email != citizen_email:
+                    send_complaint_status_email(department_email, 'Department Admin', complaint_data)
 
-            if event == 'reopened' and complaint.reopen_reason:
-                body += f'\nReopen Reason:\n{complaint.reopen_reason}\n'
+            # SMS Notification
+            citizen_phone = _get_primary_complaint_phone(complaint)
+            department_phone = (complaint.assigned_department.phone if complaint.assigned_department else '').strip()
+            
+            sms_recipients = {phone for phone in [citizen_phone, department_phone] if phone}
+            if sms_recipients:
+                sms_message = f"Smart City Update: Complaint #{complaint_no} status is now '{current_status}'. Dept: {department_name}."
+                for phone in sms_recipients:
+                    send_sms(phone, sms_message)
 
-            if complaint.resolution_notes:
-                body += f'\nLatest Notes:\n{complaint.resolution_notes}\n'
-
-            send_mail(
-                subject,
-                body,
-                'noreply@smartcity.com',
-                list(recipients),
-                fail_silently=True,
-            )
         except Exception:
             pass  # Silently fail
     Thread(target=send, daemon=True).start()
@@ -1385,6 +692,19 @@ def verify_otp_view(request):
                     address=data['address'],
                     mobile_no=data['mobile_no']
                 )
+                
+                # Send welcome email
+                try:
+                    send_welcome_email(
+                        user_email=user.email,
+                        user_name=f"{user.first_name} {user.last_name}",
+                        user_mobile=data['mobile_no'],
+                        join_date=timezone.now().strftime("%Y-%m-%d"),
+                        user_role="Citizen"
+                    )
+                except Exception:
+                    pass
+                    
                 login(request, user)
                 messages.success(request, 'Registration verified successfully!')
                 return redirect('user_dashboard')
@@ -1604,10 +924,13 @@ def preview_complaint(request):
             from threading import Thread
             Thread(target=send_complaint_email, args=(complaint, complaint_data)).start()
             
+            # Send SMS
+            send_complaint_sms(complaint)
+            
             # Clear draft
             del request.session['complaint_draft']
             
-            messages.success(request, 'Complaint submitted successfully! Confirmation email sent.')
+            messages.success(request, 'Complaint submitted successfully! Confirmation email and SMS sent.')
             return redirect('user_dashboard')
         elif 'back' in request.POST:
             if complaint_data.get('is_guest'):
@@ -1649,11 +972,20 @@ def send_complaint_email(complaint, data):
     email = EmailMessage(
         f'Complaint Submitted - #{complaint.id:05d}',
         f'Your complaint has been submitted successfully. Please find the receipt attached.',
-        'noreply@smartcity.com',
+        settings.DEFAULT_FROM_EMAIL,
         [data.get('email')]
     )
     email.attach(f'complaint_{complaint.id}.pdf', buffer.getvalue(), 'application/pdf')
     email.send(fail_silently=True)
+
+
+def send_complaint_sms(complaint):
+    """Send SMS notification to citizen when complaint is submitted."""
+    from .sms_utils import send_sms
+    phone = _get_primary_complaint_phone(complaint)
+    if phone:
+        msg = f"Smart City: Your complaint #{complaint.complaint_number} has been submitted successfully. Track status at our portal."
+        send_sms(phone, msg)
 
 def submit_complaint(request):
     is_guest = request.GET.get('guest') == 'true'
@@ -1805,6 +1137,9 @@ def guest_complaint(request):
         }
         
         complaint = Complaint.objects.create(**complaint_data)
+
+        # Send notifications
+        send_complaint_sms(complaint)
 
         if complaint.assigned_department:
             _send_complaint_notification_email(
@@ -5363,315 +4698,65 @@ def forgot_password(request):
             return render(request, 'forgot_password.html')
         
         # Always show success message immediately for security
-        messages.success(request, f'If {email} is registered as a department account, a password reset email with your department details will be sent shortly.')
+        messages.success(request, f'If {email} is registered as a department or admin account, a password reset email with your account details will be sent shortly.')
         
         # Send email in background thread
         from threading import Thread
         
         def send_reset_email():
             try:
-                # Check if email belongs to a department user
+                # Check if email belongs to a department user or city admin
                 user = User.objects.filter(email__iexact=email).first()
                 if not user:
                     return
                 
-                dept_user = DepartmentUser.objects.filter(user=user).first()
-                if not dept_user:
-                    return
+                dept_user = DepartmentUser.objects.filter(user=user).select_related('department').first()
+                city_admin = CityAdmin.objects.filter(user=user).first()
                 
-                department = dept_user.department
+                if not dept_user and not city_admin:
+                    return
                 
                 # Generate a new password
                 new_password = generate_strong_password(12)
                 user.set_password(new_password)
                 user.save()
                 
-                # Send email with department details and new password using new template
-                send_department_credentials_email(
-                    email=email,
-                    department=department,
-                    login_password=new_password
-                )
+                # Import the new email function
+                from .email_utils import send_password_reset_credentials_email
                 
-                # HTML email content with glassmorphism design
-                html_content = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Password Reset</title>
-                    <style>
-                        body {{
-                            margin: 0;
-                            padding: 0;
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-                            min-height: 100vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }}
-                        .email-container {{
-                            max-width: 650px;
-                            margin: 20px;
-                            background: rgba(255, 255, 255, 0.25);
-                            backdrop-filter: blur(20px);
-                            -webkit-backdrop-filter: blur(20px);
-                            border-radius: 20px;
-                            border: 1px solid rgba(255, 255, 255, 0.3);
-                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-                            overflow: hidden;
-                        }}
-                        .header {{
-                            background: rgba(255, 255, 255, 0.1);
-                            padding: 30px;
-                            text-align: center;
-                            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-                        }}
-                        .logo {{
-                            font-size: 48px;
-                            color: #ffffff;
-                            margin-bottom: 10px;
-                        }}
-                        .title {{
-                            color: #ffffff;
-                            font-size: 28px;
-                            font-weight: 700;
-                            margin: 0;
-                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                        }}
-                        .subtitle {{
-                            color: rgba(255, 255, 255, 0.9);
-                            font-size: 16px;
-                            margin: 5px 0 0 0;
-                        }}
-                        .content {{
-                            padding: 30px;
-                        }}
-                        .alert-message {{
-                            background: rgba(239, 68, 68, 0.2);
-                            border: 1px solid rgba(239, 68, 68, 0.3);
-                            border-radius: 15px;
-                            padding: 20px;
-                            margin: 20px 0;
-                            color: #ffffff;
-                            text-align: center;
-                            font-size: 16px;
-                        }}
-                        .info-section {{
-                            background: rgba(255, 255, 255, 0.9);
-                            border-radius: 15px;
-                            padding: 25px;
-                            margin: 20px 0;
-                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-                        }}
-                        .section-title {{
-                            color: #f39c12;
-                            font-size: 20px;
-                            font-weight: 700;
-                            margin-bottom: 15px;
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                        }}
-                        .info-grid {{
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 15px;
-                            margin-bottom: 15px;
-                        }}
-                        .info-item {{
-                            display: flex;
-                            flex-direction: column;
-                        }}
-                        .info-label {{
-                            color: #64748b;
-                            font-size: 12px;
-                            font-weight: 600;
-                            text-transform: uppercase;
-                            letter-spacing: 0.5px;
-                            margin-bottom: 5px;
-                        }}
-                        .info-value {{
-                            color: #1e293b;
-                            font-size: 16px;
-                            font-weight: 600;
-                        }}
-                        .credentials-box {{
-                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                            color: #ffffff;
-                            border-radius: 15px;
-                            padding: 25px;
-                            margin: 20px 0;
-                            text-align: center;
-                            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-                        }}
-                        .credentials-title {{
-                            font-size: 20px;
-                            font-weight: 700;
-                            margin-bottom: 15px;
-                        }}
-                        .credential-item {{
-                            background: rgba(255, 255, 255, 0.2);
-                            border-radius: 10px;
-                            padding: 15px;
-                            margin: 10px 0;
-                            text-align: left;
-                        }}
-                        .credential-label {{
-                            font-size: 12px;
-                            opacity: 0.9;
-                            margin-bottom: 5px;
-                        }}
-                        .credential-value {{
-                            font-size: 16px;
-                            font-weight: 700;
-                            word-break: break-all;
-                        }}
-                        .security-note {{
-                            background: rgba(59, 130, 246, 0.2);
-                            border: 1px solid rgba(59, 130, 246, 0.3);
-                            border-radius: 10px;
-                            padding: 15px;
-                            margin: 20px 0;
-                            color: #ffffff;
-                            font-size: 14px;
-                            text-align: center;
-                        }}
-                        .footer {{
-                            background: rgba(0, 0, 0, 0.1);
-                            padding: 20px 30px;
-                            text-align: center;
-                            border-top: 1px solid rgba(255, 255, 255, 0.2);
-                        }}
-                        .footer-text {{
-                            color: rgba(255, 255, 255, 0.8);
-                            font-size: 14px;
-                            margin: 0;
-                        }}
-                        @media (max-width: 600px) {{
-                            .info-grid {{ grid-template-columns: 1fr; }}
-                            .email-container {{ margin: 10px; }}
-                            .content {{ padding: 20px; }}
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="email-container">
-                        <div class="header">
-                            <div class="logo">🔑</div>
-                            <h1 class="title">PASSWORD RESET</h1>
-                            <p class="subtitle">Department Account Security</p>
-                        </div>
-                        <div class="content">
-                            <div class="alert-message">
-                                ⚠️ <strong>Security Alert:</strong> Your department password has been reset as requested.
-                            </div>
-                            
-                            <div class="info-section">
-                                <div class="section-title">
-                                    🏢 Department Information
-                                </div>
-                                <div class="info-grid">
-                                    <div class="info-item">
-                                        <div class="info-label">Department Name</div>
-                                        <div class="info-value">{department.name}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Department Code</div>
-                                        <div class="info-value">#{department.unique_id}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Category</div>
-                                        <div class="info-value">{department.get_department_type_display()}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Location</div>
-                                        <div class="info-value">{department.city}, {department.state}</div>
-                                    </div>
-                                </div>
-                                <div class="info-grid">
-                                    <div class="info-item">
-                                        <div class="info-label">Phone</div>
-                                        <div class="info-value">{department.phone}</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Email</div>
-                                        <div class="info-value">{department.email}</div>
-                                    </div>
-                                </div>
-                                <div class="info-item" style="grid-column: 1 / -1;">
-                                    <div class="info-label">Office Address</div>
-                                    <div class="info-value">{department.address}</div>
-                                </div>
-                            </div>
-                            
-                            <div class="credentials-box">
-                                <div class="credentials-title">🆕 New Login Credentials</div>
-                                <div class="credential-item">
-                                    <div class="credential-label">Login Email</div>
-                                    <div class="credential-value">{email}</div>
-                                </div>
-                                <div class="credential-item">
-                                    <div class="credential-label">New Password</div>
-                                    <div class="credential-value">{new_password}</div>
-                                </div>
-                            </div>
-                            
-                            <div class="security-note">
-                                🔒 <strong>Important Security Steps:</strong><br>
-                                1. Log in immediately and change this password<br>
-                                2. Use a strong, unique password<br>
-                                3. If you didn't request this reset, contact your administrator immediately
-                            </div>
-                        </div>
-                        <div class="footer">
-                            <p class="footer-text">
-                                © 2024 Smart City Portal | Secure Department Access
-                            </p>
-                        </div>
-                    </div>
-                </body>
-                </html>
-                """
+                user_name = user.get_full_name() or user.username
                 
-                # Plain text fallback
-                text_content = f'''
-Hello {user.get_full_name() or user.username},
-
-Your password has been reset for your department account.
-
-Department Details:
-Department Name: {department.name}
-Department Code: {department.unique_id}
-Department Type: {department.get_department_type_display()}
-State: {department.state}
-City: {department.city}
-Office Address: {department.address}
-Contact Email: {department.email}
-Contact Phone: {department.phone}
-
-Login Credentials:
-Email: {email}
-New Password: {new_password}
-
-Please log in and change your password after first login.
-
-If you did not request this password reset, please contact your administrator immediately.
-'''
-                
-                msg = EmailMultiAlternatives(subject, text_content, 'noreply@smartcity.com', [email])
-                msg.attach_alternative(html_content, "text/html")
-                msg.send(fail_silently=True)
+                if dept_user:
+                    # Send email with department details and new password
+                    send_password_reset_credentials_email(
+                        email=email,
+                        user_name=user_name,
+                        new_password=new_password,
+                        department=dept_user.department,
+                        city_admin_info=None
+                    )
+                elif city_admin:
+                    # Send email with city admin details and new password
+                    city_admin_info = {
+                        'full_name': user_name,
+                        'city': city_admin.city_name,
+                        'state': city_admin.state,
+                        'pincode': city_admin.pincode,
+                        'contact_address': city_admin.contact_address
+                    }
+                    send_password_reset_credentials_email(
+                        email=email,
+                        user_name=user_name,
+                        new_password=new_password,
+                        department=None,
+                        city_admin_info=city_admin_info
+                    )
                 
             except Exception:
                 pass  # Silently fail for security
         
-        # Start background thread
         Thread(target=send_reset_email, daemon=True).start()
-        
-        # Redirect immediately without waiting for email
         return redirect('login')
     
     return render(request, 'forgot_password.html')
+
