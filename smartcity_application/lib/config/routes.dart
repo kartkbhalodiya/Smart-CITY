@@ -7,6 +7,7 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/complaints/category_selection_screen.dart';
 import '../screens/complaints/submit_complaint_screen.dart';
 import '../screens/complaints/track_complaints_screen.dart';
+import '../screens/complaints/guest_track_screen.dart';
 import '../screens/complaints/complaint_detail_screen.dart';
 import '../screens/profile/profile_screen.dart';
 
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String categorySelection = '/category-selection';
   static const String submitComplaint = '/submit-complaint';
   static const String trackComplaints = '/track-complaints';
+  static const String guestTrack = '/guest-track';
   static const String complaintDetail = '/complaint-detail';
   static const String profile = '/profile';
 
@@ -53,6 +55,9 @@ class AppRoutes {
             categoryName: args?['categoryName'],
           ),
         );
+      
+      case guestTrack:
+        return MaterialPageRoute(builder: (_) => const GuestTrackScreen());
       
       case trackComplaints:
         return MaterialPageRoute(builder: (_) => const TrackComplaintsScreen());

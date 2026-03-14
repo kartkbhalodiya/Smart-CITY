@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       })),
                       const SizedBox(width: 8),
                       Expanded(child: _outlineBtn(Icons.search, 'Track', () {
-                        Navigator.pushNamed(context, AppRoutes.trackComplaints);
+                        Navigator.pushNamed(context, AppRoutes.guestTrack);
                       })),
                     ]),
                     const SizedBox(height: 14),

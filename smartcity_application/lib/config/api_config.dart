@@ -32,6 +32,9 @@ class ApiConfig {
   // Department Endpoints
   static const String departments = '$baseUrl/departments/';
   
+  // Guest Track
+  static const String trackGuest = '$baseUrl/track-guest/';
+  
   // Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

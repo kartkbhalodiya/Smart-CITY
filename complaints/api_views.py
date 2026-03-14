@@ -377,6 +377,46 @@ def get_subcategories(request, category_key):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
+# Guest Track Complaint
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def track_guest_complaint_api(request):
+    complaint_number = request.data.get('complaint_number', '').strip()
+    phone = request.data.get('phone', '').strip()
+    if not complaint_number or not phone:
+        return Response({'success': False, 'message': 'Complaint ID and mobile number are required'}, status=status.HTTP_400_BAD_REQUEST)
+    complaint = None
+    try:
+        complaint = Complaint.objects.select_related('assigned_department').get(complaint_number=complaint_number, guest_phone=phone)
+    except Complaint.DoesNotExist:
+        pass
+    if not complaint:
+        for comp in Complaint.objects.filter(complaint_number=complaint_number, user__isnull=False).select_related('assigned_department', 'user__citizenprofile'):
+            if comp.user and hasattr(comp.user, 'citizenprofile') and comp.user.citizenprofile.mobile_no == phone:
+                complaint = comp
+                break
+    if not complaint:
+        return Response({'success': False, 'message': 'Invalid complaint ID or mobile number'}, status=status.HTTP_404_NOT_FOUND)
+    dept = complaint.assigned_department
+    data = {
+        'complaint_number': complaint.complaint_number,
+        'title': complaint.title,
+        'complaint_type': complaint.get_complaint_type_display(),
+        'work_status': complaint.work_status,
+        'description': complaint.description,
+        'city': complaint.city or '',
+        'state': complaint.state or '',
+        'pincode': complaint.pincode or '',
+        'created_at': complaint.created_at.strftime('%d %b %Y, %I:%M %p'),
+        'updated_at': complaint.updated_at.strftime('%d %b %Y, %I:%M %p') if complaint.updated_at else None,
+        'assigned_department': dept.name if dept else None,
+        'contact_name': complaint.user.get_full_name() if complaint.user else (complaint.guest_name or ''),
+        'mobile': complaint.user.citizenprofile.mobile_no if (complaint.user and hasattr(complaint.user, 'citizenprofile')) else (complaint.guest_phone or ''),
+        'email': complaint.user.email if complaint.user else (complaint.guest_email or ''),
+    }
+    return Response({'success': True, 'complaint': data})
+
+
 # Department Views
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

@@ -4,7 +4,8 @@ from .api_views import (
     ComplaintViewSet,
     register_user, send_otp, verify_otp, logout_user,
     user_profile, dashboard_stats,
-    get_categories, get_subcategories, get_departments
+    get_categories, get_subcategories, get_departments,
+    track_guest_complaint_api
 )
 
 router = DefaultRouter()
@@ -29,6 +30,9 @@ urlpatterns = [
     
     # Departments
     path('departments/', get_departments, name='api_departments'),
+    
+    # Guest Track
+    path('track-guest/', track_guest_complaint_api, name='api_track_guest'),
     
     # Router URLs
     path('', include(router.urls)),
