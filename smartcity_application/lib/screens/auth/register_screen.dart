@@ -141,8 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             // Logo + title
             Center(
               child: Column(children: [
-                Image.network('https://res.cloudinary.com/dk1q50evg/image/upload/logo',
-                  height: 64, errorBuilder: (_, __, ___) => const Icon(Icons.location_city, size: 64, color: Color(0xFF1E66F5))),
+                Image.asset('assets/images/logo.png', height: 64),
                 const SizedBox(height: 8),
                 Text('COMPLAINT MANAGEMENT SYSTEM', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
                 const SizedBox(height: 6),

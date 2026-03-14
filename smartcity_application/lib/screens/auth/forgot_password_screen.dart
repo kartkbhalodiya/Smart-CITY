@@ -71,20 +71,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     return Scaffold(
       body: Stack(children: [
         // Background image
-        Image.network(
-          'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
+        Image.asset(
+          'assets/images/login_bg.jpg',
           fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (_, __, ___) => Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-              ),
-            ),
-          ),
         ),
         // Blur layer
         BackdropFilter(
@@ -125,12 +116,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   Widget _formView() {
     return Column(mainAxisSize: MainAxisSize.min, children: [
       // Logo
-      Image.network(
-        'https://res.cloudinary.com/dk1q50evg/image/upload/logo',
-        height: 60,
-        errorBuilder: (_, __, ___) =>
-            const Icon(Icons.location_city, size: 56, color: Color(0xFF1E66F5)),
-      ),
+      Image.asset('assets/images/logo.png', height: 60),
       const SizedBox(height: 6),
       Text(
         'COMPLAINT MANAGEMENT SYSTEM',
@@ -307,12 +293,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   Widget _successView() {
     return Column(mainAxisSize: MainAxisSize.min, children: [
-      Image.network(
-        'https://res.cloudinary.com/dk1q50evg/image/upload/logo',
-        height: 60,
-        errorBuilder: (_, __, ___) =>
-            const Icon(Icons.location_city, size: 56, color: Color(0xFF1E66F5)),
-      ),
+      Image.asset('assets/images/logo.png', height: 60),
       const SizedBox(height: 24),
 
       // Success icon

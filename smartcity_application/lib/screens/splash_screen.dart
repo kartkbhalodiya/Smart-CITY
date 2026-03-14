@@ -5,8 +5,6 @@ import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
 
-const _logoUrl = 'https://res.cloudinary.com/dk1q50evg/image/upload/logo';
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -155,26 +153,9 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(18),
-                    child: Image.network(
-                      _logoUrl,
+                    child: Image.asset(
+                      'assets/images/logo.png',
                       fit: BoxFit.contain,
-                      loadingBuilder: (_, child, progress) => progress == null
-                          ? child
-                          : const Center(
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                            ),
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.location_city_rounded,
-                        size: 58,
-                        color: AppColors.primaryBlue,
-                      ),
                     ),
                   ),
                 ),
