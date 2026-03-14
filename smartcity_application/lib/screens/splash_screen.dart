@@ -5,6 +5,8 @@ import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
 
+const _logoUrl = 'https://res.cloudinary.com/dk1q50evg/image/upload/logo';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -122,26 +124,58 @@ class _SplashScreenState extends State<SplashScreen>
           children: [
             const Spacer(flex: 2),
 
-            // Logo
+            // Logo from Cloudinary
             FadeTransition(
               opacity: _logoFade,
               child: ScaleTransition(
                 scale: _logoScale,
                 child: Container(
-                  width: 110,
-                  height: 110,
+                  width: 130,
+                  height: 130,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryBlue.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(32),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(36),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryBlue.withOpacity(0.12),
+                        blurRadius: 30,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                     border: Border.all(
-                      color: AppColors.primaryBlue.withOpacity(0.15),
-                      width: 1.5,
+                      color: AppColors.border,
+                      width: 1,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.location_city_rounded,
-                    size: 58,
-                    color: AppColors.primaryBlue,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(35),
+                    child: Image.network(
+                      _logoUrl,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (_, child, progress) => progress == null
+                          ? child
+                          : const Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryBlue,
+                                ),
+                              ),
+                            ),
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.location_city_rounded,
+                        size: 58,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -159,19 +193,27 @@ class _SplashScreenState extends State<SplashScreen>
                     Text(
                       'JanHelp',
                       style: GoogleFonts.poppins(
-                        fontSize: 34,
+                        fontSize: 36,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textDark,
                         letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      'Smart City Complaint System',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textMuted,
-                        letterSpacing: 1.1,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '🏛️ Smart City Complaint System',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.primaryBlue,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                     ),
                   ],
@@ -181,29 +223,91 @@ class _SplashScreenState extends State<SplashScreen>
 
             const Spacer(flex: 2),
 
-            // Rotating city quote
+            // Rotating city quote card
             FadeTransition(
               opacity: _quoteFade,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 36),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
                 child: Text(
                   _quotes[_quoteIndex],
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: AppColors.textDark.withOpacity(0.75),
-                    height: 1.5,
+                    fontSize: 14,
+                    color: AppColors.textDark.withOpacity(0.8),
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+
+            // Quote dot indicators
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_quotes.length, (i) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: i == _quoteIndex ? 18 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: i == _quoteIndex
+                        ? AppColors.primaryBlue
+                        : AppColors.border,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+
+            const SizedBox(height: 28),
 
             // Loading dots
             _LoadingDots(),
 
+            const SizedBox(height: 6),
+            Text(
+              'Loading...',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: AppColors.textMuted,
+                letterSpacing: 0.5,
+              ),
+            ),
+
             const Spacer(),
+
+            // Footer
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Column(
+                children: [
+                  Text(
+                    'Made with ❤️ in India 🇮🇳',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'v1.0.0',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      color: AppColors.border,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
