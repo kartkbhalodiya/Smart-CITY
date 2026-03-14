@@ -37,6 +37,9 @@ class ApiConfig {
 
   // Department Forgot Password
   static const String departmentForgotPassword = '$baseUrl/auth/department-forgot-password/';
+
+  // States & Cities
+  static const String statesCities = '$baseUrl/states-cities/';
   
   // Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);

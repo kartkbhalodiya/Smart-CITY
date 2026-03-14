@@ -5,7 +5,8 @@ from .api_views import (
     register_user, send_otp, verify_otp, logout_user,
     user_profile, dashboard_stats,
     get_categories, get_subcategories, get_departments,
-    track_guest_complaint_api, department_forgot_password
+    track_guest_complaint_api, department_forgot_password,
+    get_states_cities
 )
 
 router = DefaultRouter()
@@ -36,6 +37,9 @@ urlpatterns = [
     
     # Department Forgot Password
     path('auth/department-forgot-password/', department_forgot_password, name='api_dept_forgot_password'),
+    
+    # States & Cities
+    path('states-cities/', get_states_cities, name='api_states_cities'),
     
     # Router URLs
     path('', include(router.urls)),

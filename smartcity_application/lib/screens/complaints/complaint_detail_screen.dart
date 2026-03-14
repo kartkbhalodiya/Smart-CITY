@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/complaint_provider.dart';
@@ -45,6 +47,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 const Divider(height: 40),
                 _buildInfoSection('Description', complaint.description),
                 _buildInfoSection('Location', complaint.address),
+                if (complaint.latitude != 0.0 && complaint.longitude != 0.0)
+                  _buildMapSection(complaint.latitude, complaint.longitude, complaint.title),
                 _buildInfoSection('Department', complaint.assignedDepartment?.name ?? 'Not Assigned'),
                 if (complaint.media != null && complaint.media!.isNotEmpty)
                   _buildMediaSection(complaint.media!),
@@ -83,6 +87,42 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
         ),
       ],
+    );
+  }
+
+  Widget _buildMapSection(double lat, double lng, String title) {
+    final position = LatLng(lat, lng);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('GPS Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryBlue)),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              height: 220,
+              child: FlutterMap(
+                options: MapOptions(initialCenter: position, initialZoom: 15),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.janhelp.app',
+                  ),
+                  MarkerLayer(markers: [
+                    Marker(
+                      point: position,
+                      width: 40, height: 40,
+                      child: const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 40),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

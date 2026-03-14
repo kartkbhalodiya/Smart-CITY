@@ -417,6 +417,25 @@ def track_guest_complaint_api(request):
     return Response({'success': True, 'complaint': data})
 
 
+# States & Cities Views
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_states_cities(request):
+    """Get all admin-managed states and their cities"""
+    from .models import ManagedState, ManagedCity
+    states = list(ManagedState.objects.order_by('name').values('id', 'name'))
+    cities = list(ManagedCity.objects.select_related('state').order_by('name').values('id', 'name', 'state__name'))
+    cities_by_state = {}
+    for city in cities:
+        state_name = city['state__name']
+        cities_by_state.setdefault(state_name, []).append(city['name'])
+    return Response({
+        'success': True,
+        'states': [s['name'] for s in states],
+        'cities_by_state': cities_by_state,
+    })
+
+
 # Department Views
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
