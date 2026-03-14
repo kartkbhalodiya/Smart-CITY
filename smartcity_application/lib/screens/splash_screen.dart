@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/theme.dart';
@@ -98,19 +100,26 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigate() async {
     if (!mounted) return;
 
-    // Check if permissions have been requested before
-    final prefs = await SharedPreferences.getInstance();
-    final permsDone = prefs.getBool('permissions_requested') ?? false;
+    // Check actual permission status every launch
+    final locPerm = await Geolocator.checkPermission();
+    final camPerm = await Permission.camera.status;
+    final notifPerm = await Permission.notification.status;
+    final photosPerm = await Permission.photos.status;
+
+    final allGranted = (locPerm == LocationPermission.always || locPerm == LocationPermission.whileInUse)
+        && camPerm.isGranted
+        && notifPerm.isGranted
+        && photosPerm.isGranted;
 
     if (!mounted) return;
 
-    if (!permsDone) {
-      // Show permission screen first, then continue
+    if (!allGranted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => PermissionScreen(
             onDone: () async {
+              if (!mounted) return;
               final authProvider = Provider.of<AuthProvider>(context, listen: false);
               await authProvider.loadUser();
               if (!mounted) return;
@@ -128,11 +137,10 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.loadUser();
     if (!mounted) return;
-    if (authProvider.isAuthenticated) {
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
-    } else {
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
-    }
+    Navigator.pushReplacementNamed(
+      context,
+      authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
+    );
   }
 
   @override
