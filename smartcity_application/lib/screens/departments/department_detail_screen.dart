@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -142,7 +143,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
             ]),
           ),
 
-          Expanded(child: SingleChildScrollView(children: [
+          Expanded(child: SingleChildScrollView(child: Column(children: [
             // ── Map ──────────────────────────────────────────────────────
             SizedBox(
               height: 260,
@@ -377,7 +378,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 ),
               ]),
             ),
-          ])),
+          ]))),
         ]),
       ),
     );
@@ -444,7 +445,7 @@ class _PinTail extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color;
-    final path = Path()
+    final path = ui.Path()
       ..moveTo(0, 0)
       ..lineTo(size.width / 2, size.height)
       ..lineTo(size.width, 0)
