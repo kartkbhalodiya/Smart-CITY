@@ -153,8 +153,8 @@ class _SplashScreenState extends State<SplashScreen>
                       width: 1,
                     ),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(35),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
                     child: Image.network(
                       _logoUrl,
                       fit: BoxFit.contain,
