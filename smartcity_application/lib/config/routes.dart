@@ -13,6 +13,7 @@ import '../screens/complaints/complaint_detail_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/dashboard/guest_dashboard_screen.dart';
 import '../screens/departments/departments_list_screen.dart';
+import '../screens/departments/departments_by_category_screen.dart';
 import '../screens/departments/department_detail_screen.dart';
 
 class AppRoutes {
@@ -24,6 +25,7 @@ class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String guestDashboard = '/guest-dashboard';
   static const String departmentsList = '/departments-list';
+  static const String departmentsByCategory = '/departments-by-category';
   static const String departmentDetail = '/department-detail';
   static const String categorySelection = '/category-selection';
   static const String submitComplaint = '/submit-complaint';
@@ -60,6 +62,17 @@ class AppRoutes {
 
       case departmentsList:
         return MaterialPageRoute(builder: (_) => const DepartmentsListScreen());
+
+      case departmentsByCategory:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => DepartmentsByCategoryScreen(
+            categoryKey: args?['key'] ?? 'other',
+            categoryName: args?['name'] ?? 'Department',
+            categoryEmoji: args?['emoji'] ?? '🏢',
+            categoryBg: args?['bg'] as Color? ?? const Color(0xFFF8FAFC),
+          ),
+        );
 
       case departmentDetail:
         final args = settings.arguments as Map<String, dynamic>?;
