@@ -81,9 +81,8 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
 
   Widget _header() {
     return Container(
-      color: Colors.white,
+      decoration: const BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))]),
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 16, right: 16, bottom: 12),
-      decoration: const BoxDecoration(boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2))]),
       child: Row(children: [
         GestureDetector(
           onTap: () => Navigator.pop(context),
