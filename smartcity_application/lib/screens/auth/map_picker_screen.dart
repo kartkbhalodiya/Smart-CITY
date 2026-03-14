@@ -36,7 +36,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   Future<void> _initLocation() async {
-    // Detect real location automatically
     final pos = await LocationService.getCurrentLocation();
     if (!mounted) return;
     if (pos != null) {
@@ -44,20 +43,24 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       setState(() {
         _pickedLocation = loc;
         _detectingLocation = false;
+        _mapLoading = false;
       });
-      // Wait for map to be ready then animate zoom to user location
-      await Future.delayed(const Duration(milliseconds: 400));
-      if (mounted) {
-        _mapController.move(loc, 16.0);
-        _fetchAddress(loc);
-      }
+      // Give map widget time to build with new center, then move
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            _mapController.move(loc, 16.0);
+            _fetchAddress(loc);
+          }
+        });
+      });
     } else {
       setState(() {
         _detectingLocation = false;
+        _mapLoading = false;
         _addressText = 'Tap on map to select location';
       });
     }
-    if (mounted) setState(() => _mapLoading = false);
   }
 
   Future<void> _fetchAddress(LatLng pos) async {
@@ -82,7 +85,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _pickedLocation,
-              initialZoom: 5.0,
+              initialZoom: _mapLoading ? 5.0 : 16.0,
               onTap: (_, latlng) {
                 setState(() => _pickedLocation = latlng);
                 _fetchAddress(latlng);
