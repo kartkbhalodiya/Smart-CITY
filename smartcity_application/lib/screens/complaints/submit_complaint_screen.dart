@@ -162,14 +162,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (value.isNotEmpty) fieldResponses.add({'field_id': id, 'value': value});
     }
 
-    final data = {
+    final data = <String, String>{
       'title': _titleCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
       'address': _addressCtrl.text.trim(),
       'latitude': (_lat ?? 20.5937).toString(),
       'longitude': (_lng ?? 78.9629).toString(),
       'complaint_type': widget.categoryKey ?? 'other',
-      if (_selectedSubcategoryId != null) 'subcategory': _selectedSubcategoryId,
+      if (_selectedSubcategoryId != null) 'subcategory': _selectedSubcategoryId!,
     };
 
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
