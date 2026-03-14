@@ -92,16 +92,15 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   Future<void> _openMapPicker() async {
     setState(() => _openingMap = true);
-    // Get current location first to center map, but don't block
-    final pos = await LocationService.getCurrentLocation();
+    await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     setState(() => _openingMap = false);
     final result = await Navigator.push<LatLng>(
       context,
       MaterialPageRoute(
         builder: (_) => MapPickerScreen(
-          initialLat: pos?.latitude ?? _lat,
-          initialLng: pos?.longitude ?? _lng,
+          initialLat: _lat,
+          initialLng: _lng,
         ),
       ),
     );

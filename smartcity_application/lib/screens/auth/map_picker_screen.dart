@@ -21,21 +21,43 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   final MapController _mapController = MapController();
   bool _mapLoading = true;
   bool _gettingAddress = false;
-  String _addressText = 'Tap on map or drag pin to select location';
+  bool _detectingLocation = true;
+  String _addressText = 'Detecting your location...';
 
   @override
   void initState() {
     super.initState();
-    // Default to India center if no initial location
+    // Start at India center while detecting
     _pickedLocation = LatLng(
       widget.initialLat ?? 20.5937,
       widget.initialLng ?? 78.9629,
     );
-    // Simulate map tile load delay
-    Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) setState(() => _mapLoading = false);
-    });
-    if (widget.initialLat != null) _fetchAddress(_pickedLocation);
+    _initLocation();
+  }
+
+  Future<void> _initLocation() async {
+    // Detect real location automatically
+    final pos = await LocationService.getCurrentLocation();
+    if (!mounted) return;
+    if (pos != null) {
+      final loc = LatLng(pos.latitude, pos.longitude);
+      setState(() {
+        _pickedLocation = loc;
+        _detectingLocation = false;
+      });
+      // Wait for map to be ready then animate zoom to user location
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (mounted) {
+        _mapController.move(loc, 16.0);
+        _fetchAddress(loc);
+      }
+    } else {
+      setState(() {
+        _detectingLocation = false;
+        _addressText = 'Tap on map to select location';
+      });
+    }
+    if (mounted) setState(() => _mapLoading = false);
   }
 
   Future<void> _fetchAddress(LatLng pos) async {
@@ -60,7 +82,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _pickedLocation,
-              initialZoom: widget.initialLat != null ? 15.0 : 5.0,
+              initialZoom: 5.0,
               onTap: (_, latlng) {
                 setState(() => _pickedLocation = latlng);
                 _fetchAddress(latlng);
@@ -115,9 +137,22 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Text('Loading Map...', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+                    Text(
+                      _detectingLocation ? 'Detecting Location...' : 'Loading Map...',
+                      style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a)),
+                    ),
                     const SizedBox(height: 6),
-                    Text('Please wait', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
+                    Text(
+                      _detectingLocation ? 'Getting your current position' : 'Please wait',
+                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
+                    ),
+                    const SizedBox(height: 24),
+                    if (_detectingLocation)
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.location_searching_rounded, size: 16, color: _primary),
+                        const SizedBox(width: 6),
+                        Text('Zooming to your location', style: GoogleFonts.inter(fontSize: 12, color: _primary)),
+                      ]),
                   ],
                 ),
               ),
