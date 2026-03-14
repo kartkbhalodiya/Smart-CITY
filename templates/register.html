@@ -286,12 +286,59 @@
         #mapContainer {
             display: none;
             margin-top: 10px;
+            position: relative;
         }
 
         #map {
             height: 250px;
             border-radius: 12px;
             border: 1.5px solid #e2e8f0;
+        }
+
+        .map-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            gap: 12px;
+        }
+
+        .map-loader.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            color: var(--text-dark);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .loader-subtext {
+            color: var(--text-muted);
+            font-size: 12px;
         }
 
         .footer {
@@ -481,6 +528,11 @@
                 </div>
 
                 <div id="mapContainer">
+                    <div class="map-loader" id="mapLoader">
+                        <div class="spinner"></div>
+                        <div class="loader-text">Loading Map...</div>
+                        <div class="loader-subtext">Please wait</div>
+                    </div>
                     <div id="map"></div>
                     <button type="button" class="btn" onclick="confirmLocation()" style="width: 100%; margin-top: 10px;">
                         <i class="fa-solid fa-check"></i> Confirm Location
@@ -507,28 +559,58 @@
     <script>
         let map, marker;
         
+        function showMapLoader() {
+            document.getElementById('mapLoader').classList.remove('hidden');
+        }
+        
+        function hideMapLoader() {
+            document.getElementById('mapLoader').classList.add('hidden');
+        }
+        
         function initMap(lat, lng) {
+            showMapLoader();
+            
             if (map) {
                 map.remove();
             }
-            map = L.map('map').setView([lat, lng], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
             
-            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-            
-            marker.on('dragend', function(e) {
-                const pos = marker.getLatLng();
-                document.getElementById('latitude').value = pos.lat;
-                document.getElementById('longitude').value = pos.lng;
-            });
-            
-            map.on('click', function(e) {
-                marker.setLatLng(e.latlng);
-                document.getElementById('latitude').value = e.latlng.lat;
-                document.getElementById('longitude').value = e.latlng.lng;
-            });
+            try {
+                map = L.map('map').setView([lat, lng], 15);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                marker = L.marker([lat, lng], { 
+                    draggable: true,
+                    title: 'Drag me to adjust location'
+                }).addTo(map);
+                
+                marker.on('dragend', function(e) {
+                    const pos = marker.getLatLng();
+                    document.getElementById('latitude').value = pos.lat;
+                    document.getElementById('longitude').value = pos.lng;
+                });
+                
+                map.on('click', function(e) {
+                    marker.setLatLng(e.latlng);
+                    document.getElementById('latitude').value = e.latlng.lat;
+                    document.getElementById('longitude').value = e.latlng.lng;
+                });
+                
+                // Hide loader when map is ready
+                map.whenReady(function() {
+                    setTimeout(() => {
+                        hideMapLoader();
+                    }, 500);
+                });
+                
+            } catch (error) {
+                console.error('Map initialization error:', error);
+                hideMapLoader();
+                alert('Error loading map. Please try again.');
+            }
         }
 
         const stateSelect = document.getElementById('state');
@@ -586,32 +668,59 @@
                         btnIcon.className = 'fa-solid fa-check';
                         detectBtn.disabled = false;
                         
-                        setTimeout(() => {
-                            document.getElementById('mapContainer').style.display = 'block';
-                            if (!map) {
-                                setTimeout(() => initMap(lat, lng), 500);
-                            } else {
-                                map.setView([lat, lng], 13);
+                        // Show map container and initialize map
+                        document.getElementById('mapContainer').style.display = 'block';
+                        
+                        if (!map) {
+                            setTimeout(() => initMap(lat, lng), 100);
+                        } else {
+                            showMapLoader();
+                            setTimeout(() => {
+                                map.setView([lat, lng], 15);
                                 marker.setLatLng([lat, lng]);
-                            }
-                        }, 300);
+                                hideMapLoader();
+                            }, 300);
+                        }
                     },
                     (error) => {
                         btnText.textContent = 'Use Current Location';
                         btnIcon.className = 'fa-solid fa-location-arrow';
                         detectBtn.disabled = false;
-                        alert('Unable to get location. Please use "Pick on Map".');
+                        
+                        let errorMsg = 'Unable to get location. ';
+                        if (error.code === 1) {
+                            errorMsg += 'Please allow location access and try again.';
+                        } else if (error.code === 2) {
+                            errorMsg += 'Location unavailable. Please use "Pick on Map".';
+                        } else {
+                            errorMsg += 'Please use "Pick on Map".';
+                        }
+                        alert(errorMsg);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
                     }
                 );
             } else {
                 btnText.textContent = 'Use Current Location';
                 btnIcon.className = 'fa-solid fa-location-arrow';
                 detectBtn.disabled = false;
-                alert('Geolocation not supported. Please use "Pick on Map".');
+                alert('Geolocation not supported by your browser. Please use "Pick on Map".');
             }
         }
 
         function openMap() {
+            const pickBtn = document.getElementById('pickMapBtn');
+            const btnText = pickBtn.querySelector('span');
+            const btnIcon = pickBtn.querySelector('i');
+            
+            // Show loading state
+            btnText.textContent = 'Opening Map...';
+            btnIcon.className = 'fa-solid fa-spinner fa-spin';
+            pickBtn.disabled = true;
+            
             document.getElementById('mapContainer').style.display = 'block';
             
             if (navigator.geolocation) {
@@ -625,35 +734,96 @@
                                 initMap(lat, lng);
                                 document.getElementById('latitude').value = lat;
                                 document.getElementById('longitude').value = lng;
-                            }, 500);
+                                
+                                // Reset button state
+                                btnText.textContent = 'Pick on Map';
+                                btnIcon.className = 'fa-solid fa-map-marked-alt';
+                                pickBtn.disabled = false;
+                            }, 100);
                         } else {
-                            map.setView([lat, lng], 13);
-                            marker.setLatLng([lat, lng]);
-                            document.getElementById('latitude').value = lat;
-                            document.getElementById('longitude').value = lng;
+                            showMapLoader();
+                            setTimeout(() => {
+                                map.setView([lat, lng], 15);
+                                marker.setLatLng([lat, lng]);
+                                document.getElementById('latitude').value = lat;
+                                document.getElementById('longitude').value = lng;
+                                hideMapLoader();
+                                
+                                // Reset button state
+                                btnText.textContent = 'Pick on Map';
+                                btnIcon.className = 'fa-solid fa-map-marked-alt';
+                                pickBtn.disabled = false;
+                            }, 300);
                         }
                     },
                     (error) => {
+                        // Use default location (India center) if geolocation fails
                         const defaultLat = 20.5937;
                         const defaultLng = 78.9629;
                         
                         if (!map) {
-                            setTimeout(() => initMap(defaultLat, defaultLng), 500);
+                            setTimeout(() => {
+                                initMap(defaultLat, defaultLng);
+                                document.getElementById('latitude').value = defaultLat;
+                                document.getElementById('longitude').value = defaultLng;
+                                
+                                // Reset button state
+                                btnText.textContent = 'Pick on Map';
+                                btnIcon.className = 'fa-solid fa-map-marked-alt';
+                                pickBtn.disabled = false;
+                            }, 100);
                         } else {
-                            map.setView([defaultLat, defaultLng], 5);
-                            marker.setLatLng([defaultLat, defaultLng]);
+                            showMapLoader();
+                            setTimeout(() => {
+                                map.setView([defaultLat, defaultLng], 5);
+                                marker.setLatLng([defaultLat, defaultLng]);
+                                document.getElementById('latitude').value = defaultLat;
+                                document.getElementById('longitude').value = defaultLng;
+                                hideMapLoader();
+                                
+                                // Reset button state
+                                btnText.textContent = 'Pick on Map';
+                                btnIcon.className = 'fa-solid fa-map-marked-alt';
+                                pickBtn.disabled = false;
+                            }, 300);
                         }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
                     }
                 );
             } else {
+                // No geolocation support - use default location
                 const defaultLat = 20.5937;
                 const defaultLng = 78.9629;
                 
                 if (!map) {
-                    setTimeout(() => initMap(defaultLat, defaultLng), 500);
+                    setTimeout(() => {
+                        initMap(defaultLat, defaultLng);
+                        document.getElementById('latitude').value = defaultLat;
+                        document.getElementById('longitude').value = defaultLng;
+                        
+                        // Reset button state
+                        btnText.textContent = 'Pick on Map';
+                        btnIcon.className = 'fa-solid fa-map-marked-alt';
+                        pickBtn.disabled = false;
+                    }, 100);
                 } else {
-                    map.setView([defaultLat, defaultLng], 5);
-                    marker.setLatLng([defaultLat, defaultLng]);
+                    showMapLoader();
+                    setTimeout(() => {
+                        map.setView([defaultLat, defaultLng], 5);
+                        marker.setLatLng([defaultLat, defaultLng]);
+                        document.getElementById('latitude').value = defaultLat;
+                        document.getElementById('longitude').value = defaultLng;
+                        hideMapLoader();
+                        
+                        // Reset button state
+                        btnText.textContent = 'Pick on Map';
+                        btnIcon.className = 'fa-solid fa-map-marked-alt';
+                        pickBtn.disabled = false;
+                    }, 300);
                 }
             }
         }
