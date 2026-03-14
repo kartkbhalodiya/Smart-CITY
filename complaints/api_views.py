@@ -48,6 +48,7 @@ def register_user(request):
 @permission_classes([AllowAny])
 def send_otp(request):
     """Send OTP to email"""
+    from .email_utils import send_otp_email
     email = request.data.get('email')
     if not email:
         return Response({
@@ -62,15 +63,14 @@ def send_otp(request):
     OTP.objects.filter(email=email).delete()
     
     # Create new OTP
-    otp = OTP.objects.create(email=email, otp=otp_code)
+    OTP.objects.create(email=email, otp=otp_code)
     
-    # TODO: Send email (for now, return OTP in response for testing)
-    # In production, send via email service
+    # Send OTP via email
+    send_otp_email(email, otp_code)
     
     return Response({
         'success': True,
-        'message': 'OTP sent successfully',
-        'otp': otp_code  # Remove this in production!
+        'message': 'OTP sent to your email'
     }, status=status.HTTP_200_OK)
 
 
