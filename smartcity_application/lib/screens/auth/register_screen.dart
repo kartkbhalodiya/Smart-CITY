@@ -246,13 +246,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 child: SlideTransition(
                   position: _slideAnim,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 480),
-                        child: _glassCard(),
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: _glassCard(),
                   ),
                 ),
               ),
@@ -265,8 +260,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   Widget _glassCard() {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.5)),
         boxShadow: [
