@@ -12,6 +12,8 @@ import '../screens/complaints/guest_track_screen.dart';
 import '../screens/complaints/complaint_detail_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/dashboard/guest_dashboard_screen.dart';
+import '../screens/departments/departments_list_screen.dart';
+import '../screens/departments/department_detail_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -21,6 +23,8 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String dashboard = '/dashboard';
   static const String guestDashboard = '/guest-dashboard';
+  static const String departmentsList = '/departments-list';
+  static const String departmentDetail = '/department-detail';
   static const String categorySelection = '/category-selection';
   static const String submitComplaint = '/submit-complaint';
   static const String trackComplaints = '/track-complaints';
@@ -53,6 +57,15 @@ class AppRoutes {
 
       case guestDashboard:
         return MaterialPageRoute(builder: (_) => const GuestDashboardScreen());
+
+      case departmentsList:
+        return MaterialPageRoute(builder: (_) => const DepartmentsListScreen());
+
+      case departmentDetail:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => DepartmentDetailScreen(department: args ?? {}),
+        );
       
       case categorySelection:
         return MaterialPageRoute(builder: (_) => const CategorySelectionScreen());

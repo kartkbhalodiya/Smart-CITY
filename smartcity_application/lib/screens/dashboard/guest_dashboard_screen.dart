@@ -282,7 +282,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     );
   }
 
-  // ── Departments grid — 3D emoji, no background box ─────────────────────
+  // ── Departments grid — show only 3, with View All ──────────────────────
   Widget _departmentsGrid() {
     final depts = [
       {'emoji': '🚓', 'name': 'Police', 'bg': const Color(0xFFEEF2FF)},
@@ -295,36 +295,56 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       {'emoji': '🌊', 'name': 'Drainage', 'bg': const Color(0xFFEFF6FF)},
       {'emoji': '🚌', 'name': 'Transport', 'bg': const Color(0xFFFFF1F2)},
     ];
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 0.92,
-      children: depts
-          .map((d) => Container(
-                decoration: BoxDecoration(
-                  color: d['bg'] as Color,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)
-                  ],
-                ),
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  // Full-size emoji, no container/background
-                  Text(d['emoji'] as String, style: const TextStyle(fontSize: 36)),
-                  const SizedBox(height: 6),
-                  Text(d['name'] as String,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0f172a))),
-                ]),
-              ))
-          .toList(),
-    );
+    final preview = depts.take(3).toList();
+    return Column(children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: preview.map((d) => Expanded(child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: d['bg'] as Color,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+              ),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(d['emoji'] as String, style: const TextStyle(fontSize: 34)),
+                const SizedBox(height: 6),
+                Text(d['name'] as String,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                        fontSize: 11, fontWeight: FontWeight.w600,
+                        color: const Color(0xFF0f172a))),
+              ]),
+            ),
+          ),
+        ))).toList(),
+      ),
+      const SizedBox(height: 12),
+      GestureDetector(
+        onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E66F5).withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.25)),
+          ),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text('View All Departments',
+                style: GoogleFonts.poppins(
+                    fontSize: 13, fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E66F5))),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF1E66F5)),
+          ]),
+        ),
+      ),
+    ]);
   }
 
   Widget _lockedBanner() {
