@@ -32,6 +32,21 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     'transportation': '🚌', 'cyber': '🛡️', 'other': '📋',
   };
 
+  static const _bgMap = {
+    'police':         Color(0xFFEEF2FF),
+    'traffic':        Color(0xFFFFF7ED),
+    'construction':   Color(0xFFF0F9FF),
+    'water':          Color(0xFFF0FDF4),
+    'electricity':    Color(0xFFFFFBEB),
+    'garbage':        Color(0xFFECFDF5),
+    'road':           Color(0xFFFAF5FF),
+    'drainage':       Color(0xFFEFF6FF),
+    'illegal':        Color(0xFFFFF1F2),
+    'transportation': Color(0xFFF0F9FF),
+    'cyber':          Color(0xFFF5F3FF),
+    'other':          Color(0xFFF8FAFC),
+  };
+
   static const _gradients = {
     'police':         [Color(0xFF667eea), Color(0xFF764ba2)],
     'traffic':        [Color(0xFFf093fb), Color(0xFFf5576c)],
@@ -77,6 +92,15 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     return LatLng(lat, lng);
   }
 
+  bool get _hasRealData {
+    final d = widget.department;
+    return (d['address'] ?? '').toString().isNotEmpty ||
+        (d['phone'] ?? '').toString().isNotEmpty ||
+        (d['email'] ?? '').toString().isNotEmpty ||
+        (d['assigned_admin'] ?? '').toString().isNotEmpty ||
+        (d['city'] ?? '').toString().isNotEmpty;
+  }
+
   void _fitBounds() {
     if (_userLocation == null) { _mapCtrl.move(_deptLatLng, 14); return; }
     final bounds = LatLngBounds.fromPoints([_userLocation!, _deptLatLng]);
@@ -111,14 +135,9 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     final type = (d['department_type'] ?? 'other').toString();
     final emoji = _emojiMap[type] ?? '🏢';
     final grads = _gradients[type] ?? [const Color(0xFF89f7fe), const Color(0xFF66a6ff)];
+    final bg = _bgMap[type] ?? const Color(0xFFF8FAFC);
     final name = (d['name'] ?? 'Department').toString();
     final typeDisplay = (d['department_type_display'] ?? type).toString();
-    final city = (d['city'] ?? '').toString();
-    final state = (d['state'] ?? '').toString();
-    final address = (d['address'] ?? '').toString();
-    final phone = (d['phone'] ?? '').toString();
-    final emailAddr = (d['email'] ?? '').toString();
-    final sla = (d['sla_hours'] ?? '').toString();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -126,284 +145,396 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
       child: Scaffold(
         backgroundColor: _bg,
         body: Column(children: [
+          _topNav(emoji, bg, name, typeDisplay),
+          Expanded(
+            child: _hasRealData
+                ? _detailBody(d, emoji, grads, bg)
+                : _emptyState(emoji, bg, name, typeDisplay),
+          ),
+        ]),
+      ),
+    );
+  }
 
-          // ── Top nav — same white style as home ──────────────────────────
-          Container(
+  // ── Top nav ──────────────────────────────────────────────────────────────
+  Widget _topNav(String emoji, Color bg, String name, String typeDisplay) {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top,
+          left: 8, right: 16, bottom: 12),
+      child: Row(children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _textDark),
+          onPressed: () => Navigator.pop(context),
+        ),
+        // Full emoji in pastel box — no gradient bg
+        Container(
+          width: 42, height: 42,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(name,
+              style: GoogleFonts.poppins(
+                  fontSize: 15, fontWeight: FontWeight.w700, color: _textDark),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(typeDisplay,
+              style: GoogleFonts.inter(fontSize: 12, color: _primary)),
+        ])),
+      ]),
+    );
+  }
+
+  // ── Empty state — no department added by admin yet ────────────────────────
+  Widget _emptyState(String emoji, Color bg, String name, String typeDisplay) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(children: [
+        const SizedBox(height: 40),
+        // Big emoji with pastel bg circle
+        Container(
+          width: 120, height: 120,
+          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 60))),
+        ),
+        // Shadow below emoji
+        Container(
+          width: 60, height: 6,
+          margin: const EdgeInsets.only(top: 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.07),
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 28),
+        Text('No Department Found',
+            style: GoogleFonts.poppins(
+                fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
+        const SizedBox(height: 8),
+        Text('The $name department hasn\'t been\nset up by the admin yet.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 14, color: _textMuted, height: 1.5)),
+        const SizedBox(height: 32),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
             color: Colors.white,
-            padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top,
-                left: 8, right: 16, bottom: 12),
-            child: Row(children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: _textDark),
-                onPressed: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          ),
+          child: Column(children: [
+            _infoRow('📋', 'Category', typeDisplay),
+            const SizedBox(height: 14),
+            Divider(color: Colors.black.withOpacity(0.06), height: 1),
+            const SizedBox(height: 14),
+            _infoRow('🔔', 'Status', 'Not yet configured'),
+            const SizedBox(height: 14),
+            Divider(color: Colors.black.withOpacity(0.06), height: 1),
+            const SizedBox(height: 14),
+            _infoRow('💡', 'Tip', 'Contact admin to add this department'),
+          ]),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
+          ),
+          child: Row(children: [
+            const Text('ℹ️', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(
+                'Once the admin adds this department, you\'ll see full details, contact info, and location here.',
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1D4ED8), height: 1.5))),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _infoRow(String emoji, String label, String value) {
+    return Row(children: [
+      Text(emoji, style: const TextStyle(fontSize: 20)),
+      const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
+        Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
+      ])),
+    ]);
+  }
+
+  // ── Full detail body ──────────────────────────────────────────────────────
+  Widget _detailBody(Map<String, dynamic> d, String emoji, List<Color> grads, Color bg) {
+    final name = (d['name'] ?? 'Department').toString();
+    final typeDisplay = (d['department_type_display'] ?? '').toString();
+    final city = (d['city'] ?? '').toString();
+    final state = (d['state'] ?? '').toString();
+    final address = (d['address'] ?? '').toString();
+    final phone = (d['phone'] ?? '').toString();
+    final emailAddr = (d['email'] ?? '').toString();
+    final assignedAdmin = (d['assigned_admin'] ?? d['admin_name'] ?? '').toString();
+    final sla = (d['sla_hours'] ?? '').toString();
+
+    return SingleChildScrollView(
+      child: Column(children: [
+
+        // ── Map ────────────────────────────────────────────────────────────
+        SizedBox(
+          height: 220,
+          child: Stack(children: [
+            FlutterMap(
+              mapController: _mapCtrl,
+              options: MapOptions(
+                initialCenter: _deptLatLng,
+                initialZoom: 13,
+                onMapReady: _onMapReady,
               ),
-              // Gradient emoji box — same as home dept grid
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: grads),
-                  borderRadius: BorderRadius.circular(12),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.janhelp.app',
                 ),
-                child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20))),
+                if (_userLocation != null)
+                  PolylineLayer(polylines: [
+                    Polyline(
+                      points: [_userLocation!, _deptLatLng],
+                      color: _primary,
+                      strokeWidth: 3,
+                      isDotted: true,
+                    ),
+                  ]),
+                MarkerLayer(markers: [
+                  Marker(
+                    point: _deptLatLng,
+                    width: 52, height: 60,
+                    child: Column(children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: grads),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2.5),
+                          boxShadow: [BoxShadow(color: _primary.withOpacity(0.4), blurRadius: 10)],
+                        ),
+                        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 18))),
+                      ),
+                      CustomPaint(size: const Size(12, 8), painter: _PinTail(colors: grads)),
+                    ]),
+                  ),
+                  if (_userLocation != null)
+                    Marker(
+                      point: _userLocation!,
+                      width: 40, height: 40,
+                      child: Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2.5),
+                          boxShadow: [BoxShadow(
+                              color: const Color(0xFF22C55E).withOpacity(0.4), blurRadius: 8)],
+                        ),
+                        child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 16),
+                      ),
+                    ),
+                ]),
+              ],
+            ),
+            if (_locating)
+              Positioned(
+                top: 10, left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6)]),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const SizedBox(width: 12, height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E))),
+                    const SizedBox(width: 6),
+                    Text('Locating...', style: GoogleFonts.inter(fontSize: 11, color: _textDark)),
+                  ]),
+                ),
               ),
-              const SizedBox(width: 10),
+            Positioned(
+              bottom: 10, left: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)]),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _legendDot(const Color(0xFF22C55E), 'You'),
+                  const SizedBox(height: 3),
+                  _legendDot(_primary, 'Department'),
+                ]),
+              ),
+            ),
+            Positioned(
+              bottom: 10, right: 10,
+              child: GestureDetector(
+                onTap: _openDirections,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                      color: _primary, borderRadius: BorderRadius.circular(10),
+                      boxShadow: [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 8)]),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.directions_rounded, color: Colors.white, size: 15),
+                    const SizedBox(width: 5),
+                    Text('Directions',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                  ]),
+                ),
+              ),
+            ),
+          ]),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+            // ── Department header card ──────────────────────────────────
+            _card(child: Row(children: [
+              // Full emoji in pastel bg — no gradient box
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(child: Text(emoji, style: const TextStyle(fontSize: 34))),
+              ),
+              const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(name,
                     style: GoogleFonts.poppins(
-                        fontSize: 15, fontWeight: FontWeight.w700, color: _textDark),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                        fontSize: 17, fontWeight: FontWeight.w700, color: _textDark)),
                 Text(typeDisplay,
-                    style: GoogleFonts.inter(fontSize: 12, color: _primary)),
+                    style: GoogleFonts.inter(
+                        fontSize: 13, color: _primary, fontWeight: FontWeight.w600)),
+                if (city.isNotEmpty || state.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748b)),
+                    const SizedBox(width: 3),
+                    Flexible(child: Text(
+                        [city, state].where((s) => s.isNotEmpty).join(', '),
+                        style: GoogleFonts.inter(fontSize: 12, color: _textMuted))),
+                  ]),
+                ],
               ])),
-            ]),
-          ),
+            ])),
+            const SizedBox(height: 14),
 
-          Expanded(child: SingleChildScrollView(child: Column(children: [
-
-            // ── Map ──────────────────────────────────────────────────────
-            SizedBox(
-              height: 240,
-              child: Stack(children: [
-                FlutterMap(
-                  mapController: _mapCtrl,
-                  options: MapOptions(
-                    initialCenter: _deptLatLng,
-                    initialZoom: 13,
-                    onMapReady: _onMapReady,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.janhelp.app',
-                    ),
-                    if (_userLocation != null)
-                      PolylineLayer(polylines: [
-                        Polyline(
-                          points: [_userLocation!, _deptLatLng],
-                          color: _primary,
-                          strokeWidth: 3,
-                          isDotted: true,
-                        ),
-                      ]),
-                    MarkerLayer(markers: [
-                      // Department pin
-                      Marker(
-                        point: _deptLatLng,
-                        width: 52, height: 60,
-                        child: Column(children: [
-                          Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: grads),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2.5),
-                              boxShadow: [BoxShadow(
-                                  color: _primary.withOpacity(0.4), blurRadius: 10)],
-                            ),
-                            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 18))),
-                          ),
-                          CustomPaint(
-                              size: const Size(12, 8),
-                              painter: _PinTail(colors: grads)),
-                        ]),
-                      ),
-                      // User pin
-                      if (_userLocation != null)
-                        Marker(
-                          point: _userLocation!,
-                          width: 40, height: 40,
-                          child: Container(
-                            width: 36, height: 36,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF22C55E),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2.5),
-                              boxShadow: [BoxShadow(
-                                  color: const Color(0xFF22C55E).withOpacity(0.4),
-                                  blurRadius: 8)],
-                            ),
-                            child: const Icon(Icons.my_location_rounded,
-                                color: Colors.white, size: 16),
-                          ),
-                        ),
-                    ]),
-                  ],
-                ),
-
-                // Locating badge
-                if (_locating)
-                  Positioned(
-                    top: 10, left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6)]),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const SizedBox(width: 12, height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E))),
-                        const SizedBox(width: 6),
-                        Text('Locating you...',
-                            style: GoogleFonts.inter(fontSize: 11, color: _textDark)),
-                      ]),
-                    ),
-                  ),
-
-                // Legend
-                Positioned(
-                  bottom: 10, left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)]),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      _legendDot(const Color(0xFF22C55E), 'Your Location'),
-                      const SizedBox(height: 3),
-                      _legendDot(_primary, 'Department'),
-                    ]),
-                  ),
-                ),
-
-                // Directions button
-                Positioned(
-                  bottom: 10, right: 10,
-                  child: GestureDetector(
-                    onTap: _openDirections,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                          color: _primary, borderRadius: BorderRadius.circular(10),
-                          boxShadow: [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 8)]),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.directions_rounded, color: Colors.white, size: 15),
-                        const SizedBox(width: 5),
-                        Text('Directions',
-                            style: GoogleFonts.poppins(
-                                fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
-                      ]),
-                    ),
-                  ),
-                ),
-              ]),
-            ),
-
-            // ── Details ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-                // Department info card
-                _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Container(
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: grads),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 26))),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(name,
-                          style: GoogleFonts.poppins(
-                              fontSize: 17, fontWeight: FontWeight.w700, color: _textDark)),
-                      Text(typeDisplay,
-                          style: GoogleFonts.inter(fontSize: 13, color: _primary, fontWeight: FontWeight.w600)),
-                    ])),
-                  ]),
-                  if (city.isNotEmpty || state.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    _divider(),
-                    const SizedBox(height: 12),
-                    _detailRow(Icons.location_city_rounded, 'City / State',
-                        [city, state].where((s) => s.isNotEmpty).join(', ')),
-                  ],
-                  if (address.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _detailRow(Icons.location_on_outlined, 'Address', address),
-                  ],
-                  if (sla.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _detailRow(Icons.timer_outlined, 'Response SLA', '$sla hours'),
-                  ],
-                ])),
-                const SizedBox(height: 14),
-
-                // Contact card
-                if (phone.isNotEmpty || emailAddr.isNotEmpty)
-                  _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Contact Information',
-                        style: GoogleFonts.poppins(
-                            fontSize: 15, fontWeight: FontWeight.w700, color: _textDark)),
-                    const SizedBox(height: 14),
-                    if (phone.isNotEmpty) ...[
-                      _contactRow(Icons.phone_rounded, 'Phone Number', phone),
-                      if (emailAddr.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        _divider(),
-                        const SizedBox(height: 10),
-                      ],
-                    ],
-                    if (emailAddr.isNotEmpty)
-                      _contactRow(Icons.email_outlined, 'Email Address', emailAddr),
-                  ])),
-
-                const SizedBox(height: 14),
-
-                // Action buttons — same style as home page buttons
-                if (phone.isNotEmpty || emailAddr.isNotEmpty)
-                  Row(children: [
-                    if (phone.isNotEmpty)
-                      Expanded(child: _actionBtn(
-                        icon: Icons.phone_rounded,
-                        label: 'Call Now',
-                        color: const Color(0xFF22C55E),
-                        onTap: () => _call(phone),
-                      )),
-                    if (phone.isNotEmpty && emailAddr.isNotEmpty)
-                      const SizedBox(width: 12),
-                    if (emailAddr.isNotEmpty)
-                      Expanded(child: _actionBtn(
-                        icon: Icons.email_rounded,
-                        label: 'Send Email',
-                        color: _primary,
-                        onTap: () => _email(emailAddr),
-                      )),
-                  ]),
-
+            // ── Department details card ─────────────────────────────────
+            _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Department Details',
+                  style: GoogleFonts.poppins(
+                      fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
+              const SizedBox(height: 14),
+              if (assignedAdmin.isNotEmpty) ...[
+                _detailRow('👤', 'Assigned Admin', assignedAdmin),
                 const SizedBox(height: 12),
+                Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                const SizedBox(height: 12),
+              ],
+              if (address.isNotEmpty) ...[
+                _detailRow('📍', 'Address', address),
+                const SizedBox(height: 12),
+                Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                const SizedBox(height: 12),
+              ],
+              if (city.isNotEmpty || state.isNotEmpty)
+                _detailRow('🏙️', 'City / State',
+                    [city, state].where((s) => s.isNotEmpty).join(', ')),
+              if (sla.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                const SizedBox(height: 12),
+                _detailRow('⏱️', 'Response Time', '$sla hours'),
+              ],
+            ])),
+            const SizedBox(height: 14),
 
-                // Get Directions full width
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: _openDirections,
-                    icon: const Icon(Icons.directions_rounded, size: 18),
-                    label: Text('Get Directions in Google Maps',
-                        style: GoogleFonts.poppins(
-                            fontSize: 13, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: _primary,
-                      elevation: 0,
-                      side: const BorderSide(color: Color(0xFFe2e8f0), width: 1.5),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
+            // ── Contact card ────────────────────────────────────────────
+            if (phone.isNotEmpty || emailAddr.isNotEmpty) ...[
+              _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Contact Information',
+                    style: GoogleFonts.poppins(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
+                const SizedBox(height: 14),
+                if (phone.isNotEmpty) ...[
+                  _contactRow(Icons.phone_rounded, 'Phone Number', phone,
+                      const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
+                  if (emailAddr.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+                if (emailAddr.isNotEmpty)
+                  _contactRow(Icons.email_outlined, 'Email Address', emailAddr,
+                      _primary, const Color(0xFFEFF6FF)),
+              ])),
+              const SizedBox(height: 14),
+
+              // ── Action buttons ──────────────────────────────────────
+              Row(children: [
+                if (phone.isNotEmpty)
+                  Expanded(child: _actionBtn(
+                    icon: Icons.phone_rounded,
+                    label: 'Call Now',
+                    color: const Color(0xFF22C55E),
+                    onTap: () => _call(phone),
+                  )),
+                if (phone.isNotEmpty && emailAddr.isNotEmpty)
+                  const SizedBox(width: 12),
+                if (emailAddr.isNotEmpty)
+                  Expanded(child: _actionBtn(
+                    icon: Icons.email_rounded,
+                    label: 'Send Email',
+                    color: _primary,
+                    onTap: () => _email(emailAddr),
+                  )),
               ]),
+              const SizedBox(height: 12),
+            ],
+
+            // ── Directions button ───────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _openDirections,
+                icon: const Icon(Icons.directions_rounded, size: 18),
+                label: Text('Get Directions',
+                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: _primary,
+                  elevation: 0,
+                  side: const BorderSide(color: Color(0xFFe2e8f0), width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-          ]))),
-        ]),
-      ),
+            const SizedBox(height: 8),
+          ]),
+        ),
+      ]),
     );
   }
 
@@ -414,23 +545,16 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: child,
     );
   }
 
-  Widget _divider() => Divider(color: Colors.black.withOpacity(0.06), height: 1);
-
-  Widget _detailRow(IconData icon, String label, String value) {
+  Widget _detailRow(String emoji, String label, String value) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Container(
-        width: 32, height: 32,
-        decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 15, color: _textMuted),
-      ),
-      const SizedBox(width: 10),
+      Text(emoji, style: const TextStyle(fontSize: 20)),
+      const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
         Text(value,
@@ -440,13 +564,12 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     ]);
   }
 
-  Widget _contactRow(IconData icon, String label, String value) {
+  Widget _contactRow(IconData icon, String label, String value, Color iconColor, Color iconBg) {
     return Row(children: [
       Container(
-        width: 40, height: 40,
-        decoration: BoxDecoration(
-            color: const Color(0x1A1E66F5), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, size: 18, color: _primary),
+        width: 42, height: 42,
+        decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+        child: Icon(icon, size: 20, color: iconColor),
       ),
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -467,11 +590,11 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 48,
+        height: 50,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [BoxShadow(color: color.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 5))],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, color: Colors.white, size: 18),
