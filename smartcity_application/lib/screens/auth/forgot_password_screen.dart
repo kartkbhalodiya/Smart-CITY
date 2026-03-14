@@ -71,11 +71,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     return Scaffold(
       body: Stack(children: [
         // Background image
-        Image.asset(
-          'assets/images/login_bg.jpg',
+        Image.network(
+          'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
           fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
+          errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
         ),
         // Blur layer
         BackdropFilter(

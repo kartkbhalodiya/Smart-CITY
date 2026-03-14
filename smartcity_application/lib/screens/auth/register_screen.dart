@@ -302,8 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 const SizedBox(height: 14),
 
                 // Logo
-                Image.network('https://res.cloudinary.com/dk1q50evg/image/upload/logo', height: 80,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.location_city, size: 56, color: Color(0xFF1E66F5))),
+                Image.asset('assets/images/logo.png', height: 80),
                 const SizedBox(height: 8),
 
                 // Brand subtitle

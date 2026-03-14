@@ -63,8 +63,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   padding: const EdgeInsets.all(30),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     // Logo
-                    Image.network('https://res.cloudinary.com/dk1q50evg/image/upload/logo', height: 60,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.location_city, size: 56, color: Color(0xFF1E66F5))),
+                    Image.asset('assets/images/logo.png', height: 60),
                     const SizedBox(height: 6),
                     Text('COMPLAINT MANAGEMENT SYSTEM', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
                     const SizedBox(height: 8),

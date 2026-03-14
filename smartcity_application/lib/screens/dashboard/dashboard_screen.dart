@@ -57,8 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       color: Colors.white,
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 16, right: 16, bottom: 12),
       child: Row(children: [
-        Image.network('https://res.cloudinary.com/dk1q50evg/image/upload/logo', height: 36,
-          errorBuilder: (_, __, ___) => Text('JanHelp', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w800, color: const Color(0xFF1E66F5)))),
+        Image.asset('assets/images/logo.png', height: 36),
         const Spacer(),
         _navIcon(Icons.search, () {}),
         const SizedBox(width: 8),
