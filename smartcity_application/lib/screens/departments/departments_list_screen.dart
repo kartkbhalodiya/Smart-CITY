@@ -16,11 +16,22 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
   bool _loading = true;
   final _searchCtrl = TextEditingController();
 
-  static const _bg = Color(0xFF0F172A);
-  static const _card = Color(0xFF1E293B);
-  static const _accent = Color(0xFF1E66F5);
+  // Gradient map matching home page style
+  static const _gradients = {
+    'police':         [Color(0xFF667eea), Color(0xFF764ba2)],
+    'traffic':        [Color(0xFFf093fb), Color(0xFFf5576c)],
+    'construction':   [Color(0xFF4facfe), Color(0xFF00f2fe)],
+    'water':          [Color(0xFF43e97b), Color(0xFF38f9d7)],
+    'electricity':    [Color(0xFFfa709a), Color(0xFFfee140)],
+    'garbage':        [Color(0xFF30cfd0), Color(0xFF330867)],
+    'road':           [Color(0xFFa8edea), Color(0xFFfed6e3)],
+    'drainage':       [Color(0xFFfbc2eb), Color(0xFFa6c1ee)],
+    'illegal':        [Color(0xFFfdcbf1), Color(0xFFe6dee9)],
+    'transportation': [Color(0xFFa1c4fd), Color(0xFFc2e9fb)],
+    'cyber':          [Color(0xFFd299c2), Color(0xFFfef9d7)],
+    'other':          [Color(0xFF89f7fe), Color(0xFF66a6ff)],
+  };
 
-  // emoji map by department_type
   static const _emojiMap = {
     'police': '🚓', 'traffic': '🚦', 'construction': '🏗️',
     'water': '🚰', 'electricity': '💡', 'garbage': '🗑️',
@@ -28,19 +39,16 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
     'transportation': '🚌', 'cyber': '🛡️', 'other': '📋',
   };
 
-  static const _bgMap = {
-    'police': Color(0xFF1E3A5F), 'traffic': Color(0xFF3B2A1A),
-    'construction': Color(0xFF1A2E3B), 'water': Color(0xFF0F2E1E),
-    'electricity': Color(0xFF2E2A0F), 'garbage': Color(0xFF0F2E1E),
-    'road': Color(0xFF1E1A3B), 'drainage': Color(0xFF0F1E3B),
-    'illegal': Color(0xFF3B1A1A), 'transportation': Color(0xFF2E1A1A),
-    'cyber': Color(0xFF1A1A3B), 'other': Color(0xFF1A2A2A),
-  };
-
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -58,56 +66,67 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
   void _search(String q) {
     final query = q.toLowerCase();
     setState(() {
-      _filtered = _departments.where((d) {
-        return (d['name'] ?? '').toString().toLowerCase().contains(query) ||
-            (d['city'] ?? '').toString().toLowerCase().contains(query) ||
-            (d['department_type_display'] ?? '').toString().toLowerCase().contains(query);
-      }).toList();
+      _filtered = _departments.where((d) =>
+        (d['name'] ?? '').toString().toLowerCase().contains(query) ||
+        (d['city'] ?? '').toString().toLowerCase().contains(query) ||
+        (d['department_type_display'] ?? '').toString().toLowerCase().contains(query),
+      ).toList();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Column(children: [
-        _topBar(),
+        _topNav(),
         _searchBar(),
-        Expanded(child: _loading
-            ? const Center(child: CircularProgressIndicator(color: _accent))
-            : _filtered.isEmpty
-                ? Center(child: Text('No departments found',
-                    style: GoogleFonts.inter(color: Colors.white54)))
-                : RefreshIndicator(
-                    color: _accent,
-                    onRefresh: _load,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      itemCount: _filtered.length,
-                      itemBuilder: (_, i) => _deptCard(_filtered[i]),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E66F5)))
+              : _filtered.isEmpty
+                  ? Center(child: Text('No departments found',
+                      style: GoogleFonts.inter(color: const Color(0xFF64748b))))
+                  : RefreshIndicator(
+                      color: const Color(0xFF1E66F5),
+                      onRefresh: _load,
+                      child: GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.1,
+                        ),
+                        itemCount: _filtered.length,
+                        itemBuilder: (_, i) => _deptCard(_filtered[i]),
+                      ),
                     ),
-                  )),
+        ),
       ]),
     );
   }
 
-  Widget _topBar() {
+  Widget _topNav() {
     return Container(
-      color: _card,
+      color: Colors.white,
       padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8, left: 8, right: 16, bottom: 14),
+          top: MediaQuery.of(context).padding.top,
+          left: 8, right: 16, bottom: 12),
       child: Row(children: [
         IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0f172a)),
           onPressed: () => Navigator.pop(context),
         ),
-        const SizedBox(width: 4),
+        Image.asset('assets/images/logo.png', height: 32),
+        const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('All Departments',
+          Text('Departments',
               style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-          Text('${_filtered.length} departments',
-              style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
+                  fontSize: 16, fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0f172a))),
+          Text('${_filtered.length} available',
+              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
         ]),
       ]),
     );
@@ -115,20 +134,23 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
 
   Widget _searchBar() {
     return Container(
-      color: _card,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
         height: 44,
         decoration: BoxDecoration(
-            color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(12)),
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5),
+        ),
         child: TextField(
           controller: _searchCtrl,
           onChanged: _search,
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.white),
+          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
           decoration: InputDecoration(
-            hintText: 'Search by name, city, type...',
-            hintStyle: GoogleFonts.inter(fontSize: 13, color: Colors.white38),
-            prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 18),
+            hintText: 'Search departments...',
+            hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
+            prefixIcon: const Icon(Icons.search, color: Color(0xFF64748b), size: 18),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 12),
           ),
@@ -140,48 +162,56 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
   Widget _deptCard(Map<String, dynamic> d) {
     final type = (d['department_type'] ?? 'other').toString();
     final emoji = _emojiMap[type] ?? '🏢';
-    final cardBg = _bgMap[type] ?? const Color(0xFF1A2A2A);
+    final grads = _gradients[type] ?? [const Color(0xFF89f7fe), const Color(0xFF66a6ff)];
+    final name = (d['name'] ?? 'Department').toString();
+    final typeDisplay = (d['department_type_display'] ?? type).toString();
+    final city = (d['city'] ?? '').toString();
 
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, AppRoutes.departmentDetail, arguments: d),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: cardBg,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.07)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(children: [
-            // Emoji icon
-            Container(
-              width: 56, height: 56,
-              decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(14)),
-              child: Center(child: Text(emoji, style: const TextStyle(fontSize: 28))),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          // Gradient emoji box — same as home page
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: grads),
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(d['name'] ?? 'Department',
-                  style: GoogleFonts.poppins(
-                      fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
-              const SizedBox(height: 3),
-              Text(d['department_type_display'] ?? type,
-                  style: GoogleFonts.inter(fontSize: 12, color: _accent)),
-              const SizedBox(height: 4),
-              if ((d['city'] ?? '').toString().isNotEmpty)
-                Row(children: [
-                  const Icon(Icons.location_on_outlined, size: 12, color: Colors.white38),
-                  const SizedBox(width: 3),
-                  Text('${d['city']}, ${d['state'] ?? ''}',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
-                ]),
-            ])),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white24),
-          ]),
-        ),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 26))),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                    fontSize: 13, fontWeight: FontWeight.w600,
+                    color: const Color(0xFF0f172a))),
+          ),
+          const SizedBox(height: 3),
+          Text(typeDisplay,
+              style: GoogleFonts.inter(
+                  fontSize: 11, color: const Color(0xFF1E66F5),
+                  fontWeight: FontWeight.w500)),
+          if (city.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.location_on_outlined, size: 11, color: Color(0xFF64748b)),
+              const SizedBox(width: 2),
+              Text(city,
+                  style: GoogleFonts.inter(
+                      fontSize: 11, color: const Color(0xFF64748b))),
+            ]),
+          ],
+        ]),
       ),
     );
   }
