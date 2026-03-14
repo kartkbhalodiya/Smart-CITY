@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,7 +15,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
@@ -29,24 +30,23 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   double? _lat, _lng;
   bool _locationSet = false, _isLoading = false, _detectingLocation = false, _loadingStates = true;
 
-  late AnimationController _fadeCtrl, _slideCtrl;
+  late AnimationController _ac;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  static const _blue = Color(0xFF1E66F5);
-  static const _darkBlue = Color(0xFF0D47A1);
-  static const _green = Color(0xFF00C853);
+  static const _primary = Color(0xFF1E66F5);
+  static const _textDark = Color(0xFF0f172a);
+  static const _textMuted = Color(0xFF64748b);
+  static const _borderColor = Color(0xFFe2e8f0);
 
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _slideCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
+    _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fadeAnim = CurvedAnimation(parent: _ac, curve: Curves.easeIn);
     _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
-    _fadeCtrl.forward();
-    _slideCtrl.forward();
+        .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
+    _ac.forward();
     _fetchStatesCities();
   }
 
@@ -66,8 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   @override
   void dispose() {
-    _fadeCtrl.dispose();
-    _slideCtrl.dispose();
+    _ac.dispose();
     _firstNameCtrl.dispose(); _lastNameCtrl.dispose(); _mobileCtrl.dispose();
     _emailCtrl.dispose(); _pincodeCtrl.dispose(); _addressCtrl.dispose(); _aadhaarCtrl.dispose();
     super.dispose();
@@ -120,218 +119,273 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E66F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.white,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
-        ),
-        toolbarHeight: 0,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
       ),
-      body: Stack(
-        children: [
-          // Gradient background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0D47A1), Color(0xFF1E66F5), Color(0xFF42A5F5)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Blurred background image
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              child: Image.asset('assets/images/register_bg.jpg', fit: BoxFit.cover),
+            ),
+            // Blue gradient overlay (matches website)
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0x331E66F5),
+                    Color(0x26667EEA),
+                    Color(0x1A764BA2),
+                  ],
+                ),
               ),
             ),
-          ),
-          // Decorative circles
-          Positioned(top: -60, right: -60, child: _circle(200, Colors.white.withOpacity(0.06))),
-          Positioned(top: 80, left: -40, child: _circle(120, Colors.white.withOpacity(0.05))),
-          Positioned(bottom: 100, right: -30, child: _circle(160, Colors.white.withOpacity(0.05))),
+            // Backdrop blur overlay
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+              child: Container(color: Colors.transparent),
+            ),
 
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: Column(
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: Container(
-                                width: 36, height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                                ),
-                                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 18),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Image.asset('assets/images/logo.png', height: 44),
-                        const SizedBox(height: 6),
-                        Text('Create Account', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-                        Text('Join JanHelp today', style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withOpacity(0.8))),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Form card
-                  Expanded(
-                    child: SlideTransition(
-                      position: _slideAnim,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF8FAFF),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(32),
-                            topRight: Radius.circular(32),
-                          ),
-                        ),
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            _sectionLabel('Personal Info', Icons.person_rounded),
-                            const SizedBox(height: 12),
-                            Row(children: [
-                              Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.badge_outlined, TextInputType.name)),
-                              const SizedBox(width: 12),
-                              Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.badge_outlined, TextInputType.name)),
-                            ]),
-                            const SizedBox(height: 12),
-                            _field(_mobileCtrl, 'Mobile Number', Icons.phone_rounded, TextInputType.phone),
-                            const SizedBox(height: 12),
-                            _field(_emailCtrl, 'Email Address', Icons.email_rounded, TextInputType.emailAddress),
-                            const SizedBox(height: 24),
-
-                            _sectionLabel('Location Details', Icons.location_on_rounded),
-                            const SizedBox(height: 12),
-                            _field(_pincodeCtrl, 'Pincode', Icons.pin_drop_outlined, TextInputType.number),
-                            const SizedBox(height: 12),
-                            Row(children: [
-                              Expanded(child: _loadingStates
-                                ? _loadingDropdown('State')
-                                : _dropdown('State', _states, _selectedState,
-                                    (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
-                              const SizedBox(width: 12),
-                              Expanded(child: _loadingStates
-                                ? _loadingDropdown('City')
-                                : _dropdown(
-                                    'City',
-                                    _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
-                                    _selectedCity,
-                                    _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
-                                  )),
-                            ]),
-                            const SizedBox(height: 12),
-                            _addressField(),
-                            const SizedBox(height: 24),
-
-                            _sectionLabel('Identity & GPS', Icons.security_rounded),
-                            const SizedBox(height: 12),
-                            _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_rounded, TextInputType.number),
-                            const SizedBox(height: 12),
-                            _locationCard(),
-                            const SizedBox(height: 28),
-
-                            // Register button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 54,
-                              child: GestureDetector(
-                                onTap: _isLoading ? null : _register,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(colors: [_darkBlue, _blue, Color(0xFF42A5F5)]),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [BoxShadow(color: _blue.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))],
-                                  ),
-                                  child: Center(
-                                    child: _isLoading
-                                      ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                                      : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                          const Icon(Icons.how_to_reg_rounded, color: Colors.white, size: 20),
-                                          const SizedBox(width: 10),
-                                          Text('CREATE ACCOUNT', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1)),
-                                        ]),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-
-                            Center(
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: RichText(text: TextSpan(
-                                  text: 'Already have an account?  ',
-                                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
-                                  children: [TextSpan(text: 'Sign In', style: GoogleFonts.inter(fontSize: 13, color: _blue, fontWeight: FontWeight.w700))],
-                                )),
-                              ),
-                            ),
-                          ]),
-                        ),
+            // Content
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: _glassCard(),
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _circle(double size, Color color) => Container(
-    width: size, height: size,
-    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-  );
+  Widget _glassCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.15), blurRadius: 50, offset: const Offset(0, 20)),
+          BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.05), blurRadius: 100),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Back button row
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _borderColor),
+                      ),
+                      child: const Icon(Icons.arrow_back_rounded, size: 18, color: _textDark),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
 
-  Widget _sectionLabel(String label, IconData icon) => Row(children: [
-    Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Icon(icon, size: 16, color: _blue),
-    ),
-    const SizedBox(width: 10),
-    Text(label, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-    const SizedBox(width: 10),
-    Expanded(child: Divider(color: _blue.withOpacity(0.15), thickness: 1)),
-  ]);
+                // Logo
+                Image.asset('assets/images/logo.png', height: 80),
+                const SizedBox(height: 8),
+
+                // Brand subtitle
+                Text(
+                  'COMPLAINT MANAGEMENT SYSTEM',
+                  style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _primary, letterSpacing: 1.2),
+                ),
+                const SizedBox(height: 4),
+
+                // Heading
+                Text(
+                  'Create Account',
+                  style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark),
+                ),
+                const SizedBox(height: 20),
+
+                // First + Last name row
+                Row(children: [
+                  Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.person_outline, TextInputType.name)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.person_outline, TextInputType.name)),
+                ]),
+                const SizedBox(height: 12),
+                _field(_mobileCtrl, 'Mobile Number', Icons.phone_outlined, TextInputType.phone),
+                const SizedBox(height: 12),
+                _field(_emailCtrl, 'Email Address', Icons.email_outlined, TextInputType.emailAddress),
+                const SizedBox(height: 12),
+                _field(_pincodeCtrl, 'Pincode', Icons.location_on_outlined, TextInputType.number),
+                const SizedBox(height: 12),
+
+                // State + City row
+                Row(children: [
+                  Expanded(child: _loadingStates
+                    ? _loadingDropdown('Select State')
+                    : _dropdown('Select State', _states, _selectedState,
+                        (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
+                  const SizedBox(width: 12),
+                  Expanded(child: _loadingStates
+                    ? _loadingDropdown('Select City')
+                    : _dropdown(
+                        'Select City',
+                        _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
+                        _selectedCity,
+                        _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
+                      )),
+                ]),
+                const SizedBox(height: 12),
+
+                // Address
+                _addressField(),
+                const SizedBox(height: 12),
+
+                // Aadhaar
+                _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_outlined, TextInputType.number),
+                const SizedBox(height: 14),
+
+                // Location section
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '📍 Location (GPS)',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _locationButtons(),
+                if (_locationSet && _lat != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '📌 Lat: ${_lat!.toStringAsFixed(6)}, Lng: ${_lng!.toStringAsFixed(6)}',
+                      style: GoogleFonts.inter(fontSize: 12, color: _textDark),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+
+                // Register button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: GestureDetector(
+                    onTap: _isLoading ? null : _register,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E66F5), Color(0xFF2ECC71), Color(0xFF764ba2)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))],
+                      ),
+                      child: Center(
+                        child: _isLoading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              const Icon(Icons.person_add_outlined, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
+                              Text('REGISTER NOW', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
+                            ]),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Footer divider
+                Divider(color: Colors.black.withOpacity(0.05)),
+                const SizedBox(height: 12),
+
+                // Already have account
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: RichText(text: TextSpan(
+                    text: 'Already have an account?  ',
+                    style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
+                    children: [TextSpan(text: 'Login', style: GoogleFonts.inter(fontSize: 12, color: _primary, fontWeight: FontWeight.w600))],
+                  )),
+                ),
+                const SizedBox(height: 10),
+
+                // Guest track link
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.guestTrack),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _borderColor, width: 1.5),
+                    ),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const Icon(Icons.search_rounded, size: 15, color: _textDark),
+                      const SizedBox(width: 6),
+                      Text('Track Complaint as Guest', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _field(TextEditingController c, String hint, IconData icon, TextInputType type) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black, width: 1.2),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _borderColor, width: 1.5),
       ),
       child: TextField(
         controller: c, keyboardType: type,
-        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+        style: GoogleFonts.inter(fontSize: 14, color: _textDark),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8)),
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(10),
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: _blue.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: _blue, size: 16),
-          ),
+          hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
+          prefixIcon: Icon(icon, color: _textMuted, size: 16),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
       ),
     );
@@ -340,27 +394,18 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   Widget _addressField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black, width: 1.2),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _borderColor, width: 1.5),
       ),
       child: TextField(
         controller: _addressCtrl, maxLines: 3,
-        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+        style: GoogleFonts.inter(fontSize: 14, color: _textDark),
         decoration: InputDecoration(
-          hintText: 'Full Address',
-          hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8)),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 0, 0),
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: _blue.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.home_rounded, color: _blue, size: 16),
-            ),
-          ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          hintText: 'Address',
+          hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          contentPadding: const EdgeInsets.all(14),
         ),
       ),
     );
@@ -369,18 +414,18 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   Widget _dropdown(String hint, List<String> items, String? value, ValueChanged<String?>? onChanged) {
     return Container(
       decoration: BoxDecoration(
-        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black, width: 1.2),
+        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _borderColor, width: 1.5),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(hint, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8))),
+          hint: Text(hint, style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
           isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: onChanged == null ? const Color(0xFFcbd5e1) : _blue, size: 20),
-          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a)),
+          icon: const Icon(Icons.keyboard_arrow_down, color: _textMuted, size: 18),
+          style: GoogleFonts.inter(fontSize: 13, color: _textDark),
           items: items.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
           onChanged: onChanged,
         ),
@@ -391,73 +436,46 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   Widget _loadingDropdown(String hint) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black, width: 1.2),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _borderColor, width: 1.5),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       child: Row(children: [
-        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _blue)),
+        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
         const SizedBox(width: 10),
-        Text(hint, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8))),
+        Text(hint, style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
       ]),
     );
   }
 
-  Widget _locationCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black, width: 1.2),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        GestureDetector(
+  Widget _locationButtons() {
+    return Row(children: [
+      Expanded(
+        child: GestureDetector(
           onTap: _detectingLocation ? null : _detectLocation,
           child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 13),
+            padding: const EdgeInsets.symmetric(vertical: 11),
             decoration: BoxDecoration(
-              gradient: _locationSet
-                ? const LinearGradient(colors: [Color(0xFF00C853), Color(0xFF69F0AE)])
-                : LinearGradient(colors: [_blue.withOpacity(0.08), _blue.withOpacity(0.04)]),
+              color: _locationSet ? const Color(0xFFdbeafe) : const Color(0xFFe5e7eb),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _locationSet ? _green.withOpacity(0.4) : _blue.withOpacity(0.2)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               _detectingLocation
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _blue))
-                : Icon(
-                    _locationSet ? Icons.check_circle_rounded : Icons.my_location_rounded,
-                    size: 18,
-                    color: _locationSet ? Colors.white : _blue,
-                  ),
-              const SizedBox(width: 8),
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary))
+                : Icon(_locationSet ? Icons.check : Icons.location_searching_rounded, size: 15,
+                    color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
+              const SizedBox(width: 6),
               Text(
-                _detectingLocation ? 'Detecting location...' : (_locationSet ? 'Location Captured ✓' : 'Detect My Location'),
-                style: GoogleFonts.poppins(
-                  fontSize: 13, fontWeight: FontWeight.w600,
-                  color: _locationSet ? Colors.white : _blue,
-                ),
+                _detectingLocation ? 'Detecting...' : (_locationSet ? 'Location Set ✓' : 'Use Current Location'),
+                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700,
+                    color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
               ),
             ]),
           ),
         ),
-        if (_locationSet && _lat != null) ...[
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(color: _green.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-            child: Row(children: [
-              const Icon(Icons.location_pin, size: 14, color: _green),
-              const SizedBox(width: 6),
-              Text('${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
-                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF0f172a), fontWeight: FontWeight.w500)),
-            ]),
-          ),
-        ],
-      ]),
-    );
+      ),
+    ]);
   }
 }
