@@ -2,12 +2,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
+import 'map_picker_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -28,7 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   List<String> _states = [];
   Map<String, List<String>> _citiesByState = {};
   double? _lat, _lng;
-  bool _locationSet = false, _isLoading = false, _detectingLocation = false, _loadingStates = true;
+  bool _locationSet = false, _isLoading = false, _detectingLocation = false, _loadingStates = true, _openingMap = false;
 
   late AnimationController _ac;
   late Animation<double> _fadeAnim;
@@ -85,6 +87,31 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     } else {
       setState(() => _detectingLocation = false);
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not get location.')));
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    setState(() => _openingMap = true);
+    // Get current location first to center map, but don't block
+    final pos = await LocationService.getCurrentLocation();
+    if (!mounted) return;
+    setState(() => _openingMap = false);
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(
+          initialLat: pos?.latitude ?? _lat,
+          initialLng: pos?.longitude ?? _lng,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      final addr = await LocationService.getAddressFromCoordinates(result.latitude, result.longitude);
+      setState(() {
+        _lat = result.latitude; _lng = result.longitude;
+        _locationSet = true;
+        if (addr['address']!.isNotEmpty) _addressCtrl.text = addr['address']!;
+      });
     }
   }
 
@@ -293,10 +320,14 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                       color: _primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Text(
-                      '📌 Lat: ${_lat!.toStringAsFixed(6)}, Lng: ${_lng!.toStringAsFixed(6)}',
-                      style: GoogleFonts.inter(fontSize: 12, color: _textDark),
-                    ),
+                    child: Row(children: [
+                      const Icon(Icons.location_pin, size: 14, color: _primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Lat: ${_lat!.toStringAsFixed(6)},  Lng: ${_lng!.toStringAsFixed(6)}',
+                        style: GoogleFonts.inter(fontSize: 12, color: _textDark),
+                      ),
+                    ]),
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -451,6 +482,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   Widget _locationButtons() {
     return Row(children: [
+      // Use Current Location
       Expanded(
         child: GestureDetector(
           onTap: _detectingLocation ? null : _detectLocation,
@@ -467,10 +499,38 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 : Icon(_locationSet ? Icons.check : Icons.location_searching_rounded, size: 15,
                     color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
               const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  _detectingLocation ? 'Detecting...' : (_locationSet ? 'Location Set ✓' : 'Use Current'),
+                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700,
+                      color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+      const SizedBox(width: 10),
+      // Pick on Map
+      Expanded(
+        child: GestureDetector(
+          onTap: _openingMap ? null : _openMapPicker,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(
+              color: const Color(0xFFdbeafe),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: _primary.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4))],
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              _openingMap
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary))
+                : const Icon(Icons.map_outlined, size: 15, color: Color(0xFF1e40af)),
+              const SizedBox(width: 6),
               Text(
-                _detectingLocation ? 'Detecting...' : (_locationSet ? 'Location Set ✓' : 'Use Current Location'),
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700,
-                    color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
+                _openingMap ? 'Opening...' : 'Pick on Map',
+                style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF1e40af)),
               ),
             ]),
           ),
