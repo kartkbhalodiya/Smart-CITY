@@ -134,10 +134,19 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Failed to parse response: ${response.body}',
-      };
+      // Body is not JSON (e.g. HTML error page) — return clean message
+      final code = response.statusCode;
+      String msg;
+      if (code == 404) {
+        msg = 'No department account found with this email';
+      } else if (code == 403) {
+        msg = 'This email is not linked to any department account';
+      } else if (code == 500) {
+        msg = 'Server error. Please try again later';
+      } else {
+        msg = 'Something went wrong (error $code). Please try again';
+      }
+      return {'success': false, 'message': msg};
     }
   }
 }
