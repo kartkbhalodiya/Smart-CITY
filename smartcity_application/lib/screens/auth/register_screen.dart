@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +121,10 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             )),
           ),
         ),
-        Container(color: const Color(0x331E66F5)),
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(color: Colors.black.withOpacity(0.25)),
+        ),
         SafeArea(
           child: Center(
             child: SingleChildScrollView(

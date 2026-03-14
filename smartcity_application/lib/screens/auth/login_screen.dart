@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(children: [
-        // Blurred background image
+        // Background image
         Image.network(
           'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
           fit: BoxFit.cover, width: double.infinity, height: double.infinity,
@@ -45,8 +46,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             )),
           ),
         ),
-        // Overlay
-        Container(color: const Color(0x331E66F5)),
+        // Blur layer
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(color: Colors.black.withOpacity(0.25)),
+        ),
         SafeArea(
           child: Center(
             child: SingleChildScrollView(

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -43,7 +44,10 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
           fit: BoxFit.cover, width: double.infinity, height: double.infinity,
           errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
         ),
-        Container(color: const Color(0x331E66F5)),
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(color: Colors.black.withOpacity(0.25)),
+        ),
         SafeArea(
           child: Center(
             child: SingleChildScrollView(

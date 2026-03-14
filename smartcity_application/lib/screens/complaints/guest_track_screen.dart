@@ -1,5 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../services/api_service.dart';
@@ -71,7 +74,10 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
             )),
           ),
         ),
-        Container(color: const Color(0x331E66F5)),
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(color: Colors.black.withOpacity(0.25)),
+        ),
         SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -181,6 +187,8 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       _infoGrid(_complaint!),
                       const SizedBox(height: 20),
                       _timeline(_complaint!['work_status'] as String, _complaint!),
+                      const SizedBox(height: 20),
+                      _mapSection(_complaint!),
                     ],
 
                     // Back link
@@ -200,6 +208,42 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
           ),
         ),
       ]),
+    );
+  }
+
+  Widget _mapSection(Map<String, dynamic> c) {
+    final lat = (c['latitude'] ?? 0.0).toDouble();
+    final lng = (c['longitude'] ?? 0.0).toDouble();
+    if (lat == 0.0 && lng == 0.0) return const SizedBox.shrink();
+    final position = LatLng(lat, lng);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Complaint Location', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: SizedBox(
+            height: 220,
+            child: FlutterMap(
+              options: MapOptions(initialCenter: position, initialZoom: 15),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.janhelp.app',
+                ),
+                MarkerLayer(markers: [
+                  Marker(
+                    point: position,
+                    width: 40, height: 40,
+                    child: const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 40),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
