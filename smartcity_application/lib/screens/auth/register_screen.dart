@@ -158,7 +158,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             // Blurred background image
             ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-              child: Image.asset('assets/images/register_bg.jpg', fit: BoxFit.cover),
+              child: Image.network(
+                'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1E66F5)),
+              ),
             ),
             // Blue gradient overlay (matches website)
             Container(
@@ -243,7 +247,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 const SizedBox(height: 14),
 
                 // Logo
-                Image.asset('assets/images/logo.png', height: 80),
+                Image.network('https://res.cloudinary.com/dk1q50evg/image/upload/logo', height: 80,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.location_city, size: 56, color: Color(0xFF1E66F5))),
                 const SizedBox(height: 8),
 
                 // Brand subtitle
