@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     const SizedBox(height: 12),
                     Row(children: [
                       Expanded(child: _outlineBtn(Icons.person_outline, 'Guest', () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+                        Navigator.pushReplacementNamed(context, AppRoutes.guestDashboard);
                       })),
                       const SizedBox(width: 8),
                       Expanded(child: _outlineBtn(Icons.search, 'Track', () {

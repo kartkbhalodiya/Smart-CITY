@@ -39,6 +39,9 @@ class ApiConfig {
   // Department Forgot Password
   static const String departmentForgotPassword = '$baseUrl/auth/department-forgot-password/';
 
+  // Guest Stats (public)
+  static const String guestStats = '$baseUrl/guest/stats/';
+
   // States & Cities
   static const String statesCities = '$baseUrl/states-cities/';
   

@@ -457,6 +457,23 @@ def track_guest_complaint_api(request):
     return Response({'success': True, 'complaint': data})
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def guest_stats(request):
+    """Public live stats for guest dashboard"""
+    total = Complaint.objects.count()
+    pending = Complaint.objects.filter(work_status__in=['pending', 'confirmed', 'process', 'reopened']).count()
+    solved = Complaint.objects.filter(work_status='solved').count()
+    departments = Department.objects.filter(is_active=True).count()
+    return Response({
+        'success': True,
+        'total_complaints': total,
+        'pending_complaints': pending,
+        'solved_complaints': solved,
+        'active_departments': departments,
+    })
+
+
 # States & Cities Views
 @api_view(['GET'])
 @permission_classes([AllowAny])

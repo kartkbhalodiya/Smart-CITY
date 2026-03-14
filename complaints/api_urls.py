@@ -6,7 +6,7 @@ from .api_views import (
     user_profile, dashboard_stats,
     get_categories, get_subcategories, get_departments,
     track_guest_complaint_api, department_forgot_password,
-    get_states_cities
+    get_states_cities, guest_stats
 )
 
 router = DefaultRouter()
@@ -41,6 +41,7 @@ urlpatterns = [
     
     # States & Cities
     path('states-cities/', get_states_cities, name='api_states_cities'),
+    path('guest/stats/', guest_stats, name='api_guest_stats'),
     
     # Router URLs
     path('', include(router.urls)),
