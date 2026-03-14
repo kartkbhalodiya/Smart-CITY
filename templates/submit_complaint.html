@@ -484,7 +484,10 @@
                 <div class="form-group">
                     <label>State</label>
                     <select name="state" id="stateInput" required>
-                        <option value="Gujarat">Gujarat</option>
+                        <option value="">Select State</option>
+                        {% for state in states %}
+                            <option value="{{ state.name }}" {% if draft.state == state.name %}selected{% endif %}>{{ state.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -492,12 +495,8 @@
                     <label>City / District</label>
                     <select name="city" id="cityInput" required onchange="document.getElementById('districtInput').value = this.value">
                         <option value="">Select City</option>
-                        <option value="Jamnagar">Jamnagar</option>
-                        <option value="Rajkot">Rajkot</option>
-                        <option value="Ahmedabad">Ahmedabad</option>
-                        <option value="Vadodara">Vadodara</option>
                     </select>
-                    <input type="hidden" name="district" id="districtInput">
+                    <input type="hidden" name="district" id="districtInput" value="{{ draft.city }}">
                 </div>
 
                 <div class="form-group">
@@ -1633,6 +1632,41 @@
         const managedFieldConfig = {{ managed_field_map_json|safe }};
         const effectiveSubcategories = Object.keys(managedSubcategories).length ? managedSubcategories : subcategories;
         const effectiveDynamicFields = Object.keys(managedFieldConfig).length ? managedFieldConfig : dynamicFieldsConfig;
+
+        const stateSelect = document.getElementById('stateInput');
+        const citySelect = document.getElementById('cityInput');
+
+        const cityData = {};
+        {% for city in cities %}
+        if (!cityData['{{ city.state.name|escapejs }}']) {
+            cityData['{{ city.state.name|escapejs }}'] = [];
+        }
+        cityData['{{ city.state.name|escapejs }}'].push('{{ city.name|escapejs }}');
+        {% endfor %}
+
+        function updateCityOptions(state, selectedCity = '') {
+            citySelect.innerHTML = '<option value="">Select City</option>';
+            if (state && cityData[state]) {
+                cityData[state].forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    if (city === selectedCity) {
+                        option.selected = true;
+                    }
+                    citySelect.appendChild(option);
+                });
+            }
+        }
+
+        stateSelect.addEventListener('change', function() {
+            updateCityOptions(this.value);
+        });
+
+        // Initialize cities if draft has state
+        {% if draft.state %}
+        updateCityOptions('{{ draft.state }}', '{{ draft.city }}');
+        {% endif %}
 
         const mainCategory = document.getElementById('mainCategory');
         const subcategorySection = document.getElementById('subcategorySection');

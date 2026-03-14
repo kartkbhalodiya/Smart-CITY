@@ -387,17 +387,26 @@
                     
                     <div class="input-group">
                         <label class="input-label"><i class="fa-solid fa-map"></i> State</label>
-                        <input type="text" name="state" value="{% if user.citizenprofile %}{{ user.citizenprofile.state|default:'' }}{% endif %}" class="input-field" placeholder="Enter state">
+                        <select name="state" id="stateSelect" class="input-field">
+                            <option value="">Select State</option>
+                            {% for state in states %}
+                            <option value="{{ state.name }}" {% if user.citizenprofile.state == state.name %}selected{% endif %}>{{ state.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     
                     <div class="input-group">
                         <label class="input-label"><i class="fa-solid fa-map-pin"></i> District</label>
-                        <input type="text" name="district" value="{% if user.citizenprofile %}{{ user.citizenprofile.district|default:'' }}{% endif %}" class="input-field" placeholder="Enter district">
+                        <select name="district" id="districtSelect" class="input-field">
+                            <option value="">Select District</option>
+                        </select>
                     </div>
                     
                     <div class="input-group">
                         <label class="input-label"><i class="fa-solid fa-city"></i> City</label>
-                        <input type="text" name="city" value="{% if user.citizenprofile %}{{ user.citizenprofile.city|default:'' }}{% endif %}" class="input-field" placeholder="Enter city">
+                        <select name="city" id="citySelect" class="input-field">
+                            <option value="">Select City</option>
+                        </select>
                     </div>
                     
                     <div class="input-group">
@@ -460,6 +469,50 @@
     </div>
 
     <script>
+        const stateSelect = document.getElementById('stateSelect');
+        const districtSelect = document.getElementById('districtSelect');
+        const citySelect = document.getElementById('citySelect');
+
+        const cityData = {};
+        {% for city in cities %}
+        if (!cityData['{{ city.state.name|escapejs }}']) {
+            cityData['{{ city.state.name|escapejs }}'] = [];
+        }
+        cityData['{{ city.state.name|escapejs }}'].push('{{ city.name|escapejs }}');
+        {% endfor %}
+
+        function updateCityOptions(state, selectedDistrict = '', selectedCity = '') {
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            citySelect.innerHTML = '<option value="">Select City</option>';
+            
+            if (state && cityData[state]) {
+                cityData[state].forEach(city => {
+                    const opt1 = document.createElement('option');
+                    opt1.value = city;
+                    opt1.textContent = city;
+                    if (city === selectedDistrict) opt1.selected = true;
+                    districtSelect.appendChild(opt1);
+
+                    const opt2 = document.createElement('option');
+                    opt2.value = city;
+                    opt2.textContent = city;
+                    if (city === selectedCity) opt2.selected = true;
+                    citySelect.appendChild(opt2);
+                });
+            }
+        }
+
+        stateSelect.addEventListener('change', function() {
+            updateCityOptions(this.value);
+        });
+
+        // Initialize if data exists
+        window.addEventListener('load', () => {
+            {% if user.citizenprofile %}
+            updateCityOptions('{{ user.citizenprofile.state }}', '{{ user.citizenprofile.district }}', '{{ user.citizenprofile.city }}');
+            {% endif %}
+        });
+
         function changeLanguage(lang) {
             localStorage.setItem('selectedLanguage', lang);
             location.reload();

@@ -618,11 +618,10 @@
 
         const cityData = {};
         {% for city in cities %}
-        const stateName = '{{ city.state.name }}';
-        if (!cityData[stateName]) {
-            cityData[stateName] = [];
+        if (!cityData['{{ city.state.name|escapejs }}']) {
+            cityData['{{ city.state.name|escapejs }}'] = [];
         }
-        cityData[stateName].push('{{ city.name }}');
+        cityData['{{ city.state.name|escapejs }}'].push('{{ city.name|escapejs }}');
         {% endfor %}
 
         stateSelect.addEventListener('change', function() {

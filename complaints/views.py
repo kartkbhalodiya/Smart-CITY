@@ -1052,6 +1052,9 @@ def submit_complaint(request):
     managed_category_options, managed_sub_map, managed_field_map = get_managed_category_payload()
     has_managed_categories = len(managed_category_options) > 0
 
+    states = ManagedState.objects.all().order_by('name')
+    cities = ManagedCity.objects.select_related('state').all().order_by('name')
+
     return render(request, 'submit_complaint.html', {
         'initial_type': initial_type,
         'draft': draft,
@@ -1060,6 +1063,8 @@ def submit_complaint(request):
         'managed_field_map_json': json.dumps(managed_field_map),
         'has_managed_categories': has_managed_categories,
         'fallback_complaint_types': Complaint.COMPLAINT_TYPES,
+        'states': states,
+        'cities': cities,
     })
 
 @login_required
@@ -3674,6 +3679,8 @@ def profile_view(request):
     context = {
         'is_city_admin': is_city_admin,
         'is_dept_user': is_dept_user,
+        'states': ManagedState.objects.all().order_by('name'),
+        'cities': ManagedCity.objects.select_related('state').all().order_by('name'),
     }
     return render(request, 'profile.html', context)
 
