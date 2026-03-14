@@ -129,6 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.white,
           statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
         ),
         toolbarHeight: 0,
       ),
@@ -156,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                 children: [
                   // Header
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Column(
                       children: [
                         Row(
@@ -164,26 +165,26 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                width: 40, height: 40,
+                                width: 36, height: 36,
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: Colors.white.withOpacity(0.3)),
                                 ),
-                                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 18),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        Image.asset('assets/images/logo.png', height: 52),
-                        const SizedBox(height: 10),
-                        Text('Create Account', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
-                        Text('Join JanHelp today', style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.8))),
+                        const SizedBox(height: 8),
+                        Image.asset('assets/images/logo.png', height: 44),
+                        const SizedBox(height: 6),
+                        Text('Create Account', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+                        Text('Join JanHelp today', style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withOpacity(0.8))),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   // Form card
                   Expanded(
@@ -315,7 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.black, width: 1.2),
       ),
       child: TextField(
         controller: c, keyboardType: type,
@@ -341,7 +342,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.black, width: 1.2),
       ),
       child: TextField(
         controller: _addressCtrl, maxLines: 3,
@@ -370,7 +371,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: onChanged == null ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.black, width: 1.2),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
@@ -392,7 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.black, width: 1.2),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       child: Row(children: [
@@ -409,7 +410,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+        border: Border.all(color: Colors.black, width: 1.2),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         GestureDetector(
