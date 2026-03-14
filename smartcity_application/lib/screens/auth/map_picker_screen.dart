@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../services/location_service.dart';
 
@@ -17,48 +18,66 @@ class MapPickerScreen extends StatefulWidget {
 class _MapPickerScreenState extends State<MapPickerScreen> {
   static const _primary = Color(0xFF1E66F5);
 
-  late LatLng _pickedLocation;
+  LatLng _pickedLocation = const LatLng(20.5937, 78.9629);
   final MapController _mapController = MapController();
   bool _mapLoading = true;
   bool _gettingAddress = false;
   bool _detectingLocation = true;
   String _addressText = 'Detecting your location...';
+  bool _mapReady = false;
+  LatLng? _pendingMove;
 
   @override
   void initState() {
     super.initState();
-    // Start at India center while detecting
-    _pickedLocation = LatLng(
-      widget.initialLat ?? 20.5937,
-      widget.initialLng ?? 78.9629,
-    );
     _initLocation();
   }
 
   Future<void> _initLocation() async {
-    final pos = await LocationService.getCurrentLocation();
-    if (!mounted) return;
-    if (pos != null) {
+    try {
+      // Check & request permission directly
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+
+      if (perm == LocationPermission.deniedForever || perm == LocationPermission.denied) {
+        if (mounted) setState(() { _detectingLocation = false; _mapLoading = false; _addressText = 'Tap on map to select location'; });
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       final loc = LatLng(pos.latitude, pos.longitude);
+
+      if (!mounted) return;
       setState(() {
         _pickedLocation = loc;
         _detectingLocation = false;
         _mapLoading = false;
       });
-      // Give map widget time to build with new center, then move
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            _mapController.move(loc, 16.0);
-            _fetchAddress(loc);
-          }
-        });
-      });
-    } else {
-      setState(() {
-        _detectingLocation = false;
-        _mapLoading = false;
-        _addressText = 'Tap on map to select location';
+
+      // If map already ready, move now; else store pending
+      if (_mapReady) {
+        _mapController.move(loc, 16.0);
+        _fetchAddress(loc);
+      } else {
+        _pendingMove = loc;
+      }
+    } catch (e) {
+      if (mounted) setState(() { _detectingLocation = false; _mapLoading = false; _addressText = 'Tap on map to select location'; });
+    }
+  }
+
+  void _onMapReady() {
+    _mapReady = true;
+    if (_pendingMove != null) {
+      // Small delay to let tiles start loading
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _mapController.move(_pendingMove!, 16.0);
+          _fetchAddress(_pendingMove!);
+          _pendingMove = null;
+        }
       });
     }
   }
@@ -85,7 +104,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _pickedLocation,
-              initialZoom: _mapLoading ? 5.0 : 16.0,
+              initialZoom: 5.0,
+              onMapReady: _onMapReady,
               onTap: (_, latlng) {
                 setState(() => _pickedLocation = latlng);
                 _fetchAddress(latlng);

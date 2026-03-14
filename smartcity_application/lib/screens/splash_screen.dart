@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
+import 'permission_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -95,6 +97,34 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigate() async {
     if (!mounted) return;
+
+    // Check if permissions have been requested before
+    final prefs = await SharedPreferences.getInstance();
+    final permsDone = prefs.getBool('permissions_requested') ?? false;
+
+    if (!mounted) return;
+
+    if (!permsDone) {
+      // Show permission screen first, then continue
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PermissionScreen(
+            onDone: () async {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.loadUser();
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(
+                context,
+                authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
+              );
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.loadUser();
     if (!mounted) return;
