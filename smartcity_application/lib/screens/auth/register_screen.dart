@@ -13,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
@@ -22,26 +22,30 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   final _addressCtrl = TextEditingController();
   final _aadhaarCtrl = TextEditingController();
 
-  String? _selectedState;
-  String? _selectedCity;
+  String? _selectedState, _selectedCity;
   List<String> _states = [];
   Map<String, List<String>> _citiesByState = {};
   double? _lat, _lng;
-  bool _locationSet = false;
-  bool _isLoading = false;
-  bool _detectingLocation = false;
-  bool _loadingStates = true;
+  bool _locationSet = false, _isLoading = false, _detectingLocation = false, _loadingStates = true;
 
-  late AnimationController _ac;
-  late Animation<Offset> _slide;
+  late AnimationController _fadeCtrl, _slideCtrl;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  static const _blue = Color(0xFF1E66F5);
+  static const _darkBlue = Color(0xFF0D47A1);
+  static const _green = Color(0xFF00C853);
 
   @override
   void initState() {
     super.initState();
-    _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _slide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
-    _ac.forward();
+    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _slideCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
+    _fadeCtrl.forward();
+    _slideCtrl.forward();
     _fetchStatesCities();
   }
 
@@ -61,7 +65,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   @override
   void dispose() {
-    _ac.dispose();
+    _fadeCtrl.dispose();
+    _slideCtrl.dispose();
     _firstNameCtrl.dispose(); _lastNameCtrl.dispose(); _mobileCtrl.dispose();
     _emailCtrl.dispose(); _pincodeCtrl.dispose(); _addressCtrl.dispose(); _aadhaarCtrl.dispose();
     super.dispose();
@@ -73,17 +78,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     if (pos != null) {
       final addr = await LocationService.getAddressFromCoordinates(pos.latitude, pos.longitude);
       setState(() {
-        _lat = pos.latitude;
-        _lng = pos.longitude;
-        _locationSet = true;
-        _detectingLocation = false;
-        if (_addressCtrl.text.isEmpty && addr['address']!.isNotEmpty) {
-          _addressCtrl.text = addr['address']!;
-        }
+        _lat = pos.latitude; _lng = pos.longitude;
+        _locationSet = true; _detectingLocation = false;
+        if (_addressCtrl.text.isEmpty && addr['address']!.isNotEmpty) _addressCtrl.text = addr['address']!;
       });
     } else {
       setState(() => _detectingLocation = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not get location. Please try again.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not get location.')));
     }
   }
 
@@ -119,195 +120,233 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Back button
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.arrow_back_rounded, size: 20, color: Color(0xFF0f172a)),
+      body: Stack(
+        children: [
+          // Gradient background
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0D47A1), Color(0xFF1E66F5), Color(0xFF42A5F5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const SizedBox(height: 24),
+          ),
+          // Decorative circles
+          Positioned(top: -60, right: -60, child: _circle(200, Colors.white.withOpacity(0.06))),
+          Positioned(top: 80, left: -40, child: _circle(120, Colors.white.withOpacity(0.05))),
+          Positioned(bottom: 100, right: -30, child: _circle(160, Colors.white.withOpacity(0.05))),
 
-            // Logo + title
-            Center(
-              child: Column(children: [
-                Image.asset('assets/images/logo.png', height: 64),
-                const SizedBox(height: 8),
-                Text('COMPLAINT MANAGEMENT SYSTEM', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
-                const SizedBox(height: 6),
-                Text('Create Account', style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-                const SizedBox(height: 4),
-                Text('Join JanHelp to report city issues', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
-              ]),
-            ),
-            const SizedBox(height: 28),
-
-            // First + Last name row
-            Row(children: [
-              Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.person_outline, TextInputType.name)),
-              const SizedBox(width: 12),
-              Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.person_outline, TextInputType.name)),
-            ]),
-            const SizedBox(height: 14),
-            _field(_mobileCtrl, 'Mobile Number', Icons.phone_outlined, TextInputType.phone),
-            const SizedBox(height: 14),
-            _field(_emailCtrl, 'Email Address', Icons.email_outlined, TextInputType.emailAddress),
-            const SizedBox(height: 14),
-            _field(_pincodeCtrl, 'Pincode', Icons.location_on_outlined, TextInputType.number),
-            const SizedBox(height: 14),
-
-            // State + City row
-            Row(children: [
-              Expanded(child: _loadingStates
-                ? _loadingDropdown('Select State')
-                : _dropdown('Select State', _states, _selectedState, (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
-              const SizedBox(width: 12),
-              Expanded(child: _loadingStates
-                ? _loadingDropdown('Select City')
-                : _dropdown(
-                    'Select City',
-                    (_selectedState != null ? (_citiesByState[_selectedState!] ?? []) : []),
-                    _selectedCity,
-                    _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
-                  )),
-            ]),
-            const SizedBox(height: 14),
-
-            // Address textarea
-            Container(
-              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
-              child: TextField(
-                controller: _addressCtrl, maxLines: 3,
-                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
-                decoration: InputDecoration(hintText: 'Address', hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)), border: InputBorder.none, contentPadding: const EdgeInsets.all(14)),
-              ),
-            ),
-            const SizedBox(height: 14),
-            _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_outlined, TextInputType.number),
-            const SizedBox(height: 20),
-
-            // Location section
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFe2e8f0))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  const Icon(Icons.my_location, size: 16, color: Color(0xFF1E66F5)),
-                  const SizedBox(width: 8),
-                  Text('GPS Location', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
-                ]),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: GestureDetector(
-                    onTap: _detectingLocation ? null : _detectLocation,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _locationSet ? const Color(0xFFdbeafe) : const Color(0xFF1E66F5).withOpacity(0.07),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _locationSet ? const Color(0xFF93c5fd) : const Color(0xFF1E66F5).withOpacity(0.2)),
-                      ),
-                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        _detectingLocation
-                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E66F5)))
-                            : Icon(_locationSet ? Icons.check_circle_rounded : Icons.location_searching_rounded, size: 16, color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF1E66F5)),
-                        const SizedBox(width: 8),
-                        Text(
-                          _detectingLocation ? 'Detecting...' : (_locationSet ? 'Location Set ✓' : 'Use Current Location'),
-                          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF1E66F5)),
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            ),
+                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                          ),
                         ),
-                      ]),
+                        const SizedBox(width: 16),
+                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Create Account', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
+                          Text('Join JanHelp today', style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.8))),
+                        ]),
+                        const Spacer(),
+                        Image.asset('assets/images/logo.png', height: 44),
+                      ],
                     ),
                   ),
-                ),
-                if (_locationSet && _lat != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: const Color(0x1A1E66F5), borderRadius: BorderRadius.circular(10)),
-                    child: Row(children: [
-                      const Icon(Icons.location_pin, size: 14, color: Color(0xFF1E66F5)),
-                      const SizedBox(width: 6),
-                      Text('Lat: ${_lat!.toStringAsFixed(6)}, Lng: ${_lng!.toStringAsFixed(6)}',
-                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF0f172a))),
-                    ]),
+                  const SizedBox(height: 20),
+
+                  // Form card
+                  Expanded(
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF8FAFF),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(32),
+                            topRight: Radius.circular(32),
+                          ),
+                        ),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            _sectionLabel('Personal Info', Icons.person_rounded),
+                            const SizedBox(height: 12),
+                            Row(children: [
+                              Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.badge_outlined, TextInputType.name)),
+                              const SizedBox(width: 12),
+                              Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.badge_outlined, TextInputType.name)),
+                            ]),
+                            const SizedBox(height: 12),
+                            _field(_mobileCtrl, 'Mobile Number', Icons.phone_rounded, TextInputType.phone),
+                            const SizedBox(height: 12),
+                            _field(_emailCtrl, 'Email Address', Icons.email_rounded, TextInputType.emailAddress),
+                            const SizedBox(height: 24),
+
+                            _sectionLabel('Location Details', Icons.location_on_rounded),
+                            const SizedBox(height: 12),
+                            _field(_pincodeCtrl, 'Pincode', Icons.pin_drop_outlined, TextInputType.number),
+                            const SizedBox(height: 12),
+                            Row(children: [
+                              Expanded(child: _loadingStates
+                                ? _loadingDropdown('State')
+                                : _dropdown('State', _states, _selectedState,
+                                    (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
+                              const SizedBox(width: 12),
+                              Expanded(child: _loadingStates
+                                ? _loadingDropdown('City')
+                                : _dropdown(
+                                    'City',
+                                    _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
+                                    _selectedCity,
+                                    _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
+                                  )),
+                            ]),
+                            const SizedBox(height: 12),
+                            _addressField(),
+                            const SizedBox(height: 24),
+
+                            _sectionLabel('Identity & GPS', Icons.security_rounded),
+                            const SizedBox(height: 12),
+                            _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_rounded, TextInputType.number),
+                            const SizedBox(height: 12),
+                            _locationCard(),
+                            const SizedBox(height: 28),
+
+                            // Register button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 54,
+                              child: GestureDetector(
+                                onTap: _isLoading ? null : _register,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(colors: [_darkBlue, _blue, Color(0xFF42A5F5)]),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [BoxShadow(color: _blue.withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 8))],
+                                  ),
+                                  child: Center(
+                                    child: _isLoading
+                                      ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                      : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                          const Icon(Icons.how_to_reg_rounded, color: Colors.white, size: 20),
+                                          const SizedBox(width: 10),
+                                          Text('CREATE ACCOUNT', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1)),
+                                        ]),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            Center(
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: RichText(text: TextSpan(
+                                  text: 'Already have an account?  ',
+                                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
+                                  children: [TextSpan(text: 'Sign In', style: GoogleFonts.inter(fontSize: 13, color: _blue, fontWeight: FontWeight.w700))],
+                                )),
+                              ),
+                            ),
+                          ]),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-              ]),
-            ),
-            const SizedBox(height: 24),
-
-            // Register button
-            SizedBox(width: double.infinity, child: GestureDetector(
-              onTap: _isLoading ? null : _register,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF2ECC71)]),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [BoxShadow(color: const Color(0x4D1E66F5), blurRadius: 16, offset: const Offset(0, 6))],
-                ),
-                child: Center(child: _isLoading
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      const Icon(Icons.person_add_outlined, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                      Text('REGISTER NOW', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
-                    ]),
-                ),
-              ),
-            )),
-            const SizedBox(height: 20),
-            const Divider(color: Color(0xFFe2e8f0)),
-            const SizedBox(height: 16),
-
-            Center(
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: RichText(text: TextSpan(
-                  text: 'Already have an account? ',
-                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
-                  children: [TextSpan(text: 'Login', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w700))],
-                )),
               ),
             ),
-            const SizedBox(height: 24),
-          ]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _circle(double size, Color color) => Container(
+    width: size, height: size,
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+  );
+
+  Widget _sectionLabel(String label, IconData icon) => Row(children: [
+    Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(color: _blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      child: Icon(icon, size: 16, color: _blue),
+    ),
+    const SizedBox(width: 10),
+    Text(label, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+    const SizedBox(width: 10),
+    Expanded(child: Divider(color: _blue.withOpacity(0.15), thickness: 1)),
+  ]);
+
+  Widget _field(TextEditingController c, String hint, IconData icon, TextInputType type) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: TextField(
+        controller: c, keyboardType: type,
+        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8)),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: _blue.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: _blue, size: 16),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         ),
       ),
     );
   }
 
-  Widget _loadingDropdown(String hint) {
+  Widget _addressField() {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(children: [
-        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E66F5))),
-        const SizedBox(width: 10),
-        Text(hint, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
-      ]),
-    );
-  }
-
-  Widget _field(TextEditingController c, String hint, IconData icon, TextInputType type) {
-    return Container(
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
       child: TextField(
-        controller: c, keyboardType: type,
+        controller: _addressCtrl, maxLines: 3,
         style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
-        decoration: InputDecoration(hintText: hint, hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)), prefixIcon: Icon(icon, color: const Color(0xFF64748b), size: 18), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+        decoration: InputDecoration(
+          hintText: 'Full Address',
+          hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8)),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 0, 0),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: _blue.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.home_rounded, color: _blue, size: 16),
+            ),
+          ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        ),
       ),
     );
   }
@@ -315,22 +354,95 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Widget _dropdown(String hint, List<String> items, String? value, ValueChanged<String?>? onChanged) {
     return Container(
       decoration: BoxDecoration(
-        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5),
+        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: onChanged == null ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(hint, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
+          hint: Text(hint, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8))),
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748b), size: 18),
-          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: onChanged == null ? const Color(0xFFcbd5e1) : _blue, size: 20),
+          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a)),
           items: items.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
           onChanged: onChanged,
         ),
       ),
+    );
+  }
+
+  Widget _loadingDropdown(String hint) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Row(children: [
+        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _blue)),
+        const SizedBox(width: 10),
+        Text(hint, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94a3b8))),
+      ]),
+    );
+  }
+
+  Widget _locationCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        GestureDetector(
+          onTap: _detectingLocation ? null : _detectLocation,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            decoration: BoxDecoration(
+              gradient: _locationSet
+                ? const LinearGradient(colors: [Color(0xFF00C853), Color(0xFF69F0AE)])
+                : LinearGradient(colors: [_blue.withOpacity(0.08), _blue.withOpacity(0.04)]),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _locationSet ? _green.withOpacity(0.4) : _blue.withOpacity(0.2)),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              _detectingLocation
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _blue))
+                : Icon(
+                    _locationSet ? Icons.check_circle_rounded : Icons.my_location_rounded,
+                    size: 18,
+                    color: _locationSet ? Colors.white : _blue,
+                  ),
+              const SizedBox(width: 8),
+              Text(
+                _detectingLocation ? 'Detecting location...' : (_locationSet ? 'Location Captured ✓' : 'Detect My Location'),
+                style: GoogleFonts.poppins(
+                  fontSize: 13, fontWeight: FontWeight.w600,
+                  color: _locationSet ? Colors.white : _blue,
+                ),
+              ),
+            ]),
+          ),
+        ),
+        if (_locationSet && _lat != null) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(color: _green.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+            child: Row(children: [
+              const Icon(Icons.location_pin, size: 14, color: _green),
+              const SizedBox(width: 6),
+              Text('${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}',
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF0f172a), fontWeight: FontWeight.w500)),
+            ]),
+          ),
+        ],
+      ]),
     );
   }
 }
