@@ -19,7 +19,10 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => Provider.of<ComplaintProvider>(context, listen: false).loadComplaints());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = Provider.of<ComplaintProvider>(context, listen: false);
+      if (p.complaints.isEmpty) p.loadComplaints();
+    });
   }
 
   @override
@@ -33,6 +36,28 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
         _header(),
         Expanded(child: Consumer<ComplaintProvider>(builder: (context, p, _) {
           if (p.isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFF2B6CF6)));
+          if (p.error != null && p.complaints.isEmpty) {
+            return Column(children: [
+              _searchBar(),
+              _filterTabs(),
+              Expanded(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.wifi_off_outlined, size: 64, color: Color(0xFFcbd5e1)),
+                const SizedBox(height: 16),
+                Text('Could not load complaints', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
+                const SizedBox(height: 8),
+                Text(p.error!, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF718096)), textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () => p.loadComplaints(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),
+                    child: Text('Retry', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                ),
+              ]))),
+            ]);
+          }
           var complaints = p.complaints;
           if (_filter != 'all') complaints = complaints.where((c) => c.workStatus == _filter).toList();
           final q = _searchController.text.toLowerCase();

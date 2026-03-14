@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/location_service.dart';
@@ -163,7 +162,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
                     // State + City row
                     Row(children: [
-                      Expanded(child: _dropdown('Select State', _states, _selectedState, (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
+                      Expanded(child: _dropdown('Select State', _states, _selectedState, (v) => setState(() { _selectedState = v; _cityCtrl.clear(); }))),
                       const SizedBox(width: 12),
                       Expanded(child: _cityField()),
                     ]),

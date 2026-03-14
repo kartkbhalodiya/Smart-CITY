@@ -37,6 +37,7 @@ class ComplaintProvider with ChangeNotifier {
     String? search,
   }) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     final response = await ComplaintService.getComplaints(
