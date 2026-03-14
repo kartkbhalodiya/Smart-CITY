@@ -210,44 +210,26 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Blurred background image
-            ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-              child: Image.network(
-                'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1E66F5)),
-              ),
+            // Background image
+            Image.network(
+              'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1E66F5)),
             ),
-            // Blue gradient overlay (matches website)
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0x331E66F5),
-                    Color(0x26667EEA),
-                    Color(0x1A764BA2),
-                  ],
-                ),
-              ),
-            ),
-            // Backdrop blur overlay
+            // Full screen glass overlay
             BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-              child: Container(color: Colors.transparent),
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(color: Colors.white.withOpacity(0.82)),
             ),
-
-            // Content
+            // Content fills full screen
             SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnim,
                 child: SlideTransition(
                   position: _slideAnim,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: _glassCard(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: _formContent(),
                   ),
                 ),
               ),
@@ -258,206 +240,169 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     );
   }
 
-  Widget _glassCard() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.5)),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.15), blurRadius: 50, offset: const Offset(0, 20)),
-          BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.05), blurRadius: 100),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Back button row
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _borderColor),
-                      ),
-                      child: const Icon(Icons.arrow_back_rounded, size: 18, color: _textDark),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Logo
-                Image.asset('assets/images/logo.png', height: 80),
-                const SizedBox(height: 8),
-
-                // Brand subtitle
-                Text(
-                  'COMPLAINT MANAGEMENT SYSTEM',
-                  style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _primary, letterSpacing: 1.2),
-                ),
-                const SizedBox(height: 4),
-
-                // Heading
-                Text(
-                  'Create Account',
-                  style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark),
-                ),
-                const SizedBox(height: 20),
-
-                // First + Last name row
-                Row(children: [
-                  Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.person_outline, TextInputType.name)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.person_outline, TextInputType.name)),
-                ]),
-                const SizedBox(height: 12),
-                _field(_mobileCtrl, 'Mobile Number', Icons.phone_outlined, TextInputType.phone),
-                const SizedBox(height: 12),
-                _emailFieldWithVerify(),
-                if (_otpSent) ...[
-                  const SizedBox(height: 10),
-                  _otpVerifyBox(),
-                ],
-                const SizedBox(height: 12),
-                _field(_pincodeCtrl, 'Pincode', Icons.location_on_outlined, TextInputType.number),
-                const SizedBox(height: 12),
-
-                // State + City row
-                Row(children: [
-                  Expanded(child: _loadingStates
-                    ? _loadingDropdown('Select State')
-                    : _dropdown('Select State', _states, _selectedState,
-                        (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _loadingStates
-                    ? _loadingDropdown('Select City')
-                    : _dropdown(
-                        'Select City',
-                        _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
-                        _selectedCity,
-                        _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
-                      )),
-                ]),
-                const SizedBox(height: 12),
-
-                // Address
-                _addressField(),
-                const SizedBox(height: 12),
-
-                // Aadhaar
-                _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_outlined, TextInputType.number),
-                const SizedBox(height: 14),
-
-                // Location section
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '📍 Location (GPS)',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _locationButtons(),
-                if (_locationSet && _lat != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(children: [
-                      const Icon(Icons.location_pin, size: 14, color: _primary),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Lat: ${_lat!.toStringAsFixed(6)},  Lng: ${_lng!.toStringAsFixed(6)}',
-                        style: GoogleFonts.inter(fontSize: 12, color: _textDark),
-                      ),
-                    ]),
-                  ),
-                ],
-                const SizedBox(height: 16),
-
-                // Register button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: GestureDetector(
-                    onTap: (_isLoading || !_emailVerified) ? null : _register,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: _emailVerified
-                          ? const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF2ECC71), Color(0xFF764ba2)])
-                          : const LinearGradient(colors: [Color(0xFFcbd5e1), Color(0xFFcbd5e1)]),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: _emailVerified
-                          ? [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))]
-                          : [],
-                      ),
-                      child: Center(
-                        child: _isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              const Icon(Icons.person_add_outlined, color: Colors.white, size: 18),
-                              const SizedBox(width: 8),
-                              Text('REGISTER NOW', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
-                            ]),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Footer divider
-                Divider(color: Colors.black.withOpacity(0.05)),
-                const SizedBox(height: 12),
-
-                // Already have account
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: RichText(text: TextSpan(
-                    text: 'Already have an account?  ',
-                    style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
-                    children: [TextSpan(text: 'Login', style: GoogleFonts.inter(fontSize: 12, color: _primary, fontWeight: FontWeight.w600))],
-                  )),
-                ),
-                const SizedBox(height: 10),
-
-                // Guest track link
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.guestTrack),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _borderColor, width: 1.5),
-                    ),
-                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      const Icon(Icons.search_rounded, size: 15, color: _textDark),
-                      const SizedBox(width: 6),
-                      Text('Track Complaint as Guest', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
-                    ]),
-                  ),
-                ),
-              ],
+  Widget _formContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Back button
+        Align(
+          alignment: Alignment.centerLeft,
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _borderColor),
+              ),
+              child: const Icon(Icons.arrow_back_rounded, size: 18, color: _textDark),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 14),
+        // Logo
+        Image.asset('assets/images/logo.png', height: 80),
+        const SizedBox(height: 8),
+        // Brand subtitle
+        Text(
+          'COMPLAINT MANAGEMENT SYSTEM',
+          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _primary, letterSpacing: 1.2),
+        ),
+        const SizedBox(height: 4),
+        // Heading
+        Text(
+          'Create Account',
+          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark),
+        ),
+        const SizedBox(height: 20),
+        // First + Last name row
+        Row(children: [
+          Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.person_outline, TextInputType.name)),
+          const SizedBox(width: 12),
+          Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.person_outline, TextInputType.name)),
+        ]),
+        const SizedBox(height: 12),
+        _field(_mobileCtrl, 'Mobile Number', Icons.phone_outlined, TextInputType.phone),
+        const SizedBox(height: 12),
+        _emailFieldWithVerify(),
+        if (_otpSent) ...[
+          const SizedBox(height: 10),
+          _otpVerifyBox(),
+        ],
+        const SizedBox(height: 12),
+        _field(_pincodeCtrl, 'Pincode', Icons.location_on_outlined, TextInputType.number),
+        const SizedBox(height: 12),
+        // State + City row
+        Row(children: [
+          Expanded(child: _loadingStates
+            ? _loadingDropdown('Select State')
+            : _dropdown('Select State', _states, _selectedState,
+                (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
+          const SizedBox(width: 12),
+          Expanded(child: _loadingStates
+            ? _loadingDropdown('Select City')
+            : _dropdown(
+                'Select City',
+                _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
+                _selectedCity,
+                _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
+              )),
+        ]),
+        const SizedBox(height: 12),
+        _addressField(),
+        const SizedBox(height: 12),
+        _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_outlined, TextInputType.number),
+        const SizedBox(height: 14),
+        // Location section
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '📍 Location (GPS)',
+            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _locationButtons(),
+        if (_locationSet && _lat != null) ...[
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              const Icon(Icons.location_pin, size: 14, color: _primary),
+              const SizedBox(width: 6),
+              Text(
+                'Lat: ${_lat!.toStringAsFixed(6)},  Lng: ${_lng!.toStringAsFixed(6)}',
+                style: GoogleFonts.inter(fontSize: 12, color: _textDark),
+              ),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 16),
+        // Register button
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: GestureDetector(
+            onTap: (_isLoading || !_emailVerified) ? null : _register,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: _emailVerified
+                  ? const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF2ECC71), Color(0xFF764ba2)])
+                  : const LinearGradient(colors: [Color(0xFFcbd5e1), Color(0xFFcbd5e1)]),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: _emailVerified
+                  ? [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))]
+                  : [],
+              ),
+              child: Center(
+                child: _isLoading
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const Icon(Icons.person_add_outlined, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Text('REGISTER NOW', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
+                    ]),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Divider(color: Colors.black.withOpacity(0.08)),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: RichText(text: TextSpan(
+            text: 'Already have an account?  ',
+            style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
+            children: [TextSpan(text: 'Login', style: GoogleFonts.inter(fontSize: 12, color: _primary, fontWeight: FontWeight.w600))],
+          )),
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => Navigator.pushNamed(context, AppRoutes.guestTrack),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _borderColor, width: 1.5),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.search_rounded, size: 15, color: _textDark),
+              const SizedBox(width: 6),
+              Text('Track Complaint as Guest', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 
