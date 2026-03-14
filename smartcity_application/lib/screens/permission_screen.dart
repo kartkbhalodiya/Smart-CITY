@@ -261,12 +261,15 @@ class _PermissionScreenState extends State<PermissionScreen>
                   const SizedBox(height: 12),
 
                   GestureDetector(
-                    onTap: _requesting ? null : widget.onDone,
-                    child: Text('Skip for now',
-                        style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: const Color(0xFF94a3b8),
-                            fontWeight: FontWeight.w500)),
+                    onTap: widget.onDone,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text('Skip for now',
+                          style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: const Color(0xFF94a3b8),
+                              fontWeight: FontWeight.w500)),
+                    ),
                   ),
                   const SizedBox(height: 28),
                 ],
