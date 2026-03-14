@@ -78,35 +78,47 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     try {
       final res = await ApiService.get(ApiConfig.categories, includeAuth: false);
       if (res['success'] == true) {
-        final cats = (res['categories'] as List? ?? []);
-        final match = cats.firstWhere(
-          (c) => c['key'] == widget.categoryKey,
-          orElse: () => null,
-        );
+        final cats = res['categories'] as List? ?? [];
+        Map<String, dynamic>? match;
+        for (final c in cats) {
+          if ((c as Map)['key']?.toString() == widget.categoryKey) {
+            match = Map<String, dynamic>.from(c);
+            break;
+          }
+        }
         if (match != null) {
-          final subs = (match['subcategories'] as List? ?? [])
-              .map((e) => Map<String, dynamic>.from(e as Map))
-              .toList();
-          setState(() => _subcategories = subs);
+          final rawSubs = match['subcategories'] as List? ?? [];
+          final subs = rawSubs.map((e) {
+            final sub = Map<String, dynamic>.from(e as Map);
+            // Ensure dynamic_fields is a proper list of maps
+            sub['dynamic_fields'] = ((sub['dynamic_fields'] as List?) ?? [])
+                .map((f) => Map<String, dynamic>.from(f as Map))
+                .toList();
+            return sub;
+          }).toList();
+          if (mounted) setState(() => _subcategories = subs);
         }
       }
-    } catch (_) {}
-    setState(() => _loadingMeta = false);
+    } catch (e) {
+      debugPrint('_loadMeta error: $e');
+    }
+    if (mounted) setState(() => _loadingMeta = false);
   }
 
   void _selectSub(Map<String, dynamic> sub) {
     // Dispose old controllers
     if (_selectedSub != null) {
-      for (final f in (_selectedSub!['dynamic_fields'] as List? ?? [])) {
-        final id = (f as Map)['id'] as int;
+      for (final f in (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])) {
+        final id = f['id'] as int;
         _dynCtrl.remove(id)?.dispose();
         _dynDropdown.remove(id);
         _dynDate.remove(id);
       }
     }
-    // Init new controllers
-    for (final f in (sub['dynamic_fields'] as List? ?? [])) {
-      final id = (f as Map)['id'] as int;
+    // Init new controllers for new subcategory
+    final fields = sub['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
+    for (final f in fields) {
+      final id = f['id'] as int;
       final type = f['field_type'] as String;
       if (type == 'select') {
         _dynDropdown[id] = null;
@@ -175,8 +187,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     // Validate date fields
     if (_selectedSub != null) {
-      for (final f in (_selectedSub!['dynamic_fields'] as List? ?? [])) {
-        final id = (f as Map)['id'] as int;
+      for (final f in (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])) {
+        final id = f['id'] as int;
         final type = f['field_type'] as String;
         final required = f['is_required'] == true;
         if ((type == 'date' || type == 'datetime-local') && required && (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
@@ -253,9 +265,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                         _card(child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: _buildDynamicFields(
-                            (_selectedSub!['dynamic_fields'] as List? ?? [])
-                                .map((e) => Map<String, dynamic>.from(e as Map))
-                                .toList(),
+                            _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [],
                           ),
                         )),
                         const SizedBox(height: 24),
