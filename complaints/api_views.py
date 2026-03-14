@@ -12,7 +12,7 @@ import random
 
 from .models import (
     Complaint, ComplaintMedia, ComplaintResolutionProof, ComplaintReopenProof,
-    CitizenProfile, Department, ComplaintCategory, ComplaintSubcategory,
+    CitizenProfile, Department, DepartmentUser, ComplaintCategory, ComplaintSubcategory,
     ComplaintCategoryField, ComplaintFieldResponse, OTP
 )
 from .serializers import (
@@ -441,13 +441,15 @@ def department_forgot_password(request):
     if not email:
         return Response({'success': False, 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Only allow department users (users linked to a Department)
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
         return Response({'success': False, 'message': 'No department account found with this email'}, status=status.HTTP_404_NOT_FOUND)
 
-    dept = Department.objects.filter(user=user).first()
+    # Check DepartmentUser table (department staff)
+    dept_user = DepartmentUser.objects.filter(user=user).select_related('department').first()
+    dept = dept_user.department if dept_user else None
+
     if not dept:
         return Response({'success': False, 'message': 'This email is not linked to any department account'}, status=status.HTTP_403_FORBIDDEN)
 
