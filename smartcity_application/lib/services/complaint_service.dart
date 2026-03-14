@@ -1,6 +1,5 @@
 import 'dart:io';
 import '../config/api_config.dart';
-import '../models/complaint.dart';
 import 'api_service.dart';
 
 class ComplaintService {

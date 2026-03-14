@@ -39,7 +39,6 @@ class AppTheme {
         primary: AppColors.primaryBlue,
         secondary: AppColors.greenAccent,
         error: AppColors.error,
-        background: AppColors.background,
         surface: AppColors.cardBackground,
       ),
       
