@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
@@ -72,19 +71,70 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 200));
     _logoController.forward();
-
     await Future.delayed(const Duration(milliseconds: 500));
     _textController.forward();
-
     await Future.delayed(const Duration(milliseconds: 300));
     _quoteController.forward();
-
-    // Cycle quotes
     _cycleQuotes();
+    // Start permission + auth check immediately in background
+    _navigateWhenReady();
+  }
 
-    // Navigate after delay
-    await Future.delayed(const Duration(seconds: 3));
-    _navigate();
+  Future<void> _navigateWhenReady() async {
+    // Run permission check and auth load in parallel
+    final results = await Future.wait([
+      _checkPermissions(),
+      _loadAuth(),
+    ]);
+
+    // Ensure minimum 2.5s splash time
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    final allGranted = results[0] as bool;
+    final isAuth = results[1] as bool;
+
+    if (!allGranted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PermissionScreen(
+            onDone: () async {
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(
+                context,
+                isAuth ? AppRoutes.dashboard : AppRoutes.login,
+              );
+            },
+          ),
+        ),
+      );
+      return;
+    }
+    Navigator.pushReplacementNamed(context, isAuth ? AppRoutes.dashboard : AppRoutes.login);
+  }
+
+  Future<bool> _checkPermissions() async {
+    try {
+      final locPerm = await Geolocator.checkPermission();
+      final cam = await Permission.camera.status;
+      final notif = await Permission.notification.status;
+      final photos = await Permission.photos.status;
+      return (locPerm == LocationPermission.always || locPerm == LocationPermission.whileInUse)
+          && cam.isGranted && notif.isGranted && photos.isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _loadAuth() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.loadUser();
+      return authProvider.isAuthenticated;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _cycleQuotes() async {
@@ -95,52 +145,6 @@ class _SplashScreenState extends State<SplashScreen>
       setState(() => _quoteIndex = i);
       _quoteController.forward();
     }
-  }
-
-  Future<void> _navigate() async {
-    if (!mounted) return;
-
-    // Check actual permission status every launch
-    final locPerm = await Geolocator.checkPermission();
-    final camPerm = await Permission.camera.status;
-    final notifPerm = await Permission.notification.status;
-    final photosPerm = await Permission.photos.status;
-
-    final allGranted = (locPerm == LocationPermission.always || locPerm == LocationPermission.whileInUse)
-        && camPerm.isGranted
-        && notifPerm.isGranted
-        && photosPerm.isGranted;
-
-    if (!mounted) return;
-
-    if (!allGranted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PermissionScreen(
-            onDone: () async {
-              if (!mounted) return;
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              await authProvider.loadUser();
-              if (!mounted) return;
-              Navigator.pushReplacementNamed(
-                context,
-                authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
-              );
-            },
-          ),
-        ),
-      );
-      return;
-    }
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.loadUser();
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(
-      context,
-      authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
-    );
   }
 
   @override
