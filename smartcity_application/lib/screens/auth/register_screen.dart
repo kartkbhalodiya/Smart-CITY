@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
@@ -120,6 +121,17 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1E66F5),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.white,
+          statusBarIconBrightness: Brightness.dark,
+        ),
+        toolbarHeight: 0,
+      ),
       body: Stack(
         children: [
           // Gradient background
@@ -145,27 +157,29 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                   // Header
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Row(
+                    child: Column(
                       children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                width: 40, height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                                ),
+                                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                              ),
                             ),
-                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Create Account', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
-                          Text('Join JanHelp today', style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.8))),
-                        ]),
-                        const Spacer(),
-                        Image.asset('assets/images/logo.png', height: 44),
+                        const SizedBox(height: 12),
+                        Image.asset('assets/images/logo.png', height: 52),
+                        const SizedBox(height: 10),
+                        Text('Create Account', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
+                        Text('Join JanHelp today', style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.8))),
                       ],
                     ),
                   ),
