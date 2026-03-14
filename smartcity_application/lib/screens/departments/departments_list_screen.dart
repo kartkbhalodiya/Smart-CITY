@@ -51,16 +51,37 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
     super.dispose();
   }
 
+  static const _fallbackDepts = [
+    {'name': 'Police', 'department_type': 'police', 'department_type_display': 'Police'},
+    {'name': 'Traffic', 'department_type': 'traffic', 'department_type_display': 'Traffic'},
+    {'name': 'Construction', 'department_type': 'construction', 'department_type_display': 'Construction'},
+    {'name': 'Water Supply', 'department_type': 'water', 'department_type_display': 'Water Supply'},
+    {'name': 'Electricity', 'department_type': 'electricity', 'department_type_display': 'Electricity'},
+    {'name': 'Garbage', 'department_type': 'garbage', 'department_type_display': 'Garbage'},
+    {'name': 'Road / Pothole', 'department_type': 'road', 'department_type_display': 'Road'},
+    {'name': 'Drainage', 'department_type': 'drainage', 'department_type_display': 'Drainage'},
+    {'name': 'Illegal Activity', 'department_type': 'illegal', 'department_type_display': 'Illegal Activity'},
+    {'name': 'Transportation', 'department_type': 'transportation', 'department_type_display': 'Transportation'},
+    {'name': 'Cyber Crime', 'department_type': 'cyber', 'department_type_display': 'Cyber Crime'},
+    {'name': 'Other', 'department_type': 'other', 'department_type_display': 'Other'},
+  ];
+
   Future<void> _load() async {
     setState(() => _loading = true);
-    final res = await ApiService.get(ApiConfig.departments, includeAuth: false);
-    if (mounted && res['success'] == true) {
-      final list = (res['departments'] as List? ?? [])
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-      setState(() { _departments = list; _filtered = list; });
-    }
-    setState(() => _loading = false);
+    try {
+      final res = await ApiService.get(ApiConfig.departments, includeAuth: false);
+      if (mounted && res['success'] == true) {
+        final list = (res['departments'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        if (list.isNotEmpty) {
+          setState(() { _departments = list; _filtered = list; _loading = false; });
+          return;
+        }
+      }
+    } catch (_) {}
+    final fallback = _fallbackDepts.map((e) => Map<String, dynamic>.from(e)).toList();
+    if (mounted) setState(() { _departments = fallback; _filtered = fallback; _loading = false; });
   }
 
   void _search(String q) {
