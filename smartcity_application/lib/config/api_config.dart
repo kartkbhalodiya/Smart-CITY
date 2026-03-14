@@ -34,6 +34,9 @@ class ApiConfig {
   
   // Guest Track
   static const String trackGuest = '$baseUrl/track-guest/';
+
+  // Department Forgot Password
+  static const String departmentForgotPassword = '$baseUrl/auth/department-forgot-password/';
   
   // Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);

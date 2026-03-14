@@ -428,3 +428,41 @@ def get_departments(request):
         'success': True,
         'departments': serializer.data
     })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def department_forgot_password(request):
+    """Reset password for department user — sends new password to their email"""
+    from .email_utils import send_password_reset_credentials_email
+    import string
+
+    email = request.data.get('email', '').strip()
+    if not email:
+        return Response({'success': False, 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Only allow department users (users linked to a Department)
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'success': False, 'message': 'No department account found with this email'}, status=status.HTTP_404_NOT_FOUND)
+
+    dept = Department.objects.filter(user=user).first()
+    if not dept:
+        return Response({'success': False, 'message': 'This email is not linked to any department account'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Generate new 10-char password
+    chars = string.ascii_letters + string.digits + '@#$'
+    new_password = ''.join(random.choices(chars, k=10))
+
+    user.set_password(new_password)
+    user.save()
+
+    send_password_reset_credentials_email(
+        email=email,
+        user_name=user.get_full_name() or dept.name,
+        new_password=new_password,
+        department=dept,
+    )
+
+    return Response({'success': True, 'message': 'New password sent to your email'}, status=status.HTTP_200_OK)

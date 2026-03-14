@@ -3,6 +3,7 @@ import '../screens/splash_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/forgot_password_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/complaints/category_selection_screen.dart';
 import '../screens/complaints/submit_complaint_screen.dart';
@@ -16,6 +17,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String otp = '/otp';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String dashboard = '/dashboard';
   static const String categorySelection = '/category-selection';
   static const String submitComplaint = '/submit-complaint';
@@ -40,6 +42,9 @@ class AppRoutes {
       
       case register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
+
+      case forgotPassword:
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       
       case dashboard:
         return MaterialPageRoute(builder: (_) => const DashboardScreen());

@@ -87,9 +87,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     Align(
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('OTP will be sent to your registered email')),
-                        ),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
                         child: Text('Forgot Password?', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600)),
                       ),
                     ),
