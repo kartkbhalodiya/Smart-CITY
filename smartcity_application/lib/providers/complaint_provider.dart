@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/complaint.dart';
 import '../services/complaint_service.dart';
@@ -73,7 +74,7 @@ class ComplaintProvider with ChangeNotifier {
 
   Future<bool> createComplaint(
     Map<String, String> data,
-    List<dynamic> files,
+    List<File> files,
   ) async {
     _isLoading = true;
     _error = null;

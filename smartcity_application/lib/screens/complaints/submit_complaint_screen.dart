@@ -149,7 +149,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     };
     
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
-    final success = await provider.createComplaint(data, _image != null ? [_image] : []);
+    final image = _image;
+    final success = await provider.createComplaint(data, image != null ? [image] : []);
     
     setState(() => _isLoading = false);
     

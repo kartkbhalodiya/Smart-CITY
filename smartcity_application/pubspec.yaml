@@ -37,8 +37,8 @@ dependencies:
   # Image & Video
   image_picker: ^1.0.5
   video_player: ^2.8.1
-  image_cropper: ^5.0.1
-  file_picker: ^6.1.1
+  image_cropper: ^8.0.0
+  file_picker: ^8.0.0
 
   # Maps & Location
   google_maps_flutter: ^2.5.0
