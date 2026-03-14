@@ -94,7 +94,9 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
 
   bool get _hasRealData {
     final d = widget.department;
-    return (d['address'] ?? '').toString().isNotEmpty ||
+    // Has real data if any meaningful field is present (id means it came from API)
+    return d['id'] != null ||
+        (d['address'] ?? '').toString().isNotEmpty ||
         (d['phone'] ?? '').toString().isNotEmpty ||
         (d['email'] ?? '').toString().isNotEmpty ||
         (d['assigned_admin'] ?? '').toString().isNotEmpty ||
@@ -184,7 +186,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   fontSize: 15, fontWeight: FontWeight.w700, color: _textDark),
               maxLines: 1, overflow: TextOverflow.ellipsis),
           Text(typeDisplay,
-              style: GoogleFonts.inter(fontSize: 12, color: _primary)),
+              style: GoogleFonts.inter(fontSize: 12, color: _textMuted)),
         ])),
       ]),
     );
@@ -422,9 +424,6 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 Text(name,
                     style: GoogleFonts.poppins(
                         fontSize: 17, fontWeight: FontWeight.w700, color: _textDark)),
-                Text(typeDisplay,
-                    style: GoogleFonts.inter(
-                        fontSize: 13, color: _primary, fontWeight: FontWeight.w600)),
                 if (city.isNotEmpty || state.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Row(children: [
