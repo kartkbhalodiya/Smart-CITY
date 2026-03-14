@@ -111,6 +111,10 @@ class ComplaintProvider with ChangeNotifier {
     return false;
   }
 
+  Future<void> refresh() async {
+    await Future.wait([loadDashboardStats(), loadComplaints()]);
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
