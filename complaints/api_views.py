@@ -445,7 +445,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
 
 # Category Views
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_categories(request):
     """Get all complaint categories"""
     categories = ComplaintCategory.objects.filter(is_active=True).order_by('display_order')
@@ -457,22 +457,21 @@ def get_categories(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_subcategories(request, category_key):
-    """Get subcategories for a category"""
+    """Get subcategories and dynamic fields for a category"""
     try:
         category = ComplaintCategory.objects.get(key=category_key, is_active=True)
         subcategories = category.subcategories.filter(is_active=True).order_by('display_order')
-        serializer = ComplaintSubcategorySerializer(subcategories, many=True)
+        # Category-level fields (no subcategory)
+        cat_fields = category.dynamic_fields.filter(is_active=True, subcategory__isnull=True).order_by('display_order')
         return Response({
             'success': True,
-            'subcategories': serializer.data
+            'subcategories': ComplaintSubcategorySerializer(subcategories, many=True).data,
+            'category_fields': ComplaintCategoryFieldSerializer(cat_fields, many=True).data,
         })
     except ComplaintCategory.DoesNotExist:
-        return Response({
-            'success': False,
-            'message': 'Category not found'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': True, 'subcategories': [], 'category_fields': []})
 
 
 # Guest Track Complaint
