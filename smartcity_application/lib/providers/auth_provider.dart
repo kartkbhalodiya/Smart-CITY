@@ -63,7 +63,9 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     if (response['success'] == true) {
-      _user = User.fromJson(response['user']);
+      if (response['user'] != null) {
+        _user = User.fromJson(response['user']);
+      }
       notifyListeners();
       return true;
     } else {

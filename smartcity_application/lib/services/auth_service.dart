@@ -44,9 +44,13 @@ class AuthService {
       final token = response['token'];
       final userData = response['user'];
 
-      await StorageService.saveToken(token);
-      await StorageService.saveUserData(jsonEncode(userData));
-      await StorageService.setLoggedIn(true);
+      if (token != null) {
+        await StorageService.saveToken(token);
+        await StorageService.setLoggedIn(true);
+      }
+      if (userData != null) {
+        await StorageService.saveUserData(jsonEncode(userData));
+      }
     }
 
     return response;

@@ -26,11 +26,17 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   final _addressCtrl = TextEditingController();
   final _aadhaarCtrl = TextEditingController();
 
+  final _otpCtrl = TextEditingController();
+
   String? _selectedState, _selectedCity;
   List<String> _states = [];
   Map<String, List<String>> _citiesByState = {};
   double? _lat, _lng;
   bool _locationSet = false, _isLoading = false, _detectingLocation = false, _loadingStates = true, _openingMap = false;
+
+  // Email OTP verification
+  bool _sendingOtp = false, _otpSent = false, _verifyingOtp = false, _emailVerified = false;
+  String? _otpError;
 
   late AnimationController _ac;
   late Animation<double> _fadeAnim;
@@ -70,7 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   void dispose() {
     _ac.dispose();
     _firstNameCtrl.dispose(); _lastNameCtrl.dispose(); _mobileCtrl.dispose();
-    _emailCtrl.dispose(); _pincodeCtrl.dispose(); _addressCtrl.dispose(); _aadhaarCtrl.dispose();
+    _emailCtrl.dispose(); _pincodeCtrl.dispose(); _addressCtrl.dispose(); _aadhaarCtrl.dispose(); _otpCtrl.dispose();
     super.dispose();
   }
 
@@ -114,11 +120,52 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     }
   }
 
+  Future<void> _sendEmailOtp() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid email first')));
+      return;
+    }
+    setState(() { _sendingOtp = true; _otpError = null; });
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final success = await auth.sendOtp(email);
+    setState(() { _sendingOtp = false; });
+    if (success) {
+      setState(() { _otpSent = true; _emailVerified = false; _otpCtrl.clear(); });
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Failed to send OTP')));
+    }
+  }
+
+  Future<void> _verifyEmailOtp() async {
+    final otp = _otpCtrl.text.trim();
+    if (otp.length != 6) {
+      setState(() => _otpError = 'Enter the 6-digit OTP');
+      return;
+    }
+    setState(() { _verifyingOtp = true; _otpError = null; });
+    final result = await ApiService.post(
+      ApiConfig.verifyOtp,
+      {'email': _emailCtrl.text.trim(), 'otp': otp},
+      includeAuth: false,
+    );
+    setState(() => _verifyingOtp = false);
+    if (result['success'] == true) {
+      setState(() { _emailVerified = true; _otpSent = false; });
+    } else {
+      setState(() => _otpError = result['message'] ?? 'Invalid OTP');
+    }
+  }
+
   Future<void> _register() async {
     if (_firstNameCtrl.text.isEmpty || _lastNameCtrl.text.isEmpty ||
         _mobileCtrl.text.isEmpty || _emailCtrl.text.isEmpty ||
         _pincodeCtrl.text.isEmpty || _addressCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
+      return;
+    }
+    if (!_emailVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please verify your email first')));
       return;
     }
     setState(() => _isLoading = true);
@@ -137,7 +184,15 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     });
     setState(() => _isLoading = false);
     if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      if (auth.isAuthenticated) {
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      } else {
+        // Registration succeeded but no auto-login — go to login
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful! Please login.')),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Registration failed')));
     }
@@ -274,7 +329,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 const SizedBox(height: 12),
                 _field(_mobileCtrl, 'Mobile Number', Icons.phone_outlined, TextInputType.phone),
                 const SizedBox(height: 12),
-                _field(_emailCtrl, 'Email Address', Icons.email_outlined, TextInputType.emailAddress),
+                _emailFieldWithVerify(),
+                if (_otpSent) ...[
+                  const SizedBox(height: 10),
+                  _otpVerifyBox(),
+                ],
                 const SizedBox(height: 12),
                 _field(_pincodeCtrl, 'Pincode', Icons.location_on_outlined, TextInputType.number),
                 const SizedBox(height: 12),
@@ -341,14 +400,16 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   width: double.infinity,
                   height: 48,
                   child: GestureDetector(
-                    onTap: _isLoading ? null : _register,
+                    onTap: (_isLoading || !_emailVerified) ? null : _register,
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1E66F5), Color(0xFF2ECC71), Color(0xFF764ba2)],
-                        ),
+                        gradient: _emailVerified
+                          ? const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF2ECC71), Color(0xFF764ba2)])
+                          : const LinearGradient(colors: [Color(0xFFcbd5e1), Color(0xFFcbd5e1)]),
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))],
+                        boxShadow: _emailVerified
+                          ? [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))]
+                          : [],
                       ),
                       child: Center(
                         child: _isLoading
@@ -481,6 +542,158 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(width: 10),
         Text(hint, style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
       ]),
+    );
+  }
+
+  Widget _emailFieldWithVerify() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Email input field
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _emailVerified ? const Color(0xFF22c55e) : _borderColor,
+              width: 1.5,
+            ),
+          ),
+          child: TextField(
+            controller: _emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            enabled: !_emailVerified,
+            style: GoogleFonts.inter(fontSize: 14, color: _textDark),
+            onChanged: (_) {
+              if (_emailVerified || _otpSent) {
+                setState(() { _emailVerified = false; _otpSent = false; _otpCtrl.clear(); });
+              }
+            },
+            decoration: InputDecoration(
+              hintText: 'Email Address',
+              hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
+              prefixIcon: Icon(
+                _emailVerified ? Icons.verified_outlined : Icons.email_outlined,
+                color: _emailVerified ? const Color(0xFF22c55e) : _textMuted,
+                size: 18,
+              ),
+              suffixIcon: _emailVerified
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.check_circle, color: Color(0xFF22c55e), size: 16),
+                      const SizedBox(width: 4),
+                      Text('Verified', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF22c55e), fontWeight: FontWeight.w700)),
+                    ]),
+                  )
+                : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            ),
+          ),
+        ),
+        // Verify / Resend button below the field
+        if (!_emailVerified) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: _sendingOtp ? null : _sendEmailOtp,
+              icon: _sendingOtp
+                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Icon(_otpSent ? Icons.refresh_rounded : Icons.send_rounded, size: 15),
+              label: Text(
+                _sendingOtp ? 'Sending...' : (_otpSent ? 'Resend OTP' : 'Send Verification OTP'),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _otpSent ? const Color(0xFF0f172a) : _primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _otpVerifyBox() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFeff6ff),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFbfdbfe), width: 1.5),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.mark_email_read_outlined, size: 14, color: Color(0xFF1e40af)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'OTP sent to ${_emailCtrl.text.trim()}',
+                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1e40af), fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _otpError != null ? Colors.red : _borderColor, width: 1.5),
+                  ),
+                  child: TextField(
+                    controller: _otpCtrl,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark, letterSpacing: 6),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      hintText: '------',
+                      hintStyle: GoogleFonts.poppins(fontSize: 16, color: _textMuted, letterSpacing: 4),
+                      border: InputBorder.none,
+                      counterText: '',
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onChanged: (_) => setState(() => _otpError = null),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _verifyingOtp ? null : _verifyEmailOtp,
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: _primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: _verifyingOtp
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text('Submit', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                ),
+              ),
+            ]),
+            if (_otpError != null) ...[
+              const SizedBox(height: 6),
+              Text(_otpError!, style: GoogleFonts.inter(fontSize: 11, color: Colors.red)),
+            ],
+          ]),
+        ),
+      ],
     );
   }
 
