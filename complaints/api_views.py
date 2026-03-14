@@ -553,9 +553,9 @@ def get_states_cities(request):
 
 # Department Views
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_departments(request):
-    """Get all departments"""
+    """Get all departments — public"""
     departments = Department.objects.filter(is_active=True)
     serializer = DepartmentSerializer(departments, many=True, context={'request': request})
     return Response({

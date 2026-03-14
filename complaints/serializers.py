@@ -89,13 +89,14 @@ class ComplaintReopenProofSerializer(serializers.ModelSerializer):
 class DepartmentSerializer(serializers.ModelSerializer):
     department_type_display = serializers.CharField(source='get_department_type_display', read_only=True)
     logo_url = serializers.SerializerMethodField()
+    assigned_admin = serializers.SerializerMethodField()
     
     class Meta:
         model = Department
         fields = ['id', 'name', 'department_type', 'department_type_display',
                   'state', 'city', 'location_name', 'latitude', 'longitude',
                   'email', 'phone', 'address', 'formatted_address', 'sla_hours',
-                  'department_logo', 'logo_url', 'is_active']
+                  'department_logo', 'logo_url', 'is_active', 'assigned_admin']
     
     def get_logo_url(self, obj):
         request = self.context.get('request')
@@ -103,6 +104,12 @@ class DepartmentSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.department_logo.url)
             return obj.department_logo.url
+        return None
+
+    def get_assigned_admin(self, obj):
+        dept_user = obj.departmentuser_set.select_related('user').first()
+        if dept_user and dept_user.user:
+            return dept_user.user.get_full_name() or dept_user.user.username
         return None
 
 
