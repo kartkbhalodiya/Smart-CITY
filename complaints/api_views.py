@@ -27,21 +27,79 @@ from .serializers import (
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    """Register new user"""
-    serializer = RegisterSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'success': True,
-            'message': 'User registered successfully',
-            'token': token.key,
-            'user': UserSerializer(user).data
-        }, status=status.HTTP_201_CREATED)
+    """Register new user — accepts name, email, mobile_no, pincode, state, district, address, aadhaar, latitude, longitude"""
+    from .email_utils import send_welcome_email
+    data = request.data
+
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    mobile_no = (data.get('mobile_no') or '').strip()
+    pincode = (data.get('pincode') or '').strip()
+    state = (data.get('state') or '').strip()
+    district = (data.get('district') or '').strip()
+    address = (data.get('address') or '').strip()
+    aadhaar = (data.get('aadhaar') or '').strip()
+    latitude = data.get('latitude') or ''
+    longitude = data.get('longitude') or ''
+
+    if not name or not email or not mobile_no:
+        return Response({'success': False, 'message': 'Name, email and mobile number are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=email).exists():
+        return Response({'success': False, 'message': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
+
+    parts = name.split(' ', 1)
+    first_name = parts[0]
+    last_name = parts[1] if len(parts) > 1 else ''
+
+    user = User.objects.create_user(
+        username=email,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+    profile_kwargs = dict(
+        surname=last_name,
+        mobile_no=mobile_no,
+        state=state,
+        district=district,
+        city=district,
+        address=address,
+    )
+    if pincode:
+        profile_kwargs['pincode'] = pincode if hasattr(CitizenProfile, 'pincode') else None
+    if aadhaar:
+        profile_kwargs['aadhaar_number'] = aadhaar
+    try:
+        profile_kwargs['latitude'] = float(latitude) if latitude else None
+        profile_kwargs['longitude'] = float(longitude) if longitude else None
+    except (ValueError, TypeError):
+        pass
+    # Remove None values for fields that may not exist
+    profile_kwargs = {k: v for k, v in profile_kwargs.items() if v is not None}
+
+    CitizenProfile.objects.create(user=user, **profile_kwargs)
+
+    token, _ = Token.objects.get_or_create(user=user)
+
+    try:
+        send_welcome_email(
+            user_email=email,
+            user_name=name,
+            user_mobile=mobile_no,
+            join_date=user.date_joined.strftime('%Y-%m-%d'),
+            user_role='Citizen'
+        )
+    except Exception:
+        pass
+
     return Response({
-        'success': False,
-        'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
+        'success': True,
+        'message': 'Registration successful',
+        'token': token.key,
+        'user': UserSerializer(user).data,
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
@@ -89,6 +88,29 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         _lat = pos.latitude; _lng = pos.longitude;
         _locationSet = true; _detectingLocation = false;
         if (_addressCtrl.text.isEmpty && addr['address']!.isNotEmpty) _addressCtrl.text = addr['address']!;
+        if (addr['pincode']!.isNotEmpty) _pincodeCtrl.text = addr['pincode']!;
+        // Auto-select state
+        final detectedState = addr['state'] ?? '';
+        if (detectedState.isNotEmpty) {
+          final matchedState = _states.firstWhere(
+            (s) => s.toLowerCase().contains(detectedState.toLowerCase()) ||
+                   detectedState.toLowerCase().contains(s.toLowerCase()),
+            orElse: () => '',
+          );
+          if (matchedState.isNotEmpty) {
+            _selectedState = matchedState;
+            final detectedCity = addr['city'] ?? '';
+            if (detectedCity.isNotEmpty) {
+              final cities = _citiesByState[matchedState] ?? [];
+              final matchedCity = cities.firstWhere(
+                (c) => c.toLowerCase().contains(detectedCity.toLowerCase()) ||
+                       detectedCity.toLowerCase().contains(c.toLowerCase()),
+                orElse: () => '',
+              );
+              if (matchedCity.isNotEmpty) _selectedCity = matchedCity;
+            }
+          }
+        }
       });
     } else {
       setState(() => _detectingLocation = false);
@@ -101,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     setState(() => _openingMap = false);
-    final result = await Navigator.push<LatLng>(
+    final result = await Navigator.push<MapPickerResult>(
       context,
       MaterialPageRoute(
         builder: (_) => MapPickerScreen(
@@ -111,11 +133,34 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       ),
     );
     if (result != null && mounted) {
-      final addr = await LocationService.getAddressFromCoordinates(result.latitude, result.longitude);
       setState(() {
-        _lat = result.latitude; _lng = result.longitude;
+        _lat = result.lat;
+        _lng = result.lng;
         _locationSet = true;
-        if (addr['address']!.isNotEmpty) _addressCtrl.text = addr['address']!;
+        if (result.address.isNotEmpty) _addressCtrl.text = result.address;
+        // Auto-fill pincode
+        if (result.pincode.isNotEmpty) _pincodeCtrl.text = result.pincode;
+        // Auto-select state
+        if (result.state.isNotEmpty) {
+          final matchedState = _states.firstWhere(
+            (s) => s.toLowerCase().contains(result.state.toLowerCase()) ||
+                   result.state.toLowerCase().contains(s.toLowerCase()),
+            orElse: () => '',
+          );
+          if (matchedState.isNotEmpty) {
+            _selectedState = matchedState;
+            // Auto-select city
+            if (result.city.isNotEmpty) {
+              final cities = _citiesByState[matchedState] ?? [];
+              final matchedCity = cities.firstWhere(
+                (c) => c.toLowerCase().contains(result.city.toLowerCase()) ||
+                       result.city.toLowerCase().contains(c.toLowerCase()),
+                orElse: () => '',
+              );
+              if (matchedCity.isNotEmpty) _selectedCity = matchedCity;
+            }
+          }
+        }
       });
     }
   }

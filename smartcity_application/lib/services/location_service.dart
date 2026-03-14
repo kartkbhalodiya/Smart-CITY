@@ -1,25 +1,18 @@
+import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
 
 class LocationService {
   static Future<bool> checkPermission() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return false;
-    }
+    if (!serviceEnabled) return false;
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return false;
-      }
+      if (permission == LocationPermission.denied) return false;
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      return false;
-    }
-
+    if (permission == LocationPermission.deniedForever) return false;
     return true;
   }
 
@@ -27,40 +20,51 @@ class LocationService {
     try {
       bool hasPermission = await checkPermission();
       if (!hasPermission) return null;
-
-      return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     } catch (e) {
-      print('Error getting location: $e');
       return null;
     }
   }
 
+  /// Reverse geocode using OSM Nominatim — reliable, no API key needed
   static Future<Map<String, String>> getAddressFromCoordinates(
     double latitude,
     double longitude,
   ) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        latitude,
-        longitude,
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1',
       );
+      final response = await http.get(url, headers: {'User-Agent': 'JanHelpApp/1.0'}).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final addr = data['address'] as Map<String, dynamic>? ?? {};
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
+        final state = (addr['state'] ?? '').toString().trim();
+        final city = (addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['district'] ?? addr['county'] ?? '').toString().trim();
+        final pincode = (addr['postcode'] ?? '').toString().trim();
+        final road = (addr['road'] ?? addr['suburb'] ?? '').toString().trim();
+        final neighbourhood = (addr['neighbourhood'] ?? addr['suburb'] ?? '').toString().trim();
+        final displayName = (data['display_name'] ?? '').toString().trim();
+
+        // Build a clean short address
+        final parts = <String>[];
+        if (road.isNotEmpty) parts.add(road);
+        if (neighbourhood.isNotEmpty && neighbourhood != road) parts.add(neighbourhood);
+        if (city.isNotEmpty) parts.add(city);
+        final shortAddress = parts.isNotEmpty ? parts.join(', ') : displayName;
+
         return {
-          'address': '${place.street}, ${place.subLocality}, ${place.locality}',
-          'city': place.locality ?? '',
-          'state': place.administrativeArea ?? '',
-          'pincode': place.postalCode ?? '',
-          'area': place.subLocality ?? '',
-          'road': place.street ?? '',
+          'address': shortAddress,
+          'city': city,
+          'state': state,
+          'pincode': pincode,
+          'area': neighbourhood,
+          'road': road,
+          'display_name': displayName,
         };
       }
-    } catch (e) {
-      print('Error getting address: $e');
-    }
+    } catch (_) {}
 
     return {
       'address': '',
@@ -69,29 +73,7 @@ class LocationService {
       'pincode': '',
       'area': '',
       'road': '',
+      'display_name': '',
     };
-  }
-
-  static Future<Position?> getCoordinatesFromAddress(String address) async {
-    try {
-      List<Location> locations = await locationFromAddress(address);
-      if (locations.isNotEmpty) {
-        return Position(
-          latitude: locations[0].latitude,
-          longitude: locations[0].longitude,
-          timestamp: DateTime.now(),
-          accuracy: 0,
-          altitude: 0,
-          heading: 0,
-          speed: 0,
-          speedAccuracy: 0,
-          altitudeAccuracy: 0,
-          headingAccuracy: 0,
-        );
-      }
-    } catch (e) {
-      print('Error getting coordinates: $e');
-    }
-    return null;
   }
 }

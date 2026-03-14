@@ -6,6 +6,17 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../services/location_service.dart';
 
+/// Result returned from MapPickerScreen
+class MapPickerResult {
+  final double lat;
+  final double lng;
+  final String address;
+  final String city;
+  final String state;
+  final String pincode;
+  MapPickerResult({required this.lat, required this.lng, required this.address, required this.city, required this.state, required this.pincode});
+}
+
 class MapPickerScreen extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
@@ -24,6 +35,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   bool _gettingAddress = false;
   bool _detectingLocation = true;
   String _addressText = 'Detecting your location...';
+  String _city = '', _state = '', _pincode = '';
   bool _mapReady = false;
   LatLng? _pendingMove;
 
@@ -88,6 +100,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     if (mounted) {
       setState(() {
         _addressText = addr['address']!.isNotEmpty ? addr['address']! : 'Lat: ${pos.latitude.toStringAsFixed(5)}, Lng: ${pos.longitude.toStringAsFixed(5)}';
+        _city = addr['city'] ?? '';
+        _state = addr['state'] ?? '';
+        _pincode = addr['pincode'] ?? '';
         _gettingAddress = false;
       });
     }
@@ -273,7 +288,14 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pop(context, _pickedLocation),
+                      onPressed: () => Navigator.pop(context, MapPickerResult(
+                        lat: _pickedLocation.latitude,
+                        lng: _pickedLocation.longitude,
+                        address: _addressText,
+                        city: _city,
+                        state: _state,
+                        pincode: _pincode,
+                      )),
                       icon: const Icon(Icons.check_circle_rounded, size: 18),
                       label: Text('Confirm Location', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
                       style: ElevatedButton.styleFrom(
