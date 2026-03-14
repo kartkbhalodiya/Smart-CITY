@@ -155,6 +155,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     setState(() => _isLoading = false);
     
     if (success && mounted) {
+      await provider.refresh();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Complaint submitted successfully!')),
       );

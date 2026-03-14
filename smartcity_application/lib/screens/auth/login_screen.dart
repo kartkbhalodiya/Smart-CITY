@@ -79,7 +79,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     _inputField(_identifierController, 'Email / Mobile Number', Icons.person_outline, TextInputType.emailAddress),
                     const SizedBox(height: 12),
                     _passwordField(),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('OTP will be sent to your registered email')),
+                        ),
+                        child: Text('Forgot Password?', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     SizedBox(width: double.infinity, child: ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
@@ -96,9 +106,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     const Divider(color: Color(0x0D000000)),
                     const SizedBox(height: 12),
                     Row(children: [
-                      Expanded(child: _outlineBtn(Icons.person_outline, 'Guest', () {})),
+                      Expanded(child: _outlineBtn(Icons.person_outline, 'Guest', () {
+                        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+                      })),
                       const SizedBox(width: 8),
-                      Expanded(child: _outlineBtn(Icons.search, 'Track', () {})),
+                      Expanded(child: _outlineBtn(Icons.search, 'Track', () {
+                        Navigator.pushNamed(context, AppRoutes.trackComplaints);
+                      })),
                     ]),
                     const SizedBox(height: 14),
                     GestureDetector(
