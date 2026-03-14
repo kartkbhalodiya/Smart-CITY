@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
@@ -116,12 +115,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<bool> _checkPermissions() async {
     try {
-      final locPerm = await Geolocator.checkPermission();
+      final loc = await Permission.locationWhenInUse.status;
       final cam = await Permission.camera.status;
       final notif = await Permission.notification.status;
       final photos = await Permission.photos.status;
-      return (locPerm == LocationPermission.always || locPerm == LocationPermission.whileInUse)
-          && cam.isGranted && notif.isGranted && photos.isGranted;
+      return loc.isGranted && cam.isGranted && notif.isGranted && photos.isGranted;
     } catch (_) {
       return false;
     }
