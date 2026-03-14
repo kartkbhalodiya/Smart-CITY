@@ -172,12 +172,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     if (_identifierController.text.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter email or mobile'))); return; }
     setState(() => _isLoading = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final success = await auth.sendOtp(_identifierController.text);
-    setState(() => _isLoading = false);
-    if (success && mounted) {
-      Navigator.pushNamed(context, AppRoutes.otp, arguments: {'email': _identifierController.text});
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Failed to send OTP')));
+    final password = _passwordController.text.trim();
+
+    if (password.isNotEmpty) {
+      // Password login (superadmin, city admin, department)
+      final response = await auth.loginWithPassword(_identifierController.text.trim(), password);
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      if (response['success'] == true) {
+        final role = response['role'] ?? 'citizen';
+        if (role == 'superadmin' || role == 'city_admin' || role == 'department') {
+          Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Login failed')));
+      }
+    } else {
+      // OTP login (citizens)
+      final success = await auth.sendOtp(_identifierController.text.trim());
+      setState(() => _isLoading = false);
+      if (success && mounted) {
+        Navigator.pushNamed(context, AppRoutes.otp, arguments: {'email': _identifierController.text.trim()});
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Failed to send OTP')));
+      }
     }
   }
 }

@@ -137,6 +137,46 @@ def verify_otp(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+def login_with_password(request):
+    """Login with email/username + password (for superadmin, city admin, department users)"""
+    from .models import CityAdmin
+    identifier = request.data.get('identifier', '').strip()
+    password = request.data.get('password', '').strip()
+
+    if not identifier or not password:
+        return Response({'success': False, 'message': 'Email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = authenticate(request, username=identifier, password=password)
+    if not user:
+        try:
+            user_obj = User.objects.get(email__iexact=identifier)
+            user = authenticate(request, username=user_obj.username, password=password)
+        except User.DoesNotExist:
+            pass
+
+    if not user:
+        return Response({'success': False, 'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    role = 'citizen'
+    if user.is_superuser:
+        role = 'superadmin'
+    elif CityAdmin.objects.filter(user=user).exists():
+        role = 'city_admin'
+    elif DepartmentUser.objects.filter(user=user).exists():
+        role = 'department'
+
+    token, _ = Token.objects.get_or_create(user=user)
+    return Response({
+        'success': True,
+        'message': 'Login successful',
+        'token': token.key,
+        'user': UserSerializer(user).data,
+        'role': role,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_user(request):
     """Logout user"""

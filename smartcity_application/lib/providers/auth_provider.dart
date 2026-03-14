@@ -35,6 +35,24 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> loginWithPassword(String identifier, String password) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final response = await AuthService.loginWithPassword(identifier, password);
+
+    _isLoading = false;
+    if (response['success'] == true) {
+      if (response['user'] != null) _user = User.fromJson(response['user']);
+      notifyListeners();
+    } else {
+      _error = response['message'] ?? 'Login failed';
+      notifyListeners();
+    }
+    return response;
+  }
+
   Future<bool> verifyOtp(String email, String otp) async {
     _isLoading = true;
     _error = null;

@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .api_views import (
     ComplaintViewSet,
-    register_user, send_otp, verify_otp, logout_user,
+    register_user, send_otp, verify_otp, logout_user, login_with_password,
     user_profile, dashboard_stats,
     get_categories, get_subcategories, get_departments,
     track_guest_complaint_api, department_forgot_password,
@@ -15,6 +15,7 @@ router.register(r'complaints', ComplaintViewSet, basename='complaint')
 urlpatterns = [
     # Authentication
     path('auth/register/', register_user, name='api_register'),
+    path('auth/login/', login_with_password, name='api_login'),
     path('auth/send-otp/', send_otp, name='api_send_otp'),
     path('auth/verify-otp/', verify_otp, name='api_verify_otp'),
     path('auth/logout/', logout_user, name='api_logout'),

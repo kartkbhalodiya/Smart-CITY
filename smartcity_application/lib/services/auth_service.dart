@@ -13,6 +13,22 @@ class AuthService {
     );
   }
 
+  static Future<Map<String, dynamic>> loginWithPassword(String identifier, String password) async {
+    final response = await ApiService.post(
+      ApiConfig.login,
+      {'identifier': identifier, 'password': password},
+      includeAuth: false,
+    );
+    if (response['success'] == true) {
+      final token = response['token'];
+      final userData = response['user'];
+      if (token != null) await StorageService.saveToken(token);
+      if (userData != null) await StorageService.saveUserData(jsonEncode(userData));
+      await StorageService.setLoggedIn(true);
+    }
+    return response;
+  }
+
   static Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
     final response = await ApiService.post(
       ApiConfig.verifyOtp,
