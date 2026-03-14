@@ -40,22 +40,24 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
             return Column(children: [
               _searchBar(),
               _filterTabs(),
-              Expanded(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.wifi_off_outlined, size: 64, color: Color(0xFFcbd5e1)),
-                const SizedBox(height: 16),
-                Text('Could not load complaints', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
-                const SizedBox(height: 8),
-                Text(p.error!, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF718096)), textAlign: TextAlign.center),
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: () => p.loadComplaints(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),
-                    child: Text('Retry', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-                  ),
+              const SizedBox(height: 60),
+              const Icon(Icons.wifi_off_outlined, size: 64, color: Color(0xFFcbd5e1)),
+              const SizedBox(height: 16),
+              Text('Could not load complaints', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(p.error!, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF718096)), textAlign: TextAlign.center),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () => p.loadComplaints(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),
+                  child: Text('Retry', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                 ),
-              ]))),
+              ),
             ]);
           }
           var complaints = p.complaints;
