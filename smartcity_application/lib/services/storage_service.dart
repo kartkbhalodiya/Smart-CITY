@@ -1,9 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StorageService {
   static late SharedPreferences _prefs;
-  static const _storage = FlutterSecureStorage();
 
   // Keys
   static const String _tokenKey = 'auth_token';
@@ -14,17 +12,17 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // Token Management
+  // Token — saved in SharedPreferences so it persists across reinstalls
   static Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+    await _prefs.setString(_tokenKey, token);
   }
 
   static Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    return _prefs.getString(_tokenKey);
   }
 
   static Future<void> deleteToken() async {
-    await _storage.delete(key: _tokenKey);
+    await _prefs.remove(_tokenKey);
   }
 
   // User Data
@@ -51,7 +49,6 @@ class StorageService {
 
   // Clear All Data
   static Future<void> clearAll() async {
-    await _storage.deleteAll();
     await _prefs.clear();
   }
 }

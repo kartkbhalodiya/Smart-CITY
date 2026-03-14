@@ -100,9 +100,13 @@ class _SplashScreenState extends State<SplashScreen>
           builder: (_) => PermissionScreen(
             onDone: () async {
               if (!mounted) return;
+              // Load auth fresh here, not from stale closure
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.loadUser();
+              if (!mounted) return;
               Navigator.pushReplacementNamed(
                 context,
-                isAuth ? AppRoutes.dashboard : AppRoutes.login,
+                authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
               );
             },
           ),

@@ -109,10 +109,8 @@ class _PermissionScreenState extends State<PermissionScreen>
         return;
       }
 
-      // Location is the only critical one — proceed if granted
-      if (_locStatus?.isGranted ?? false) {
-        widget.onDone();
-      }
+      // Always proceed after requesting — don't block on non-critical perms
+      widget.onDone();
     } catch (e) {
       if (mounted) setState(() => _requesting = false);
     }
