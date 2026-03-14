@@ -98,14 +98,12 @@ class _SplashScreenState extends State<SplashScreen>
         context,
         MaterialPageRoute(
           builder: (_) => PermissionScreen(
-            onDone: () async {
-              if (!mounted) return;
-              // Load auth fresh here, not from stale closure
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            onDone: (BuildContext permContext) async {
+              final authProvider = Provider.of<AuthProvider>(permContext, listen: false);
               await authProvider.loadUser();
-              if (!mounted) return;
+              if (!permContext.mounted) return;
               Navigator.pushReplacementNamed(
-                context,
+                permContext,
                 authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
               );
             },

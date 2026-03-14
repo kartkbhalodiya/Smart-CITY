@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionScreen extends StatefulWidget {
-  final VoidCallback onDone;
+  final void Function(BuildContext context) onDone;
   const PermissionScreen({super.key, required this.onDone});
 
   @override
@@ -27,8 +27,7 @@ class _PermissionScreenState extends State<PermissionScreen>
   @override
   void initState() {
     super.initState();
-    _ac = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
+    _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fade = CurvedAnimation(parent: _ac, curve: Curves.easeIn);
     _slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
@@ -46,7 +45,7 @@ class _PermissionScreenState extends State<PermissionScreen>
     final loc = await Permission.locationWhenInUse.status;
     final cam = await Permission.camera.status;
     final notif = await Permission.notification.status;
-    final storage = await _storagePermission().status;
+    final storage = await Permission.photos.status;
     if (mounted) {
       setState(() {
         _locStatus = loc;
@@ -55,11 +54,6 @@ class _PermissionScreenState extends State<PermissionScreen>
         _storageStatus = storage;
       });
     }
-  }
-
-  // Android 13+ uses photos, older uses storage
-  Permission _storagePermission() {
-    return Permission.photos;
   }
 
   bool get _allGranted =>
@@ -71,19 +65,15 @@ class _PermissionScreenState extends State<PermissionScreen>
   Future<void> _requestAll() async {
     if (_requesting) return;
     setState(() => _requesting = true);
-
     try {
-      // Request all at once using permission_handler only
-      final Map<Permission, PermissionStatus> results = await [
+      final results = await [
         Permission.locationWhenInUse,
         Permission.camera,
         Permission.notification,
         Permission.photos,
       ].request();
 
-      // If photos denied, try storage (older Android)
-      PermissionStatus storageResult =
-          results[Permission.photos] ?? PermissionStatus.denied;
+      PermissionStatus storageResult = results[Permission.photos] ?? PermissionStatus.denied;
       if (!storageResult.isGranted) {
         storageResult = await Permission.storage.request();
       }
@@ -98,7 +88,6 @@ class _PermissionScreenState extends State<PermissionScreen>
         _requesting = false;
       });
 
-      // Check if any permanently denied
       final anyPermanent = (_locStatus?.isPermanentlyDenied ?? false) ||
           (_camStatus?.isPermanentlyDenied ?? false) ||
           (_notifStatus?.isPermanentlyDenied ?? false) ||
@@ -109,8 +98,7 @@ class _PermissionScreenState extends State<PermissionScreen>
         return;
       }
 
-      // Always proceed after requesting — don't block on non-critical perms
-      widget.onDone();
+      widget.onDone(context);
     } catch (e) {
       if (mounted) setState(() => _requesting = false);
     }
@@ -123,21 +111,18 @@ class _PermissionScreenState extends State<PermissionScreen>
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Permissions Blocked',
-            style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700, fontSize: 16)),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16)),
         content: Text(
           'Some permissions are permanently denied. Open App Settings to enable them.',
-          style: GoogleFonts.inter(
-              fontSize: 13, color: const Color(0xFF64748b)),
+          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              widget.onDone(); // let them continue anyway
+              widget.onDone(context);
             },
-            child: Text('Skip',
-                style: GoogleFonts.inter(color: const Color(0xFF94a3b8))),
+            child: Text('Skip', style: GoogleFonts.inter(color: const Color(0xFF94a3b8))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -150,12 +135,10 @@ class _PermissionScreenState extends State<PermissionScreen>
               backgroundColor: _primary,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Open Settings',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600, fontSize: 13)),
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ],
       ),
@@ -190,69 +173,49 @@ class _PermissionScreenState extends State<PermissionScreen>
                   Container(
                     width: 76, height: 76,
                     decoration: BoxDecoration(
-                        color: _primary.withOpacity(0.1),
-                        shape: BoxShape.circle),
-                    child: const Icon(Icons.security_rounded,
-                        size: 38, color: _primary),
+                        color: _primary.withOpacity(0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.security_rounded, size: 38, color: _primary),
                   ),
                   const SizedBox(height: 18),
                   Text('App Permissions',
                       style: GoogleFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF0f172a))),
+                          fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
                   const SizedBox(height: 6),
                   Text(
                     'JanHelp needs these permissions for the best experience',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: const Color(0xFF64748b),
-                        height: 1.5),
+                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b), height: 1.5),
                   ),
                   const SizedBox(height: 28),
                   ...items.map((p) => _permCard(p)),
                   const Spacer(),
 
-                  // Button
+                  // Allow / Continue button
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
                       onPressed: _requesting
                           ? null
-                          : (_allGranted ? widget.onDone : _requestAll),
+                          : (_allGranted ? () => widget.onDone(context) : _requestAll),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _allGranted
-                            ? const Color(0xFF059669)
-                            : _primary,
+                        backgroundColor: _allGranted ? const Color(0xFF059669) : _primary,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
                       child: _requesting
                           ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2.5))
+                              width: 22, height: 22,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                    _allGranted
-                                        ? Icons.check_circle_rounded
-                                        : Icons.security_rounded,
-                                    size: 18),
+                                Icon(_allGranted ? Icons.check_circle_rounded : Icons.security_rounded, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _allGranted
-                                      ? 'Continue'
-                                      : 'Allow Permissions',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700),
+                                  _allGranted ? 'Continue' : 'Allow Permissions',
+                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),
@@ -260,15 +223,18 @@ class _PermissionScreenState extends State<PermissionScreen>
                   ),
                   const SizedBox(height: 12),
 
+                  // Skip for now — always works
                   GestureDetector(
-                    onTap: widget.onDone,
+                    onTap: () => widget.onDone(context),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text('Skip for now',
-                          style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: const Color(0xFF94a3b8),
-                              fontWeight: FontWeight.w500)),
+                      child: Text(
+                        'Skip for now',
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: const Color(0xFF94a3b8),
+                            fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -307,43 +273,31 @@ class _PermissionScreenState extends State<PermissionScreen>
         Container(
           width: 42, height: 42,
           decoration: BoxDecoration(
-            color: granted
-                ? const Color(0xFFDCFCE7)
-                : p.color.withOpacity(0.12),
+            color: granted ? const Color(0xFFDCFCE7) : p.color.withOpacity(0.12),
             borderRadius: BorderRadius.circular(11),
           ),
-          child: Icon(p.icon,
-              color: granted ? const Color(0xFF059669) : p.color, size: 20),
+          child: Icon(p.icon, color: granted ? const Color(0xFF059669) : p.color, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-              Text(p.title,
-                  style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0f172a))),
-              Text(p.subtitle,
-                  style: GoogleFonts.inter(
-                      fontSize: 11, color: const Color(0xFF64748b))),
-            ])),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(p.title,
+              style: GoogleFonts.poppins(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+          Text(p.subtitle,
+              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
+        ])),
         const SizedBox(width: 8),
         if (p.status == null)
           const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Color(0xFF94a3b8)))
+              width: 16, height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF94a3b8)))
         else if (granted)
-          const Icon(Icons.check_circle_rounded,
-              color: Color(0xFF059669), size: 20)
+          const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 20)
         else if (permanentDenied)
           const Icon(Icons.block_rounded, color: Color(0xFFEF4444), size: 20)
         else
-          Icon(Icons.radio_button_unchecked_rounded,
-              color: p.color.withOpacity(0.5), size: 20),
+          Icon(Icons.radio_button_unchecked_rounded, color: p.color.withOpacity(0.5), size: 20),
       ]),
     );
   }
@@ -355,6 +309,5 @@ class _PermItem {
   final String subtitle;
   final Color color;
   final PermissionStatus? status;
-  const _PermItem(
-      this.icon, this.title, this.subtitle, this.color, this.status);
+  const _PermItem(this.icon, this.title, this.subtitle, this.color, this.status);
 }
