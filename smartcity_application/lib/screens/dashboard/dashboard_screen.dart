@@ -235,20 +235,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _submitTab() {
     final categories = [
-      {'icon': '🚔', 'name': 'Police', 'key': 'police'}, {'icon': '🚦', 'name': 'Traffic', 'key': 'traffic'},
-      {'icon': '🏗️', 'name': 'Construction', 'key': 'construction'}, {'icon': '💧', 'name': 'Water Supply', 'key': 'water'},
-      {'icon': '💡', 'name': 'Electricity', 'key': 'electricity'}, {'icon': '🗑️', 'name': 'Garbage', 'key': 'garbage'},
-      {'icon': '🚧', 'name': 'Road/Pothole', 'key': 'road'}, {'icon': '🌊', 'name': 'Drainage', 'key': 'drainage'},
-      {'icon': '⚠️', 'name': 'Illegal Activity', 'key': 'illegal'}, {'icon': '🚌', 'name': 'Transportation', 'key': 'transportation'},
-      {'icon': '🛡️', 'name': 'Cyber Crime', 'key': 'cyber'}, {'icon': '📋', 'name': 'Other', 'key': 'other'},
-    ];
-    final gradients = [
-      [const Color(0xFF667eea), const Color(0xFF764ba2)], [const Color(0xFFf093fb), const Color(0xFFf5576c)],
-      [const Color(0xFF4facfe), const Color(0xFF00f2fe)], [const Color(0xFF43e97b), const Color(0xFF38f9d7)],
-      [const Color(0xFFfa709a), const Color(0xFFfee140)], [const Color(0xFF30cfd0), const Color(0xFF330867)],
-      [const Color(0xFFa8edea), const Color(0xFFfed6e3)], [const Color(0xFFfbc2eb), const Color(0xFFa6c1ee)],
-      [const Color(0xFFfdcbf1), const Color(0xFFe6dee9)], [const Color(0xFFa1c4fd), const Color(0xFFc2e9fb)],
-      [const Color(0xFFd299c2), const Color(0xFFfef9d7)], [const Color(0xFF89f7fe), const Color(0xFF66a6ff)],
+      {'emoji': '🚓', 'name': 'Police',          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': 'Traffic',         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': 'Construction',    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚰', 'name': 'Water Supply',    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '💡', 'name': 'Electricity',     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
+      {'emoji': '🗑️', 'name': 'Garbage',         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
+      {'emoji': '🛣️', 'name': 'Road / Pothole',  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
+      {'emoji': '🌊', 'name': 'Drainage',        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
+      {'emoji': '⚠️', 'name': 'Illegal Activity','key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
+      {'emoji': '🚌', 'name': 'Transportation',  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🛡️', 'name': 'Cyber Crime',     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
+      {'emoji': '📋', 'name': 'Other',           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('What do you want to report?', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
@@ -257,24 +255,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SizedBox(height: 20),
       GridView.count(
         crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 1.1,
-        children: List.generate(categories.length, (i) => GestureDetector(
-          onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint, arguments: {'categoryKey': categories[i]['key'], 'categoryName': categories[i]['name']}),
-          child: Container(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.transparent, width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Container(
-                width: 64, height: 64,
-                decoration: BoxDecoration(gradient: LinearGradient(colors: gradients[i]), borderRadius: BorderRadius.circular(16)),
-                child: Center(child: Text(categories[i]['icon']!, style: const TextStyle(fontSize: 30))),
-              ),
-              const SizedBox(height: 10),
-              Text(categories[i]['name']!, textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
-            ]),
-          ),
-        )),
+        crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: 0.95,
+        children: categories.map((c) => _categoryCard(c)).toList(),
       ),
     ]);
+  }
+
+  Widget _categoryCard(Map<String, Object> c) {
+    final bg = c['bg'] as Color;
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
+          arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+        ),
+        child: Column(children: [
+          Expanded(
+            flex: 5,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              ),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(c['emoji'] as String, style: const TextStyle(fontSize: 48)),
+                const SizedBox(height: 6),
+                Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Center(
+                child: Text(c['name'] as String,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0f172a))),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
   }
 
   Widget _myComplaintsTab() {

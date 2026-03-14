@@ -394,21 +394,20 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     ]);
   }
 
-  // ── Submit tab ─────────────────────────────────────────────────────────────
   Widget _submitTab() {
     final categories = [
-      {'emoji': '🚓', 'name': 'Police', 'key': 'police', 'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': 'Traffic', 'key': 'traffic', 'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': 'Construction', 'key': 'construction', 'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🚰', 'name': 'Water Supply', 'key': 'water', 'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '💡', 'name': 'Electricity', 'key': 'electricity', 'bg': const Color(0xFFFFFBEB)},
-      {'emoji': '🗑️', 'name': 'Garbage', 'key': 'garbage', 'bg': const Color(0xFFECFDF5)},
-      {'emoji': '🛣️', 'name': 'Road/Pothole', 'key': 'road', 'bg': const Color(0xFFFAF5FF)},
-      {'emoji': '🌊', 'name': 'Drainage', 'key': 'drainage', 'bg': const Color(0xFFEFF6FF)},
-      {'emoji': '⚠️', 'name': 'Illegal Activity', 'key': 'illegal', 'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🚌', 'name': 'Transportation', 'key': 'transportation', 'bg': const Color(0xFFFFF1F2)},
-      {'emoji': '🛡️', 'name': 'Cyber Crime', 'key': 'cyber', 'bg': const Color(0xFFF5F3FF)},
-      {'emoji': '📋', 'name': 'Other', 'key': 'other', 'bg': const Color(0xFFF8FAFC)},
+      {'emoji': '🚓', 'name': 'Police',          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': 'Traffic',         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': 'Construction',    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚰', 'name': 'Water Supply',    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '💡', 'name': 'Electricity',     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
+      {'emoji': '🗑️', 'name': 'Garbage',         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
+      {'emoji': '🛣️', 'name': 'Road / Pothole',  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
+      {'emoji': '🌊', 'name': 'Drainage',        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
+      {'emoji': '⚠️', 'name': 'Illegal Activity','key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
+      {'emoji': '🚌', 'name': 'Transportation',  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🛡️', 'name': 'Cyber Crime',     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
+      {'emoji': '📋', 'name': 'Other',           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Submit a Complaint',
@@ -424,33 +423,59 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         physics: const NeverScrollableScrollPhysics(),
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: 1.05,
-        children: categories
-            .map((c) => GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
-                      arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
+        childAspectRatio: 0.95,
+        children: categories.map((c) {
+          final bg = c['bg'] as Color;
+          return GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
+                arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: Column(children: [
+                Expanded(
+                  flex: 5,
                   child: Container(
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      color: c['bg'] as Color,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)
-                      ],
+                      color: bg,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                     ),
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      // Full emoji, no background box
-                      Text(c['emoji'] as String, style: const TextStyle(fontSize: 42)),
-                      const SizedBox(height: 10),
-                      Text(c['name'] as String,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF0f172a))),
+                      Text(c['emoji'] as String, style: const TextStyle(fontSize: 48)),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 36, height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
                     ]),
                   ),
-                ))
-            .toList(),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    child: Center(
+                      child: Text(c['name'] as String,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                              fontSize: 13, fontWeight: FontWeight.w700,
+                              color: const Color(0xFF0f172a))),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+          );
+        }).toList(),
       ),
     ]);
   }

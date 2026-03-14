@@ -1,108 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../config/theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../config/routes.dart';
-import '../../providers/category_provider.dart';
-import '../../models/category.dart';
 
-class CategorySelectionScreen extends StatefulWidget {
+class CategorySelectionScreen extends StatelessWidget {
   const CategorySelectionScreen({super.key});
 
-  @override
-  State<CategorySelectionScreen> createState() => _CategorySelectionScreenState();
-}
-
-class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CategoryProvider>(context, listen: false).loadCategories();
-    });
-  }
+  static const _categories = [
+    {'emoji': '🚓', 'name': 'Police',          'key': 'police',         'bg': Color(0xFFEEF2FF)},
+    {'emoji': '🚦', 'name': 'Traffic',         'key': 'traffic',        'bg': Color(0xFFFFF7ED)},
+    {'emoji': '🏗️', 'name': 'Construction',    'key': 'construction',   'bg': Color(0xFFF0F9FF)},
+    {'emoji': '🚰', 'name': 'Water Supply',    'key': 'water',          'bg': Color(0xFFF0FDF4)},
+    {'emoji': '💡', 'name': 'Electricity',     'key': 'electricity',    'bg': Color(0xFFFFFBEB)},
+    {'emoji': '🗑️', 'name': 'Garbage',         'key': 'garbage',        'bg': Color(0xFFECFDF5)},
+    {'emoji': '🛣️', 'name': 'Road / Pothole',  'key': 'road',           'bg': Color(0xFFFAF5FF)},
+    {'emoji': '🌊', 'name': 'Drainage',        'key': 'drainage',       'bg': Color(0xFFEFF6FF)},
+    {'emoji': '⚠️', 'name': 'Illegal Activity','key': 'illegal',        'bg': Color(0xFFFFF1F2)},
+    {'emoji': '🚌', 'name': 'Transportation',  'key': 'transportation', 'bg': Color(0xFFF0F9FF)},
+    {'emoji': '🛡️', 'name': 'Cyber Crime',     'key': 'cyber',          'bg': Color(0xFFF5F3FF)},
+    {'emoji': '📋', 'name': 'Other',           'key': 'other',          'bg': Color(0xFFF8FAFC)},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Category')),
-      body: Consumer<CategoryProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Column(children: [
+        // Top nav
+        Container(
+          color: Colors.white,
+          padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top,
+              left: 8, right: 16, bottom: 12),
+          child: Row(children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0f172a)),
+              onPressed: () => Navigator.pop(context),
+            ),
+            Image.asset('assets/images/logo.png', height: 32),
+            const SizedBox(width: 10),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Submit Complaint',
+                  style: GoogleFonts.poppins(
+                      fontSize: 16, fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0f172a))),
+              Text('Choose a category',
+                  style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
+            ]),
+          ]),
+        ),
 
-          if (provider.error != null) {
-            return Center(child: Text(provider.error!));
-          }
-
-          final categories = provider.categories;
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              childAspectRatio: 0.95,
             ),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return _CategoryCard(category: category);
-            },
-          );
-        },
-      ),
+            itemCount: _categories.length,
+            itemBuilder: (_, i) => _card(context, _categories[i]),
+          ),
+        ),
+      ]),
     );
   }
-}
 
-class _CategoryCard extends StatelessWidget {
-  final Category category;
-  const _CategoryCard({required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.submitComplaint,
-            arguments: {
-              'categoryKey': category.key,
-              'categoryName': category.name,
-            },
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (category.logoUrl != null)
-              Image.network(category.logoUrl!, height: 48, width: 48, errorBuilder: (_, __, ___) => _buildFallbackIcon())
-            else if (category.emoji != null)
-              Text(category.emoji!, style: const TextStyle(fontSize: 40))
-            else
-              _buildFallbackIcon(),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                category.name,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
+  Widget _card(BuildContext context, Map<String, Object> c) {
+    final bg = c['bg'] as Color;
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
+          arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
           ],
         ),
+        child: Column(children: [
+          // Top pastel half — full emoji, no box
+          Expanded(
+            flex: 5,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              ),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(c['emoji'] as String, style: const TextStyle(fontSize: 48)),
+                const SizedBox(height: 6),
+                Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+          // Bottom white half — name
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Center(
+                child: Text(c['name'] as String,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0f172a))),
+              ),
+            ),
+          ),
+        ]),
       ),
     );
-  }
-
-  Widget _buildFallbackIcon() {
-    return const Icon(Icons.category, size: 40, color: AppColors.primaryBlue);
   }
 }
