@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../config/routes.dart';
@@ -11,23 +12,92 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  late AnimationController _quoteController;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoFade;
+  late Animation<double> _textFade;
+  late Animation<Offset> _textSlide;
+  late Animation<double> _quoteFade;
+
+  int _quoteIndex = 0;
+
+  final List<String> _quotes = [
+    '🏙️ Building a smarter city, together',
+    '🧹 Clean streets, happy citizens',
+    '🚦 Safer roads for everyone',
+    '💧 Every complaint counts for change',
+    '🌳 A greener city starts with you',
+    '🔧 Report it. Fix it. Live better.',
+  ];
+
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+
+    _logoController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _textController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _quoteController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _logoScale = CurvedAnimation(parent: _logoController, curve: Curves.elasticOut)
+        .drive(Tween(begin: 0.0, end: 1.0));
+    _logoFade = CurvedAnimation(parent: _logoController, curve: Curves.easeIn)
+        .drive(Tween(begin: 0.0, end: 1.0));
+    _textFade = CurvedAnimation(parent: _textController, curve: Curves.easeIn)
+        .drive(Tween(begin: 0.0, end: 1.0));
+    _textSlide = CurvedAnimation(parent: _textController, curve: Curves.easeOut)
+        .drive(Tween(begin: const Offset(0, 0.3), end: Offset.zero));
+    _quoteFade = CurvedAnimation(parent: _quoteController, curve: Curves.easeInOut)
+        .drive(Tween(begin: 0.0, end: 1.0));
+
+    _startAnimations();
   }
 
-  Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2));
-    
+  Future<void> _startAnimations() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    _logoController.forward();
+
+    await Future.delayed(const Duration(milliseconds: 500));
+    _textController.forward();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    _quoteController.forward();
+
+    // Cycle quotes
+    _cycleQuotes();
+
+    // Navigate after delay
+    await Future.delayed(const Duration(seconds: 3));
+    _navigate();
+  }
+
+  void _cycleQuotes() async {
+    for (int i = 1; i < _quotes.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
+      await _quoteController.reverse();
+      setState(() => _quoteIndex = i);
+      _quoteController.forward();
+    }
+  }
+
+  Future<void> _navigate() async {
     if (!mounted) return;
-    
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.loadUser();
-
     if (!mounted) return;
-
     if (authProvider.isAuthenticated) {
       Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
     } else {
@@ -36,66 +106,160 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _logoController.dispose();
+    _textController.dispose();
+    _quoteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Spacer(flex: 2),
+
+            // Logo
+            FadeTransition(
+              opacity: _logoFade,
+              child: ScaleTransition(
+                scale: _logoScale,
+                child: Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withOpacity(0.15),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.location_city_rounded,
+                    size: 58,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // App name + tagline
+            SlideTransition(
+              position: _textSlide,
+              child: FadeTransition(
+                opacity: _textFade,
+                child: Column(
+                  children: [
+                    Text(
+                      'JanHelp',
+                      style: GoogleFonts.poppins(
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Smart City Complaint System',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                        letterSpacing: 1.1,
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.location_city,
-                  size: 60,
-                  color: AppColors.primaryBlue,
+              ),
+            ),
+
+            const Spacer(flex: 2),
+
+            // Rotating city quote
+            FadeTransition(
+              opacity: _quoteFade,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  _quotes[_quoteIndex],
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: AppColors.textDark.withOpacity(0.75),
+                    height: 1.5,
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'JanHelp',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Complaint Management System',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 40),
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Loading dots
+            _LoadingDots(),
+
+            const Spacer(),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _LoadingDots extends StatefulWidget {
+  @override
+  State<_LoadingDots> createState() => _LoadingDotsState();
+}
+
+class _LoadingDotsState extends State<_LoadingDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (i) {
+            final delay = i / 3;
+            final value = ((_controller.value - delay) % 1.0).clamp(0.0, 1.0);
+            final opacity = value < 0.5
+                ? value * 2
+                : (1.0 - value) * 2;
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withOpacity(0.2 + opacity * 0.8),
+                shape: BoxShape.circle,
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }
