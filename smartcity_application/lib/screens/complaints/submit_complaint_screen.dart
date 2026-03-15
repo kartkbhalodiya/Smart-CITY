@@ -27,6 +27,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  final _mobileCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _pincodeCtrl = TextEditingController();
+  final _stateCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController();
+  final _geoCtrl = TextEditingController();
+
+  String _priority = 'medium'; // high, medium, low
 
   // Dynamic field controllers keyed by field id
   final Map<int, TextEditingController> _dynCtrl = {};
@@ -70,6 +78,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _addressCtrl.dispose();
+    _mobileCtrl.dispose();
+    _emailCtrl.dispose();
+    _pincodeCtrl.dispose();
+    _stateCtrl.dispose();
+    _cityCtrl.dispose();
+    _geoCtrl.dispose();
     for (final c in _dynCtrl.values) c.dispose();
     super.dispose();
   }
@@ -186,9 +200,15 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     if (pos != null && mounted) {
       _lat = pos.latitude;
       _lng = pos.longitude;
+      _geoCtrl.text = '${_lat!.toStringAsFixed(6)}, ${_lng!.toStringAsFixed(6)}';
       final addr = await LocationService.getAddressFromCoordinates(pos.latitude, pos.longitude);
-      if (mounted && (addr['address'] ?? '').isNotEmpty) {
-        _addressCtrl.text = addr['address']!;
+      if (mounted) {
+        if ((addr['address'] ?? '').isNotEmpty) {
+          _addressCtrl.text = addr['address']!;
+        }
+        if (addr['city'] != null) _cityCtrl.text = addr['city']!;
+        if (addr['state'] != null) _stateCtrl.text = addr['state']!;
+        if (addr['pincode'] != null) _pincodeCtrl.text = addr['pincode']!;
       }
     }
   }
@@ -196,6 +216,20 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 80);
     if (picked != null && mounted) setState(() => _images.add(File(picked.path)));
+  }
+
+  void _updateGeoFromText(String v) {
+    try {
+      final parts = v.split(',');
+      if (parts.length == 2) {
+        final lat = double.tryParse(parts[0].trim());
+        final lng = double.tryParse(parts[1].trim());
+        if (lat != null && lng != null) {
+          _lat = lat;
+          _lng = lng;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _pickDate(int fieldId, bool withTime) async {
@@ -259,6 +293,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       'latitude': (_lat ?? 20.5937).toString(),
       'longitude': (_lng ?? 78.9629).toString(),
       'complaint_type': widget.categoryKey ?? 'other',
+      'priority': _priority,
+      'mobile_no': _mobileCtrl.text.trim(),
+      'email': _emailCtrl.text.trim(),
+      'pincode': _pincodeCtrl.text.trim(),
+      'state': _stateCtrl.text.trim(),
+      'city': _cityCtrl.text.trim(),
       if (_selectedSub != null) 'subcategory': _selectedSub!['name'] as String,
     };
 
@@ -365,7 +405,54 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       }
     }
 
-    // ── Step 3: Complaint details ─────────────────────
+    // ── Step 3: Contact Information ──────────────────
+    sections.add(_sectionTitle((step++).toString(), 'Contact Information'));
+    sections.add(const SizedBox(height: 12));
+    sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _label('Mobile Number'),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _mobileCtrl,
+        hint: 'Your contact number',
+        keyboard: TextInputType.phone,
+        validator: (v) => (v ?? '').trim().isEmpty ? 'Mobile number is required' : null,
+      ),
+      const SizedBox(height: 16),
+      _label('Email Address'),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _emailCtrl,
+        hint: 'Your email address',
+        keyboard: TextInputType.emailAddress,
+      ),
+      const SizedBox(height: 16),
+      Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _label('City'),
+          const SizedBox(height: 6),
+          _textField(controller: _cityCtrl, hint: 'City'),
+        ])),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _label('Pincode'),
+          const SizedBox(height: 6),
+          _textField(controller: _pincodeCtrl, hint: 'Pincode', keyboard: TextInputType.number),
+        ])),
+      ]),
+      const SizedBox(height: 16),
+      _label('State'),
+      const SizedBox(height: 6),
+      _textField(controller: _stateCtrl, hint: 'State'),
+    ])));
+    sections.add(const SizedBox(height: 24));
+
+    // ── Step 4: Priority & Severity ───────────────────
+    sections.add(_sectionTitle((step++).toString(), 'Set Priority'));
+    sections.add(const SizedBox(height: 12));
+    sections.add(_prioritySelector());
+    sections.add(const SizedBox(height: 24));
+
+    // ── Step 5: Complaint details ─────────────────────
     sections.add(_sectionTitle((step++).toString(), 'Complaint Details'));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -392,15 +479,21 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         controller: _addressCtrl,
         hint: 'Address of the issue',
         maxLines: 2,
-        suffix: IconButton(
-          icon: const Icon(Icons.my_location_rounded, color: _primary, size: 20),
-          onPressed: _detectLocation,
-        ),
+      ),
+      const SizedBox(height: 12),
+      _locationButtons(),
+      const SizedBox(height: 16),
+      _label('Geo Coordinates (Lat, Lng)'),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _geoCtrl,
+        hint: 'Latitude, Longitude',
+        onChanged: _updateGeoFromText,
       ),
     ])));
     sections.add(const SizedBox(height: 24));
 
-    // ── Step 4: Photos ────────────────────────────────
+    // ── Step 6: Photos ────────────────────────────────
     sections.add(_sectionTitle((step++).toString(), 'Evidence Photos'));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: _photoSection()));
@@ -572,7 +665,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         widgets.add(_textField(
           controller: _dynCtrl[id]!,
           hint: 'Enter $label',
-          keyboardType: type == 'number' ? TextInputType.number
+          keyboard: type == 'number' ? TextInputType.number
               : type == 'email' ? TextInputType.emailAddress
               : type == 'tel' ? TextInputType.phone
               : TextInputType.text,
@@ -701,15 +794,17 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     required TextEditingController controller,
     required String hint,
     int maxLines = 1,
-    TextInputType? keyboardType,
+    TextInputType? keyboard,
     Widget? suffix,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
-      keyboardType: keyboardType,
+      keyboardType: keyboard,
       validator: validator,
+      onChanged: onChanged,
       style: GoogleFonts.inter(fontSize: 14, color: _textDark),
       decoration: InputDecoration(
         hintText: hint,
@@ -723,6 +818,75 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _primary, width: 2)),
         errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
         focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
+      ),
+    );
+  }
+
+  Widget _prioritySelector() {
+    return Row(children: [
+      _priorityBtn('high', 'High', Colors.red, const Color(0xFFFEF2F2)),
+      const SizedBox(width: 10),
+      _priorityBtn('medium', 'Medium', Colors.orange, const Color(0xFFFFF7ED)),
+      const SizedBox(width: 10),
+      _priorityBtn('low', 'Low', Colors.green, const Color(0xFFF0FDF4)),
+    ]);
+  }
+
+  Widget _priorityBtn(String key, String label, Color color, Color bg) {
+    final selected = _priority == key;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _priority = key),
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: selected ? color : bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: selected ? color : color.withOpacity(0.2), width: 1.5),
+            boxShadow: selected ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))] : [],
+          ),
+          child: Center(
+            child: Text(label,
+                style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : color)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _locationButtons() {
+    return Row(children: [
+      Expanded(
+        child: _smallBtn(Icons.my_location_rounded, 'Detect Location', _detectLocation),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: _smallBtn(Icons.map_outlined, 'Select on Map', () {
+          // TODO: Implement map selection
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Map selection coming soon')));
+        }),
+      ),
+    ]);
+  }
+
+  Widget _smallBtn(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: _borderColor, width: 1.5),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, size: 16, color: _primary),
+          const SizedBox(width: 6),
+          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
+        ]),
       ),
     );
   }
