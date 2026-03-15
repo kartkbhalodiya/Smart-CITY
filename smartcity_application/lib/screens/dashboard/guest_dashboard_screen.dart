@@ -1,9 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class GuestDashboardScreen extends StatefulWidget {
   const GuestDashboardScreen({super.key});
@@ -18,10 +21,23 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   int _total = 0, _pending = 0, _solved = 0, _depts = 0;
   bool _statsLoading = true;
 
+  final _trackComplaintCtrl = TextEditingController();
+  final _trackPhoneCtrl = TextEditingController();
+  bool _trackLoading = false;
+  String? _trackError;
+  Map<String, dynamic>? _trackResult;
+
   @override
   void initState() {
     super.initState();
     _loadStats();
+  }
+
+  @override
+  void dispose() {
+    _trackComplaintCtrl.dispose();
+    _trackPhoneCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStats() async {
@@ -56,6 +72,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               _tabNav(),
               if (_tab == 0) _homeTab(),
               if (_tab == 1) _submitTab(),
+              if (_tab == 2) _trackTab(),
             ]),
           ),
         )),
@@ -96,7 +113,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Widget _tabNav() {
-    final tabs = ['Home', 'Submit Complaint'];
+    final tabs = ['Home', 'Submit', 'Track'];
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(6),
@@ -106,7 +123,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]),
       child: Row(
           children: List.generate(
-              2,
+              3,
               (i) => Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() {
@@ -198,6 +215,285 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       // Locked features
       _lockedBanner(),
     ]);
+  }
+
+  Future<void> _track() async {
+    if (_trackComplaintCtrl.text.trim().isEmpty || _trackPhoneCtrl.text.trim().isEmpty) {
+      setState(() => _trackError = 'Please enter both complaint ID and mobile number');
+      return;
+    }
+    setState(() { _trackLoading = true; _trackError = null; _trackResult = null; });
+    try {
+      final res = await ApiService.post(
+        ApiConfig.trackGuest,
+        {'complaint_number': _trackComplaintCtrl.text.trim(), 'phone': _trackPhoneCtrl.text.trim()},
+        includeAuth: false,
+      );
+      setState(() {
+        _trackLoading = false;
+        if (res['success'] == true) {
+          _trackResult = res['complaint'] as Map<String, dynamic>;
+        } else {
+          _trackError = res['message'] ?? 'Complaint not found';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _trackLoading = false;
+        _trackError = 'Something went wrong. Please try again.';
+      });
+    }
+  }
+
+  Widget _trackTab() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Track Complaint',
+          style: GoogleFonts.poppins(
+              fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+      const SizedBox(height: 4),
+      Text('Check the status of your reported issue',
+          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
+      const SizedBox(height: 20),
+      
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        ),
+        child: Column(children: [
+          _inputField(_trackComplaintCtrl, 'Complaint ID (e.g. COMP123)', Icons.tag),
+          const SizedBox(height: 12),
+          _inputField(_trackPhoneCtrl, 'Mobile Number', Icons.phone_outlined, type: TextInputType.phone),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _trackLoading ? null : _track,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E66F5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _trackLoading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text('TRACK NOW', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+            ),
+          ),
+          if (_trackError != null) ...[
+            const SizedBox(height: 12),
+            Text(_trackError!, style: GoogleFonts.inter(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w600)),
+          ]
+        ]),
+      ),
+
+      if (_trackResult != null) ...[
+        const SizedBox(height: 24),
+        Text('Complaint Details',
+            style: GoogleFonts.poppins(
+                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        const SizedBox(height: 12),
+        _infoGrid(_trackResult!),
+        const SizedBox(height: 24),
+        Text('Progress Status',
+            style: GoogleFonts.poppins(
+                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        const SizedBox(height: 16),
+        _timeline(_trackResult!['work_status'] as String, _trackResult!),
+        const SizedBox(height: 24),
+        _mapSection(_trackResult!),
+        const SizedBox(height: 24),
+        if (_trackResult!['assigned_department_phone'] != null)
+          _connectDeptSection(_trackResult!),
+        const SizedBox(height: 40),
+      ],
+    ]);
+  }
+
+  Widget _inputField(TextEditingController c, String hint, IconData icon, {TextInputType type = TextInputType.text}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: TextField(
+        controller: c,
+        keyboardType: type,
+        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b)),
+          prefixIcon: Icon(icon, color: const Color(0xFF64748b), size: 18),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoGrid(Map<String, dynamic> c) {
+    final items = [
+      ('Complaint ID', '#${c['complaint_number']}'),
+      ('Category', c['complaint_type'] ?? ''),
+      ('Assigned Dept', c['assigned_department'] ?? 'Not Assigned Yet'),
+      ('Location', '${c['city']}, ${c['pincode']}'),
+      ('Submitted On', c['created_at'] ?? ''),
+      ('Contact Person', c['contact_name'] ?? ''),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+      ),
+      child: Column(
+        children: items.map((item) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(item.$1, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b), fontWeight: FontWeight.w500)),
+            const SizedBox(width: 12),
+            Flexible(child: Text(item.$2, textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a)))),
+          ]),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _timeline(String status, Map<String, dynamic> c) {
+    final steps = [
+      _TimelineStep('Submitted', Icons.assignment_outlined, _isCompleted(status, 'pending'), _statusColor('pending'), c['created_at'] ?? ''),
+      _TimelineStep('Confirmed', Icons.check_circle_outline, _isCompleted(status, 'confirmed'), _statusColor('confirmed'), _isCompleted(status, 'confirmed') ? (c['updated_at'] ?? 'Confirmed') : '-'),
+      _TimelineStep('Processing', Icons.autorenew, _isCompleted(status, 'process'), _statusColor('process'), _isCompleted(status, 'process') ? (c['updated_at'] ?? 'In Process') : '-'),
+      _TimelineStep(status == 'reopened' ? 'Reopened' : 'Solved', status == 'reopened' ? Icons.refresh : Icons.verified_outlined, _isCompleted(status, 'solved'), _statusColor(status == 'reopened' ? 'reopened' : 'solved'), _isCompleted(status, 'solved') ? (c['updated_at'] ?? 'Done') : '-'),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        children: List.generate(steps.length, (i) {
+          final s = steps[i];
+          final isLast = i == steps.length - 1;
+          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Column(children: [
+              Container(
+                width: 24, height: 24,
+                decoration: BoxDecoration(
+                  color: s.completed ? s.color : Colors.white,
+                  border: Border.all(color: s.completed ? Colors.transparent : const Color(0xFFE2E8F0), width: 2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(s.completed ? Icons.check : s.icon, size: 12, color: s.completed ? Colors.white : const Color(0xFF94a3b8)),
+              ),
+              if (!isLast) Container(width: 2, height: 40, color: s.completed ? s.color.withOpacity(0.3) : const Color(0xFFE2E8F0)),
+            ]),
+            const SizedBox(width: 16),
+            Expanded(child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 20, top: 2),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(s.label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: s.completed ? const Color(0xFF0f172a) : const Color(0xFF64748b))),
+                const SizedBox(height: 2),
+                Text(s.date, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94a3b8))),
+              ]),
+            )),
+          ]);
+        }),
+      ),
+    );
+  }
+
+  Widget _mapSection(Map<String, dynamic> c) {
+    final lat = (c['latitude'] ?? 0.0).toDouble();
+    final lng = (c['longitude'] ?? 0.0).toDouble();
+    if (lat == 0.0 && lng == 0.0) return const SizedBox.shrink();
+    final position = LatLng(lat, lng);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Complaint Location', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0))),
+            child: FlutterMap(
+              options: MapOptions(initialCenter: position, initialZoom: 14),
+              children: [
+                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                MarkerLayer(markers: [
+                  Marker(point: position, width: 40, height: 40, child: const Icon(Icons.location_pin, color: Colors.red, size: 40)),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _connectDeptSection(Map<String, dynamic> c) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E66F5).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.1)),
+      ),
+      child: Column(children: [
+        Text('Assigned Department Contact',
+            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => launchUrl(Uri.parse('tel:${c['assigned_department_phone']}')),
+              icon: const Icon(Icons.call, size: 18),
+              label: const Text('Call Department'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E66F5),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => launchUrl(Uri.parse('mailto:${c['assigned_department_email']}')),
+              icon: const Icon(Icons.email_outlined, size: 18),
+              label: const Text('Email Dept'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1E66F5),
+                side: const BorderSide(color: Color(0xFF1E66F5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  bool _isCompleted(String current, String step) {
+    const order = ['pending', 'confirmed', 'process', 'solved', 'reopened'];
+    final ci = order.indexOf(current);
+    final si = order.indexOf(step);
+    if (step == 'solved') return current == 'solved' || current == 'reopened';
+    return ci >= si && si != -1;
+  }
+
+  Color _statusColor(String s) {
+    switch (s) {
+      case 'pending': return const Color(0xFFEF4444);
+      case 'confirmed': return const Color(0xFFF97316);
+      case 'process': return const Color(0xFFEAB308);
+      case 'solved': return const Color(0xFF22C55E);
+      case 'reopened': return const Color(0xFF991B1B);
+      default: return const Color(0xFF94A3B8);
+    }
   }
 
   // ── Stats grid with blur overlay ──────────────────────────────────────────
@@ -484,6 +780,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     final items = [
       {'emoji': '🏠', 'label': 'Home'},
       {'emoji': '📝', 'label': 'Submit'},
+      {'emoji': '🔍', 'label': 'Track'},
       {'emoji': '🔑', 'label': 'Login'},
     ];
     return Container(
@@ -494,16 +791,17 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           bottom: MediaQuery.of(context).padding.bottom, top: 8, left: 16, right: 16),
       child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(3, (i) {
+          children: List.generate(4, (i) {
             final active = _navIndex == i;
             return GestureDetector(
               onTap: () {
                 if (i == 0) setState(() { _navIndex = 0; _tab = 0; });
                 else if (i == 1) setState(() { _navIndex = 1; _tab = 1; });
+                else if (i == 2) setState(() { _navIndex = 2; _tab = 2; });
                 else Navigator.pushReplacementNamed(context, AppRoutes.login);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                     color: active ? const Color(0x1A1E66F5) : Colors.transparent,
                     borderRadius: BorderRadius.circular(12)),
@@ -522,4 +820,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           })),
     );
   }
+}
+
+class _TimelineStep {
+  final String label;
+  final IconData icon;
+  final bool completed;
+  final Color color;
+  final String date;
+  const _TimelineStep(this.label, this.icon, this.completed, this.color, this.date);
 }

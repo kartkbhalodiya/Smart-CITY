@@ -57,6 +57,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   final List<File> _images = [];
   bool _submitting = false;
+  bool _isPreviewing = false;
   double? _lat, _lng;
 
   static const _emojiMap = {
@@ -343,27 +344,31 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   }
 
   Future<void> _submit() async {
-    if (_selectedSub == null && _subcategories.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a subcategory'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-    if (!_formKey.currentState!.validate()) return;
+    if (!_isPreviewing) {
+      if (_selectedSub == null && _subcategories.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a subcategory'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      if (!_formKey.currentState!.validate()) return;
 
-    // Validate date fields
-    if (_selectedSub != null) {
-      for (final f in (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])) {
-        final id = f['id'] as int;
-        final type = f['field_type'] as String;
-        final required = f['is_required'] == true;
-        if ((type == 'date' || type == 'datetime-local') && required && (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${f['label']} is required'), backgroundColor: Colors.orange),
-          );
-          return;
+      // Validate date fields
+      if (_selectedSub != null) {
+        for (final f in (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])) {
+          final id = f['id'] as int;
+          final type = f['field_type'] as String;
+          final required = f['is_required'] == true;
+          if ((type == 'date' || type == 'datetime-local') && required && (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${f['label']} is required'), backgroundColor: Colors.orange),
+            );
+            return;
+          }
         }
       }
+      setState(() => _isPreviewing = true);
+      return;
     }
 
     setState(() => _submitting = true);
@@ -436,6 +441,97 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     }
   }
 
+  Widget _previewSection() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Preview Your Complaint',
+            style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
+        const SizedBox(height: 4),
+        Text('Please verify your details before confirming',
+            style: GoogleFonts.inter(fontSize: 14, color: _textMuted)),
+        const SizedBox(height: 24),
+        
+        _previewCard('Issue Details', [
+          ('Title', _titleCtrl.text),
+          ('Category', widget.categoryName ?? 'Other'),
+          if (_selectedSub != null) ('Subcategory', _selectedSub!['name'] as String),
+          ('Priority', _priority.toUpperCase()),
+          ('Description', _descCtrl.text),
+        ]),
+        const SizedBox(height: 16),
+        
+        _previewCard('Location', [
+          ('Address', _addressCtrl.text),
+          ('City', _selectedCity ?? 'Not Selected'),
+          ('State', _selectedState ?? 'Not Selected'),
+          ('Pincode', _pincodeCtrl.text),
+        ]),
+        const SizedBox(height: 16),
+        
+        _previewCard('Personal Info', [
+          ('Name', _nameCtrl.text),
+          ('Mobile', _mobileCtrl.text),
+          if (_emailCtrl.text.isNotEmpty) ('Email', _emailCtrl.text),
+        ]),
+        const SizedBox(height: 32),
+        
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _submitting ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _submitting
+                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                : Text('Confirm & Submit', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton(
+            onPressed: () => setState(() => _isPreviewing = false),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _primary),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text('Edit Details', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _primary)),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _previewCard(String title, List<(String, String)> items) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _primary)),
+        const Divider(height: 24),
+        ...items.map((it) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(it.$1, style: GoogleFonts.inter(fontSize: 12, color: _textMuted, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(it.$2, style: GoogleFonts.inter(fontSize: 14, color: _textDark, fontWeight: FontWeight.w600)),
+          ]),
+        )).toList(),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final key = widget.categoryKey ?? 'other';
@@ -450,7 +546,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         Expanded(
           child: _loadingMeta
               ? const Center(child: CircularProgressIndicator(color: _primary))
-              : Form(
+              : _isPreviewing 
+                ? _previewSection()
+                : Form(
                   key: _formKey,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
@@ -629,7 +727,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         child: _submitting
             ? const SizedBox(width: 22, height: 22,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-            : Text('Submit Complaint',
+            : Text(_isPreviewing ? 'Confirm & Submit' : 'Preview Complaint',
                 style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
       ),
     ));
