@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
@@ -42,7 +41,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Timer? _resendTimer;
 
   late AnimationController _ac;
-  late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
   static const _primary = Color(0xFF1E66F5);
@@ -54,7 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   void initState() {
     super.initState();
     _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnim = CurvedAnimation(parent: _ac, curve: Curves.easeIn);
     _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
     _ac.forward();
@@ -312,59 +309,31 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-      child: Scaffold(
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF667EEA),
-                Color(0xFF764BA2),
-                Color(0xFFF093FB),
-                Color(0xFFF5576C),
-              ],
-              stops: [0.0, 0.3, 0.7, 1.0],
-            ),
-          ),
+    return Scaffold(
+      body: Stack(children: [
+        Image.network(
+          'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
+          fit: BoxFit.cover, width: double.infinity, height: double.infinity,
+          errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
+        ),
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
           child: Container(
-            margin: const EdgeInsets.all(6), // 6px gradient background visible
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: SafeArea(
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: SlideTransition(
-                      position: _slideAnim,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
-                        child: _formContent(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.white.withOpacity(0.85),
+          ),
+        ),
+        SafeArea(
+          child: SlideTransition(
+            position: _slideAnim,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: _formContent(),
             ),
           ),
         ),
-      ),
+      ]),
     );
   }
 

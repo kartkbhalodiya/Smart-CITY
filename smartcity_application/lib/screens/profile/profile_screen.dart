@@ -557,9 +557,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(context); // close dialog
                   await auth.logout();
-                  Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+                  if (mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      this.context, AppRoutes.login, (_) => false);
+                  }
                 },
                 child: Text('Logout', style: GoogleFonts.inter(color: const Color(0xFFdc2626), fontWeight: FontWeight.bold)),
               ),

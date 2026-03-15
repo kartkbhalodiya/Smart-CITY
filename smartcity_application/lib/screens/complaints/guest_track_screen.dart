@@ -64,9 +64,10 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(children: [
-        Image.asset(
-          'assets/images/track_bg.png',
+        Image.network(
+          'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
           fit: BoxFit.cover, width: double.infinity, height: double.infinity,
+          errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
         ),
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),

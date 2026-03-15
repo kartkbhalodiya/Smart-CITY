@@ -93,6 +93,31 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                           : Text('LOGIN', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                     )),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFCD34D), width: 1),
+                      ),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF78350F)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: RichText(text: TextSpan(
+                            style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF1C1C1C), height: 1.5),
+                            children: [
+                              const TextSpan(text: 'Citizen? ', style: TextStyle(fontWeight: FontWeight.w700)),
+                              const TextSpan(text: 'Just enter your email and tap '),
+                              const TextSpan(text: 'LOGIN', style: TextStyle(fontWeight: FontWeight.w700)),
+                              const TextSpan(text: ' — no password needed. An OTP will be sent to your email.'),
+                            ],
+                          )),
+                        ),
+                      ]),
+                    ),
                     const SizedBox(height: 16),
                     const Divider(color: Color(0x0D000000)),
                     const SizedBox(height: 12),
@@ -144,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         controller: _passwordController, obscureText: _obscure,
         style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
         decoration: InputDecoration(
-          hintText: 'Password', hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
+          hintText: 'Password (Staff/Admin only)', hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
           prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF64748b), size: 18),
           suffixIcon: IconButton(icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: const Color(0xFF64748b), size: 18), onPressed: () => setState(() => _obscure = !_obscure)),
           border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

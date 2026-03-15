@@ -313,14 +313,20 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.janhelp.app',
               ),
-              // Dotted line complaint → department
+              // Road line complaint → department (white border + blue fill)
               if (hasComplaintCoords && hasDeptCoords)
                 PolylineLayer(polylines: [
+                  // White border (road casing)
+                  Polyline(
+                    points: [LatLng(lat, lng), LatLng(deptLat, deptLng)],
+                    color: Colors.white,
+                    strokeWidth: 7.0,
+                  ),
+                  // Blue road fill
                   Polyline(
                     points: [LatLng(lat, lng), LatLng(deptLat, deptLng)],
                     color: const Color(0xFF1E66F5),
-                    strokeWidth: 2.5,
-                    isDotted: true,
+                    strokeWidth: 4.0,
                   ),
                 ]),
               MarkerLayer(markers: [

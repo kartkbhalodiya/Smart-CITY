@@ -87,10 +87,13 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                     ),
                     const SizedBox(height: 24),
                     // 6 OTP input boxes
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(6, (i) => _otpBox(i)),
-                    ),
+                    LayoutBuilder(builder: (context, constraints) {
+                      final boxSize = ((constraints.maxWidth - 30) / 6).clamp(0.0, 52.0);
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(6, (i) => _otpBox(i, boxSize)),
+                      );
+                    }),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -130,22 +133,23 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _otpBox(int i) {
-    return Container(
-      width: 45, height: 52,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
-      child: TextField(
-        controller: _c[i], focusNode: _f[i],
-        textAlign: TextAlign.center, keyboardType: TextInputType.number,
-        maxLength: 1, inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a)),
-        decoration: const InputDecoration(border: InputBorder.none, counterText: '', contentPadding: EdgeInsets.zero),
-        onChanged: (val) {
-          if (val.isNotEmpty && i < 5) _f[i + 1].requestFocus();
-          else if (val.isEmpty && i > 0) _f[i - 1].requestFocus();
-          setState(() {});
-        },
+  Widget _otpBox(int i, double size) {
+    return SizedBox(
+      width: size, height: size + 4,
+      child: Container(
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
+        child: TextField(
+          controller: _c[i], focusNode: _f[i],
+          textAlign: TextAlign.center, keyboardType: TextInputType.number,
+          maxLength: 1, inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: GoogleFonts.poppins(fontSize: size * 0.44, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a)),
+          decoration: const InputDecoration(border: InputBorder.none, counterText: '', contentPadding: EdgeInsets.zero),
+          onChanged: (val) {
+            if (val.isNotEmpty && i < 5) _f[i + 1].requestFocus();
+            else if (val.isEmpty && i > 0) _f[i - 1].requestFocus();
+            setState(() {});
+          },
+        ),
       ),
     );
   }
