@@ -137,7 +137,8 @@ class ComplaintListSerializer(serializers.ModelSerializer):
         fields = ['id', 'complaint_number', 'title', 'complaint_type', 
                   'complaint_type_display', 'subcategory', 'status', 'status_display',
                   'work_status', 'work_status_display', 'priority', 'priority_display',
-                  'city', 'state', 'created_at', 'updated_at', 'user_name',
+                  'city', 'state', 'latitude', 'longitude', 'address',
+                  'created_at', 'updated_at', 'user_name',
                   'media_count', 'thumbnail', 'citizen_rating']
     
     def get_user_name(self, obj):

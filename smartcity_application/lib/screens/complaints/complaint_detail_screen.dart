@@ -19,6 +19,7 @@ class ComplaintDetailScreen extends StatefulWidget {
 
 class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   bool _showDeptPopup = false;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -108,9 +109,13 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     final hasDept = dept != null && dept.latitude != 0.0 && dept.longitude != 0.0;
     final deptPos = hasDept ? LatLng(dept.latitude, dept.longitude) : null;
 
-    // Fit bounds to show both markers
     final points = [complaintPos, if (deptPos != null) deptPos];
     final bounds = LatLngBounds.fromPoints(points);
+    final fit = CameraFit.bounds(
+      bounds: bounds,
+      padding: const EdgeInsets.all(80),
+      maxZoom: 15,
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -191,11 +196,14 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               child: Stack(
                 children: [
                   FlutterMap(
+                    mapController: _mapController,
                     options: MapOptions(
-                      initialCameraFit: CameraFit.bounds(
-                        bounds: bounds,
-                        padding: const EdgeInsets.all(60),
-                      ),
+                      initialCameraFit: fit,
+                      onMapReady: () {
+                        Future.microtask(() {
+                          if (mounted) _mapController.fitCamera(fit);
+                        });
+                      },
                       onTap: (_, __) {
                         if (_showDeptPopup) {
                           setState(() => _showDeptPopup = false);
