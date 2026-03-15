@@ -26,6 +26,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   bool _trackLoading = false;
   String? _trackError;
   Map<String, dynamic>? _trackResult;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -502,56 +503,86 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 250,
+            height: 300,
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
             ),
-            child: FlutterMap(
-              options: MapOptions(initialCenter: center, initialZoom: hasDept ? 13 : 15),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.janhelp.app',
+            child: Stack(children: [
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: center, 
+                  initialZoom: hasDept ? 12 : 15,
+                  minZoom: 5,
+                  maxZoom: 18,
                 ),
-                if (hasDept) PolylineLayer(polylines: [
-                  Polyline(
-                    points: [cPos, dPos!],
-                    color: const Color(0xFF1E66F5).withOpacity(0.5),
-                    strokeWidth: 4,
-                    isDotted: true,
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.janhelp.app',
                   ),
+                  if (hasDept) PolylineLayer(polylines: [
+                    Polyline(
+                      points: [cPos, dPos!],
+                      color: const Color(0xFF1E66F5).withOpacity(0.6),
+                      strokeWidth: 4,
+                      isDotted: true,
+                    ),
+                  ]),
+                  MarkerLayer(markers: [
+                    Marker(
+                      point: cPos,
+                      width: 45, height: 45,
+                      child: Column(children: [
+                        const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 32),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
+                          child: Text('Issue', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700)),
+                        ),
+                      ]),
+                    ),
+                    if (hasDept) Marker(
+                      point: dPos!,
+                      width: 45, height: 45,
+                      child: Column(children: [
+                        const Icon(Icons.business_rounded, color: Color(0xFF1E66F5), size: 30),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
+                          child: Text('Dept', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
+                        ),
+                      ]),
+                    ),
+                  ]),
+                ],
+              ),
+              
+              // Zoom Buttons Overlay
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(children: [
+                  _zoomBtn(Icons.add, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1)),
+                  const SizedBox(height: 8),
+                  _zoomBtn(Icons.remove, () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1)),
                 ]),
-                MarkerLayer(markers: [
-                  Marker(
-                    point: cPos,
-                    width: 45, height: 45,
-                    child: Column(children: [
-                      const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 32),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
-                        child: Text('Complaint', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700)),
-                      ),
-                    ]),
-                  ),
-                  if (hasDept) Marker(
-                    point: dPos!,
-                    width: 45, height: 45,
-                    child: Column(children: [
-                      const Icon(Icons.business_rounded, color: Color(0xFF1E66F5), size: 30),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
-                        child: Text('Dept', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
-                      ),
-                    ]),
-                  ),
-                ]),
-              ],
-            ),
+              ),
+            ]),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _zoomBtn(IconData icon, VoidCallback tap) {
+    return GestureDetector(
+      onTap: tap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]),
+        child: Icon(icon, size: 20, color: const Color(0xFF1E66F5)),
+      ),
     );
   }
 
