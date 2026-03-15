@@ -9,17 +9,21 @@ from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
 import random
+import string
 
 from .models import (
     Complaint, ComplaintMedia, ComplaintResolutionProof, ComplaintReopenProof,
     CitizenProfile, Department, DepartmentUser, ComplaintCategory, ComplaintSubcategory,
-    ComplaintCategoryField, ComplaintFieldResponse, OTP
+    ComplaintCategoryField, ComplaintFieldResponse, OTP, CityAdmin
 )
 from .serializers import (
     ComplaintListSerializer, ComplaintDetailSerializer, ComplaintCreateSerializer,
     CitizenProfileSerializer, DepartmentSerializer, ComplaintCategorySerializer,
     ComplaintSubcategorySerializer, ComplaintCategoryFieldSerializer, UserSerializer, RegisterSerializer,
     OTPSerializer, DashboardStatsSerializer
+)
+from .email_utils import (
+    send_welcome_email, send_otp_email, send_password_reset_credentials_email
 )
 
 
@@ -28,108 +32,131 @@ from .serializers import (
 @permission_classes([AllowAny])
 def register_user(request):
     """Register new user — accepts name, email, mobile_no, pincode, state, district, address, aadhaar, latitude, longitude"""
-    from .email_utils import send_welcome_email
-    data = request.data
-
-    name = (data.get('name') or '').strip()
-    email = (data.get('email') or '').strip().lower()
-    mobile_no = (data.get('mobile_no') or '').strip()
-    pincode = (data.get('pincode') or '').strip()
-    state = (data.get('state') or '').strip()
-    district = (data.get('district') or '').strip()
-    address = (data.get('address') or '').strip()
-    aadhaar = (data.get('aadhaar') or '').strip()
-    latitude = data.get('latitude') or ''
-    longitude = data.get('longitude') or ''
-
-    if not name or not email or not mobile_no:
-        return Response({
-            'success': False, 
-            'message': 'Name, email and mobile number are required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    # Check if user already exists and is FULLY registered
-    existing_user = User.objects.filter(email__iexact=email).first()
-    if existing_user and hasattr(existing_user, 'citizenprofile') and existing_user.citizenprofile.mobile_no:
-        return Response({
-            'success': False, 
-            'message': 'This email is already fully registered and verified'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    parts = name.split(' ', 1)
-    first_name = parts[0]
-    last_name = parts[1] if len(parts) > 1 else ''
-
     try:
-        # Try to get existing user (created by verify_otp) or create new one
-        user = User.objects.filter(email__iexact=email).first()
+        data = request.data
+
+        name = (data.get('name') or '').strip()
+        email = (data.get('email') or '').strip().lower()
+        mobile_no = (data.get('mobile_no') or '').strip()
+        pincode = (data.get('pincode') or '').strip()
+        state = (data.get('state') or '').strip()
+        district = (data.get('district') or '').strip()
+        address = (data.get('address') or '').strip()
+        aadhaar = (data.get('aadhaar') or '').strip()
+        latitude = data.get('latitude') or ''
+        longitude = data.get('longitude') or ''
+
+        if not name or not email or not mobile_no:
+            return Response({
+                'success': False, 
+                'message': 'Name, email and mobile number are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if user already exists and is FULLY registered
+        existing_user = User.objects.filter(email__iexact=email).first()
+        if existing_user and hasattr(existing_user, 'citizenprofile') and existing_user.citizenprofile.mobile_no:
+            return Response({
+                'success': False, 
+                'message': 'This email is already fully registered and verified'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        parts = name.split(' ', 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ''
+
+        user = None
         is_new_user = False
-        if user:
-            # Update their name
-            if not user.first_name: user.first_name = first_name
-            if not user.last_name: user.last_name = last_name
-            user.save()
-        else:
-            is_new_user = True
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-            )
-
-        # Update or create citizen profile
-        profile_kwargs = dict(
-            surname=last_name or 'Not Provided',
-            mobile_no=mobile_no,
-            state=state or 'Not Specified',
-            district=district or 'Not Specified',
-            city=district or 'Not Specified',
-            address=address or 'Not Provided',
-            pincode=pincode,
-        )
-        if aadhaar:
-            profile_kwargs['aadhaar_number'] = aadhaar
-        
         try:
-            profile_kwargs['latitude'] = float(latitude) if latitude else 0.0
-            profile_kwargs['longitude'] = float(longitude) if longitude else 0.0
-        except (ValueError, TypeError):
-            profile_kwargs['latitude'] = 0.0
-            profile_kwargs['longitude'] = 0.0
+            # Try to get existing user (created by verify_otp) or create new one
+            user = User.objects.filter(email__iexact=email).first()
+            if user:
+                # Update their name
+                if not user.first_name: user.first_name = first_name
+                if not user.last_name: user.last_name = last_name
+                user.save()
+            else:
+                is_new_user = True
+                # Check if username exists independently of email to prevent IntegrityError
+                if User.objects.filter(username=email).exists():
+                    return Response({
+                        'success': False,
+                        'message': 'A user with this identifier already exists. Please login.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                    
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
 
-        CitizenProfile.objects.update_or_create(
-            user=user, 
-            defaults=profile_kwargs
-        )
-        
-        token, _ = Token.objects.get_or_create(user=user)
-
-        try:
-            send_welcome_email(
-                user_email=email,
-                user_name=name,
-                user_mobile=mobile_no,
-                join_date=user.date_joined.strftime('%Y-%m-%d'),
-                user_role='Citizen'
+            # Update or create citizen profile
+            profile_kwargs = dict(
+                surname=last_name or 'Citizen',
+                mobile_no=mobile_no,
+                state=state or 'Not Specified',
+                district=district or 'Not Specified',
+                city=district or 'Not Specified',
+                address=address or 'Not Provided',
+                pincode=pincode,
             )
-        except Exception:
-            pass
+            if aadhaar:
+                profile_kwargs['aadhaar_number'] = aadhaar
+            
+            try:
+                profile_kwargs['latitude'] = float(latitude) if (latitude and str(latitude).strip()) else 0.0
+                profile_kwargs['longitude'] = float(longitude) if (longitude and str(longitude).strip()) else 0.0
+            except (ValueError, TypeError):
+                profile_kwargs['latitude'] = 0.0
+                profile_kwargs['longitude'] = 0.0
 
-        return Response({
-            'success': True,
-            'message': 'Registration successful',
-            'token': token.key,
-            'user': UserSerializer(user).data,
-        }, status=status.HTTP_201_CREATED)
+            # Use update_or_create to handle existing profiles safely
+            CitizenProfile.objects.update_or_create(
+                user=user, 
+                defaults=profile_kwargs
+            )
+            
+            token, _ = Token.objects.get_or_create(user=user)
 
-    except Exception as e:
-        # Cleanup ONLY if we created a brand new user in THIS request
-        if 'is_new_user' in locals() and is_new_user and 'user' in locals():
-            user.delete()
+            try:
+                send_welcome_email(
+                    user_email=email,
+                    user_name=name,
+                    user_mobile=mobile_no,
+                    join_date=user.date_joined.strftime('%Y-%m-%d'),
+                    user_role='Citizen'
+                )
+            except Exception as email_err:
+                print(f"Error sending welcome email: {email_err}")
+
+            return Response({
+                'success': True,
+                'message': 'Registration successful',
+                'token': token.key,
+                'user': UserSerializer(user).data,
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # Cleanup ONLY if we created a brand new user in THIS request
+            if is_new_user and user:
+                try:
+                    user.delete()
+                except:
+                    pass
+            
+            import traceback
+            traceback.print_exc()
+            
+            return Response({
+                'success': False,
+                'message': f'Registration Error: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as outer_e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
-            'message': f'Registration failed: {str(e)}'
+            'message': f'Request Processing Error: {str(outer_e)}'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -137,91 +164,115 @@ def register_user(request):
 @permission_classes([AllowAny])
 def send_otp(request):
     """Send OTP to email"""
-    from .email_utils import send_otp_email
-    email = request.data.get('email')
-    if not email:
+    try:
+        email = (request.data.get('email') or '').strip().lower()
+        if not email:
+            return Response({
+                'success': False,
+                'message': 'Email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Generate 6-digit OTP
+        otp_code = str(random.randint(100000, 999999))
+        
+        # Delete old OTPs for this email
+        OTP.objects.filter(email=email).delete()
+        
+        # Create new OTP
+        OTP.objects.create(email=email, otp=otp_code)
+        
+        # Send OTP via email
+        try:
+            send_otp_email(email, otp_code)
+        except Exception as e:
+            # Don't fail the whole request if email fails (for testing), or return a specific error
+            return Response({
+                'success': False,
+                'message': f'Failed to send OTP email: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'success': True,
+            'message': 'OTP sent to your email'
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
         return Response({
             'success': False,
-            'message': 'Email is required'
+            'message': f'OTP Request Error: {str(e)}'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Generate 6-digit OTP
-    otp_code = str(random.randint(100000, 999999))
-    
-    # Delete old OTPs for this email
-    OTP.objects.filter(email=email).delete()
-    
-    # Create new OTP
-    OTP.objects.create(email=email, otp=otp_code)
-    
-    # Send OTP via email
-    send_otp_email(email, otp_code)
-    
-    return Response({
-        'success': True,
-        'message': 'OTP sent to your email'
-    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def verify_otp(request):
     """Verify OTP and login/register user"""
-    email = request.data.get('email')
-    otp_code = request.data.get('otp')
-    
-    if not email or not otp_code:
-        return Response({
-            'success': False,
-            'message': 'Email and OTP are required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Check OTP
     try:
-        otp = OTP.objects.get(email=email, otp=otp_code, is_verified=False)
+        email = (request.data.get('email') or '').strip().lower()
+        otp_code = (request.data.get('otp') or '').strip()
         
-        # Check if OTP is expired (10 minutes)
-        if timezone.now() > otp.created_at + timedelta(minutes=10):
+        if not email or not otp_code:
             return Response({
                 'success': False,
-                'message': 'OTP expired'
+                'message': 'Email and OTP are required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Mark OTP as verified
-        otp.is_verified = True
-        otp.save()
-        
-        # Get or create user
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={'username': email}
-        )
-        
-        # Create citizen profile if new user
-        if created:
-            CitizenProfile.objects.create(
-                user=user,
-                surname='',
-                city='',
-                address='',
-                mobile_no=''
+        # Check OTP
+        try:
+            otp = OTP.objects.get(email=email, otp=otp_code, is_verified=False)
+            
+            # Check if OTP is expired (10 minutes)
+            if timezone.now() > otp.created_at + timedelta(minutes=10):
+                return Response({
+                    'success': False,
+                    'message': 'OTP expired'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Mark OTP as verified
+            otp.is_verified = True
+            otp.save()
+            
+            # Get or create user
+            user, created = User.objects.get_or_create(
+                email__iexact=email,
+                defaults={
+                    'username': email,
+                    'email': email
+                }
             )
-        
-        # Get or create token
-        token, _ = Token.objects.get_or_create(user=user)
-        
-        return Response({
-            'success': True,
-            'message': 'Login successful',
-            'token': token.key,
-            'user': UserSerializer(user).data,
-            'is_new_user': created
-        }, status=status.HTTP_200_OK)
-        
-    except OTP.DoesNotExist:
+            
+            # Ensure citizen profile exists
+            CitizenProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    'surname': user.last_name or 'Citizen',
+                    'city': 'Not Specified',
+                    'address': 'Not Provided',
+                    'mobile_no': 'Not Provided'
+                }
+            )
+            
+            # Get or create token
+            token, _ = Token.objects.get_or_create(user=user)
+            
+            return Response({
+                'success': True,
+                'message': 'Verification successful',
+                'token': token.key,
+                'user': UserSerializer(user).data,
+                'is_new_user': created
+            }, status=status.HTTP_200_OK)
+            
+        except OTP.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Invalid OTP code'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
-            'message': 'Invalid OTP'
+            'message': f'Verification error: {str(e)}'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -391,19 +442,39 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         return queryset.prefetch_related('media', 'resolution_proofs', 'assigned_department')
     
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            complaint = serializer.save()
-            detail_serializer = ComplaintDetailSerializer(complaint, context={'request': request})
+        try:
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            if serializer.is_valid():
+                complaint = serializer.save()
+                detail_serializer = ComplaintDetailSerializer(complaint, context={'request': request})
+                return Response({
+                    'success': True,
+                    'message': 'Complaint submitted successfully',
+                    'complaint': detail_serializer.data
+                }, status=status.HTTP_201_CREATED)
+            
+            # Extract first error message for easier debugging
+            error_msg = 'Validation error'
+            if serializer.errors:
+                first_field = list(serializer.errors.keys())[0]
+                first_err = serializer.errors[first_field]
+                if isinstance(first_err, list) and first_err:
+                    error_msg = f"{first_field}: {first_err[0]}"
+                else:
+                    error_msg = f"{first_field}: {first_err}"
+
             return Response({
-                'success': True,
-                'message': 'Complaint submitted successfully',
-                'complaint': detail_serializer.data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'success': False,
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+                'success': False,
+                'message': error_msg,
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({
+                'success': False,
+                'message': f'Submission Error: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])
     def rate(self, request, pk=None):
@@ -570,18 +641,24 @@ def guest_stats(request):
 @permission_classes([AllowAny])
 def get_states_cities(request):
     """Get all admin-managed states and their cities"""
-    from .models import ManagedState, ManagedCity
-    states = list(ManagedState.objects.order_by('name').values('id', 'name'))
-    cities = list(ManagedCity.objects.select_related('state').order_by('name').values('id', 'name', 'state__name'))
-    cities_by_state = {}
-    for city in cities:
-        state_name = city['state__name']
-        cities_by_state.setdefault(state_name, []).append(city['name'])
-    return Response({
-        'success': True,
-        'states': [s['name'] for s in states],
-        'cities_by_state': cities_by_state,
-    })
+    try:
+        from .models import ManagedState, ManagedCity
+        states = list(ManagedState.objects.all().order_by('name').values('id', 'name'))
+        cities = list(ManagedCity.objects.all().select_related('state').order_by('name').values('id', 'name', 'state__name'))
+        cities_by_state = {}
+        for city in cities:
+            state_name = city['state__name']
+            cities_by_state.setdefault(state_name, []).append(city['name'])
+        return Response({
+            'success': True,
+            'states': [s['name'] for s in states],
+            'cities_by_state': cities_by_state,
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error loading states/cities: {str(e)}'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Department Views
@@ -589,12 +666,18 @@ def get_states_cities(request):
 @permission_classes([AllowAny])
 def get_departments(request):
     """Get all departments — public"""
-    departments = Department.objects.filter(is_active=True)
-    serializer = DepartmentSerializer(departments, many=True, context={'request': request})
-    return Response({
-        'success': True,
-        'departments': serializer.data
-    })
+    try:
+        departments = Department.objects.filter(is_active=True)
+        serializer = DepartmentSerializer(departments, many=True, context={'request': request})
+        return Response({
+            'success': True,
+            'departments': serializer.data
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error loading departments: {str(e)}'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
