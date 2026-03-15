@@ -116,9 +116,18 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
 
   Future<void> _openDirections() async {
     final d = _deptLatLng;
-    final uri = Uri.parse(
+    final googleMapsUrl = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}&travelmode=driving');
-    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final appleMapsUrl = Uri.parse('https://maps.apple.com/?daddr=${d.latitude},${d.longitude}');
+    
+    if (await canLaunchUrl(googleMapsUrl)) {
+      await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+    } else if (await canLaunchUrl(appleMapsUrl)) {
+      await launchUrl(appleMapsUrl, mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback to browser
+      await launchUrl(googleMapsUrl);
+    }
   }
 
   Future<void> _call(String phone) async {

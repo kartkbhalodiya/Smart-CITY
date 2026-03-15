@@ -118,7 +118,7 @@ class ComplaintProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> createComplaint(
+  Future<Map<String, dynamic>?> createComplaint(
     Map<String, String> data,
     List<File> files,
   ) async {
@@ -131,11 +131,11 @@ class ComplaintProvider with ChangeNotifier {
     _isLoading = false;
     if (response['success'] == true) {
       notifyListeners();
-      return true;
+      return response;
     } else {
       _error = response['message'] ?? 'Failed to submit complaint';
       notifyListeners();
-      return false;
+      return null;
     }
   }
 

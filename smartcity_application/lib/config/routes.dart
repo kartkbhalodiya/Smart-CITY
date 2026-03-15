@@ -10,6 +10,7 @@ import '../screens/complaints/submit_complaint_screen.dart';
 import '../screens/complaints/track_complaints_screen.dart';
 import '../screens/complaints/guest_track_screen.dart';
 import '../screens/complaints/complaint_detail_screen.dart';
+import '../screens/complaints/complaint_success_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/dashboard/guest_dashboard_screen.dart';
 import '../screens/departments/departments_list_screen.dart';
@@ -32,6 +33,7 @@ class AppRoutes {
   static const String trackComplaints = '/track-complaints';
   static const String guestTrack = '/guest-track';
   static const String complaintDetail = '/complaint-detail';
+  static const String complaintSuccess = '/complaint-success';
   static const String profile = '/profile';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -103,6 +105,16 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ComplaintDetailScreen(
             complaintId: args?['complaintId'] ?? 0,
+          ),
+        );
+      
+      case complaintSuccess:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => ComplaintSuccessScreen(
+            complaintId: args?['complaintId'] ?? '',
+            title: args?['title'] ?? '',
+            description: args?['description'] ?? '',
           ),
         );
       

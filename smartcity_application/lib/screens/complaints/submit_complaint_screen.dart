@@ -407,16 +407,27 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     }
 
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
-    final success = await provider.createComplaint(data, _images);
+    final res = await provider.createComplaint(data, _images);
     setState(() => _submitting = false);
 
     if (!mounted) return;
-    if (success) {
+    if (res != null) {
       await provider.refresh();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Complaint submitted successfully!'), backgroundColor: Color(0xFF22C55E)),
+      
+      final complaint = res['complaint'];
+      final complaintId = complaint?['complaint_number'] ?? 'N/A';
+      final title = complaint?['title'] ?? _titleCtrl.text;
+      final desc = complaint?['description'] ?? _descCtrl.text;
+
+      Navigator.pushReplacementNamed(
+        context, 
+        AppRoutes.complaintSuccess,
+        arguments: {
+          'complaintId': complaintId,
+          'title': title,
+          'description': desc,
+        },
       );
-      Navigator.popUntil(context, (r) => r.isFirst);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(provider.error ?? 'Failed to submit'), backgroundColor: Colors.red),
