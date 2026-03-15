@@ -412,19 +412,34 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Complaint Location', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        Row(children: [
+          const Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF1E66F5)),
+          const SizedBox(width: 8),
+          Text('Complaint Location',
+              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        ]),
         const SizedBox(height: 12),
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 200,
-            decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE2E8F0))),
+            height: 220,
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            ),
             child: FlutterMap(
-              options: MapOptions(initialCenter: position, initialZoom: 14),
+              options: MapOptions(initialCenter: position, initialZoom: 15),
               children: [
-                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.janhelp.app',
+                ),
                 MarkerLayer(markers: [
-                  Marker(point: position, width: 40, height: 40, child: const Icon(Icons.location_pin, color: Colors.red, size: 40)),
+                  Marker(
+                    point: position,
+                    width: 40, height: 40,
+                    child: const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 40),
+                  ),
                 ]),
               ],
             ),
@@ -435,40 +450,60 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Widget _connectDeptSection(Map<String, dynamic> c) {
+    final deptName = c['assigned_department'] ?? 'Department';
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E66F5).withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.1)),
+        gradient: LinearGradient(
+          colors: [const Color(0xFF1E66F5).withOpacity(0.08), const Color(0xFF1E66F5).withOpacity(0.03)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.15), width: 1.5),
       ),
       child: Column(children: [
-        Text('Assigned Department Contact',
-            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
-        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.1), blurRadius: 10)]),
+          child: const Icon(Icons.business_rounded, color: Color(0xFF1E66F5), size: 30),
+        ),
+        const SizedBox(height: 12),
+        Text('Connect with Assigned Department',
+            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        const SizedBox(height: 4),
+        Text('Get in touch with $deptName for updates',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
+        const SizedBox(height: 20),
         Row(children: [
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () => launchUrl(Uri.parse('tel:${c['assigned_department_phone']}')),
-              icon: const Icon(Icons.call, size: 18),
-              label: const Text('Call Department'),
+              icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+              label: const Text('Call'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E66F5),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
               onPressed: () => launchUrl(Uri.parse('mailto:${c['assigned_department_email']}')),
-              icon: const Icon(Icons.email_outlined, size: 18),
-              label: const Text('Email Dept'),
-              style: OutlinedButton.styleFrom(
+              icon: const Icon(Icons.email_rounded, size: 18),
+              label: const Text('Email'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1E66F5),
-                side: const BorderSide(color: Color(0xFF1E66F5)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+                side: const BorderSide(color: Color(0xFF1E66F5), width: 1.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
