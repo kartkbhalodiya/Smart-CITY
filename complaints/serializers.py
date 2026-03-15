@@ -220,6 +220,7 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
 
 
 class ComplaintCategoryFieldSerializer(serializers.ModelSerializer):
+    options = serializers.SerializerMethodField()
     options_list = serializers.SerializerMethodField()
     
     class Meta:
@@ -227,10 +228,13 @@ class ComplaintCategoryFieldSerializer(serializers.ModelSerializer):
         fields = ['id', 'label', 'field_type', 'options', 'options_list', 
                   'is_required', 'display_order']
     
-    def get_options_list(self, obj):
+    def get_options(self, obj):
         if obj.options:
             return [opt.strip() for opt in obj.options.split(',')]
         return []
+
+    def get_options_list(self, obj):
+        return self.get_options(obj)
 
 
 class ComplaintSubcategorySerializer(serializers.ModelSerializer):

@@ -459,7 +459,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       widgets.add(const SizedBox(height: 6));
 
       if (type == 'select') {
-        final options = ((f['options'] as List?) ?? []).map((o) => o.toString()).toList();
+        List<String> options = [];
+        try {
+          if (f['options'] is List) {
+            options = (f['options'] as List).map((o) => o.toString()).toList();
+          } else if (f['options_list'] is List) {
+            options = (f['options_list'] as List).map((o) => o.toString()).toList();
+          } else if (f['options'] is String && (f['options'] as String).isNotEmpty) {
+            options = (f['options'] as String).split(',').map((e) => e.trim()).toList();
+          }
+        } catch (e) {
+          debugPrint('Error parsing options for field $label: $e');
+        }
+
         widgets.add(_dropdownField(
           hint: 'Select $label',
           value: _dynDropdown[id],
