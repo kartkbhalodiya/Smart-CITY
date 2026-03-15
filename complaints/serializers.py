@@ -194,6 +194,10 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     
+    preferred_contact_phone = serializers.BooleanField(required=False, default=False)
+    preferred_contact_email = serializers.BooleanField(required=False, default=False)
+    preferred_contact_sms = serializers.BooleanField(required=False, default=False)
+    
     class Meta:
         model = Complaint
         fields = ['complaint_type', 'subcategory', 'priority', 'title', 'description',

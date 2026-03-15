@@ -37,7 +37,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final _cityCtrl = TextEditingController();
   final _geoCtrl = TextEditingController();
 
-  String _priority = 'medium'; // high, medium, low
+  String _priority = 'medium'; // high, medium, normal
 
   List<String> _allStates = [];
   Map<String, List<String>> _citiesByState = {};
@@ -931,7 +931,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       const SizedBox(width: 10),
       _priorityBtn('medium', 'Medium', Colors.orange, const Color(0xFFFFF7ED)),
       const SizedBox(width: 10),
-      _priorityBtn('low', 'Low', Colors.green, const Color(0xFFF0FDF4)),
+      _priorityBtn('normal', 'Normal', Colors.green, const Color(0xFFF0FDF4)),
     ]);
   }
 

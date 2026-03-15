@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/complaint_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
 import 'map_picker_screen.dart';

@@ -127,9 +127,24 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data is Map<String, dynamic> ? data : {'success': true, 'data': data};
       } else {
+        String msg = data['message'] ?? 'Request failed';
+        if (data['errors'] != null && data['errors'] is Map) {
+          final errors = data['errors'] as Map;
+          if (errors.isNotEmpty) {
+            final firstError = errors.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              msg = firstError.first.toString();
+            } else {
+              msg = firstError.toString();
+            }
+          }
+        } else if (data is Map && data.containsKey('detail')) {
+          msg = data['detail'];
+        }
+        
         return {
           'success': false,
-          'message': data['message'] ?? 'Request failed',
+          'message': msg,
           'errors': data['errors'],
         };
       }

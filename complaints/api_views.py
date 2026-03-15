@@ -63,12 +63,14 @@ def register_user(request):
     try:
         # Try to get existing user (created by verify_otp) or create new one
         user = User.objects.filter(email__iexact=email).first()
+        is_new_user = False
         if user:
             # Update their name
             if not user.first_name: user.first_name = first_name
             if not user.last_name: user.last_name = last_name
             user.save()
         else:
+            is_new_user = True
             user = User.objects.create_user(
                 username=email,
                 email=email,
@@ -122,8 +124,8 @@ def register_user(request):
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        # Cleanup if anything fails
-        if 'user' in locals():
+        # Cleanup ONLY if we created a brand new user in THIS request
+        if 'is_new_user' in locals() and is_new_user and 'user' in locals():
             user.delete()
         return Response({
             'success': False,
@@ -351,7 +353,10 @@ def dashboard_stats(request):
 
 # Complaint Views
 class ComplaintViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
     
     def get_serializer_class(self):
         if self.action == 'list':
