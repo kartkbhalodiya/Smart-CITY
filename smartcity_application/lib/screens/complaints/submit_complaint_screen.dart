@@ -74,30 +74,30 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   }
 
   Future<void> _loadMeta() async {
+    if (widget.categoryKey == null) {
+      if (mounted) setState(() => _loadingMeta = false);
+      return;
+    }
+    
     setState(() => _loadingMeta = true);
     try {
-      final res = await ApiService.get(ApiConfig.categories, includeAuth: false);
+      // Use optimized specific category endpoint instead of fetching all categories
+      final res = await ApiService.get(
+        ApiConfig.subcategories(widget.categoryKey!), 
+        includeAuth: false
+      );
+      
       if (res['success'] == true) {
-        final cats = res['categories'] as List? ?? [];
-        Map<String, dynamic>? match;
-        for (final c in cats) {
-          if ((c as Map)['key']?.toString() == widget.categoryKey) {
-            match = Map<String, dynamic>.from(c);
-            break;
-          }
-        }
-        if (match != null) {
-          final rawSubs = match['subcategories'] as List? ?? [];
-          final subs = rawSubs.map((e) {
-            final sub = Map<String, dynamic>.from(e as Map);
-            // Ensure dynamic_fields is a proper list of maps
-            sub['dynamic_fields'] = ((sub['dynamic_fields'] as List?) ?? [])
-                .map((f) => Map<String, dynamic>.from(f as Map))
-                .toList();
-            return sub;
-          }).toList();
-          if (mounted) setState(() => _subcategories = subs);
-        }
+        final rawSubs = res['subcategories'] as List? ?? [];
+        final subs = rawSubs.map((e) {
+          final sub = Map<String, dynamic>.from(e as Map);
+          sub['dynamic_fields'] = ((sub['dynamic_fields'] as List?) ?? [])
+              .map((f) => Map<String, dynamic>.from(f as Map))
+              .toList();
+          return sub;
+        }).toList();
+        
+        if (mounted) setState(() => _subcategories = subs);
       }
     } catch (e) {
       debugPrint('_loadMeta error: $e');
