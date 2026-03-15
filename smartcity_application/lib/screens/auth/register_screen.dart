@@ -58,16 +58,14 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   }
 
   Future<void> _fetchStatesCities() async {
-    final result = await ApiService.get(ApiConfig.statesCities, includeAuth: false);
-    if (mounted && result['success'] == true) {
-      final rawCities = result['cities_by_state'] as Map<String, dynamic>;
+    final provider = Provider.of<ComplaintProvider>(context, listen: false);
+    await provider.loadStatesCities();
+    if (mounted) {
       setState(() {
-        _states = List<String>.from(result['states'] ?? []);
-        _citiesByState = rawCities.map((k, v) => MapEntry(k, List<String>.from(v)));
+        _states = provider.states;
+        _citiesByState = provider.citiesByState;
         _loadingStates = false;
       });
-    } else if (mounted) {
-      setState(() => _loadingStates = false);
     }
   }
 

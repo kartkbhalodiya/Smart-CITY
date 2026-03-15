@@ -71,4 +71,8 @@ class ComplaintService {
   static Future<Map<String, dynamic>> getSubcategories(String categoryKey) async {
     return await ApiService.get(ApiConfig.subcategories(categoryKey));
   }
+
+  static Future<Map<String, dynamic>> getStatesCities() async {
+    return await ApiService.get(ApiConfig.statesCities, includeAuth: false);
+  }
 }

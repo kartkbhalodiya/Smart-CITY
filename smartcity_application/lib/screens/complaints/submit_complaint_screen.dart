@@ -105,23 +105,15 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     
     setState(() => _loadingMeta = true);
     try {
-      // Load categories meta
-      final res = await ApiService.get(
-        ApiConfig.subcategories(widget.categoryKey!), 
-        includeAuth: false
-      );
+      final provider = Provider.of<ComplaintProvider>(context, listen: false);
+      
+      // Load both meta and states/cities in parallel
+      final results = await Future.wait([
+        provider.getSubcategories(widget.categoryKey!),
+        provider.loadStatesCities(),
+      ]);
 
-      // Load states & cities
-      final scRes = await ApiService.get(ApiConfig.statesCities, includeAuth: false);
-      List<String> states = [];
-      Map<String, List<String>> citiesByState = {};
-      if (scRes['success'] == true) {
-        states = List<String>.from(scRes['states'] ?? []);
-        final rawMap = scRes['cities_by_state'] as Map? ?? {};
-        rawMap.forEach((k, v) {
-          citiesByState[k.toString()] = List<String>.from(v as List? ?? []);
-        });
-      }
+      final res = results[0] as Map<String, dynamic>;
       
       if (res['success'] == true) {
         final rawSubs = res['subcategories'] as List? ?? [];
@@ -172,8 +164,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             _subcategories = subs;
             _categoryFields = catFields;
             _selectedSub = firstSub;
-            _allStates = states;
-            _citiesByState = citiesByState;
+            _allStates = provider.states;
+            _citiesByState = provider.citiesByState;
             _loadingMeta = false;
           });
         }

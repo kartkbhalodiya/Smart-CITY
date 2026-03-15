@@ -316,6 +316,7 @@ class CitizenProfile(models.Model):
     district = models.CharField(max_length=100, default='Not Specified')
     taluka = models.CharField(max_length=100, default='Not Specified')
     city = models.CharField(max_length=100)
+    pincode = models.CharField(max_length=10, blank=True, null=True)
     address = models.TextField()
     mobile_no = models.CharField(max_length=15)
     aadhaar_number = models.CharField(max_length=12, blank=True, null=True)

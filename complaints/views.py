@@ -304,78 +304,149 @@ def default_subcategory_blueprint():
     }
 
 
+def get_detailed_fields_blueprint():
+    return {
+        'police': {
+            'Theft / Robbery': [
+                {'label': 'Incident Location', 'type': 'text'},
+                {'label': 'Date & Time of Incident', 'type': 'datetime-local'},
+                {'label': 'Type of Property Stolen', 'type': 'text'},
+                {'label': 'Estimated Value of Loss', 'type': 'text'},
+                {'label': 'Suspect Description (if known)', 'type': 'textarea'},
+                {'label': 'Witness Details', 'type': 'textarea'},
+            ],
+            'Cyber Crime': [
+                {'label': 'Platform / Website / App Name', 'type': 'text'},
+                {'label': 'Fraud Type', 'type': 'select', 'options': 'UPI Fraud,Credit Card,Bank Transfer,Social Media,Other'},
+                {'label': 'Amount Lost', 'type': 'text'},
+                {'label': 'Transaction ID', 'type': 'text'},
+                {'label': 'Date of Incident', 'type': 'date'},
+                {'label': 'Contact Number Used', 'type': 'text'},
+            ],
+            'Domestic Violence': [
+                {'label': 'Victim Name', 'type': 'text'},
+                {'label': 'Incident Location', 'type': 'text'},
+                {'label': 'Relationship to Accused', 'type': 'text'},
+                {'label': 'Date of Incident', 'type': 'date'},
+                {'label': 'Type of Abuse', 'type': 'select', 'options': 'Physical,Emotional,Financial,Other'},
+                {'label': 'Immediate Danger', 'type': 'select', 'options': 'Yes,No'},
+            ],
+            'Missing Person': [
+                {'label': 'Name of Missing Person', 'type': 'text'},
+                {'label': 'Age', 'type': 'number'},
+                {'label': 'Last Seen Location', 'type': 'text'},
+                {'label': 'Date Last Seen', 'type': 'date'},
+                {'label': 'Physical Description', 'type': 'textarea'},
+                {'label': 'Contact Person', 'type': 'text'},
+            ],
+            'Physical Assault': [
+                {'label': 'Incident Location', 'type': 'text'},
+                {'label': 'Date & Time', 'type': 'datetime-local'},
+                {'label': 'Number of Attackers', 'type': 'number'},
+                {'label': 'Injury Details', 'type': 'textarea'},
+                {'label': 'Suspect Description', 'type': 'textarea'},
+                {'label': 'Witness Details', 'type': 'textarea'},
+            ],
+        },
+        'traffic': {
+            'Signal Jumping': [
+                {'label': 'Vehicle Number', 'type': 'text'},
+                {'label': 'Signal Location', 'type': 'text'},
+                {'label': 'Date & Time', 'type': 'datetime-local'},
+                {'label': 'Vehicle Type', 'type': 'select', 'options': 'Two Wheeler,Four Wheeler,Heavy Vehicle,Other'},
+            ],
+            'Wrong Side Driving': [
+                {'label': 'Vehicle Number', 'type': 'text'},
+                {'label': 'Road Location', 'type': 'text'},
+                {'label': 'Date & Time', 'type': 'datetime-local'},
+                {'label': 'Traffic Risk Level', 'type': 'select', 'options': 'Low,Medium,High,Very Dangerous'},
+            ],
+            'Overspeeding': [
+                {'label': 'Vehicle Number', 'type': 'text'},
+                {'label': 'Road Location', 'type': 'text'},
+                {'label': 'Estimated Speed', 'type': 'text'},
+                {'label': 'Speed Limit Area', 'type': 'text'},
+                {'label': 'Date & Time', 'type': 'datetime-local'},
+            ],
+            'Illegal Parking': [
+                {'label': 'Vehicle Number', 'type': 'text'},
+                {'label': 'Parking Location', 'type': 'text'},
+                {'label': 'Duration Parked', 'type': 'text'},
+                {'label': 'Road Blocked', 'type': 'select', 'options': 'Yes,No'},
+            ],
+        },
+        'construction': {
+            'Road Damage / Potholes': [
+                {'label': 'Road Name', 'type': 'text'},
+                {'label': 'Location', 'type': 'text'},
+                {'label': 'Pothole Size', 'type': 'select', 'options': 'Small,Medium,Large,Very Large'},
+                {'label': 'Depth Estimate', 'type': 'text'},
+                {'label': 'Traffic Risk Level', 'type': 'select', 'options': 'Low,Medium,High'},
+            ],
+            'Footpath Damage': [
+                {'label': 'Location', 'type': 'text'},
+                {'label': 'Damage Type', 'type': 'select', 'options': 'Broken Tiles,Encroachment,Missing Section,Other'},
+                {'label': 'Length of Damage', 'type': 'text'},
+                {'label': 'Pedestrian Risk', 'type': 'select', 'options': 'Low,Medium,High'},
+            ],
+        }
+    }
+
 def ensure_unique_fields_for_each_subcategory(category):
+    blueprint = get_detailed_fields_blueprint()
+    category_slug = category.slug
+    
     subcategories = list(
         category.subcategories.filter(is_active=True).order_by('display_order', 'name')
     )
+    
     existing_fields = list(
         category.dynamic_fields.filter(is_active=True).select_related('subcategory')
     )
     max_order = max([field.display_order for field in existing_fields], default=0)
-    by_subcategory = {}
-    for field in existing_fields:
-        if field.subcategory_id:
-            by_subcategory.setdefault(field.subcategory_id, []).append(field)
 
     for subcategory in subcategories:
+        # Check if subcategory already has fields
         if category.dynamic_fields.filter(subcategory=subcategory).exists():
             continue
 
-        max_order += 1
-        ComplaintCategoryField.objects.create(
-            category=category,
-            subcategory=subcategory,
-            label='Issue Details',
-            field_type='textarea',
-            options='',
-            is_required=True,
-            display_order=max_order,
-            is_active=True,
-        )
-        max_order += 1
-        ComplaintCategoryField.objects.create(
-            category=category,
-            subcategory=subcategory,
-            label='Location Landmark',
-            field_type='text',
-            options='',
-            is_required=True,
-            display_order=max_order,
-            is_active=True,
-        )
-        max_order += 1
-        ComplaintCategoryField.objects.create(
-            category=category,
-            subcategory=subcategory,
-            label='Severity Level',
-            field_type='select',
-            options='Low,Medium,High',
-            is_required=True,
-            display_order=max_order,
-            is_active=True,
-        )
-        max_order += 1
-        ComplaintCategoryField.objects.create(
-            category=category,
-            subcategory=subcategory,
-            label='Date of Incident',
-            field_type='date',
-            options='',
-            is_required=False,
-            display_order=max_order,
-            is_active=True,
-        )
-        max_order += 1
-        ComplaintCategoryField.objects.create(
-            category=category,
-            subcategory=subcategory,
-            label='Additional Remarks',
-            field_type='text',
-            options='',
-            is_required=False,
-            display_order=max_order,
-            is_active=True,
-        )
+        # Get detailed fields from blueprint
+        detailed_fields = blueprint.get(category_slug, {}).get(subcategory.name)
+        
+        if detailed_fields:
+            for field_data in detailed_fields:
+                max_order += 1
+                ComplaintCategoryField.objects.create(
+                    category=category,
+                    subcategory=subcategory,
+                    label=field_data['label'],
+                    field_type=field_data['type'],
+                    options=field_data.get('options', ''),
+                    is_required=True,
+                    display_order=max_order,
+                    is_active=True,
+                )
+        else:
+            # Fallback to generic fields
+            generic_fields = [
+                ('Issue Details', 'textarea', '', True),
+                ('Location Landmark', 'text', '', True),
+                ('Severity Level', 'select', 'Low,Medium,High', True),
+                ('Date of Incident', 'date', '', False),
+                ('Additional Remarks', 'text', '', False),
+            ]
+            for label, ftype, opts, req in generic_fields:
+                max_order += 1
+                ComplaintCategoryField.objects.create(
+                    category=category,
+                    subcategory=subcategory,
+                    label=label,
+                    field_type=ftype,
+                    options=opts,
+                    is_required=req,
+                    display_order=max_order,
+                    is_active=True,
+                )
 
 
 def ensure_category_baseline(category, preferred_sub_names=None):

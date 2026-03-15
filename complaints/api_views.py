@@ -43,63 +43,92 @@ def register_user(request):
     longitude = data.get('longitude') or ''
 
     if not name or not email or not mobile_no:
-        return Response({'success': False, 'message': 'Name, email and mobile number are required'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'success': False, 
+            'message': 'Name, email and mobile number are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    if User.objects.filter(email__iexact=email).exists():
-        return Response({'success': False, 'message': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
+    # Check if user already exists and is FULLY registered
+    existing_user = User.objects.filter(email__iexact=email).first()
+    if existing_user and hasattr(existing_user, 'citizenprofile') and existing_user.citizenprofile.mobile_no:
+        return Response({
+            'success': False, 
+            'message': 'This email is already fully registered and verified'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     parts = name.split(' ', 1)
     first_name = parts[0]
     last_name = parts[1] if len(parts) > 1 else ''
 
-    user = User.objects.create_user(
-        username=email,
-        email=email,
-        first_name=first_name,
-        last_name=last_name,
-    )
-
-    profile_kwargs = dict(
-        surname=last_name,
-        mobile_no=mobile_no,
-        state=state,
-        district=district,
-        city=district,
-        address=address,
-    )
-    if pincode:
-        profile_kwargs['pincode'] = pincode if hasattr(CitizenProfile, 'pincode') else None
-    if aadhaar:
-        profile_kwargs['aadhaar_number'] = aadhaar
     try:
-        profile_kwargs['latitude'] = float(latitude) if latitude else None
-        profile_kwargs['longitude'] = float(longitude) if longitude else None
-    except (ValueError, TypeError):
-        pass
-    # Remove None values for fields that may not exist
-    profile_kwargs = {k: v for k, v in profile_kwargs.items() if v is not None}
+        # Try to get existing user (created by verify_otp) or create new one
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            # Update their name
+            if not user.first_name: user.first_name = first_name
+            if not user.last_name: user.last_name = last_name
+            user.save()
+        else:
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+            )
 
-    CitizenProfile.objects.create(user=user, **profile_kwargs)
-
-    token, _ = Token.objects.get_or_create(user=user)
-
-    try:
-        send_welcome_email(
-            user_email=email,
-            user_name=name,
-            user_mobile=mobile_no,
-            join_date=user.date_joined.strftime('%Y-%m-%d'),
-            user_role='Citizen'
+        # Update or create citizen profile
+        profile_kwargs = dict(
+            surname=last_name or 'Not Provided',
+            mobile_no=mobile_no,
+            state=state or 'Not Specified',
+            district=district or 'Not Specified',
+            city=district or 'Not Specified',
+            address=address or 'Not Provided',
+            pincode=pincode,
         )
-    except Exception:
-        pass
+        if aadhaar:
+            profile_kwargs['aadhaar_number'] = aadhaar
+        
+        try:
+            profile_kwargs['latitude'] = float(latitude) if latitude else 0.0
+            profile_kwargs['longitude'] = float(longitude) if longitude else 0.0
+        except (ValueError, TypeError):
+            profile_kwargs['latitude'] = 0.0
+            profile_kwargs['longitude'] = 0.0
 
-    return Response({
-        'success': True,
-        'message': 'Registration successful',
-        'token': token.key,
-        'user': UserSerializer(user).data,
-    }, status=status.HTTP_201_CREATED)
+        CitizenProfile.objects.update_or_create(
+            user=user, 
+            defaults=profile_kwargs
+        )
+        
+        token, _ = Token.objects.get_or_create(user=user)
+
+        try:
+            send_welcome_email(
+                user_email=email,
+                user_name=name,
+                user_mobile=mobile_no,
+                join_date=user.date_joined.strftime('%Y-%m-%d'),
+                user_role='Citizen'
+            )
+        except Exception:
+            pass
+
+        return Response({
+            'success': True,
+            'message': 'Registration successful',
+            'token': token.key,
+            'user': UserSerializer(user).data,
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        # Cleanup if anything fails
+        if 'user' in locals():
+            user.delete()
+        return Response({
+            'success': False,
+            'message': f'Registration failed: {str(e)}'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -163,7 +192,7 @@ def verify_otp(request):
         # Get or create user
         user, created = User.objects.get_or_create(
             email=email,
-            defaults={'username': email.split('@')[0]}
+            defaults={'username': email}
         )
         
         # Create citizen profile if new user

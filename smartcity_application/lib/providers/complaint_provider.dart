@@ -10,11 +10,56 @@ class ComplaintProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Cache for states and cities
+  List<String> _states = [];
+  Map<String, List<String>> _citiesByState = {};
+  bool _isStatesLoading = false;
+
+  // Cache for subcategories
+  final Map<String, Map<String, dynamic>> _subcategoryCache = {};
+
   List<Complaint> get complaints => _complaints;
   DashboardStats? get stats => _stats;
   Complaint? get selectedComplaint => _selectedComplaint;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  List<String> get states => _states;
+  Map<String, List<String>> get citiesByState => _citiesByState;
+  bool get isStatesLoading => _isStatesLoading;
+
+  Future<void> loadStatesCities() async {
+    if (_states.isNotEmpty) return; // Already loaded
+    
+    _isStatesLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await ComplaintService.getStatesCities();
+      if (response['success'] == true) {
+        _states = List<String>.from(response['states'] ?? []);
+        final rawCities = response['cities_by_state'] as Map<String, dynamic>? ?? {};
+        _citiesByState = rawCities.map((k, v) => MapEntry(k, List<String>.from(v)));
+      }
+    } catch (e) {
+      debugPrint('Error loading states/cities: $e');
+    }
+
+    _isStatesLoading = false;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> getSubcategories(String categoryKey) async {
+    if (_subcategoryCache.containsKey(categoryKey)) {
+      return _subcategoryCache[categoryKey]!;
+    }
+
+    final response = await ComplaintService.getSubcategories(categoryKey);
+    if (response['success'] == true) {
+      _subcategoryCache[categoryKey] = response;
+    }
+    return response;
+  }
 
   Future<void> loadDashboardStats() async {
     _isLoading = true;

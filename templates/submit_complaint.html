@@ -439,7 +439,8 @@
 
                 <div class="form-group">
                     <label>Upload Evidence (Optional)</label>
-                    <input type="file" name="media" class="file-input" accept="image/*,video/*,.pdf" multiple>
+                    <input type="file" id="mediaInput" name="media" class="file-input" accept="image/*,video/*,.pdf" multiple style="margin-bottom: 10px;">
+                    <div id="filePreviewContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 10px;"></div>
                     <small style="color: #6c757d;">Max 10MB per file. Formats: JPG, PNG, PDF, MP4</small>
                 </div>
             </div>
@@ -1627,6 +1628,81 @@
                 {name: 'Date of Issue', type: 'date'}
             ],
         };
+
+        const mediaInput = document.getElementById('mediaInput');
+        const filePreviewContainer = document.getElementById('filePreviewContainer');
+        let selectedFiles = [];
+
+        mediaInput.addEventListener('change', function() {
+            const files = Array.from(this.files);
+            selectedFiles = [...selectedFiles, ...files];
+            updateFilePreviews();
+            updateInputFiles();
+        });
+
+        function updateFilePreviews() {
+            filePreviewContainer.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const div = document.createElement('div');
+                div.className = 'file-preview';
+                div.style.position = 'relative';
+                div.style.width = '100px';
+                div.style.height = '100px';
+                div.style.border = '1.5px solid #e2e8f0';
+                div.style.borderRadius = '12px';
+                div.style.overflow = 'hidden';
+                div.style.backgroundColor = '#f1f5f9';
+
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    div.appendChild(img);
+                } else {
+                    const icon = document.createElement('div');
+                    icon.style.display = 'flex';
+                    icon.style.flexDirection = 'column';
+                    icon.style.alignItems = 'center';
+                    icon.style.justifyContent = 'center';
+                    icon.style.height = '100%';
+                    icon.innerHTML = `<i class="fa-solid ${file.type.includes('pdf') ? 'fa-file-pdf' : 'fa-file-video'}" style="font-size: 24px; color: #64748b;"></i><span style="font-size: 10px; color: #64748b; margin-top: 5px; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; width: 90%;">${file.name}</span>`;
+                    div.appendChild(icon);
+                }
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '5px';
+                removeBtn.style.right = '5px';
+                removeBtn.style.width = '20px';
+                removeBtn.style.height = '20px';
+                removeBtn.style.borderRadius = '50%';
+                removeBtn.style.backgroundColor = '#ef4444';
+                removeBtn.style.color = 'white';
+                removeBtn.style.border = 'none';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.style.display = 'flex';
+                removeBtn.style.alignItems = 'center';
+                removeBtn.style.justifyContent = 'center';
+                removeBtn.style.fontSize = '12px';
+                removeBtn.onclick = function() {
+                    selectedFiles.splice(index, 1);
+                    updateFilePreviews();
+                    updateInputFiles();
+                };
+                div.appendChild(removeBtn);
+                filePreviewContainer.appendChild(div);
+            });
+        }
+
+        function updateInputFiles() {
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(file => dataTransfer.items.add(file));
+            mediaInput.files = dataTransfer.files;
+        }
 
         const managedSubcategories = {{ managed_subcategories_json|safe }};
         const managedFieldConfig = {{ managed_field_map_json|safe }};
