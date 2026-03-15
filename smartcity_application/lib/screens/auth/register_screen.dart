@@ -244,19 +244,70 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       'longitude': _lng?.toString() ?? '',
     });
     setState(() => _isLoading = false);
+    
     if (success && mounted) {
-      if (auth.isAuthenticated) {
-        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
-      } else {
-        // Registration succeeded but no auto-login — go to login
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please login.')),
-        );
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      }
+      _showRegistrationSuccessDialog();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Registration failed')));
     }
+  }
+
+  void _showRegistrationSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80, height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22C55E).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(Icons.check_circle_rounded, color: Color(0xFF22C55E), size: 54),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Registration Successful!',
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Your account has been created for ${_emailCtrl.text.trim()}. Please login to continue.',
+                style: GoogleFonts.inter(fontSize: 13, color: _textMuted, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop(); // Close dialog
+                    Navigator.pushReplacementNamed(context, AppRoutes.login);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text('OKAY, LOGIN', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override

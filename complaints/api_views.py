@@ -54,11 +54,14 @@ def register_user(request):
 
         # Check if user already exists and is FULLY registered
         existing_user = User.objects.filter(email__iexact=email).first()
-        if existing_user and hasattr(existing_user, 'citizenprofile') and existing_user.citizenprofile.mobile_no:
-            return Response({
-                'success': False, 
-                'message': 'This email is already fully registered and verified'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        if existing_user and hasattr(existing_user, 'citizenprofile'):
+            # If they have a real mobile_no (not default), then they're truly registered
+            profile = existing_user.citizenprofile
+            if profile.mobile_no and profile.mobile_no != 'Not Provided' and profile.mobile_no != '':
+                return Response({
+                    'success': False, 
+                    'message': 'This email is already fully registered and verified'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         # Handle name splitting safely even if empty
         name_to_split = name if name.strip() else 'Citizen'
