@@ -92,9 +92,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         final rawSubs = res['subcategories'] as List? ?? [];
         final subs = rawSubs.map((e) {
           final sub = Map<String, dynamic>.from(e as Map);
-          sub['dynamic_fields'] = ((sub['dynamic_fields'] as List?) ?? [])
-              .map((f) => Map<String, dynamic>.from(f as Map))
-              .toList();
+          final fields = sub['dynamic_fields'] as List? ?? [];
+          sub['dynamic_fields'] = fields.map((f) => Map<String, dynamic>.from(f as Map)).toList();
           return sub;
         }).toList();
         
@@ -132,20 +131,27 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   }
 
   void _selectSub(Map<String, dynamic> sub) {
-    // Dispose old controllers
-    if (_selectedSub != null) {
-      for (final f in (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])) {
-        final id = f['id'] as int;
+    // Keep category fields, but clear old subcategory fields
+    final oldSubFields = _selectedSub != null ? (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? []) : [];
+    for (final f in oldSubFields) {
+      final id = f['id'] as int;
+      // Only remove if it's NOT a category field
+      if (!_categoryFields.any((cf) => cf['id'] == id)) {
         _dynCtrl.remove(id)?.dispose();
         _dynDropdown.remove(id);
         _dynDate.remove(id);
       }
     }
+
     // Init new controllers for new subcategory
     final fields = sub['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
     for (final f in fields) {
       final id = f['id'] as int;
       final type = f['field_type'] as String;
+      
+      // Don't re-init if already exists (from category fields)
+      if (_dynCtrl.containsKey(id) || _dynDropdown.containsKey(id) || _dynDate.containsKey(id)) continue;
+
       if (type == 'select') {
         _dynDropdown[id] = null;
       } else if (type == 'date' || type == 'datetime-local') {
@@ -443,6 +449,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   // ── Subcategory grid ──────────────────────────────────────────────────────
   Widget _subcategoryGrid() {
+    if (_subcategories.isEmpty) return const SizedBox.shrink();
+    
     return Wrap(
       spacing: 10,
       runSpacing: 10,
