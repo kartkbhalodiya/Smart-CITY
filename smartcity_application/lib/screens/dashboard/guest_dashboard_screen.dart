@@ -306,9 +306,77 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         const SizedBox(height: 24),
         if (_trackResult!['assigned_department_phone'] != null)
           _connectDeptSection(_trackResult!),
+        const SizedBox(height: 24),
+        if (_trackResult!['work_status'] == 'solved')
+          _reopenButton(),
         const SizedBox(height: 40),
       ],
     ]);
+  }
+
+  Widget _reopenButton() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Column(children: [
+        const Text('🔄', style: TextStyle(fontSize: 24)),
+        const SizedBox(height: 8),
+        Text('Not satisfied with the resolution?',
+            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF991B1B))),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _showReopenLoginDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('REOPEN COMPLAINT', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  void _showReopenLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          const Text('🔐 ', style: TextStyle(fontSize: 20)),
+          Text('Login Required', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        ]),
+        content: Text('To reopen a complaint, you must be logged in to your account for verification and security purposes.',
+            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748b), fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushReplacementNamed(context, AppRoutes.login);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E66F5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Login Now', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _inputField(TextEditingController c, String hint, IconData icon, {TextInputType type = TextInputType.text}) {
@@ -405,40 +473,78 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Widget _mapSection(Map<String, dynamic> c) {
-    final lat = (c['latitude'] ?? 0.0).toDouble();
-    final lng = (c['longitude'] ?? 0.0).toDouble();
-    if (lat == 0.0 && lng == 0.0) return const SizedBox.shrink();
-    final position = LatLng(lat, lng);
+    final cLat = (c['latitude'] ?? 0.0).toDouble();
+    final cLng = (c['longitude'] ?? 0.0).toDouble();
+    final dLat = (c['assigned_department_latitude'] ?? 0.0).toDouble();
+    final dLng = (c['assigned_department_longitude'] ?? 0.0).toDouble();
+    
+    if (cLat == 0.0 && cLng == 0.0) return const SizedBox.shrink();
+    
+    final cPos = LatLng(cLat, cLng);
+    final hasDept = dLat != 0.0 && dLng != 0.0;
+    final dPos = hasDept ? LatLng(dLat, dLng) : null;
+    
+    // Calculate center for both or just complaint
+    final center = hasDept 
+        ? LatLng((cLat + dLat) / 2, (cLng + dLng) / 2)
+        : cPos;
+        
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          const Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF1E66F5)),
+          const Icon(Icons.map_outlined, size: 20, color: Color(0xFF1E66F5)),
           const SizedBox(width: 8),
-          Text('Complaint Location',
+          Text('Location Tracking',
               style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         ]),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Container(
-            height: 220,
+            height: 250,
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
             ),
             child: FlutterMap(
-              options: MapOptions(initialCenter: position, initialZoom: 15),
+              options: MapOptions(initialCenter: center, initialZoom: hasDept ? 13 : 15),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.janhelp.app',
                 ),
+                if (hasDept) PolylineLayer(polylines: [
+                  Polyline(
+                    points: [cPos, dPos!],
+                    color: const Color(0xFF1E66F5).withOpacity(0.5),
+                    strokeWidth: 4,
+                    isDotted: true,
+                  ),
+                ]),
                 MarkerLayer(markers: [
                   Marker(
-                    point: position,
-                    width: 40, height: 40,
-                    child: const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 40),
+                    point: cPos,
+                    width: 45, height: 45,
+                    child: Column(children: [
+                      const Icon(Icons.location_pin, color: Color(0xFFEF4444), size: 32),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
+                        child: Text('Complaint', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700)),
+                      ),
+                    ]),
+                  ),
+                  if (hasDept) Marker(
+                    point: dPos!,
+                    width: 45, height: 45,
+                    child: Column(children: [
+                      const Icon(Icons.business_rounded, color: Color(0xFF1E66F5), size: 30),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
+                        child: Text('Dept', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
+                      ),
+                    ]),
                   ),
                 ]),
               ],

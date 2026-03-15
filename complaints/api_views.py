@@ -622,6 +622,8 @@ def track_guest_complaint_api(request):
         'assigned_department': dept.name if dept else None,
         'assigned_department_phone': dept.phone if dept else None,
         'assigned_department_email': dept.email if dept else None,
+        'assigned_department_latitude': float(dept.latitude) if (dept and dept.latitude) else 0.0,
+        'assigned_department_longitude': float(dept.longitude) if (dept and dept.longitude) else 0.0,
         'latitude': float(complaint.latitude) if complaint.latitude else 0.0,
         'longitude': float(complaint.longitude) if complaint.longitude else 0.0,
         'contact_name': complaint.user.get_full_name() if complaint.user else (complaint.guest_name or ''),
