@@ -41,26 +41,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   Future<void> _loadUserComplaints() async {
     try {
-      print('=== LOADING USER COMPLAINTS ===');
-      print('API URL: ${ApiConfig.complaints}');
-      
-      // Check if user is authenticated
-      final token = await StorageService.getToken();
-      print('Auth Token: ${token != null ? "Present (${token.substring(0, 10)}...)" : "Missing"}');
-      
       final provider = context.read<ComplaintProvider>();
-      print('Provider state before load: Loading=${provider.isLoading}, Error=${provider.error}');
-      
       await provider.loadComplaints();
-      
-      print('Provider state after load: Loading=${provider.isLoading}, Error=${provider.error}');
-      print('Complaints count: ${provider.complaints.length}');
-      
-      if (provider.complaints.isNotEmpty) {
-        print('First complaint: ${provider.complaints.first.complaintNumber}');
-      }
-      
-      print('=== LOAD COMPLETE ===');
     } catch (e) {
       print('Error loading complaints: $e');
     }
@@ -726,60 +708,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
               ),
             ),
           ],
-          const SizedBox(height: 20),
-          // Debug info for troubleshooting
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Column(
-              children: [
-                Text('Debug Info:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
-                Text('Filter: $_selectedFilter', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
-                Text('Search: "$_searchQuery"', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    print('Manual reload button pressed');
-                    _loadUserComplaints();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEAB308),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    'Force Reload Complaints',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _testApiDirectly,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF4444),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(
-                    'Test API Directly',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -936,7 +864,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 ),
                 
                 // Connecting line (except for last item)
-                if (!isLast) ..[
+                if (!isLast) ...[
                   const SizedBox(width: 4),
                   Expanded(
                     child: Container(
@@ -978,13 +906,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   String _getUserInitials(user) {
     if (user == null) return 'U';
-    final firstName = user.firstName?.trim() ?? '';
-    final lastName = user.lastName?.trim() ?? '';
-    String initials = '';
-    if (firstName.isNotEmpty) initials += firstName[0].toUpperCase();
-    if (lastName.isNotEmpty) initials += lastName[0].toUpperCase();
-    return initials.isEmpty ? 'U' : initials;
-  }
     final firstName = user.firstName?.trim() ?? '';
     final lastName = user.lastName?.trim() ?? '';
     String initials = '';

@@ -1234,6 +1234,26 @@ def view_complaint_location(request, complaint_id):
         'reopen_window_days': Complaint.REOPEN_WINDOW_DAYS,
     })
 
+@login_required
+def user_track_complaint_detail(request, complaint_id):
+    """Comprehensive complaint tracking detail page for users"""
+    complaint = get_object_or_404(
+        Complaint.objects.select_related('assigned_department')
+        .prefetch_related('media', 'resolution_proofs', 'reopen_proofs'),
+        id=complaint_id
+    )
+    
+    # Check if user owns this complaint or is authorized
+    if not request.user.is_superuser:
+        if complaint.user != request.user:
+            messages.error(request, 'Access denied!')
+            return redirect('user_dashboard')
+    
+    return render(request, 'user_track_complaint_detail.html', {
+        'complaint': complaint,
+        'reopen_window_days': Complaint.REOPEN_WINDOW_DAYS,
+    })
+
 def guest_complaint(request):
     if request.method == 'POST':
         complaint_data = {

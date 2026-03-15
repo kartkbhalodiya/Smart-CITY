@@ -842,7 +842,7 @@
                 </div>
             {% elif recent_complaints %}
                 {% for complaint in recent_complaints %}
-                <div class="complaint-card" onclick="window.location.href='{% url 'view_location' complaint.id %}'">
+                <div class="complaint-card" onclick="window.location.href='{% url 'user_track_complaint_detail' complaint.id %}'">
                     <div class="complaint-header">
                         <div class="complaint-id">#{{ complaint.complaint_number }}</div>
                         <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.work_status }}</span>

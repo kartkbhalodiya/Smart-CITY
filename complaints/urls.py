@@ -18,6 +18,7 @@ urlpatterns = [
     path('approve/<int:complaint_id>/', views.approve_complaint, name='approve_complaint'),
     path('reject/<int:complaint_id>/', views.reject_complaint, name='reject_complaint'),
     path('location/<int:complaint_id>/', views.view_complaint_location, name='view_location'),
+    path('complaint-detail/<int:complaint_id>/', views.user_track_complaint_detail, name='user_track_complaint_detail'),
     path('guest/complaint/', views.guest_complaint, name='guest_complaint'),
     path('guest/track/', views.track_guest_complaint, name='track_guest_complaint'),
     path('super-admin/', views.super_admin_dashboard, name='super_admin_dashboard'),

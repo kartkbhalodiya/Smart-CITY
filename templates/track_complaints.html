@@ -993,19 +993,19 @@
                         </div>
                         <div class="quick-actions">
                             {% if not complaint.citizen_rating %}
-                            <a href="{% url 'view_location' complaint.id %}" class="quick-btn quick-btn-warning">
+                            <a href="{% url 'user_track_complaint_detail' complaint.id %}" class="quick-btn quick-btn-warning">
                                 <i class="fa-solid fa-star"></i>
                                 Rate
                             </a>
                             {% endif %}
-                            <a href="{% url 'view_location' complaint.id %}" class="quick-btn quick-btn-danger">
+                            <a href="{% url 'user_track_complaint_detail' complaint.id %}" class="quick-btn quick-btn-danger">
                                 <i class="fa-solid fa-rotate-left"></i>
                                 Reopen
                             </a>
                         </div>
                         {% elif not complaint.citizen_rating %}
                         <div class="quick-actions">
-                            <a href="{% url 'view_location' complaint.id %}" class="quick-btn quick-btn-warning">
+                            <a href="{% url 'user_track_complaint_detail' complaint.id %}" class="quick-btn quick-btn-warning">
                                 <i class="fa-solid fa-star"></i>
                                 Rate Service
                             </a>
@@ -1024,7 +1024,7 @@
                     {% endif %}
 
                     <!-- Action Button -->
-                    <a href="{% url 'view_location' complaint.id %}" class="action-btn">
+                    <a href="{% url 'user_track_complaint_detail' complaint.id %}" class="action-btn">
                         <i class="fa-solid fa-eye"></i>
                         View Details
                     </a>

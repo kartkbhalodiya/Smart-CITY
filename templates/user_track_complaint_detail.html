@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Details - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --primary-color: #2B6CF6;
+            --success-color: #2ECC71;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --purple-color: #9333EA;
+            --dark-red: #8B0000;
+            --bg-white: #FFFFFF;
+            --bg-section: #F7F9FC;
+            --text-dark: #1a202c;
+            --text-muted: #718096;
+            --border-radius: 16px;
+            --card-shadow: 0 6px 20px rgba(0,0,0,0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-section);
+            color: var(--text-dark);
+            padding-bottom: 24px;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            background: var(--bg-white);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            z-index: 1000;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-section);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            color: var(--text-dark);
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        .header-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 24px 16px;
+            max-width: 768px;
+            margin: 0 auto;
+        }
+
+        /* Map Section */
+        .map-section {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 250px;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .map-overlay h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .map-overlay p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Status Header */
+        .status-header {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .complaint-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending { background: var(--purple-color); color: white; }
+        .status-confirmed { background: var(--primary-color); color: white; }
+        .status-process { background: var(--warning-color); color: white; }
+        .status-solved { background: var(--success-color); color: white; }
+        .status-reopened { background: var(--dark-red); color: white; }
+
+        /* Section Card */
+        .section-card {
+            background: var(--bg-white);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+        }
+
+        /* Detail Row */
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 120px;
+        }
+
+        .detail-value {
+            color: var(--text-dark);
+            flex: 1;
+        }
+
+        /* Department Contact */
+        .contact-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .contact-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .contact-btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .contact-btn-secondary {
+            background: var(--bg-section);
+            color: var(--text-dark);
+            border: 2px solid #E2E8F0;
+        }
+
+        .contact-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Rating Display */
+        .rating-display {
+            background: linear-gradient(135deg, #FFF9E6 0%, #FEF3C7 100%);
+            border: 2px solid #FCD34D;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .rating-stars i {
+            font-size: 24px;
+            color: #F39C12;
+        }
+
+        .rating-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .feedback-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Rating Form */
+        .rating-form {
+            text-align: center;
+        }
+
+        .rating-input {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .star-input {
+            font-size: 36px;
+            color: #E2E8F0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .star-input.active, .star-input:hover {
+            color: #F39C12;
+            transform: scale(1.1);
+        }
+
+        .feedback-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            margin-top: 16px;
+        }
+
+        .feedback-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Reopen Section */
+        .reopen-section {
+            background: #FFEBEE;
+            border: 2px solid var(--danger-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .reopen-warning {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--danger-color);
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .reopen-warning i {
+            font-size: 24px;
+        }
+
+        .file-upload {
+            margin-top: 16px;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 16px;
+            background: var(--bg-section);
+            border: 2px dashed #CBD5E0;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--primary-color);
+            background: #E3F2FD;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-white);
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-section);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: #E8F8F0;
+            color: var(--success-color);
+        }
+
+        .alert-danger {
+            background: #FFEBEE;
+            color: var(--danger-color);
+        }
+
+        .alert-warning {
+            background: #FFF4E6;
+            color: var(--warning-color);
+        }
+
+        /* Responsive */
+        @media (min-width: 768px) {
+            .contact-buttons {
+                max-width: 300px;
+                margin: 16px auto 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <a href="{% url 'track_complaints' %}" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <h1 class="header-title">Complaint Details</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Map Section -->
+        <div class="map-section">
+            <div class="map-overlay">
+                <h3>{{ complaint.title }}</h3>
+                <p>{{ complaint.city }}, {{ complaint.state }}</p>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- Status Header -->
+        <div class="status-header">
+            <div class="complaint-number">#{{ complaint.complaint_number }}</div>
+            <span class="status-badge status-{{ complaint.work_status }}">{{ complaint.get_work_status_display }}</span>
+        </div>
+
+        <!-- Complaint Details -->
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fa-solid fa-file-lines"></i>
+                Complaint Information
+            </h2>
+            <div class="detail-row">
+                <span class="detail-label">Category:</span>
+                <span class="detail-value">{{ complaint.get_complaint_type_display }}</span>
+            </div>
+            {% if complaint.subcategory %}
+            <div class="detail-row">
+                <span class="detail-label">Subcategory:</span>
+                <span class="detail-value">{{ complaint.subcategory }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-row">
+                <span class="detail-label">Description:</span>
+                <span class="detail-value">{{ complaint.description }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Submitted:</span>
+                <span class="detail-value">{{ complaint.created_at|date:"M d, Y — H:i" }}</span>
+            </div>
+            {% if complaint.resolved_at %}
+            <div class="detail-row">
+                <span class="detail-label">Resolved:</span>
+                <span class="detail-value">{{ complaint.resolved_at|date:"M d, Y — H:i" }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-row">
+                <span class="detail-label">Location:</span>
+                <span class="detail-value">{{ complaint.address }}</span>
+            </div>
+        </div>
+
+        <!-- Assigned Department Contact -->
+        {% if complaint.assigned_department %}
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fa-solid fa-building"></i>
+                Contact Department
+            </h2>
+            <div class="detail-row">
+                <span class="detail-label">Department:</span>
+                <span class="detail-value">{{ complaint.assigned_department.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ complaint.assigned_department.email }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">{{ complaint.assigned_department.phone }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">{{ complaint.assigned_department.address }}</span>
+            </div>
+            
+            <div class="contact-buttons">
+                <a href="tel:{{ complaint.assigned_department.phone }}" class="contact-btn contact-btn-primary">
+                    <i class="fa-solid fa-phone"></i>
+                    Call Department
+                </a>
+                <a href="mailto:{{ complaint.assigned_department.email }}" class="contact-btn contact-btn-secondary">
+                    <i class="fa-solid fa-envelope"></i>
+                    Send Email
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Rating & Feedback Section (Only for solved complaints) -->
+        {% if complaint.work_status == 'solved' %}
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fa-solid fa-star"></i>
+                Service Rating
+            </h2>
+            
+            {% if complaint.citizen_rating %}
+            <!-- Already Rated -->
+            <div class="rating-display">
+                <div class="rating-text">You rated this service</div>
+                <div class="rating-stars">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= complaint.citizen_rating %}
+                        <i class="fa-solid fa-star"></i>
+                        {% else %}
+                        <i class="fa-regular fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="rating-text">{{ complaint.citizen_rating }}/5 Stars</div>
+                {% if complaint.citizen_feedback %}
+                <div class="feedback-text">"{{ complaint.citizen_feedback }}"</div>
+                {% endif %}
+            </div>
+            {% else %}
+            <!-- Rating Form -->
+            <div class="rating-form">
+                <p style="color: var(--text-muted); margin-bottom: 8px;">How satisfied are you with the resolution?</p>
+                <form method="POST" action="{% url 'submit_complaint_feedback' complaint.id %}">
+                    {% csrf_token %}
+                    <div class="rating-input" id="ratingStars">
+                        <i class="fa-solid fa-star star-input" data-rating="1"></i>
+                        <i class="fa-solid fa-star star-input" data-rating="2"></i>
+                        <i class="fa-solid fa-star star-input" data-rating="3"></i>
+                        <i class="fa-solid fa-star star-input" data-rating="4"></i>
+                        <i class="fa-solid fa-star star-input" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" name="rating" id="ratingInput" required>
+                    <textarea name="feedback" class="feedback-textarea" placeholder="Share your experience (optional)"></textarea>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 16px;">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Submit Rating
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Reopen Section (Only if within 7 days and not already reopened) -->
+        {% if complaint.can_reopen %}
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fa-solid fa-rotate-left"></i>
+                Reopen Complaint
+            </h2>
+            <div class="reopen-section">
+                <div class="reopen-warning">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    <span>You can reopen this complaint within {{ reopen_window_days }} days</span>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+                    If the issue is not resolved properly, you can reopen this complaint. Photo proof is mandatory.
+                </p>
+                <button class="btn btn-danger" onclick="showReopenModal()">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Reopen Complaint
+                </button>
+            </div>
+        </div>
+        {% elif complaint.work_status == 'reopened' %}
+        <div class="alert alert-warning">
+            <i class="fa-solid fa-info-circle"></i>
+            <span>This complaint has been reopened and is being reviewed</span>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Reopen History -->
+        {% if complaint.reopen_proofs.all %}
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fa-solid fa-history"></i>
+                Reopen History
+            </h2>
+            {% for reopen in complaint.reopen_proofs.all %}
+            <div style="background: var(--bg-section); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                <div class="detail-row">
+                    <span class="detail-label">Reason:</span>
+                    <span class="detail-value">{{ reopen.reason }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">{{ reopen.created_at|date:"M d, Y — H:i" }}</span>
+                </div>
+                {% if reopen.proof %}
+                <img src="{{ reopen.proof.url }}" alt="Reopen proof" style="width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer;" onclick="window.open('{{ reopen.proof.url }}', '_blank')">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Reopen Modal -->
+    <div class="modal" id="reopenModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Reopen Complaint</h3>
+                <button class="close-btn" onclick="hideReopenModal()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <form method="POST" action="{% url 'reopen_complaint' complaint.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Reason for reopening *</label>
+                    <textarea name="reopen_reason" class="feedback-textarea" placeholder="Explain why you want to reopen this complaint" required style="margin-top: 0;"></textarea>
+                </div>
+                
+                <div class="file-upload">
+                    <label for="reopenProof" class="file-upload-label">
+                        <i class="fa-solid fa-camera" style="font-size: 24px; margin-bottom: 8px;"></i>
+                        <div style="font-weight: 600;">Upload Photo Proof *</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Required: JPG, PNG, WEBP</div>
+                    </label>
+                    <input type="file" id="reopenProof" name="reopen_proof" accept="image/*" required>
+                    <div id="fileName" style="margin-top: 8px; font-size: 14px; color: var(--primary-color);"></div>
+                </div>
+                
+                <button type="submit" class="btn btn-danger" style="margin-top: 20px;">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Submit Reopen Request
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map
+        var map = L.map('map').setView([{{ complaint.latitude }}, {{ complaint.longitude }}], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add complaint marker
+        L.marker([{{ complaint.latitude }}, {{ complaint.longitude }}]).addTo(map)
+            .bindPopup('<b>{{ complaint.title }}</b><br>{{ complaint.address }}').openPopup();
+
+        // Add department marker if available
+        {% if complaint.assigned_department and complaint.assigned_department.latitude and complaint.assigned_department.longitude %}
+        var deptIcon = L.divIcon({
+            html: '<i class="fa-solid fa-building" style="color: #2B6CF6; font-size: 20px;"></i>',
+            iconSize: [30, 30],
+            className: 'custom-div-icon'
+        });
+        
+        L.marker([{{ complaint.assigned_department.latitude }}, {{ complaint.assigned_department.longitude }}], {icon: deptIcon}).addTo(map)
+            .bindPopup('<b>{{ complaint.assigned_department.name }}</b><br>{{ complaint.assigned_department.address }}');
+        {% endif %}
+
+        // Rating system
+        const stars = document.querySelectorAll('.star-input');
+        const ratingInput = document.getElementById('ratingInput');
+        
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = this.getAttribute('data-rating');
+                ratingInput.value = rating;
+                
+                stars.forEach(s => {
+                    if (s.getAttribute('data-rating') <= rating) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // File upload preview
+        document.getElementById('reopenProof').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            if (fileName) {
+                document.getElementById('fileName').textContent = '✓ ' + fileName;
+            }
+        });
+
+        // Modal functions
+        function showReopenModal() {
+            document.getElementById('reopenModal').classList.add('show');
+        }
+
+        function hideReopenModal() {
+            document.getElementById('reopenModal').classList.remove('show');
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('reopenModal');
+            if (event.target === modal) {
+                hideReopenModal();
+            }
+        });
+    </script>
+</body>
+</html>
