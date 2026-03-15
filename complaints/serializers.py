@@ -20,7 +20,7 @@ class CitizenProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CitizenProfile
         fields = ['id', 'user', 'surname', 'state', 'district', 'taluka', 
-                  'city', 'address', 'mobile_no', 'aadhaar_number', 
+                  'city', 'pincode', 'address', 'mobile_no', 'aadhaar_number', 
                   'latitude', 'longitude']
 
 
@@ -224,7 +224,11 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
             if 'name' in request.data and not validated_data.get('guest_name'):
                 validated_data['guest_name'] = request.data['name']
 
-        complaint = Complaint.objects.create(user=user, **validated_data)
+        # Ensure we only pass valid fields to create
+        valid_fields = [f.name for f in Complaint._meta.fields]
+        create_data = {k: v for k, v in validated_data.items() if k in valid_fields}
+        
+        complaint = Complaint.objects.create(user=user, **create_data)
         
         # Handle media files
         for file in media_files:

@@ -248,8 +248,11 @@ def verify_otp(request):
                 defaults={
                     'surname': user.last_name or 'Citizen',
                     'city': 'Not Specified',
+                    'district': 'Not Specified',
+                    'state': 'Not Specified',
                     'address': 'Not Provided',
-                    'mobile_no': 'Not Provided'
+                    'mobile_no': 'Not Provided',
+                    'pincode': '',
                 }
             )
             

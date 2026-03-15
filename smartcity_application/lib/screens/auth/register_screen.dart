@@ -339,12 +339,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 20),
         // First + Last name row
         Row(children: [
-          Expanded(child: _field(_firstNameCtrl, 'First Name', Icons.person_outline, TextInputType.name)),
+          Expanded(child: _field(_firstNameCtrl, 'First Name (Optional)', Icons.person_outline, TextInputType.name)),
           const SizedBox(width: 12),
-          Expanded(child: _field(_lastNameCtrl, 'Last Name', Icons.person_outline, TextInputType.name)),
+          Expanded(child: _field(_lastNameCtrl, 'Last Name (Optional)', Icons.person_outline, TextInputType.name)),
         ]),
         const SizedBox(height: 12),
-        _field(_mobileCtrl, 'Mobile Number', Icons.phone_outlined, TextInputType.phone),
+        _field(_mobileCtrl, 'Mobile Number (Optional)', Icons.phone_outlined, TextInputType.phone),
         const SizedBox(height: 12),
         _emailFieldWithVerify(),
         if (_otpSent) ...[
@@ -352,19 +352,19 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           _otpVerifyBox(),
         ],
         const SizedBox(height: 12),
-        _field(_pincodeCtrl, 'Pincode', Icons.location_on_outlined, TextInputType.number),
+        _field(_pincodeCtrl, 'Pincode (Optional)', Icons.location_on_outlined, TextInputType.number),
         const SizedBox(height: 12),
         // State + City row
         Row(children: [
           Expanded(child: _loadingStates
             ? _loadingDropdown('Select State')
-            : _dropdown('Select State', _states, _selectedState,
+            : _dropdown('Select State (Opt)', _states, _selectedState,
                 (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
           const SizedBox(width: 12),
           Expanded(child: _loadingStates
             ? _loadingDropdown('Select City')
             : _dropdown(
-                'Select City',
+                'Select City (Opt)',
                 _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
                 _selectedCity,
                 _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
@@ -499,7 +499,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         controller: _addressCtrl, maxLines: 3,
         style: GoogleFonts.inter(fontSize: 14, color: _textDark),
         decoration: InputDecoration(
-          hintText: 'Address',
+          hintText: 'Address (Optional)',
           hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(14),
