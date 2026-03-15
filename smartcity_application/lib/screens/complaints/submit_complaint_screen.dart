@@ -82,12 +82,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     
     setState(() => _loadingMeta = true);
     try {
-      // Use optimized specific category endpoint instead of fetching all categories
       final res = await ApiService.get(
         ApiConfig.subcategories(widget.categoryKey!), 
         includeAuth: false
       );
-      debugPrint('API Response for ${widget.categoryKey}: $res');
       
       if (res['success'] == true) {
         final rawSubs = res['subcategories'] as List? ?? [];
@@ -101,16 +99,28 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         final rawCatFields = res['category_fields'] as List? ?? [];
         final catFields = rawCatFields.map((f) => Map<String, dynamic>.from(f as Map)).toList();
         
-        if (mounted) {
-          setState(() {
-            _subcategories = subs;
-            _categoryFields = catFields;
-          });
+        // Initialize controllers for category fields
+        for (final f in catFields) {
+          final id = f['id'] as int;
+          final type = f['field_type'] as String;
+          if (type == 'select') {
+            _dynDropdown[id] = null;
+          } else if (type == 'date' || type == 'datetime-local') {
+            _dynDate[id] = null;
+          } else {
+            _dynCtrl[id] = TextEditingController();
+          }
+        }
 
-          // Initialize controllers for category fields
-          for (final f in catFields) {
+        Map<String, dynamic>? firstSub;
+        if (subs.isNotEmpty) {
+          firstSub = subs.first;
+          // Init controllers for first subcategory
+          final fields = firstSub['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
+          for (final f in fields) {
             final id = f['id'] as int;
             final type = f['field_type'] as String;
+            if (_dynCtrl.containsKey(id) || _dynDropdown.containsKey(id) || _dynDate.containsKey(id)) continue;
             if (type == 'select') {
               _dynDropdown[id] = null;
             } else if (type == 'date' || type == 'datetime-local') {
@@ -119,16 +129,23 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
               _dynCtrl[id] = TextEditingController();
             }
           }
-
-          if (subs.isNotEmpty) {
-            _selectSub(subs.first);
-          }
         }
+
+        if (mounted) {
+          setState(() {
+            _subcategories = subs;
+            _categoryFields = catFields;
+            _selectedSub = firstSub;
+            _loadingMeta = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _loadingMeta = false);
       }
     } catch (e) {
       debugPrint('_loadMeta error: $e');
+      if (mounted) setState(() => _loadingMeta = false);
     }
-    if (mounted) setState(() => _loadingMeta = false);
   }
 
   void _selectSub(Map<String, dynamic> sub) {
