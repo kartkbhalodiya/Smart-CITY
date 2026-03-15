@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../config/routes.dart';
 
 class ComplaintSuccessScreen extends StatelessWidget {
@@ -19,6 +21,9 @@ class ComplaintSuccessScreen extends StatelessWidget {
     const primary = Color(0xFF1E66F5);
     const textDark = Color(0xFF0F172A);
     const textMuted = Color(0xFF64748B);
+
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final nextRoute = auth.isAuthenticated ? AppRoutes.dashboard : AppRoutes.guestDashboard;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -126,7 +131,7 @@ class ComplaintSuccessScreen extends StatelessWidget {
                     // Navigate back to dashboard and clear stack
                     Navigator.pushNamedAndRemoveUntil(
                       context, 
-                      AppRoutes.guestDashboard, 
+                      nextRoute, 
                       (route) => false,
                     );
                   },
