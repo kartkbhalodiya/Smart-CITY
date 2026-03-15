@@ -5,6 +5,9 @@ import '../../config/routes.dart';
 import '../../providers/complaint_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/complaint.dart';
+import '../../services/storage_service.dart';
+import '../../services/api_service.dart';
+import '../../config/api_config.dart';
 
 class UserTrackScreen extends StatefulWidget {
   const UserTrackScreen({super.key});
@@ -20,10 +23,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   final List<Map<String, dynamic>> _filterTabs = [
     {'key': 'all', 'label': 'All', 'icon': Icons.list_alt, 'color': Color(0xFF1E66F5)},
-    {'key': 'confirmed', 'label': 'Confirmed', 'icon': Icons.check_circle, 'color': Color(0xFFF97316)},
-    {'key': 'process', 'label': 'In Progress', 'icon': Icons.autorenew, 'color': Color(0xFFEAB308)},
+    {'key': 'pending', 'label': 'Pending', 'icon': Icons.pending, 'color': Color(0xFFEAB308)},
     {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified, 'color': Color(0xFF22C55E)},
     {'key': 'reopened', 'label': 'Reopened', 'icon': Icons.refresh, 'color': Color(0xFFEF4444)},
+    {'key': 'rejected', 'label': 'Rejected', 'icon': Icons.cancel, 'color': Color(0xFF991B1B)},
   ];
 
   @override
@@ -38,9 +41,26 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   Future<void> _loadUserComplaints() async {
     try {
-      print('Loading user complaints...');
-      await context.read<ComplaintProvider>().loadComplaints();
-      print('Complaints loaded successfully');
+      print('=== LOADING USER COMPLAINTS ===');
+      print('API URL: ${ApiConfig.complaints}');
+      
+      // Check if user is authenticated
+      final token = await StorageService.getToken();
+      print('Auth Token: ${token != null ? "Present (${token.substring(0, 10)}...)" : "Missing"}');
+      
+      final provider = context.read<ComplaintProvider>();
+      print('Provider state before load: Loading=${provider.isLoading}, Error=${provider.error}');
+      
+      await provider.loadComplaints();
+      
+      print('Provider state after load: Loading=${provider.isLoading}, Error=${provider.error}');
+      print('Complaints count: ${provider.complaints.length}');
+      
+      if (provider.complaints.isNotEmpty) {
+        print('First complaint: ${provider.complaints.first.complaintNumber}');
+      }
+      
+      print('=== LOAD COMPLETE ===');
     } catch (e) {
       print('Error loading complaints: $e');
     }
@@ -170,36 +190,21 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       builder: (context, provider, _) {
         final complaints = provider.complaints;
         final stats = {
-          'total': complaints.length,
-          'confirmed': complaints.where((c) => c.workStatus == 'confirmed').length,
-          'process': complaints.where((c) => c.workStatus == 'process').length,
+          'pending': complaints.where((c) => c.workStatus == 'pending').length,
           'solved': complaints.where((c) => c.workStatus == 'solved').length,
+          'rejected': complaints.where((c) => c.workStatus == 'rejected').length,
+          'reopened': complaints.where((c) => c.workStatus == 'reopened').length,
         };
 
-        return Column(
+        return Row(
           children: [
-            // First row with 4 boxes
-            Row(
-              children: [
-                _buildStatChip('Total', stats['total']!, const Color(0xFF1E66F5)),
-                const SizedBox(width: 8),
-                _buildStatChip('Confirmed', stats['confirmed']!, const Color(0xFFF97316)),
-                const SizedBox(width: 8),
-                _buildStatChip('Progress', stats['process']!, const Color(0xFFEAB308)),
-                const SizedBox(width: 8),
-                _buildStatChip('Solved', stats['solved']!, const Color(0xFF22C55E)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Second row with Reopened box
-            Row(
-              children: [
-                _buildStatChip('Reopened', complaints.where((c) => c.workStatus == 'reopened').length, const Color(0xFFEF4444)),
-                const Spacer(),
-                const Spacer(),
-                const Spacer(),
-              ],
-            ),
+            _buildStatChip('Pending', stats['pending']!, const Color(0xFFEAB308)),
+            const SizedBox(width: 8),
+            _buildStatChip('Solved', stats['solved']!, const Color(0xFF22C55E)),
+            const SizedBox(width: 8),
+            _buildStatChip('Rejected', stats['rejected']!, const Color(0xFF991B1B)),
+            const SizedBox(width: 8),
+            _buildStatChip('Reopened', stats['reopened']!, const Color(0xFFEF4444)),
           ],
         );
       },
@@ -385,86 +390,130 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header row
+                // Header: Status, Priority, Complaint ID
                 Row(
                   children: [
+                    // Status Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        statusText,
+                        statusText.toUpperCase(),
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: statusColor,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // Priority Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: priorityColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: priorityColor, width: 1),
                       ),
                       child: Text(
                         complaint.priority.toUpperCase(),
                         style: GoogleFonts.inter(
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: priorityColor,
                         ),
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      '#${complaint.complaintNumber}',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF64748b),
+                    // Complaint ID
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        '#${complaint.complaintNumber}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0f172a),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                // Title and category
+                const SizedBox(height: 16),
+                
+                // Title and Category with Emoji
                 Row(
                   children: [
                     Text(
                       _getCategoryEmoji(complaint.complaintType),
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 24),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            complaint.complaintType,
+                            complaint.title,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0f172a),
                             ),
                           ),
-                          if (complaint.subcategory != null)
-                            Text(
-                              complaint.subcategory!,
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: const Color(0xFF64748b),
-                              ),
+                          const SizedBox(height: 2),
+                          Text(
+                            complaint.complaintType,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF64748b),
                             ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                
+                // Subcategory if available
+                if (complaint.subcategory != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E66F5).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.category, size: 14, color: const Color(0xFF1E66F5)),
+                        const SizedBox(width: 6),
+                        Text(
+                          complaint.subcategory!,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1E66F5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                const SizedBox(height: 12),
+                
                 // Description
                 Text(
                   complaint.description,
@@ -476,11 +525,18 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 12),
-                // Location and time
+                
+                const SizedBox(height: 16),
+                
+                // Status Timeline
+                _buildStatusTimeline(complaint.workStatus),
+                
+                const SizedBox(height: 16),
+                
+                // Location and Time Info
                 Row(
                   children: [
-                    Icon(Icons.location_on_outlined, size: 16, color: const Color(0xFF64748b)),
+                    Icon(Icons.location_on, size: 16, color: const Color(0xFF64748b)),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -491,7 +547,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Icon(Icons.access_time, size: 16, color: const Color(0xFF64748b)),
                     const SizedBox(width: 4),
                     Text(
@@ -503,31 +559,110 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     ),
                   ],
                 ),
-                // Department info if assigned
+                
+                // Department Assignment Info
                 if (complaint.assignedDepartment != null) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.business, size: 16, color: const Color(0xFF1E66F5)),
-                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E66F5).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.business, size: 18, color: const Color(0xFF1E66F5)),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            'Assigned to ${complaint.assignedDepartment!.name}',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1E66F5),
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Assigned Department',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: const Color(0xFF64748b),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                complaint.assignedDepartment!.name,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1E66F5),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, size: 12, color: const Color(0xFF64748b)),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E66F5),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(Icons.location_on, size: 14, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                // Rejection Notice if rejected
+                if (complaint.workStatus.toLowerCase() == 'rejected') ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF991B1B),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(Icons.cancel, size: 16, color: Colors.white),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Complaint Rejected',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF991B1B),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Tap to view rejection reason',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: const Color(0xFF991B1B).withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, size: 12, color: const Color(0xFF991B1B)),
                       ],
                     ),
                   ),
@@ -625,6 +760,23 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _testApiDirectly,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    'Test API Directly',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -664,8 +816,175 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     setState(() {});
   }
 
+  Future<void> _testApiDirectly() async {
+    try {
+      print('=== DIRECT API TEST ===');
+      
+      final response = await ApiService.get('https://janhelp.vercel.app/api/complaints/');
+      print('Direct API Response Keys: ${response.keys}');
+      print('Response Count: ${response['count']}');
+      
+      if (response.containsKey('results')) {
+        final results = response['results'] ?? [];
+        print('Direct API - Complaints found: ${results.length}');
+        
+        if (results.isNotEmpty) {
+          final firstComplaint = results[0];
+          print('First complaint ID: ${firstComplaint['id']}');
+          print('First complaint number: ${firstComplaint['complaint_number']}');
+          print('First complaint type: ${firstComplaint['complaint_type']}');
+        }
+        
+        print('SUCCESS: API is working and returning ${results.length} complaints!');
+      } else if (response['success'] == false) {
+        print('Direct API Error: ${response['message']}');
+      } else {
+        print('Unknown response format: ${response.keys}');
+      }
+      
+      print('=== DIRECT API TEST COMPLETE ===');
+    } catch (e) {
+      print('Direct API Test Error: $e');
+    }
+  }
+
+  Widget _buildStatusTimeline(String currentStatus) {
+    final steps = [
+      {'key': 'pending', 'label': 'Submitted', 'icon': Icons.assignment_outlined},
+      {'key': 'confirmed', 'label': 'Confirmed', 'icon': Icons.check_circle_outline},
+      {'key': 'process', 'label': 'In Process', 'icon': Icons.autorenew},
+      {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified_outlined},
+    ];
+    
+    // Handle rejected status - show direct path from submitted to rejected
+    if (currentStatus.toLowerCase() == 'rejected') {
+      final rejectedSteps = [
+        {'key': 'pending', 'label': 'Submitted', 'icon': Icons.assignment_outlined},
+        {'key': 'rejected', 'label': 'Rejected', 'icon': Icons.cancel_outlined},
+      ];
+      return _buildTimelineRow(rejectedSteps, currentStatus);
+    }
+    
+    // Handle reopened status - show full cycle with reopen
+    if (currentStatus.toLowerCase() == 'reopened') {
+      final reopenedSteps = [
+        {'key': 'pending', 'label': 'Submitted', 'icon': Icons.assignment_outlined},
+        {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified_outlined},
+        {'key': 'reopened', 'label': 'Reopened', 'icon': Icons.refresh},
+      ];
+      return _buildTimelineRow(reopenedSteps, currentStatus);
+    }
+    
+    return _buildTimelineRow(steps, currentStatus);
+  }
+  
+  Widget _buildTimelineRow(List<Map<String, dynamic>> steps, String currentStatus) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: List.generate(steps.length, (index) {
+          final step = steps[index];
+          final isCompleted = _isStepCompleted(step['key'] as String, currentStatus);
+          final isActive = step['key'] == currentStatus.toLowerCase();
+          final isLast = index == steps.length - 1;
+          
+          return Expanded(
+            child: Row(
+              children: [
+                // Step circle with icon
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: isCompleted || isActive 
+                        ? _getStatusColor(step['key'] as String)
+                        : Colors.white,
+                    border: Border.all(
+                      color: isCompleted || isActive 
+                          ? _getStatusColor(step['key'] as String)
+                          : const Color(0xFFE2E8F0),
+                      width: 2,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isCompleted || isActive ? Icons.check : step['icon'] as IconData,
+                    size: 14,
+                    color: isCompleted || isActive ? Colors.white : const Color(0xFF94A3B8),
+                  ),
+                ),
+                
+                // Step label
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    step['label'] as String,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: isCompleted || isActive ? FontWeight.w700 : FontWeight.w500,
+                      color: isCompleted || isActive 
+                          ? const Color(0xFF0f172a)
+                          : const Color(0xFF64748b),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                
+                // Connecting line (except for last item)
+                if (!isLast) ..[
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: isCompleted 
+                            ? _getStatusColor(currentStatus)
+                            : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+  
+  bool _isStepCompleted(String stepKey, String currentStatus) {
+    final statusOrder = ['pending', 'confirmed', 'process', 'solved'];
+    final currentIndex = statusOrder.indexOf(currentStatus.toLowerCase());
+    final stepIndex = statusOrder.indexOf(stepKey);
+    
+    // Special cases
+    if (currentStatus.toLowerCase() == 'rejected') {
+      return stepKey == 'pending'; // Only submitted is completed for rejected
+    }
+    
+    if (currentStatus.toLowerCase() == 'reopened') {
+      return stepKey == 'pending' || stepKey == 'solved'; // Submitted and solved are completed
+    }
+    
+    return currentIndex >= stepIndex && stepIndex != -1;
+  }
+
   String _getUserInitials(user) {
     if (user == null) return 'U';
+    final firstName = user.firstName?.trim() ?? '';
+    final lastName = user.lastName?.trim() ?? '';
+    String initials = '';
+    if (firstName.isNotEmpty) initials += firstName[0].toUpperCase();
+    if (lastName.isNotEmpty) initials += lastName[0].toUpperCase();
+    return initials.isEmpty ? 'U' : initials;
+  }
     final firstName = user.firstName?.trim() ?? '';
     final lastName = user.lastName?.trim() ?? '';
     String initials = '';
@@ -676,11 +995,12 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending': return const Color(0xFFEF4444);
+      case 'pending': return const Color(0xFFEAB308);
       case 'confirmed': return const Color(0xFFF97316);
-      case 'process': return const Color(0xFFEAB308);
+      case 'process': return const Color(0xFF1E66F5);
       case 'solved': return const Color(0xFF22C55E);
-      case 'reopened': return const Color(0xFF991B1B);
+      case 'reopened': return const Color(0xFFEF4444);
+      case 'rejected': return const Color(0xFF991B1B);
       default: return const Color(0xFF94A3B8);
     }
   }
@@ -692,6 +1012,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       case 'process': return 'In Progress';
       case 'solved': return 'Solved';
       case 'reopened': return 'Reopened';
+      case 'rejected': return 'Rejected';
       default: return 'Unknown';
     }
   }

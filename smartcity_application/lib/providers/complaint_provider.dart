@@ -85,21 +85,43 @@ class ComplaintProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
 
-    final response = await ComplaintService.getComplaints(
-      workStatus: workStatus,
-      complaintType: complaintType,
-      search: search,
-    );
+    try {
+      final response = await ComplaintService.getComplaints(
+        workStatus: workStatus,
+        complaintType: complaintType,
+        search: search,
+      );
 
-    _isLoading = false;
-    if (response['success'] == true) {
-      final results = response['results'] ?? [];
-      _complaints = (results as List)
-          .map((json) => Complaint.fromJson(json))
-          .toList();
-    } else {
-      _error = response['message'];
+      _isLoading = false;
+      
+      // Handle both success format and direct data format
+      if (response['success'] == true) {
+        // Success format
+        final results = response['results'] ?? [];
+        _complaints = (results as List)
+            .map((json) => Complaint.fromJson(json))
+            .toList();
+      } else if (response.containsKey('results')) {
+        // Direct data format (like your API)
+        final results = response['results'] ?? [];
+        _complaints = (results as List)
+            .map((json) => Complaint.fromJson(json))
+            .toList();
+        debugPrint('Loaded ${_complaints.length} complaints directly from API');
+      } else if (response['success'] == false) {
+        // Error format
+        _error = response['message'] ?? 'Failed to load complaints';
+      } else {
+        // Unknown format
+        _error = 'Unexpected API response format';
+        debugPrint('Unknown API response: $response');
+      }
+    } catch (e) {
+      _isLoading = false;
+      _error = 'Error loading complaints: $e';
+      debugPrint('Exception in loadComplaints: $e');
     }
+    
     notifyListeners();
   }
 
