@@ -20,10 +20,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   final List<Map<String, dynamic>> _filterTabs = [
     {'key': 'all', 'label': 'All', 'icon': Icons.list_alt, 'color': Color(0xFF1E66F5)},
-    {'key': 'pending', 'label': 'Pending', 'icon': Icons.pending, 'color': Color(0xFFEF4444)},
     {'key': 'confirmed', 'label': 'Confirmed', 'icon': Icons.check_circle, 'color': Color(0xFFF97316)},
     {'key': 'process', 'label': 'In Progress', 'icon': Icons.autorenew, 'color': Color(0xFFEAB308)},
     {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified, 'color': Color(0xFF22C55E)},
+    {'key': 'reopened', 'label': 'Reopened', 'icon': Icons.refresh, 'color': Color(0xFFEF4444)},
   ];
 
   @override
@@ -31,8 +31,19 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     super.initState();
     _tabController = TabController(length: _filterTabs.length, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ComplaintProvider>().loadComplaints();
+      // Force load complaints when screen opens
+      _loadUserComplaints();
     });
+  }
+
+  Future<void> _loadUserComplaints() async {
+    try {
+      print('Loading user complaints...');
+      await context.read<ComplaintProvider>().loadComplaints();
+      print('Complaints loaded successfully');
+    } catch (e) {
+      print('Error loading complaints: $e');
+    }
   }
 
   @override
@@ -160,20 +171,35 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         final complaints = provider.complaints;
         final stats = {
           'total': complaints.length,
-          'pending': complaints.where((c) => c.workStatus == 'pending').length,
+          'confirmed': complaints.where((c) => c.workStatus == 'confirmed').length,
           'process': complaints.where((c) => c.workStatus == 'process').length,
           'solved': complaints.where((c) => c.workStatus == 'solved').length,
         };
 
-        return Row(
+        return Column(
           children: [
-            _buildStatChip('Total', stats['total']!, const Color(0xFF1E66F5)),
-            const SizedBox(width: 8),
-            _buildStatChip('Pending', stats['pending']!, const Color(0xFFEF4444)),
-            const SizedBox(width: 8),
-            _buildStatChip('Progress', stats['process']!, const Color(0xFFEAB308)),
-            const SizedBox(width: 8),
-            _buildStatChip('Solved', stats['solved']!, const Color(0xFF22C55E)),
+            // First row with 4 boxes
+            Row(
+              children: [
+                _buildStatChip('Total', stats['total']!, const Color(0xFF1E66F5)),
+                const SizedBox(width: 8),
+                _buildStatChip('Confirmed', stats['confirmed']!, const Color(0xFFF97316)),
+                const SizedBox(width: 8),
+                _buildStatChip('Progress', stats['process']!, const Color(0xFFEAB308)),
+                const SizedBox(width: 8),
+                _buildStatChip('Solved', stats['solved']!, const Color(0xFF22C55E)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Second row with Reopened box
+            Row(
+              children: [
+                _buildStatChip('Reopened', complaints.where((c) => c.workStatus == 'reopened').length, const Color(0xFFEF4444)),
+                const Spacer(),
+                const Spacer(),
+                const Spacer(),
+              ],
+            ),
           ],
         );
       },
@@ -252,7 +278,61 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           );
         }
 
-        final filteredComplaints = _getFilteredComplaints(provider.complaints);
+        // Show error if there's one
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Color(0xFFEF4444)),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading complaints',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF0f172a),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  provider.error!,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF64748b),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _loadUserComplaints,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E66F5),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text(
+                    'Retry',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final allComplaints = provider.complaints;
+        final filteredComplaints = _getFilteredComplaints(allComplaints);
+
+        // Debug info
+        print('Total complaints: ${allComplaints.length}');
+        print('Filtered complaints: ${filteredComplaints.length}');
+        print('Selected filter: $_selectedFilter');
+        print('Search query: $_searchQuery');
 
         if (filteredComplaints.isEmpty) {
           return _buildEmptyState();
@@ -260,7 +340,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
         return RefreshIndicator(
           color: const Color(0xFF1E66F5),
-          onRefresh: () => provider.loadComplaints(),
+          onRefresh: _loadUserComplaints,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: filteredComplaints.length,
@@ -483,7 +563,9 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           Text(
             _searchQuery.isNotEmpty
                 ? 'Try adjusting your search terms'
-                : 'Submit your first complaint to get started',
+                : _selectedFilter == 'all' 
+                    ? 'You haven\'t submitted any complaints yet'
+                    : 'No complaints with ${_selectedFilter} status',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
@@ -500,7 +582,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: Text(
-                'Submit Complaint',
+                'Submit Your First Complaint',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -509,6 +591,43 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
               ),
             ),
           ],
+          const SizedBox(height: 20),
+          // Debug info for troubleshooting
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                Text('Debug Info:', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text('Filter: $_selectedFilter', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
+                Text('Search: "$_searchQuery"', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    print('Manual reload button pressed');
+                    _loadUserComplaints();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEAB308),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text(
+                    'Force Reload Complaints',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -540,10 +659,9 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   }
 
   void _filterComplaints() {
-    context.read<ComplaintProvider>().loadComplaints(
-      workStatus: _selectedFilter == 'all' ? null : _selectedFilter,
-      search: _searchQuery.isEmpty ? null : _searchQuery,
-    );
+    // Don't call API again, just trigger UI update
+    // The filtering is done in _getFilteredComplaints method
+    setState(() {});
   }
 
   String _getUserInitials(user) {
