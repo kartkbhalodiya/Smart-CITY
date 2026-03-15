@@ -145,99 +145,197 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryBlue,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(flex: 3),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFFFFFF),
+              Color(0xFFF8F9FF),
+              Color(0xFFEEF2FF),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 3),
 
-            // Bare logo — no box, no bg
-            FadeTransition(
-              opacity: _logoFade,
-              child: ScaleTransition(
-                scale: _logoScale,
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 130,
-                  height: 130,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 36),
-
-            // Loading circle
-            SlideTransition(
-              position: _textSlide,
-              child: FadeTransition(
-                opacity: _textFade,
-                child: const SizedBox(
-                  width: 26,
-                  height: 26,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
+              // Logo with animated container
+              FadeTransition(
+                opacity: _logoFade,
+                child: ScaleTransition(
+                  scale: _logoScale,
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF1E66F5).withOpacity(0.1),
+                          const Color(0xFF667EEA).withOpacity(0.05),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1E66F5).withOpacity(0.15),
+                          blurRadius: 40,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            const Spacer(flex: 2),
+              const SizedBox(height: 24),
 
-            // Rotating quotes
-            FadeTransition(
-              opacity: _quoteFade,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _quotes[_quoteIndex],
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.85),
-                    height: 1.6,
-                    fontWeight: FontWeight.w500,
+              // App name
+              SlideTransition(
+                position: _textSlide,
+                child: FadeTransition(
+                  opacity: _textFade,
+                  child: Column(
+                    children: [
+                      Text(
+                        'JanHelp',
+                        style: GoogleFonts.poppins(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E66F5),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Smart City Complaint Management',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 36),
 
-            // Quote dot indicators
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_quotes.length, (i) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == _quoteIndex ? 18 : 6,
-                  height: 6,
+              // Loading circle
+              SlideTransition(
+                position: _textSlide,
+                child: FadeTransition(
+                  opacity: _textFade,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF1E66F5).withOpacity(0.1),
+                    ),
+                    child: const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF1E66F5),
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const Spacer(flex: 2),
+
+              // Rotating quotes
+              FadeTransition(
+                opacity: _quoteFade,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   decoration: BoxDecoration(
-                    color: i == _quoteIndex
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(3),
+                    color: const Color(0xFF1E66F5).withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF1E66F5).withOpacity(0.1),
+                      width: 1,
+                    ),
                   ),
-                );
-              }),
-            ),
-
-            const Spacer(),
-
-            // Footer
-            Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Text(
-                'Made with ❤️ in India 🇮🇳',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.5),
+                  child: Text(
+                    _quotes[_quoteIndex],
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF475569),
+                      height: 1.6,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 20),
+
+              // Quote dot indicators
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_quotes.length, (i) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: i == _quoteIndex ? 20 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      gradient: i == _quoteIndex
+                          ? const LinearGradient(
+                              colors: [Color(0xFF1E66F5), Color(0xFF667EEA)],
+                            )
+                          : null,
+                      color: i == _quoteIndex ? null : const Color(0xFF1E66F5).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
+              ),
+
+              const Spacer(),
+
+              // Footer
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  children: [
+                    Text(
+                      'Made with ❤️ in India 🇮🇳',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: const Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Designed by Kartik Bhalodiya',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: const Color(0xFFCBD5E1),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

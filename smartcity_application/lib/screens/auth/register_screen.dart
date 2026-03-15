@@ -318,35 +318,51 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background image
-            Image.network(
-              'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1E66F5)),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF667EEA),
+                Color(0xFF764BA2),
+                Color(0xFFF093FB),
+                Color(0xFFF5576C),
+              ],
+              stops: [0.0, 0.3, 0.7, 1.0],
             ),
-            // Full screen glass overlay
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(color: Colors.white.withOpacity(0.82)),
+          ),
+          child: Container(
+            margin: const EdgeInsets.all(6), // 6px gradient background visible
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
             ),
-            // Content fills full screen
-            SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnim,
-                child: SlideTransition(
-                  position: _slideAnim,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: _formContent(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: SafeArea(
+                  child: FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: _formContent(),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

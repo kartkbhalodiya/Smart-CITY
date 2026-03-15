@@ -1,31 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:intl/intl.dart';
 
-// Custom painter for map grid
-class _MapGridPainter extends CustomPainter {
+class _MapPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
-      ..strokeWidth = 1;
+      ..color = Colors.white.withOpacity(0.2)
+      ..strokeWidth = 0.5;
 
-    // Draw grid lines
-    for (int i = 0; i < size.width; i += 40) {
+    // Draw subtle grid pattern like real maps
+    for (int i = 0; i < size.width; i += 30) {
       canvas.drawLine(
         Offset(i.toDouble(), 0),
         Offset(i.toDouble(), size.height),
         paint,
       );
     }
-    for (int i = 0; i < size.height; i += 40) {
+    for (int i = 0; i < size.height; i += 30) {
       canvas.drawLine(
         Offset(0, i.toDouble()),
         Offset(size.width, i.toDouble()),
         paint,
       );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DottedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF2B6CF6)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    const dashWidth = 8.0;
+    const dashSpace = 4.0;
+    double startX = 0;
+
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, size.height / 2),
+        Offset(startX + dashWidth, size.height / 2),
+        paint,
+      );
+      startX += dashWidth + dashSpace;
     }
   }
 
@@ -77,42 +105,47 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               ],
             ),
           )
-        : CustomScrollView(
-            slivers: [
-              _buildAppBar(complaint),
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    // Interactive Map Section
-                    _buildInteractiveMapSection(complaint),
-                    
-                    // Status Timeline
-                    _buildStatusTimeline(complaint),
-                    
-                    // Complaint Details Card
-                    _buildComplaintDetailsCard(complaint),
-                    
-                    // Personal Details Card
-                    _buildPersonalDetailsCard(complaint),
-                    
-                    // Department Details Card
-                    if (complaint['assigned_department'] != null)
-                      _buildDepartmentDetailsCard(complaint['assigned_department']),
-                    
-                    // Rating Section (if solved and no rating yet)
-                    if (isSolved && !hasRating)
-                      _buildRatingSection(complaint),
-                    
-                    // Show Rating (if already rated)
-                    if (hasRating)
-                      _buildExistingRatingCard(complaint),
-                    
-                    // Reopen Button (if can reopen)
-                    if (canReopen)
-                      _buildReopenSection(),
-                    
-                    const SizedBox(height: 100),
-                  ],
+        : Column(
+            children: [
+              // App Bar with Map
+              _buildMapAppBar(complaint),
+              
+              // Scrollable Content
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Complaint Title Card
+                      _buildComplaintTitleCard(complaint),
+                      
+                      // Department Details Card
+                      if (complaint['assigned_department'] != null)
+                        _buildDepartmentDetailsCard(complaint['assigned_department']),
+                      
+                      // Status Timeline
+                      _buildStatusTimeline(complaint),
+                      
+                      // Complaint Details Card
+                      _buildComplaintDetailsCard(complaint),
+                      
+                      // Personal Details Card
+                      _buildPersonalDetailsCard(complaint),
+                      
+                      // Rating Section (if solved and no rating yet)
+                      if (isSolved && !hasRating)
+                        _buildRatingSection(complaint),
+                      
+                      // Show Rating (if already rated)
+                      if (hasRating)
+                        _buildExistingRatingCard(complaint),
+                      
+                      // Reopen Button (if can reopen)
+                      if (canReopen)
+                        _buildReopenSection(),
+                      
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -122,70 +155,455 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     );
   }
 
-  Widget _buildAppBar(Map<String, dynamic> complaint) {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF2B6CF6),
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          '#${complaint['complaint_number'] ?? 'Unknown'}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2B6CF6), Color(0xFF1E40AF)],
+  Widget _buildMapAppBar(Map<String, dynamic> complaint) {
+    final userLat = complaint['latitude'] ?? 28.6139; // Default to Delhi if no coordinates
+    final userLng = complaint['longitude'] ?? 77.2090;
+    final deptLat = complaint['assigned_department']?['latitude'] ?? 28.6129;
+    final deptLng = complaint['assigned_department']?['longitude'] ?? 77.2295;
+    
+    // Calculate distance between user and department
+    final distance = _calculateDistance(userLat, userLng, deptLat, deptLng);
+    
+    return Container(
+      height: 320,
+      child: Stack(
+        children: [
+          // Real OpenStreetMap
+          FlutterMap(
+            options: MapOptions(
+              center: LatLng((userLat + deptLat) / 2, (userLng + deptLng) / 2), // Center between user and department
+              zoom: 14.0,
+              interactiveFlags: InteractiveFlag.all,
             ),
+            children: [
+              // OpenStreetMap Tile Layer
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.smartcity',
+                maxZoom: 19,
+              ),
+              
+              // Markers Layer
+              MarkerLayer(
+                markers: [
+                  // User Complaint Location Marker (Red)
+                  Marker(
+                    point: LatLng(userLat, userLng),
+                    width: 100,
+                    height: 90,
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'Complaint Location',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 8,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.report_problem,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Department Location Marker (Blue)
+                  if (complaint['assigned_department'] != null)
+                    Marker(
+                      point: LatLng(deptLat, deptLng),
+                      width: 100,
+                      height: 90,
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2563EB),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              '${complaint['complaint_type']?.toString().toUpperCase() ?? 'DEPT'}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF2563EB),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.business,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  
+                  // Route direction arrows
+                  ..._generateDirectionArrows(userLat, userLng, deptLat, deptLng),
+                ],
+              ),
+              
+              // Polyline Layer (Route between user and department)
+              if (complaint['assigned_department'] != null)
+                PolylineLayer(
+                  polylines: [
+                    // Main route line
+                    Polyline(
+                      points: _generateRoutePoints(userLat, userLng, deptLat, deptLng),
+                      color: const Color(0xFF10B981),
+                      strokeWidth: 5.0,
+                      isDotted: false,
+                    ),
+                    // Road connection lines
+                    ..._generateRoadConnections(userLat, userLng, deptLat, deptLng),
+                  ],
+                ),
+            ],
           ),
-          child: SafeArea(
+          
+          // App Bar Overlay
+          SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          complaint['title']?.isNotEmpty == true ? complaint['title'] : '-',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      _buildStatusBadge(complaint['work_status'] ?? 'unknown'),
-                    ],
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Color(0xFF374151),
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'COMPLAINT TRACKING',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Color(0xFFEF4444),
+                      size: 22,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-        ),
+          
+          // Distance Info Card
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.route,
+                      color: Color(0xFF10B981),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Distance to Department',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${distance.toStringAsFixed(1)} km away',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _getDirections(userLat, userLng),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.directions,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Directions',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.pop(context),
+    );
+  }
+  
+  Widget _buildComplaintTitleCard(Map<String, dynamic> complaint) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.share, color: Colors.white),
-          onPressed: () => _shareComplaint(complaint),
-        ),
-      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.report_problem,
+                  color: Color(0xFF3B82F6),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      complaint['title']?.isNotEmpty == true 
+                          ? complaint['title'].toString().toUpperCase() 
+                          : 'COMPLAINT DETAILS',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Subcategory Section
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        '${complaint['complaint_type']?.toString().toUpperCase() ?? 'GENERAL'} COMPLAINT',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF8B5CF6),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Color(0xFF6B7280),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${complaint['city'] ?? 'VADODARA'}, ${complaint['state'] ?? 'GUJARAT'}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF6B7280),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  _buildStatusBadge(complaint['work_status'] ?? 'unknown'),
+                  const SizedBox(height: 8),
+                  Text(
+                    '#${complaint['complaint_number'] ?? 'N/A'}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -316,7 +734,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                       ),
                     ),
                     child: CustomPaint(
-                      painter: _MapGridPainter(),
+                      painter: _MapPatternPainter(),
                       child: Stack(
                         children: [
                           // Draggable Complaint Location Marker
@@ -1953,7 +2371,144 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     );
   }
 
-  // Helper Methods
+  // Generate direction arrows along the route
+  List<Marker> _generateDirectionArrows(double startLat, double startLng, double endLat, double endLng) {
+    List<Marker> arrows = [];
+    
+    // Get route points
+    List<LatLng> routePoints = _generateRoutePoints(startLat, startLng, endLat, endLng);
+    
+    // Add direction arrows between route points
+    for (int i = 0; i < routePoints.length - 1; i++) {
+      LatLng current = routePoints[i];
+      LatLng next = routePoints[i + 1];
+      
+      // Calculate midpoint
+      double midLat = (current.latitude + next.latitude) / 2;
+      double midLng = (current.longitude + next.longitude) / 2;
+      
+      // Calculate rotation angle
+      double angle = math.atan2(
+        next.longitude - current.longitude,
+        next.latitude - current.latitude,
+      ) * 180 / math.pi;
+      
+      arrows.add(
+        Marker(
+          point: LatLng(midLat, midLng),
+          width: 30,
+          height: 30,
+          child: Transform.rotate(
+            angle: angle * math.pi / 180,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_upward,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return arrows;
+  }
+  List<LatLng> _generateRoutePoints(double startLat, double startLng, double endLat, double endLng) {
+    List<LatLng> routePoints = [];
+    
+    // Start point
+    routePoints.add(LatLng(startLat, startLng));
+    
+    // Calculate intermediate points to simulate road routing
+    double latDiff = endLat - startLat;
+    double lngDiff = endLng - startLng;
+    
+    // Add waypoints to simulate realistic road routing
+    // First turn - horizontal movement
+    if (latDiff.abs() > 0.001 || lngDiff.abs() > 0.001) {
+      routePoints.add(LatLng(startLat + (latDiff * 0.3), startLng + (lngDiff * 0.7)));
+      
+      // Second turn - vertical movement
+      routePoints.add(LatLng(startLat + (latDiff * 0.7), startLng + (lngDiff * 0.9)));
+      
+      // Third turn - final approach
+      routePoints.add(LatLng(endLat - (latDiff * 0.1), endLng));
+    }
+    
+    // End point
+    routePoints.add(LatLng(endLat, endLng));
+    
+    return routePoints;
+  }
+  
+  // Generate road connection lines
+  List<Polyline> _generateRoadConnections(double startLat, double startLng, double endLat, double endLng) {
+    List<Polyline> roadLines = [];
+    
+    // Horizontal road lines (streets)
+    for (int i = 0; i < 3; i++) {
+      double lat = startLat + ((endLat - startLat) * (i + 1) / 4);
+      roadLines.add(
+        Polyline(
+          points: [
+            LatLng(lat, startLng - 0.002),
+            LatLng(lat, endLng + 0.002),
+          ],
+          color: Colors.white.withOpacity(0.8),
+          strokeWidth: 3.0,
+          isDotted: false,
+        ),
+      );
+    }
+    
+    // Vertical road lines (avenues)
+    for (int i = 0; i < 3; i++) {
+      double lng = startLng + ((endLng - startLng) * (i + 1) / 4);
+      roadLines.add(
+        Polyline(
+          points: [
+            LatLng(startLat - 0.002, lng),
+            LatLng(endLat + 0.002, lng),
+          ],
+          color: Colors.white.withOpacity(0.8),
+          strokeWidth: 3.0,
+          isDotted: false,
+        ),
+      );
+    }
+    
+    return roadLines;
+  }
+  double _calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+    const double earthRadius = 6371; // Earth's radius in kilometers
+    
+    double dLat = _degreesToRadians(lat2 - lat1);
+    double dLng = _degreesToRadians(lng2 - lng1);
+    
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) * math.cos(_degreesToRadians(lat2)) *
+        math.sin(dLng / 2) * math.sin(dLng / 2);
+    
+    double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    
+    return earthRadius * c;
+  }
+  
+  double _degreesToRadians(double degrees) {
+    return degrees * (math.pi / 180);
+  }
   bool _canReopenComplaint(Map<String, dynamic> complaint) {
     if (complaint['work_status'] != 'solved') return false;
     
@@ -2206,7 +2761,7 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
             child: Transform.scale(
               scale: _zoomLevel,
               child: CustomPaint(
-                painter: _MapGridPainter(),
+                painter: _MapPatternPainter(),
                 child: Stack(
                   children: [
                     // Complaint Location Marker
