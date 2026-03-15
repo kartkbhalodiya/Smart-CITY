@@ -34,6 +34,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final Map<int, String?> _dynDate = {};
 
   List<Map<String, dynamic>> _subcategories = [];
+  List<Map<String, dynamic>> _categoryFields = [];
   Map<String, dynamic>? _selectedSub;
   bool _loadingMeta = true;
 
@@ -97,7 +98,32 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           return sub;
         }).toList();
         
-        if (mounted) setState(() => _subcategories = subs);
+        final rawCatFields = res['category_fields'] as List? ?? [];
+        final catFields = rawCatFields.map((f) => Map<String, dynamic>.from(f as Map)).toList();
+        
+        if (mounted) {
+          setState(() {
+            _subcategories = subs;
+            _categoryFields = catFields;
+          });
+
+          // Initialize controllers for category fields
+          for (final f in catFields) {
+            final id = f['id'] as int;
+            final type = f['field_type'] as String;
+            if (type == 'select') {
+              _dynDropdown[id] = null;
+            } else if (type == 'date' || type == 'datetime-local') {
+              _dynDate[id] = null;
+            } else {
+              _dynCtrl[id] = TextEditingController();
+            }
+          }
+
+          if (subs.isNotEmpty) {
+            _selectSub(subs.first);
+          }
+        }
       }
     } catch (e) {
       debugPrint('_loadMeta error: $e');
@@ -212,23 +238,25 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (_selectedSub != null) 'subcategory': _selectedSub!['name'] as String,
     };
 
-    // Collect dynamic fields
+    // Collect dynamic fields from both category and subcategory
+    final allFields = [..._categoryFields];
     if (_selectedSub != null) {
-      final fields = _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
-      for (final f in fields) {
-        final id = f['id'] as int;
-        final type = f['field_type'] as String;
-        String? value;
-        if (type == 'select') {
-          value = _dynDropdown[id];
-        } else if (type == 'date' || type == 'datetime-local') {
-          value = _dynDate[id];
-        } else {
-          value = _dynCtrl[id]?.text;
-        }
-        if (value != null && value.isNotEmpty) {
-          data['field_$id'] = value;
-        }
+      allFields.addAll(_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? []);
+    }
+
+    for (final f in allFields) {
+      final id = f['id'] as int;
+      final type = f['field_type'] as String;
+      String? value;
+      if (type == 'select') {
+        value = _dynDropdown[id];
+      } else if (type == 'date' || type == 'datetime-local') {
+        value = _dynDate[id];
+      } else {
+        value = _dynCtrl[id]?.text;
+      }
+      if (value != null && value.isNotEmpty) {
+        data['field_$id'] = value;
       }
     }
 
@@ -268,90 +296,104 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                   key: _formKey,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    child: Builder(builder: (context) {
+                      int step = 1;
+                      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-                      // ── Step 1: Subcategory selection ─────────────────
-                      if (_subcategories.isNotEmpty) ...[
-                        _sectionTitle('1', 'Select Subcategory'),
+                        // ── Step 1: Subcategory selection ─────────────────
+                        if (_subcategories.isNotEmpty) ...[
+                          _sectionTitle((step++).toString(), 'Select Subcategory'),
+                          const SizedBox(height: 12),
+                          _subcategoryGrid(),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // ── Category-level fields ──────────────────────────
+                        if (_categoryFields.isNotEmpty) ...[
+                          _sectionTitle((step++).toString(), 'Additional Information'),
+                          const SizedBox(height: 12),
+                          _card(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: _buildDynamicFields(_categoryFields),
+                          )),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // ── Step 2: Dynamic fields for selected subcategory
+                        if (_selectedSub != null) ...[
+                          _sectionTitle((step++).toString(), _selectedSub!['name'] as String),
+                          const SizedBox(height: 12),
+                          _card(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: _buildDynamicFields(
+                              _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [],
+                            ),
+                          )),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // ── Step 3: Complaint details ─────────────────────
+                        _sectionTitle((step++).toString(), 'Complaint Details'),
                         const SizedBox(height: 12),
-                        _subcategoryGrid(),
+                        _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          _label('Title'),
+                          const SizedBox(height: 6),
+                          _textField(
+                            controller: _titleCtrl,
+                            hint: 'Brief title of your complaint',
+                            validator: (v) => (v ?? '').trim().isEmpty ? 'Title is required' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          _label('Description'),
+                          const SizedBox(height: 6),
+                          _textField(
+                            controller: _descCtrl,
+                            hint: 'Describe the issue in detail...',
+                            maxLines: 4,
+                            validator: (v) => (v ?? '').trim().isEmpty ? 'Description is required' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          _label('Location / Address'),
+                          const SizedBox(height: 6),
+                          _textField(
+                            controller: _addressCtrl,
+                            hint: 'Address of the issue',
+                            maxLines: 2,
+                            suffix: IconButton(
+                              icon: const Icon(Icons.my_location_rounded, color: _primary, size: 20),
+                              onPressed: _detectLocation,
+                            ),
+                          ),
+                        ])),
                         const SizedBox(height: 24),
-                      ],
 
-                      // ── Step 2: Dynamic fields for selected subcategory
-                      if (_selectedSub != null) ...[
-                        _sectionTitle('2', _selectedSub!['name'] as String),
+                        // ── Step 4: Photos ────────────────────────────────
+                        _sectionTitle((step++).toString(), 'Evidence Photos'),
                         const SizedBox(height: 12),
-                        _card(child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: _buildDynamicFields(
-                            _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [],
-                          ),
-                        )),
-                        const SizedBox(height: 24),
-                      ],
+                        _card(child: _photoSection()),
+                        const SizedBox(height: 28),
 
-                      // ── Step 3: Complaint details ─────────────────────
-                      _sectionTitle(_subcategories.isNotEmpty ? '3' : '1', 'Complaint Details'),
-                      const SizedBox(height: 12),
-                      _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _label('Title'),
-                        const SizedBox(height: 6),
-                        _textField(
-                          controller: _titleCtrl,
-                          hint: 'Brief title of your complaint',
-                          validator: (v) => (v ?? '').trim().isEmpty ? 'Title is required' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _label('Description'),
-                        const SizedBox(height: 6),
-                        _textField(
-                          controller: _descCtrl,
-                          hint: 'Describe the issue in detail...',
-                          maxLines: 4,
-                          validator: (v) => (v ?? '').trim().isEmpty ? 'Description is required' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _label('Location / Address'),
-                        const SizedBox(height: 6),
-                        _textField(
-                          controller: _addressCtrl,
-                          hint: 'Address of the issue',
-                          maxLines: 2,
-                          suffix: IconButton(
-                            icon: const Icon(Icons.my_location_rounded, color: _primary, size: 20),
-                            onPressed: _detectLocation,
+                        // ── Submit ────────────────────────────────────────
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _submitting ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: _submitting
+                                ? const SizedBox(width: 22, height: 22,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                : Text('Submit Complaint',
+                                    style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
                           ),
                         ),
-                      ])),
-                      const SizedBox(height: 24),
-
-                      // ── Step 4: Photos ────────────────────────────────
-                      _sectionTitle(_subcategories.isNotEmpty ? '4' : '2', 'Evidence Photos'),
-                      const SizedBox(height: 12),
-                      _card(child: _photoSection()),
-                      const SizedBox(height: 28),
-
-                      // ── Submit ────────────────────────────────────────
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _submitting ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: _submitting
-                              ? const SizedBox(width: 22, height: 22,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                              : Text('Submit Complaint',
-                                  style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
-                        ),
-                      ),
-                    ]),
+                      ]);
+                    }),
                   ),
                 ),
         ),

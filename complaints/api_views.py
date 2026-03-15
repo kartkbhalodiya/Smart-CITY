@@ -462,7 +462,7 @@ def get_subcategories(request, category_key):
     """Get subcategories and dynamic fields for a category"""
     try:
         category = ComplaintCategory.objects.get(key=category_key, is_active=True)
-        subcategories = category.subcategories.filter(is_active=True).order_by('display_order')
+        subcategories = category.subcategories.filter(is_active=True).prefetch_related('dynamic_fields').order_by('display_order')
         # Category-level fields (no subcategory)
         cat_fields = category.dynamic_fields.filter(is_active=True, subcategory__isnull=True).order_by('display_order')
         return Response({
