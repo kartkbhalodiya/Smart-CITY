@@ -29,6 +29,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _pincodeCtrl = TextEditingController();
@@ -85,6 +86,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _addressCtrl.dispose();
+    _nameCtrl.dispose();
     _mobileCtrl.dispose();
     _emailCtrl.dispose();
     _pincodeCtrl.dispose();
@@ -381,6 +383,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       'longitude': (_lng ?? 78.9629).toString(),
       'complaint_type': widget.categoryKey ?? 'other',
       'priority': _priority,
+      'name': _nameCtrl.text.trim(),
       'mobile_no': _mobileCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),
       'pincode': _pincodeCtrl.text.trim(),
@@ -496,6 +499,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     sections.add(_sectionTitle((step++).toString(), 'Contact Information'));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _label('Full Name'),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _nameCtrl,
+        hint: 'Your full name',
+        validator: (v) => (v ?? '').trim().isEmpty ? 'Name is required' : null,
+      ),
+      const SizedBox(height: 16),
       _label('Mobile Number'),
       const SizedBox(height: 6),
       _textField(

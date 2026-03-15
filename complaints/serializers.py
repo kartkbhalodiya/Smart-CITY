@@ -199,13 +199,27 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         fields = ['complaint_type', 'subcategory', 'priority', 'title', 'description',
                   'latitude', 'longitude', 'city', 'state', 'pincode', 'address',
                   'preferred_contact_phone', 'preferred_contact_email', 
-                  'preferred_contact_sms', 'media_files']
+                  'preferred_contact_sms', 'media_files', 'guest_name', 'guest_email', 'guest_phone']
     
     def create(self, validated_data):
         media_files = validated_data.pop('media_files', [])
         request = self.context.get('request')
         user = request.user if request and request.user.is_authenticated else None
         
+        # Handle priority mapping (Flutter might send 'low', model expects 'normal' or 'low' if updated)
+        priority = validated_data.get('priority', 'normal').lower()
+        if priority == 'low':
+            validated_data['priority'] = 'normal' # Or keep 'low' if model supports it
+        
+        # Handle contact fields from Flutter app (which uses mobile_no instead of guest_phone)
+        if request and not user:
+            if 'mobile_no' in request.data and not validated_data.get('guest_phone'):
+                validated_data['guest_phone'] = request.data['mobile_no']
+            if 'email' in request.data and not validated_data.get('guest_email'):
+                validated_data['guest_email'] = request.data['email']
+            if 'name' in request.data and not validated_data.get('guest_name'):
+                validated_data['guest_name'] = request.data['name']
+
         complaint = Complaint.objects.create(user=user, **validated_data)
         
         # Handle media files
