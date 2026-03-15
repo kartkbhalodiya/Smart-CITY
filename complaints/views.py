@@ -255,51 +255,51 @@ def default_subcategory_blueprint():
     return {
         'police': [
             'Theft / Robbery', 'Cyber Crime', 'Domestic Violence', 'Missing Person', 'Physical Assault',
-            'Fraud / Scam', 'Harassment / Threat', 'Property Damage', 'Drug Activity', 'Noise Disturbance'
+            'Fraud / Scam', 'Harassment / Threat', 'Property Damage', 'Drug Activity', 'Other'
         ],
         'traffic': [
             'Signal Jumping', 'Wrong Side Driving', 'Overspeeding', 'Illegal Parking', 'No Helmet / Triple Riding',
-            'Drunk Driving', 'Rash Driving', 'Accident Spot Hazard', 'Broken Traffic Signal', 'Road Encroachment'
+            'Drunk Driving', 'Rash Driving', 'Accident Spot Hazard', 'Broken Traffic Signal', 'Other'
         ],
         'construction': [
             'Road Damage / Potholes', 'Footpath Damage', 'Illegal Construction', 'Construction Debris', 'Building Safety Risk',
-            'Bridge Structural Issue', 'Sewer Construction Issue', 'Public Work Delay', 'Dust Pollution from Work', 'Unsafe Barricading'
+            'Bridge Structural Issue', 'Sewer Construction Issue', 'Public Work Delay', 'Dust Pollution from Work', 'Other'
         ],
         'water': [
             'No Water Supply', 'Low Water Pressure', 'Water Leakage', 'Dirty / Contaminated Water', 'Pipeline Burst',
-            'Meter Issue', 'Illegal Connection', 'Water Tank Overflow', 'Irregular Supply Timing', 'Borewell Issue'
+            'Meter Issue', 'Illegal Connection', 'Water Tank Overflow', 'Irregular Supply Timing', 'Other'
         ],
         'electricity': [
             'Power Outage', 'Frequent Power Cuts', 'Street Light Not Working', 'Voltage Fluctuation', 'Transformer Fault',
-            'Exposed Wiring', 'Meter Billing Issue', 'Illegal Electricity Use', 'Pole Damage', 'Sparking Complaint'
+            'Exposed Wiring', 'Meter Billing Issue', 'Illegal Electricity Use', 'Pole Damage', 'Other'
         ],
         'garbage': [
             'Garbage Not Collected', 'Overflowing Garbage Bin', 'Illegal Garbage Dumping', 'Dead Animal Pickup', 'Door-to-Door Pickup Missed',
-            'Medical Waste Dumping', 'Burning Waste', 'Public Toilet Unclean', 'Drainside Garbage', 'Recycle Collection Issue'
+            'Medical Waste Dumping', 'Burning Waste', 'Public Toilet Unclean', 'Drainside Garbage', 'Other'
         ],
         'road': [
             'Deep Pothole', 'Road Crack / Damage', 'Missing Road Sign', 'Broken Footpath', 'Waterlogging on Road',
-            'Open Manhole', 'Divider Damage', 'Speed Breaker Damage', 'Road Marking Faded', 'Tree Obstruction on Road'
+            'Open Manhole', 'Divider Damage', 'Speed Breaker Damage', 'Road Marking Faded', 'Other'
         ],
         'drainage': [
             'Drain Blockage', 'Sewer Overflow', 'Open Manhole', 'Drainage Backflow', 'Storm Water Logging',
-            'Broken Drain Cover', 'Foul Smell from Drain', 'Mosquito Breeding Spot', 'Drain Cleaning Delay', 'Illegal Drain Connection'
+            'Broken Drain Cover', 'Foul Smell from Drain', 'Mosquito Breeding Spot', 'Drain Cleaning Delay', 'Other'
         ],
         'illegal': [
             'Encroachment', 'Illegal Business', 'Gambling Activity', 'Public Nuisance', 'Unauthorized Construction',
-            'Illegal Parking Stand', 'Loudspeaker Violation', 'Street Vending Obstruction', 'Land Grab Attempt', 'Substance Abuse Spot'
+            'Illegal Parking Stand', 'Loudspeaker Violation', 'Street Vending Obstruction', 'Land Grab Attempt', 'Other'
         ],
         'transportation': [
             'Bus Delay', 'Overcrowded Vehicle', 'Route Violation', 'Unauthorized Bus Parking', 'Bus Stop Damage',
-            'Auto Rickshaw Overcharge', 'No Transport in Area', 'Unsafe School Transport', 'Vehicle Emission Issue', 'Taxi Refusal'
+            'Auto Rickshaw Overcharge', 'No Transport in Area', 'Unsafe School Transport', 'Vehicle Emission Issue', 'Other'
         ],
         'cyber': [
             'UPI Scam', 'Identity Theft', 'Phishing Link', 'Social Media Harassment', 'OTP Fraud',
-            'Fake Loan App', 'Online Shopping Scam', 'SIM Swap Fraud', 'Data Leak Complaint', 'Cyber Bullying'
+            'Fake Loan App', 'Online Shopping Scam', 'SIM Swap Fraud', 'Data Leak Complaint', 'Other'
         ],
         'other': [
             'Noise Complaint', 'Public Safety Concern', 'Government Service Delay', 'Park Maintenance Issue', 'Animal Menace',
-            'Street Light Request', 'Community Hall Issue', 'Public Event Disturbance', 'Tree Cutting Complaint', 'Miscellaneous'
+            'Street Light Request', 'Community Hall Issue', 'Public Event Disturbance', 'Tree Cutting Complaint', 'Other'
         ],
     }
 
@@ -318,14 +318,14 @@ def ensure_unique_fields_for_each_subcategory(category):
             by_subcategory.setdefault(field.subcategory_id, []).append(field)
 
     for subcategory in subcategories:
-        if by_subcategory.get(subcategory.id):
+        if category.dynamic_fields.filter(subcategory=subcategory).exists():
             continue
 
         max_order += 1
         ComplaintCategoryField.objects.create(
             category=category,
             subcategory=subcategory,
-            label=f'{subcategory.name} Details',
+            label='Issue Details',
             field_type='textarea',
             options='',
             is_required=True,
@@ -336,8 +336,41 @@ def ensure_unique_fields_for_each_subcategory(category):
         ComplaintCategoryField.objects.create(
             category=category,
             subcategory=subcategory,
-            label=f'{subcategory.name} Date',
+            label='Location Landmark',
+            field_type='text',
+            options='',
+            is_required=True,
+            display_order=max_order,
+            is_active=True,
+        )
+        max_order += 1
+        ComplaintCategoryField.objects.create(
+            category=category,
+            subcategory=subcategory,
+            label='Severity Level',
+            field_type='select',
+            options='Low,Medium,High',
+            is_required=True,
+            display_order=max_order,
+            is_active=True,
+        )
+        max_order += 1
+        ComplaintCategoryField.objects.create(
+            category=category,
+            subcategory=subcategory,
+            label='Date of Incident',
             field_type='date',
+            options='',
+            is_required=False,
+            display_order=max_order,
+            is_active=True,
+        )
+        max_order += 1
+        ComplaintCategoryField.objects.create(
+            category=category,
+            subcategory=subcategory,
+            label='Additional Remarks',
+            field_type='text',
             options='',
             is_required=False,
             display_order=max_order,

@@ -212,6 +212,26 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (_selectedSub != null) 'subcategory': _selectedSub!['name'] as String,
     };
 
+    // Collect dynamic fields
+    if (_selectedSub != null) {
+      final fields = _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
+      for (final f in fields) {
+        final id = f['id'] as int;
+        final type = f['field_type'] as String;
+        String? value;
+        if (type == 'select') {
+          value = _dynDropdown[id];
+        } else if (type == 'date' || type == 'datetime-local') {
+          value = _dynDate[id];
+        } else {
+          value = _dynCtrl[id]?.text;
+        }
+        if (value != null && value.isNotEmpty) {
+          data['field_$id'] = value;
+        }
+      }
+    }
+
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
     final success = await provider.createComplaint(data, _images);
     setState(() => _submitting = false);
@@ -439,7 +459,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       widgets.add(const SizedBox(height: 6));
 
       if (type == 'select') {
-        final options = ((f['options_list'] as List?) ?? []).map((o) => o.toString()).toList();
+        final options = ((f['options'] as List?) ?? []).map((o) => o.toString()).toList();
         widgets.add(_dropdownField(
           hint: 'Select $label',
           value: _dynDropdown[id],
