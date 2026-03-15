@@ -91,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               if (!permContext.mounted) return;
               Navigator.pushReplacementNamed(
                 permContext,
-                authProvider.isAuthenticated ? AppRoutes.dashboard : AppRoutes.login,
+                authProvider.isAuthenticated ? AppRoutes.userDashboard : AppRoutes.login,
               );
             },
           ),
@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       );
       return;
     }
-    Navigator.pushReplacementNamed(context, isAuth ? AppRoutes.dashboard : AppRoutes.login);
+    Navigator.pushReplacementNamed(context, isAuth ? AppRoutes.userDashboard : AppRoutes.login);
   }
 
   Future<bool> _checkPermissions() async {

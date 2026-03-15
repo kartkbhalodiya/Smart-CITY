@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         if (role == 'superadmin' || role == 'city_admin' || role == 'department') {
           Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
         } else {
-          Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+          Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Login failed')));

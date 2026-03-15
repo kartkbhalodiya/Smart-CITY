@@ -15,6 +15,39 @@ class UserDashboardScreen extends StatefulWidget {
 class _UserDashboardScreenState extends State<UserDashboardScreen> {
   int _tab = 0;
   int _navIndex = 0;
+  int _notificationCount = 3; // Mock notification count
+  List<Map<String, dynamic>> _notifications = [
+    {
+      'id': 1,
+      'title': 'Complaint Status Updated',
+      'message': 'Your complaint #COMP123 has been confirmed and assigned to Traffic Department.',
+      'type': 'status_change',
+      'time': '2 hours ago',
+      'icon': Icons.check_circle,
+      'color': Color(0xFF22C55E),
+      'isRead': false,
+    },
+    {
+      'id': 2,
+      'title': 'Complaint In Progress',
+      'message': 'Work has started on your road repair complaint #COMP124.',
+      'type': 'status_change', 
+      'time': '1 day ago',
+      'icon': Icons.construction,
+      'color': Color(0xFFEAB308),
+      'isRead': false,
+    },
+    {
+      'id': 3,
+      'title': 'Complaint Resolved',
+      'message': 'Your garbage collection complaint #COMP122 has been marked as solved.',
+      'type': 'status_change',
+      'time': '3 days ago', 
+      'icon': Icons.verified,
+      'color': Color(0xFF1E66F5),
+      'isRead': true,
+    },
+  ];
 
   @override
   void initState() {
@@ -41,7 +74,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               _tabNav(),
               if (_tab == 0) _homeTab(),
               if (_tab == 1) _submitTab(),
-              if (_tab == 2) _trackTab(),
             ]),
           ),
         )),
@@ -59,23 +91,66 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       child: Row(children: [
         Image.asset('assets/images/logo.png', height: 36),
         const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(user?.fullName ?? 'User',
-              style: GoogleFonts.poppins(
-                  fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-          Text('Welcome back!',
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
-        ]),
+        Text('Smart City',
+            style: GoogleFonts.poppins(
+                fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const Spacer(),
+        GestureDetector(
+          onTap: _showNotifications,
+          child: Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.notifications_outlined, size: 20, color: Color(0xFF64748b)),
+              ),
+              if (_notificationCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      _notificationCount > 99 ? '99+' : _notificationCount.toString(),
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        // User avatar in top nav
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-                color: const Color(0xFF1E66F5), borderRadius: BorderRadius.circular(10)),
-            child: Text('Profile',
+              color: const Color(0xFF1E66F5),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                _getUserInitials(user),
                 style: GoogleFonts.poppins(
-                    fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                    fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+              ),
+            ),
           ),
         ),
       ]),
@@ -83,7 +158,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Widget _tabNav() {
-    final tabs = ['Home', 'Submit', 'Track'];
+    final tabs = ['Home', 'Submit'];
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(6),
@@ -93,7 +168,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]),
       child: Row(
           children: List.generate(
-              3,
+              2,
               (i) => Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() {
@@ -120,9 +195,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   Widget _homeTab() {
     final stats = context.watch<ComplaintProvider>().stats;
     final isLoading = context.watch<ComplaintProvider>().isLoading;
+    final user = context.watch<AuthProvider>().user;
     
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      // Welcome banner
+      // Welcome banner with user name
       Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
@@ -131,18 +207,37 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(children: [
+          // User avatar
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                _getUserInitials(user),
+                style: GoogleFonts.poppins(
+                    fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Dashboard Overview 📊',
+            Text('Welcome back! 👋',
                 style: GoogleFonts.poppins(
-                    fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-            const SizedBox(height: 4),
+                    fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.9))),
+            const SizedBox(height: 2),
+            Text(user?.fullName ?? 'User',
+                style: GoogleFonts.poppins(
+                    fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+            const SizedBox(height: 2),
             Text('Track your complaints and view city statistics.',
                 style: GoogleFonts.inter(
                     fontSize: 12, color: Colors.white.withOpacity(0.85))),
           ])),
-          const SizedBox(width: 12),
-          const Text('✨', style: TextStyle(fontSize: 52)),
         ]),
       ),
       const SizedBox(height: 24),
@@ -172,164 +267,264 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     ]);
   }
 
-  Widget _trackTab() {
-    final complaints = context.watch<ComplaintProvider>().complaints;
-    final isLoading = context.watch<ComplaintProvider>().isLoading;
+  String _getUserInitials(user) {
+    if (user == null) return 'U';
     
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('My Complaints',
-          style: GoogleFonts.poppins(
-              fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-      const SizedBox(height: 4),
-      Text('Track the status of your reported issues',
-          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
-      const SizedBox(height: 20),
-      
-      if (isLoading)
-        const Center(child: CircularProgressIndicator(color: Color(0xFF1E66F5)))
-      else if (complaints.isEmpty)
-        _emptyState()
-      else
-        _complaintsList(complaints),
-    ]);
+    final firstName = user.firstName?.trim() ?? '';
+    final lastName = user.lastName?.trim() ?? '';
+    
+    String initials = '';
+    
+    if (firstName.isNotEmpty) {
+      initials += firstName[0].toUpperCase();
+    }
+    
+    if (lastName.isNotEmpty) {
+      initials += lastName[0].toUpperCase();
+    }
+    
+    return initials.isEmpty ? 'U' : initials;
   }
 
-  Widget _emptyState() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: Column(children: [
-        const Text('📝', style: TextStyle(fontSize: 64)),
-        const SizedBox(height: 16),
-        Text('No complaints yet',
-            style: GoogleFonts.poppins(
-                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-        const SizedBox(height: 8),
-        Text('Submit your first complaint to get started',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: () => setState(() { _tab = 1; _navIndex = 1; }),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E66F5),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          child: Text('Submit Complaint',
-              style: GoogleFonts.poppins(
-                  fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+  void _showNotifications() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-      ]),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications, color: Color(0xFF1E66F5), size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Notifications',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0f172a),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_notificationCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _notificationCount.toString(),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.close, color: Color(0xFF64748b)),
+                  ),
+                ],
+              ),
+            ),
+            // Notifications list
+            Expanded(
+              child: _notifications.isEmpty
+                  ? _emptyNotifications()
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = _notifications[index];
+                        return _notificationItem(notification, index);
+                      },
+                    ),
+            ),
+            // Clear all button
+            if (_notifications.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: _clearAllNotifications,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                    child: Text(
+                      'Clear All Notifications',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748b),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _complaintsList(List<Complaint> complaints) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: complaints.length,
-      itemBuilder: (context, index) {
-        final complaint = complaints[index];
-        return _complaintCard(complaint);
-      },
-    );
-  }
-
-  Widget _complaintCard(Complaint complaint) {
-    final statusColor = _getStatusColor(complaint.workStatus);
-    final statusText = _getStatusText(complaint.workStatus);
-    
+  Widget _notificationItem(Map<String, dynamic> notification, int index) {
+    final isRead = notification['isRead'] as bool;
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        color: isRead ? Colors.white : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isRead ? const Color(0xFFE2E8F0) : const Color(0xFF1E66F5).withOpacity(0.2),
+        ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => Navigator.pushNamed(
-            context,
-            AppRoutes.complaintDetail,
-            arguments: {'complaintId': complaint.id},
-          ),
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _markAsRead(index),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    color: (notification['color'] as Color).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(statusText,
-                      style: GoogleFonts.inter(
-                          fontSize: 11, fontWeight: FontWeight.w700, color: statusColor)),
+                  child: Icon(
+                    notification['icon'] as IconData,
+                    size: 20,
+                    color: notification['color'] as Color,
+                  ),
                 ),
-                const Spacer(),
-                Text('#${complaint.complaintNumber}',
-                    style: GoogleFonts.inter(
-                        fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF64748b))),
-              ]),
-              const SizedBox(height: 12),
-              Text(complaint.complaintType,
-                  style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-              const SizedBox(height: 4),
-              Text(complaint.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
-              const SizedBox(height: 12),
-              Row(children: [
-                Icon(Icons.location_on_outlined, size: 16, color: const Color(0xFF64748b)),
-                const SizedBox(width: 4),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text('${complaint.city}, ${complaint.pincode}',
-                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              notification['title'] as String,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0f172a),
+                              ),
+                            ),
+                          ),
+                          if (!isRead)
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF1E66F5),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        notification['message'] as String,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFF64748b),
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        notification['time'] as String,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: const Color(0xFF94A3B8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Icon(Icons.access_time, size: 16, color: const Color(0xFF64748b)),
-                const SizedBox(width: 4),
-                Text(_formatDate(complaint.createdAt.toIso8601String()),
-                    style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
-              ]),
-            ]),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending': return const Color(0xFFEF4444);
-      case 'confirmed': return const Color(0xFFF97316);
-      case 'process': return const Color(0xFFEAB308);
-      case 'solved': return const Color(0xFF22C55E);
-      case 'reopened': return const Color(0xFF991B1B);
-      default: return const Color(0xFF94A3B8);
-    }
+  Widget _emptyNotifications() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.notifications_none,
+            size: 64,
+            color: Color(0xFFCBD5E1),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No notifications yet',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0f172a),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We\'ll notify you about complaint updates',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFF64748b),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _getStatusText(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending': return 'Pending';
-      case 'confirmed': return 'Confirmed';
-      case 'process': return 'In Progress';
-      case 'solved': return 'Solved';
-      case 'reopened': return 'Reopened';
-      default: return 'Unknown';
-    }
+  void _markAsRead(int index) {
+    setState(() {
+      _notifications[index]['isRead'] = true;
+      _notificationCount = _notifications.where((n) => !n['isRead']).length;
+    });
+  }
+
+  void _clearAllNotifications() {
+    setState(() {
+      _notifications.clear();
+      _notificationCount = 0;
+    });
+    Navigator.pop(context);
   }
 
   String _formatDate(String dateStr) {
@@ -557,7 +752,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               onTap: () {
                 if (i == 0) setState(() { _navIndex = 0; _tab = 0; });
                 else if (i == 1) setState(() { _navIndex = 1; _tab = 1; });
-                else if (i == 2) setState(() { _navIndex = 2; _tab = 2; });
+                else if (i == 2) Navigator.pushNamed(context, AppRoutes.userTrack);
                 else Navigator.pushNamed(context, AppRoutes.profile);
               },
               child: Container(

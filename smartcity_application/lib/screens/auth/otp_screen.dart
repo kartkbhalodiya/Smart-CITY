@@ -156,7 +156,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
     final success = await auth.verifyOtp(widget.email, _otp);
     setState(() => _isLoading = false);
     if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Invalid OTP')));
     }
