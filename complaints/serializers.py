@@ -203,7 +203,8 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         media_files = validated_data.pop('media_files', [])
-        user = self.context['request'].user
+        request = self.context.get('request')
+        user = request.user if request and request.user.is_authenticated else None
         
         complaint = Complaint.objects.create(user=user, **validated_data)
         
@@ -215,6 +216,22 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
                 file=file,
                 file_type=file_type
             )
+        
+        # Handle dynamic fields from request.data
+        if request:
+            for key, value in request.data.items():
+                if key.startswith('field_'):
+                    try:
+                        field_id = int(key.replace('field_', ''))
+                        field_obj = ComplaintCategoryField.objects.filter(id=field_id, is_active=True).first()
+                        if field_obj:
+                            ComplaintFieldResponse.objects.update_or_create(
+                                complaint=complaint,
+                                field=field_obj,
+                                defaults={'value': str(value).strip()},
+                            )
+                    except (ValueError, TypeError):
+                        continue
         
         return complaint
 
