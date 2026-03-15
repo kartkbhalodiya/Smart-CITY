@@ -18,7 +18,7 @@ from .models import (
 from .serializers import (
     ComplaintListSerializer, ComplaintDetailSerializer, ComplaintCreateSerializer,
     CitizenProfileSerializer, DepartmentSerializer, ComplaintCategorySerializer,
-    ComplaintSubcategorySerializer, UserSerializer, RegisterSerializer,
+    ComplaintSubcategorySerializer, ComplaintCategoryFieldSerializer, UserSerializer, RegisterSerializer,
     OTPSerializer, DashboardStatsSerializer
 )
 
