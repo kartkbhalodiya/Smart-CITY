@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:latlong2/latlong2.dart' as ll;
 import '../../config/api_config.dart';
 import '../../providers/complaint_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
+import './map_selection_screen.dart';
 
 class SubmitComplaintScreen extends StatefulWidget {
   final String? categoryKey;
@@ -35,6 +37,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final _geoCtrl = TextEditingController();
 
   String _priority = 'medium'; // high, medium, low
+
+  List<String> _allStates = [];
+  Map<String, List<String>> _citiesByState = {};
+  String? _selectedState;
+  String? _selectedCity;
 
   // Dynamic field controllers keyed by field id
   final Map<int, TextEditingController> _dynCtrl = {};
@@ -96,10 +103,23 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     
     setState(() => _loadingMeta = true);
     try {
+      // Load categories meta
       final res = await ApiService.get(
         ApiConfig.subcategories(widget.categoryKey!), 
         includeAuth: false
       );
+
+      // Load states & cities
+      final scRes = await ApiService.get(ApiConfig.statesCities, includeAuth: false);
+      List<String> states = [];
+      Map<String, List<String>> citiesByState = {};
+      if (scRes['success'] == true) {
+        states = List<String>.from(scRes['states'] ?? []);
+        final rawMap = scRes['cities_by_state'] as Map? ?? {};
+        rawMap.forEach((k, v) {
+          citiesByState[k.toString()] = List<String>.from(v as List? ?? []);
+        });
+      }
       
       if (res['success'] == true) {
         final rawSubs = res['subcategories'] as List? ?? [];
@@ -150,6 +170,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             _subcategories = subs;
             _categoryFields = catFields;
             _selectedSub = firstSub;
+            _allStates = states;
+            _citiesByState = citiesByState;
             _loadingMeta = false;
           });
         }
@@ -206,9 +228,28 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         if ((addr['address'] ?? '').isNotEmpty) {
           _addressCtrl.text = addr['address']!;
         }
-        if (addr['city'] != null) _cityCtrl.text = addr['city']!;
-        if (addr['state'] != null) _stateCtrl.text = addr['state']!;
+        if (addr['city'] != null) {
+          final city = addr['city']!;
+          // Find state by city if not directly available or to sync
+          String? foundState = addr['state'];
+          if (foundState != null && _allStates.contains(foundState)) {
+            _selectedState = foundState;
+            if (_citiesByState[_selectedState]?.contains(city) == true) {
+              _selectedCity = city;
+            }
+          } else {
+            // Search city in all states
+            for (final entry in _citiesByState.entries) {
+              if (entry.value.contains(city)) {
+                _selectedState = entry.key;
+                _selectedCity = city;
+                break;
+              }
+            }
+          }
+        }
         if (addr['pincode'] != null) _pincodeCtrl.text = addr['pincode']!;
+        setState(() {});
       }
     }
   }
@@ -230,6 +271,52 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         }
       }
     } catch (_) {}
+  }
+
+  Future<void> _selectOnMap() async {
+    final ll.LatLng? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapSelectionScreen(
+          initialLat: _lat,
+          initialLng: _lng,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      _lat = result.latitude;
+      _lng = result.longitude;
+      _geoCtrl.text = '${_lat!.toStringAsFixed(6)}, ${_lng!.toStringAsFixed(6)}';
+      
+      // Update address automatically from coordinates
+      final addr = await LocationService.getAddressFromCoordinates(_lat!, _lng!);
+      if (mounted) {
+        if ((addr['address'] ?? '').isNotEmpty) {
+          _addressCtrl.text = addr['address']!;
+        }
+        if (addr['city'] != null) {
+          final city = addr['city']!;
+          String? foundState = addr['state'];
+          if (foundState != null && _allStates.contains(foundState)) {
+            _selectedState = foundState;
+            if (_citiesByState[_selectedState]?.contains(city) == true) {
+              _selectedCity = city;
+            }
+          } else {
+            for (final entry in _citiesByState.entries) {
+              if (entry.value.contains(city)) {
+                _selectedState = entry.key;
+                _selectedCity = city;
+                break;
+              }
+            }
+          }
+        }
+        if (addr['pincode'] != null) _pincodeCtrl.text = addr['pincode']!;
+        setState(() {});
+      }
+    }
   }
 
   Future<void> _pickDate(int fieldId, bool withTime) async {
@@ -297,8 +384,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       'mobile_no': _mobileCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),
       'pincode': _pincodeCtrl.text.trim(),
-      'state': _stateCtrl.text.trim(),
-      'city': _cityCtrl.text.trim(),
+      'state': _selectedState ?? '',
+      'city': _selectedCity ?? '',
       if (_selectedSub != null) 'subcategory': _selectedSub!['name'] as String,
     };
 
@@ -426,11 +513,28 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         keyboard: TextInputType.emailAddress,
       ),
       const SizedBox(height: 16),
+      _label('State'),
+      const SizedBox(height: 6),
+      _dropdownField(
+        hint: 'Select State',
+        value: _selectedState,
+        items: _allStates.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+        onChanged: (v) => setState(() {
+          _selectedState = v;
+          _selectedCity = null;
+        }),
+      ),
+      const SizedBox(height: 16),
       Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _label('City'),
           const SizedBox(height: 6),
-          _textField(controller: _cityCtrl, hint: 'City'),
+          _dropdownField(
+            hint: 'Select City',
+            value: _selectedCity,
+            items: (_citiesByState[_selectedState] ?? []).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            onChanged: (v) => setState(() => _selectedCity = v),
+          ),
         ])),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -439,10 +543,6 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           _textField(controller: _pincodeCtrl, hint: 'Pincode', keyboard: TextInputType.number),
         ])),
       ]),
-      const SizedBox(height: 16),
-      _label('State'),
-      const SizedBox(height: 6),
-      _textField(controller: _stateCtrl, hint: 'State'),
     ])));
     sections.add(const SizedBox(height: 24));
 
@@ -864,10 +964,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       ),
       const SizedBox(width: 10),
       Expanded(
-        child: _smallBtn(Icons.map_outlined, 'Select on Map', () {
-          // TODO: Implement map selection
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Map selection coming soon')));
-        }),
+        child: _smallBtn(Icons.map_outlined, 'Select on Map', _selectOnMap),
       ),
     ]);
   }
@@ -876,16 +973,22 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _borderColor, width: 1.5),
+          color: const Color(0xFF0F172A), // Darker UI
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 16, color: _primary),
-          const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
+          Icon(icon, size: 18, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
         ]),
       ),
     );
