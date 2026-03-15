@@ -13,6 +13,7 @@ import '../screens/complaints/complaint_detail_screen.dart';
 import '../screens/complaints/complaint_success_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/dashboard/guest_dashboard_screen.dart';
+import '../screens/dashboard/user_dashboard_screen.dart';
 import '../screens/departments/departments_list_screen.dart';
 import '../screens/departments/departments_by_category_screen.dart';
 import '../screens/departments/department_detail_screen.dart';
@@ -24,6 +25,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String dashboard = '/dashboard';
+  static const String userDashboard = '/user-dashboard';
   static const String guestDashboard = '/guest-dashboard';
   static const String departmentsList = '/departments-list';
   static const String departmentsByCategory = '/departments-by-category';
@@ -58,6 +60,9 @@ class AppRoutes {
       
       case dashboard:
         return MaterialPageRoute(builder: (_) => const DashboardScreen());
+
+      case userDashboard:
+        return MaterialPageRoute(builder: (_) => const UserDashboardScreen());
 
       case guestDashboard:
         return MaterialPageRoute(builder: (_) => const GuestDashboardScreen());
