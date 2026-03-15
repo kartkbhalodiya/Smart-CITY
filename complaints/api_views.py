@@ -46,10 +46,10 @@ def register_user(request):
         latitude = data.get('latitude') or ''
         longitude = data.get('longitude') or ''
 
-        if not name or not email or not mobile_no:
+        if not email:
             return Response({
                 'success': False, 
-                'message': 'Name, email and mobile number are required'
+                'message': 'Email is required'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if user already exists and is FULLY registered
@@ -60,7 +60,9 @@ def register_user(request):
                 'message': 'This email is already fully registered and verified'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        parts = name.split(' ', 1)
+        # Handle name splitting safely even if empty
+        name_to_split = name if name.strip() else 'Citizen'
+        parts = name_to_split.split(' ', 1)
         first_name = parts[0]
         last_name = parts[1] if len(parts) > 1 else ''
 
@@ -70,9 +72,9 @@ def register_user(request):
             # Try to get existing user (created by verify_otp) or create new one
             user = User.objects.filter(email__iexact=email).first()
             if user:
-                # Update their name
-                if not user.first_name: user.first_name = first_name
-                if not user.last_name: user.last_name = last_name
+                # Update their name only if provided
+                if not user.first_name and first_name: user.first_name = first_name
+                if not user.last_name and last_name: user.last_name = last_name
                 user.save()
             else:
                 is_new_user = True
@@ -86,19 +88,19 @@ def register_user(request):
                 user = User.objects.create_user(
                     username=email,
                     email=email,
-                    first_name=first_name,
-                    last_name=last_name,
+                    first_name=first_name or 'Citizen',
+                    last_name=last_name or '',
                 )
 
-            # Update or create citizen profile
+            # Update or create citizen profile - all fields optional
             profile_kwargs = dict(
                 surname=last_name or 'Citizen',
-                mobile_no=mobile_no,
+                mobile_no=mobile_no or 'Not Provided',
                 state=state or 'Not Specified',
                 district=district or 'Not Specified',
                 city=district or 'Not Specified',
                 address=address or 'Not Provided',
-                pincode=pincode,
+                pincode=pincode or '',
             )
             if aadhaar:
                 profile_kwargs['aadhaar_number'] = aadhaar

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,6 +38,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   // Email OTP verification
   bool _sendingOtp = false, _otpSent = false, _verifyingOtp = false, _emailVerified = false;
   String? _otpError;
+  int _resendSeconds = 0;
+  Timer? _resendTimer;
 
   late AnimationController _ac;
   late Animation<double> _fadeAnim;
@@ -73,6 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   @override
   void dispose() {
     _ac.dispose();
+    _resendTimer?.cancel();
     _firstNameCtrl.dispose(); _lastNameCtrl.dispose(); _mobileCtrl.dispose();
     _emailCtrl.dispose(); _pincodeCtrl.dispose(); _addressCtrl.dispose(); _aadhaarCtrl.dispose(); _otpCtrl.dispose();
     super.dispose();
@@ -164,18 +168,33 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     }
   }
 
+  void _startResendTimer() {
+    setState(() => _resendSeconds = 60);
+    _resendTimer?.cancel();
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendSeconds > 0) {
+        setState(() => _resendSeconds--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
   Future<void> _sendEmailOtp() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid email first')));
       return;
     }
+    if (_resendSeconds > 0) return;
+
     setState(() { _sendingOtp = true; _otpError = null; });
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final success = await auth.sendOtp(email);
     setState(() { _sendingOtp = false; });
     if (success) {
       setState(() { _otpSent = true; _emailVerified = false; _otpCtrl.clear(); });
+      _startResendTimer();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Failed to send OTP')));
     }
@@ -202,10 +221,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   }
 
   Future<void> _register() async {
-    if (_firstNameCtrl.text.isEmpty || _lastNameCtrl.text.isEmpty ||
-        _mobileCtrl.text.isEmpty || _emailCtrl.text.isEmpty ||
-        _pincodeCtrl.text.isEmpty || _addressCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
+    if (_emailCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email is required')));
       return;
     }
     if (!_emailVerified) {
@@ -582,12 +599,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           SizedBox(
             height: 40,
             child: ElevatedButton.icon(
-              onPressed: _sendingOtp ? null : _sendEmailOtp,
+              onPressed: (_sendingOtp || _resendSeconds > 0) ? null : _sendEmailOtp,
               icon: _sendingOtp
                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Icon(_otpSent ? Icons.refresh_rounded : Icons.send_rounded, size: 15),
               label: Text(
-                _sendingOtp ? 'Sending...' : (_otpSent ? 'Resend OTP' : 'Send Verification OTP'),
+                _sendingOtp ? 'Sending...' : (_otpSent ? (_resendSeconds > 0 ? 'Resend in ${_resendSeconds}s' : 'Resend OTP') : 'Send Verification OTP'),
                 style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
