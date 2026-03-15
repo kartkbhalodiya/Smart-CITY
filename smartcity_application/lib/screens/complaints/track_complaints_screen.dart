@@ -174,8 +174,6 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
           decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE8EDF3))), borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const SizedBox(height: 16),
-            _timeline(c.workStatus),
-            const SizedBox(height: 16),
             Row(children: [
               const Icon(Icons.tag, size: 16, color: Color(0xFF2B6CF6)),
               const SizedBox(width: 8),
@@ -189,34 +187,43 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
             ]),
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => UserTrackComplaintDetail(
-                    complaint: {
-                      'complaint_number': c.complaintNumber,
-                      'title': c.title,
-                      'description': c.description,
-                      'complaint_type': c.complaintType,
-                      'work_status': c.workStatus,
-                      'created_at': c.createdAt.toString(),
-                      'address': c.address,
-                      'latitude': c.latitude,
-                      'longitude': c.longitude,
-                      'city': c.city ?? '',
-                      'state': c.state ?? '',
-                      'assigned_department': c.assignedDepartment != null ? {
-                        'name': c.assignedDepartment!.name,
-                        'email': c.assignedDepartment!.email ?? '',
-                        'phone': c.assignedDepartment!.phone ?? '',
-                      } : null,
-                      'citizen_rating': c.citizenRating,
-                      'citizen_feedback': c.citizenFeedback,
-                      'can_reopen': c.workStatus == 'solved',
-                    },
+              onTap: () {
+                print('Tapping complaint: ${c.complaintNumber}');
+                print('Complaint data: ${{
+                  'complaint_number': c.complaintNumber,
+                  'title': c.title,
+                  'work_status': c.workStatus,
+                }}');
+                
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserTrackComplaintDetail(
+                      complaint: {
+                        'complaint_number': c.complaintNumber,
+                        'title': c.title,
+                        'description': c.description,
+                        'complaint_type': c.complaintType,
+                        'work_status': c.workStatus,
+                        'created_at': c.createdAt.toString(),
+                        'address': c.address,
+                        'latitude': c.latitude,
+                        'longitude': c.longitude,
+                        'city': c.city,
+                        'state': c.state,
+                        'assigned_department': c.assignedDepartment != null ? {
+                          'name': c.assignedDepartment!.name,
+                          'email': c.assignedDepartment!.email,
+                          'phone': c.assignedDepartment!.phone,
+                        } : null,
+                        'citizen_rating': c.citizenRating,
+                        'citizen_feedback': null,
+                        'can_reopen': c.canReopen ?? false,
+                      },
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
               child: Container(
                 width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),
@@ -231,35 +238,6 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
         ),
       ]),
     );
-  }
-
-  Widget _timeline(String status) {
-    final steps = [
-      {'label': 'Submitted', 'icon': Icons.send_outlined, 'statuses': ['pending', 'confirmed', 'process', 'solved', 'reopened']},
-      {'label': 'Assigned', 'icon': Icons.person_outline, 'statuses': ['confirmed', 'process', 'solved', 'reopened']},
-      {'label': 'In Progress', 'icon': Icons.autorenew, 'statuses': ['process', 'solved', 'reopened']},
-      {'label': 'Resolved', 'icon': Icons.check_circle_outline, 'statuses': ['solved', 'reopened']},
-      {'label': 'Reopened', 'icon': Icons.refresh, 'statuses': ['reopened']},
-    ];
-    final stepColors = [const Color(0xFFF59E0B), const Color(0xFFEA580C), const Color(0xFF2563EB), const Color(0xFF10B981), const Color(0xFFDC2626)];
-
-    return Row(children: List.generate(steps.length, (i) {
-      final active = (steps[i]['statuses'] as List<String>).contains(status);
-      return Expanded(child: Column(children: [
-        Container(
-          width: 34, height: 34,
-          decoration: BoxDecoration(
-            gradient: active ? LinearGradient(colors: [stepColors[i].withOpacity(0.8), stepColors[i]]) : null,
-            color: active ? null : const Color(0xFFE2E8F0),
-            borderRadius: BorderRadius.circular(17),
-            boxShadow: active ? [BoxShadow(color: stepColors[i].withOpacity(0.3), blurRadius: 8)] : null,
-          ),
-          child: Icon(steps[i]['icon'] as IconData, size: 16, color: active ? Colors.white : const Color(0xFFCBD5E1)),
-        ),
-        const SizedBox(height: 6),
-        Text(steps[i]['label'] as String, textAlign: TextAlign.center, style: GoogleFonts.poppins(fontSize: 8, fontWeight: active ? FontWeight.w700 : FontWeight.w500, color: active ? const Color(0xFF1a202c) : const Color(0xFF718096))),
-      ]));
-    }));
   }
 
   Map<String, dynamic> _statusConfig(String status) {

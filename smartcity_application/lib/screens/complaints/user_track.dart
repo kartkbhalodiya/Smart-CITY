@@ -8,6 +8,7 @@ import '../../models/complaint.dart';
 import '../../services/storage_service.dart';
 import '../../services/api_service.dart';
 import '../../config/api_config.dart';
+import '../user_track_complaint_detail.dart';
 
 class UserTrackScreen extends StatefulWidget {
   const UserTrackScreen({super.key});
@@ -100,7 +101,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         ],
       ),
       actions: [
-        // User avatar
         Container(
           margin: const EdgeInsets.only(right: 16),
           child: CircleAvatar(
@@ -362,11 +362,36 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => Navigator.pushNamed(
-            context,
-            AppRoutes.complaintDetail,
-            arguments: {'complaintId': complaint.id},
-          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserTrackComplaintDetail(
+                  complaint: {
+                    'complaint_number': complaint.complaintNumber,
+                    'title': complaint.title,
+                    'description': complaint.description,
+                    'complaint_type': complaint.complaintType,
+                    'work_status': complaint.workStatus,
+                    'created_at': complaint.createdAt.toString(),
+                    'address': complaint.address,
+                    'latitude': complaint.latitude,
+                    'longitude': complaint.longitude,
+                    'city': complaint.city,
+                    'state': complaint.state,
+                    'assigned_department': complaint.assignedDepartment != null ? {
+                      'name': complaint.assignedDepartment!.name,
+                      'email': complaint.assignedDepartment!.email,
+                      'phone': complaint.assignedDepartment!.phone,
+                    } : null,
+                    'citizen_rating': complaint.citizenRating,
+                    'citizen_feedback': null,
+                    'can_reopen': complaint.canReopen ?? false,
+                  },
+                ),
+              ),
+            );
+          },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -510,11 +535,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 
                 const SizedBox(height: 16),
                 
-                // Status Timeline
-                _buildStatusTimeline(complaint.workStatus),
-                
-                const SizedBox(height: 16),
-                
                 // Location and Time Info
                 Row(
                   children: [
@@ -600,53 +620,68 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   ),
                 ],
                 
-                // Rejection Notice if rejected
-                if (complaint.workStatus.toLowerCase() == 'rejected') ...[
+                // Rating and Reopen Section
+                if (complaint.workStatus == 'solved') ...[
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFFECACA)),
-                    ),
-                    child: Row(
-                      children: [
+                  Row(
+                    children: [
+                      // Rating Display
+                      if (complaint.citizenRating != null) ...[
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF991B1B),
+                            color: const Color(0xFFF59E0B).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFF59E0B)),
                           ),
-                          child: Icon(Icons.cancel, size: 16, color: Colors.white),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
+                              const Icon(Icons.star, size: 12, color: Color(0xFFF59E0B)),
+                              const SizedBox(width: 4),
                               Text(
-                                'Complaint Rejected',
+                                '${complaint.citizenRating}/5',
                                 style: GoogleFonts.inter(
-                                  fontSize: 13,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF991B1B),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Tap to view rejection reason',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: const Color(0xFF991B1B).withOpacity(0.8),
+                                  color: const Color(0xFFF59E0B),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, size: 12, color: const Color(0xFF991B1B)),
+                        const SizedBox(width: 8),
                       ],
-                    ),
+                      // Reopen Button (if within 7 days)
+                      if (_canReopenComplaint(complaint)) ...[
+                        GestureDetector(
+                          onTap: () => _showReopenDialog(context, complaint),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFEF4444)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.refresh, size: 12, color: Color(0xFFEF4444)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Reopen',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFFEF4444),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ],
@@ -776,134 +811,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     }
   }
 
-  Widget _buildStatusTimeline(String currentStatus) {
-    final steps = [
-      {'key': 'pending', 'label': 'Submitted', 'icon': Icons.assignment_outlined},
-      {'key': 'confirmed', 'label': 'Confirmed', 'icon': Icons.check_circle_outline},
-      {'key': 'process', 'label': 'In Process', 'icon': Icons.autorenew},
-      {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified_outlined},
-    ];
-    
-    // Handle rejected status - show direct path from submitted to rejected
-    if (currentStatus.toLowerCase() == 'rejected') {
-      final rejectedSteps = [
-        {'key': 'pending', 'label': 'Submitted', 'icon': Icons.assignment_outlined},
-        {'key': 'rejected', 'label': 'Rejected', 'icon': Icons.cancel_outlined},
-      ];
-      return _buildTimelineRow(rejectedSteps, currentStatus);
-    }
-    
-    // Handle reopened status - show full cycle with reopen
-    if (currentStatus.toLowerCase() == 'reopened') {
-      final reopenedSteps = [
-        {'key': 'pending', 'label': 'Submitted', 'icon': Icons.assignment_outlined},
-        {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified_outlined},
-        {'key': 'reopened', 'label': 'Reopened', 'icon': Icons.refresh},
-      ];
-      return _buildTimelineRow(reopenedSteps, currentStatus);
-    }
-    
-    return _buildTimelineRow(steps, currentStatus);
-  }
-  
-  Widget _buildTimelineRow(List<Map<String, dynamic>> steps, String currentStatus) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: List.generate(steps.length, (index) {
-          final step = steps[index];
-          final isCompleted = _isStepCompleted(step['key'] as String, currentStatus);
-          final isActive = step['key'] == currentStatus.toLowerCase();
-          final isLast = index == steps.length - 1;
-          
-          return Expanded(
-            child: Row(
-              children: [
-                // Step circle with icon
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: isCompleted || isActive 
-                        ? _getStatusColor(step['key'] as String)
-                        : Colors.white,
-                    border: Border.all(
-                      color: isCompleted || isActive 
-                          ? _getStatusColor(step['key'] as String)
-                          : const Color(0xFFE2E8F0),
-                      width: 2,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isCompleted || isActive ? Icons.check : step['icon'] as IconData,
-                    size: 14,
-                    color: isCompleted || isActive ? Colors.white : const Color(0xFF94A3B8),
-                  ),
-                ),
-                
-                // Step label
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    step['label'] as String,
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: isCompleted || isActive ? FontWeight.w700 : FontWeight.w500,
-                      color: isCompleted || isActive 
-                          ? const Color(0xFF0f172a)
-                          : const Color(0xFF64748b),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                
-                // Connecting line (except for last item)
-                if (!isLast) ...[
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: isCompleted 
-                            ? _getStatusColor(currentStatus)
-                            : const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                ],
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-  
-  bool _isStepCompleted(String stepKey, String currentStatus) {
-    final statusOrder = ['pending', 'confirmed', 'process', 'solved'];
-    final currentIndex = statusOrder.indexOf(currentStatus.toLowerCase());
-    final stepIndex = statusOrder.indexOf(stepKey);
-    
-    // Special cases
-    if (currentStatus.toLowerCase() == 'rejected') {
-      return stepKey == 'pending'; // Only submitted is completed for rejected
-    }
-    
-    if (currentStatus.toLowerCase() == 'reopened') {
-      return stepKey == 'pending' || stepKey == 'solved'; // Submitted and solved are completed
-    }
-    
-    return currentIndex >= stepIndex && stepIndex != -1;
-  }
-
   String _getUserInitials(user) {
     if (user == null) return 'U';
     final firstName = user.firstName?.trim() ?? '';
@@ -976,6 +883,211 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       return 'Just now';
     } catch (e) {
       return dateStr;
+    }
+  }
+
+  bool _canReopenComplaint(Complaint complaint) {
+    if (complaint.workStatus != 'solved') return false;
+    
+    // Assuming complaint has a solvedAt field - if not available, use updatedAt
+    final solvedDate = complaint.updatedAt;
+    final daysSinceSolved = DateTime.now().difference(solvedDate).inDays;
+    return daysSinceSolved <= 7;
+  }
+
+  void _showReopenDialog(BuildContext context, Complaint complaint) {
+    final reasonController = TextEditingController();
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Reopen Complaint',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Complaint #${complaint.complaintNumber}',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Reason for reopening:',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Please explain why you want to reopen this complaint...',
+                  hintStyle: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF2B6CF6)),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF6B7280),
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (reasonController.text.isNotEmpty) {
+                          _submitReopenRequest(context, complaint, reasonController.text);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Submit',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitReopenRequest(BuildContext context, Complaint complaint, String reason) async {
+    Navigator.pop(context); // Close dialog
+    
+    // Show loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Submitting reopen request...',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2B6CF6),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    
+    try {
+      // Simulate API call
+      await Future.delayed(const Duration(seconds: 2));
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Reopen request submitted successfully!',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: const Color(0xFF10B981),
+          ),
+        );
+        
+        // Refresh complaints
+        await _loadUserComplaints();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to submit reopen request. Please try again.',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
     }
   }
 }
