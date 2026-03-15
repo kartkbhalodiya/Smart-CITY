@@ -378,6 +378,17 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     );
   }
 
+  String _getStatusDisplayText(String status) {
+    switch (status) {
+      case 'pending': return 'Pending';
+      case 'confirmed': return 'Confirmed';
+      case 'process': return 'In Progress';
+      case 'solved': return 'Solved';
+      case 'reopened': return 'Reopened';
+      default: return status;
+    }
+  }
+
   void _openMap(double lat, double lng) async {
     final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
     if (await canLaunch(url)) {

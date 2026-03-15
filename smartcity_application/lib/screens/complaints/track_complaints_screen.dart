@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
+import '../user_track_complaint_detail.dart';
 
 class TrackComplaintsScreen extends StatefulWidget {
   const TrackComplaintsScreen({super.key});
@@ -160,12 +161,6 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
               ])),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(gradient: LinearGradient(colors: statusConfig['gradient'] as List<Color>), borderRadius: BorderRadius.circular(20)),
-                child: Text(statusConfig['label'] as String, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
-              ),
-              const SizedBox(width: 8),
-              Container(
                 width: 32, height: 32,
                 decoration: BoxDecoration(color: isExpanded ? const Color(0xFF2B6CF6) : const Color(0xFFF7F9FC), borderRadius: BorderRadius.circular(16)),
                 child: Icon(isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 18, color: isExpanded ? Colors.white : const Color(0xFF718096)),
@@ -194,7 +189,34 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
             ]),
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: () => Navigator.pushNamed(context, AppRoutes.complaintDetail, arguments: {'complaintId': c.id}),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UserTrackComplaintDetail(
+                    complaint: {
+                      'complaint_number': c.complaintNumber,
+                      'title': c.title,
+                      'description': c.description,
+                      'complaint_type': c.complaintType,
+                      'work_status': c.workStatus,
+                      'created_at': c.createdAt.toString(),
+                      'address': c.address,
+                      'latitude': c.latitude,
+                      'longitude': c.longitude,
+                      'city': c.city ?? '',
+                      'state': c.state ?? '',
+                      'assigned_department': c.assignedDepartment != null ? {
+                        'name': c.assignedDepartment!.name,
+                        'email': c.assignedDepartment!.email ?? '',
+                        'phone': c.assignedDepartment!.phone ?? '',
+                      } : null,
+                      'citizen_rating': c.citizenRating,
+                      'citizen_feedback': c.citizenFeedback,
+                      'can_reopen': c.workStatus == 'solved',
+                    },
+                  ),
+                ),
+              ),
               child: Container(
                 width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),

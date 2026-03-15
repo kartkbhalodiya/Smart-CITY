@@ -851,15 +851,6 @@
                             <div class="complaint-title-compact">{{ complaint.title }}</div>
                         </div>
                         <div class="card-header-right">
-                            <span class="status-badge status-{{ complaint.work_status }}">
-                                {% if complaint.work_status == 'pending' %}Submitted
-                                {% elif complaint.work_status == 'confirmed' %}Assigned
-                                {% elif complaint.work_status == 'process' %}In Progress
-                                {% elif complaint.work_status == 'solved' %}Resolved
-                                {% elif complaint.work_status == 'reopened' %}Reopened
-                                {% else %}{{ complaint.work_status }}
-                                {% endif %}
-                            </span>
                             <div class="expand-icon">
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>

@@ -714,62 +714,82 @@
     </div>
 
     <script>
-        // Initialize map
-        var map = L.map('map').setView([{{ complaint.latitude }}, {{ complaint.longitude }}], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        
-        // Add complaint marker
-        L.marker([{{ complaint.latitude }}, {{ complaint.longitude }}]).addTo(map)
-            .bindPopup('<b>{{ complaint.title }}</b><br>{{ complaint.address }}').openPopup();
+        // Initialize map with error handling
+        try {
+            var map = L.map('map').setView([{{ complaint.latitude|default:"20.5937" }}, {{ complaint.longitude|default:"78.9629" }}], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add complaint marker
+            {% if complaint.latitude and complaint.longitude %}
+            L.marker([{{ complaint.latitude }}, {{ complaint.longitude }}]).addTo(map)
+                .bindPopup('<b>{{ complaint.title|escapejs }}</b><br>{{ complaint.address|escapejs }}').openPopup();
+            {% endif %}
 
-        // Add department marker if available
-        {% if complaint.assigned_department and complaint.assigned_department.latitude and complaint.assigned_department.longitude %}
-        var deptIcon = L.divIcon({
-            html: '<i class="fa-solid fa-building" style="color: #2B6CF6; font-size: 20px;"></i>',
-            iconSize: [30, 30],
-            className: 'custom-div-icon'
-        });
-        
-        L.marker([{{ complaint.assigned_department.latitude }}, {{ complaint.assigned_department.longitude }}], {icon: deptIcon}).addTo(map)
-            .bindPopup('<b>{{ complaint.assigned_department.name }}</b><br>{{ complaint.assigned_department.address }}');
-        {% endif %}
+            // Add department marker if available
+            {% if complaint.assigned_department and complaint.assigned_department.latitude and complaint.assigned_department.longitude %}
+            var deptIcon = L.divIcon({
+                html: '<i class="fa-solid fa-building" style="color: #2B6CF6; font-size: 20px;"></i>',
+                iconSize: [30, 30],
+                className: 'custom-div-icon'
+            });
+            
+            L.marker([{{ complaint.assigned_department.latitude }}, {{ complaint.assigned_department.longitude }}], {icon: deptIcon}).addTo(map)
+                .bindPopup('<b>{{ complaint.assigned_department.name|escapejs }}</b><br>{{ complaint.assigned_department.address|escapejs }}');
+            {% endif %}
+        } catch (error) {
+            console.error('Map initialization error:', error);
+            document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666;"><i class="fa-solid fa-map-marker-alt" style="margin-right: 8px;"></i>Map unavailable</div>';
+        }
 
         // Rating system
         const stars = document.querySelectorAll('.star-input');
         const ratingInput = document.getElementById('ratingInput');
         
-        stars.forEach(star => {
-            star.addEventListener('click', function() {
-                const rating = this.getAttribute('data-rating');
-                ratingInput.value = rating;
-                
-                stars.forEach(s => {
-                    if (s.getAttribute('data-rating') <= rating) {
-                        s.classList.add('active');
-                    } else {
-                        s.classList.remove('active');
-                    }
+        if (stars.length > 0 && ratingInput) {
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = this.getAttribute('data-rating');
+                    ratingInput.value = rating;
+                    
+                    stars.forEach(s => {
+                        if (s.getAttribute('data-rating') <= rating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
                 });
             });
-        });
+        }
 
         // File upload preview
-        document.getElementById('reopenProof').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            if (fileName) {
-                document.getElementById('fileName').textContent = '✓ ' + fileName;
-            }
-        });
+        const reopenProof = document.getElementById('reopenProof');
+        const fileName = document.getElementById('fileName');
+        
+        if (reopenProof && fileName) {
+            reopenProof.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    fileName.textContent = '✓ ' + file.name;
+                }
+            });
+        }
 
         // Modal functions
         function showReopenModal() {
-            document.getElementById('reopenModal').classList.add('show');
+            const modal = document.getElementById('reopenModal');
+            if (modal) {
+                modal.classList.add('show');
+            }
         }
 
         function hideReopenModal() {
-            document.getElementById('reopenModal').classList.remove('show');
+            const modal = document.getElementById('reopenModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
         }
 
         // Close modal on outside click
