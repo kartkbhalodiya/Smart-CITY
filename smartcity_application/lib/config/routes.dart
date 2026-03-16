@@ -17,6 +17,7 @@ import '../screens/complaints/user_track.dart';
 import '../screens/departments/departments_list_screen.dart';
 import '../screens/departments/departments_by_category_screen.dart';
 import '../screens/departments/department_detail_screen.dart';
+import '../l10n/app_strings.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -132,7 +133,7 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => Scaffold(
             body: Center(
-              child: Text('No route defined for ${settings.name}'),
+              child: Text(AppStrings.t(_, 'No route defined for ${settings.name}')),
             ),
           ),
         );

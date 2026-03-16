@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
+import '../../l10n/app_strings.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -66,10 +67,10 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Image.asset('assets/images/logo.png', height: 56),
                     const SizedBox(height: 4),
-                    Text('COMPLAINT MANAGEMENT SYSTEM', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
+                    Text(AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
                     const SizedBox(height: 8),
-                    Text('Verify OTP', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-                    Text('Secure login verification', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
+                    Text(AppStrings.t(context, 'Verify OTP'), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                    Text(AppStrings.t(context, 'Secure login verification'), style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
                     const SizedBox(height: 20),
                     // Email info banner - gradient same as website
                     Container(
@@ -80,7 +81,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(children: [
-                        Text('OTP sent to', style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w500)),
+                        Text(AppStrings.t(context, 'OTP sent to'), style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w500)),
                         const SizedBox(height: 4),
                         Text(widget.email, style: GoogleFonts.inter(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w700)),
                       ]),
@@ -100,7 +101,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                       child: ElevatedButton.icon(
                         onPressed: (_isLoading || !_complete) ? null : _verify,
                         icon: const Icon(Icons.check_circle_outline, size: 18),
-                        label: Text('VERIFY & CONTINUE', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                        label: Text(AppStrings.t(context, 'VERIFY & CONTINUE'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _complete ? const Color(0xFF1E66F5) : const Color(0xFF94a3b8),
                           padding: const EdgeInsets.symmetric(vertical: 13),
@@ -113,14 +114,14 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                     const SizedBox(height: 20),
                     const Divider(color: Color(0x0D000000)),
                     const SizedBox(height: 12),
-                    Text("Didn't receive the code?", style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
+                    Text(AppStrings.t(context, "Didn't receive the code?"), style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         const Icon(Icons.refresh, size: 16, color: Color(0xFF1E66F5)),
                         const SizedBox(width: 6),
-                        Text('Resend OTP', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600)),
+                        Text(AppStrings.t(context, 'Resend OTP'), style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600)),
                       ]),
                     ),
                   ]),
@@ -157,12 +158,18 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
   Future<void> _verify() async {
     setState(() => _isLoading = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final success = await auth.verifyOtp(widget.email, _otp);
+    final response = await auth.verifyOtp(widget.email, _otp);
     setState(() => _isLoading = false);
-    if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Invalid OTP')));
+    if (!mounted) return;
+    if (response['success'] == true) {
+      final role = response['role'] ?? 'citizen';
+      if (role == 'superadmin' || role == 'city_admin' || role == 'department') {
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Invalid OTP'))));
     }
   }
 }

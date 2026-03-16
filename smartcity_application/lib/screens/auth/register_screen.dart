@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
+import '../../l10n/app_strings.dart';
 import 'map_picker_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -114,7 +115,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       });
     } else {
       setState(() => _detectingLocation = false);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not get location.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppStrings.t(context, 'Could not get location.'))),
+        );
+      }
     }
   }
 
@@ -180,7 +185,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Future<void> _sendEmailOtp() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid email first')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.t(context, 'Enter a valid email first'))),
+      );
       return;
     }
     if (_resendSeconds > 0) return;
@@ -193,14 +200,16 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       setState(() { _otpSent = true; _emailVerified = false; _otpCtrl.clear(); });
       _startResendTimer();
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Failed to send OTP')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Failed to send OTP'))),
+      );
     }
   }
 
   Future<void> _verifyEmailOtp() async {
     final otp = _otpCtrl.text.trim();
     if (otp.length != 6) {
-      setState(() => _otpError = 'Enter the 6-digit OTP');
+      setState(() => _otpError = AppStrings.t(context, 'Enter the 6-digit OTP'));
       return;
     }
     setState(() { _verifyingOtp = true; _otpError = null; });
@@ -213,17 +222,21 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     if (result['success'] == true) {
       setState(() { _emailVerified = true; _otpSent = false; });
     } else {
-      setState(() => _otpError = result['message'] ?? 'Invalid OTP');
+      setState(() => _otpError = result['message'] ?? AppStrings.t(context, 'Invalid OTP'));
     }
   }
 
   Future<void> _register() async {
     if (_emailCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email is required')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.t(context, 'Email is required'))),
+      );
       return;
     }
     if (!_emailVerified) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please verify your email first')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.t(context, 'Please verify your email first'))),
+      );
       return;
     }
     setState(() => _isLoading = true);
@@ -245,7 +258,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     if (success && mounted) {
       _showRegistrationSuccessDialog();
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Registration failed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Registration failed'))),
+      );
     }
   }
 
@@ -272,13 +287,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               ),
               const SizedBox(height: 24),
               Text(
-                'Registration Successful!',
+                AppStrings.t(context, 'Registration Successful!'),
                 style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
-                'Your account has been created for ${_emailCtrl.text.trim()}. Please login to continue.',
+                '${AppStrings.t(context, 'Your account has been created for')} ${_emailCtrl.text.trim()}. ${AppStrings.t(context, 'Please login to continue.')}',
                 style: GoogleFonts.inter(fontSize: 13, color: _textMuted, height: 1.5),
                 textAlign: TextAlign.center,
               ),
@@ -297,7 +312,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: Text('OKAY, LOGIN', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+                  child: Text(AppStrings.t(context, 'OKAY, LOGIN'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
@@ -363,24 +378,24 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 8),
         // Brand subtitle
         Text(
-          'COMPLAINT MANAGEMENT SYSTEM',
+          AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'),
           style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _primary, letterSpacing: 1.2),
         ),
         const SizedBox(height: 4),
         // Heading
         Text(
-          'Create Account',
+          AppStrings.t(context, 'Create Account'),
           style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark),
         ),
         const SizedBox(height: 20),
         // First + Last name row
         Row(children: [
-          Expanded(child: _field(_firstNameCtrl, 'First Name (Optional)', Icons.person_outline, TextInputType.name)),
+          Expanded(child: _field(_firstNameCtrl, AppStrings.t(context, 'First Name (Optional)'), Icons.person_outline, TextInputType.name)),
           const SizedBox(width: 12),
-          Expanded(child: _field(_lastNameCtrl, 'Last Name (Optional)', Icons.person_outline, TextInputType.name)),
+          Expanded(child: _field(_lastNameCtrl, AppStrings.t(context, 'Last Name (Optional)'), Icons.person_outline, TextInputType.name)),
         ]),
         const SizedBox(height: 12),
-        _field(_mobileCtrl, 'Mobile Number (Optional)', Icons.phone_outlined, TextInputType.phone),
+        _field(_mobileCtrl, AppStrings.t(context, 'Mobile Number (Optional)'), Icons.phone_outlined, TextInputType.phone),
         const SizedBox(height: 12),
         _emailFieldWithVerify(),
         if (_otpSent) ...[
@@ -388,19 +403,19 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           _otpVerifyBox(),
         ],
         const SizedBox(height: 12),
-        _field(_pincodeCtrl, 'Pincode (Optional)', Icons.location_on_outlined, TextInputType.number),
+        _field(_pincodeCtrl, AppStrings.t(context, 'Pincode (Optional)'), Icons.location_on_outlined, TextInputType.number),
         const SizedBox(height: 12),
         // State + City row
         Row(children: [
           Expanded(child: _loadingStates
-            ? _loadingDropdown('Select State')
-            : _dropdown('Select State (Opt)', _states, _selectedState,
+            ? _loadingDropdown(AppStrings.t(context, 'Select State'))
+            : _dropdown(AppStrings.t(context, 'Select State (Opt)'), _states, _selectedState,
                 (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
           const SizedBox(width: 12),
           Expanded(child: _loadingStates
-            ? _loadingDropdown('Select City')
+            ? _loadingDropdown(AppStrings.t(context, 'Select City'))
             : _dropdown(
-                'Select City (Opt)',
+                AppStrings.t(context, 'Select City (Opt)'),
                 _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
                 _selectedCity,
                 _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
@@ -409,13 +424,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         const SizedBox(height: 12),
         _addressField(),
         const SizedBox(height: 12),
-        _field(_aadhaarCtrl, 'Aadhaar Number (Optional)', Icons.credit_card_outlined, TextInputType.number),
+        _field(_aadhaarCtrl, AppStrings.t(context, 'Aadhaar Number (Optional)'), Icons.credit_card_outlined, TextInputType.number),
         const SizedBox(height: 14),
         // Location section
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            '📍 Location (GPS)',
+            AppStrings.t(context, '📍 Location (GPS)'),
             style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
           ),
         ),
@@ -434,7 +449,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               const Icon(Icons.location_pin, size: 14, color: _primary),
               const SizedBox(width: 6),
               Text(
-                'Lat: ${_lat!.toStringAsFixed(6)},  Lng: ${_lng!.toStringAsFixed(6)}',
+                '${AppStrings.t(context, 'Lat')}: ${_lat!.toStringAsFixed(6)},  ${AppStrings.t(context, 'Lng')}: ${_lng!.toStringAsFixed(6)}',
                 style: GoogleFonts.inter(fontSize: 12, color: _textDark),
               ),
             ]),
@@ -463,7 +478,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       const Icon(Icons.person_add_outlined, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
-                      Text('REGISTER NOW', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
+                      Text(AppStrings.t(context, 'REGISTER NOW'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
                     ]),
               ),
             ),
@@ -475,9 +490,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         GestureDetector(
           onTap: () => Navigator.pop(context),
           child: RichText(text: TextSpan(
-            text: 'Already have an account?  ',
+            text: AppStrings.t(context, 'Already have an account?  '),
             style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
-            children: [TextSpan(text: 'Login', style: GoogleFonts.inter(fontSize: 12, color: _primary, fontWeight: FontWeight.w600))],
+            children: [TextSpan(text: AppStrings.t(context, 'Login'), style: GoogleFonts.inter(fontSize: 12, color: _primary, fontWeight: FontWeight.w600))],
           )),
         ),
         const SizedBox(height: 10),
@@ -494,7 +509,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               const Icon(Icons.search_rounded, size: 15, color: _textDark),
               const SizedBox(width: 6),
-              Text('Track Complaint as Guest', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
+              Text(AppStrings.t(context, 'Track Complaint as Guest'), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
             ]),
           ),
         ),
@@ -535,7 +550,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         controller: _addressCtrl, maxLines: 3,
         style: GoogleFonts.inter(fontSize: 14, color: _textDark),
         decoration: InputDecoration(
-          hintText: 'Address (Optional)',
+          hintText: AppStrings.t(context, 'Address (Optional)'),
           hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(14),
@@ -607,7 +622,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               }
             },
             decoration: InputDecoration(
-              hintText: 'Email Address',
+              hintText: AppStrings.t(context, 'Email Address'),
               hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
               prefixIcon: Icon(
                 _emailVerified ? Icons.verified_outlined : Icons.email_outlined,
@@ -620,7 +635,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(Icons.check_circle, color: Color(0xFF22c55e), size: 16),
                       const SizedBox(width: 4),
-                      Text('Verified', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF22c55e), fontWeight: FontWeight.w700)),
+                      Text(AppStrings.t(context, 'Verified'), style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF22c55e), fontWeight: FontWeight.w700)),
                     ]),
                   )
                 : null,
@@ -640,7 +655,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Icon(_otpSent ? Icons.refresh_rounded : Icons.send_rounded, size: 15),
               label: Text(
-                _sendingOtp ? 'Sending...' : (_otpSent ? (_resendSeconds > 0 ? 'Resend in ${_resendSeconds}s' : 'Resend OTP') : 'Send Verification OTP'),
+                _sendingOtp
+                    ? AppStrings.t(context, 'Sending...')
+                    : (_otpSent
+                        ? (_resendSeconds > 0
+                            ? '${AppStrings.t(context, 'Resend in')} ${_resendSeconds}s'
+                            : AppStrings.t(context, 'Resend OTP'))
+                        : AppStrings.t(context, 'Send Verification OTP')),
                 style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
@@ -673,7 +694,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'OTP sent to ${_emailCtrl.text.trim()}',
+                  '${AppStrings.t(context, 'OTP sent to')} ${_emailCtrl.text.trim()}',
                   style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1e40af), fontWeight: FontWeight.w500),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -719,7 +740,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   child: Center(
                     child: _verifyingOtp
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text('Submit', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                      : Text(AppStrings.t(context, 'Submit'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                   ),
                 ),
               ),
@@ -755,7 +776,11 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  _detectingLocation ? 'Detecting...' : (_locationSet ? 'Location Set ✓' : 'Use Current'),
+                  _detectingLocation
+                      ? AppStrings.t(context, 'Detecting...')
+                      : (_locationSet
+                          ? AppStrings.t(context, 'Location Set ✓')
+                          : AppStrings.t(context, 'Use Current')),
                   style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700,
                       color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
                   overflow: TextOverflow.ellipsis,
@@ -783,7 +808,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                 : const Icon(Icons.map_outlined, size: 15, color: Color(0xFF1e40af)),
               const SizedBox(width: 6),
               Text(
-                _openingMap ? 'Opening...' : 'Pick on Map',
+                _openingMap
+                    ? AppStrings.t(context, 'Opening...')
+                    : AppStrings.t(context, 'Pick on Map'),
                 style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF1e40af)),
               ),
             ]),

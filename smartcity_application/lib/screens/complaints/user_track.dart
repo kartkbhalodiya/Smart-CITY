@@ -9,6 +9,7 @@ import '../../services/storage_service.dart';
 import '../../services/api_service.dart';
 import '../../config/api_config.dart';
 import '../user_track_complaint_detail.dart';
+import '../../l10n/app_strings.dart';
 
 class UserTrackScreen extends StatefulWidget {
   const UserTrackScreen({super.key});
@@ -84,7 +85,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Track Complaints',
+            AppStrings.t(context, 'Track Complaints'),
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -92,7 +93,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             ),
           ),
           Text(
-            'Monitor your complaint status',
+            AppStrings.t(context, 'Monitor your complaint status'),
             style: GoogleFonts.inter(
               fontSize: 12,
               color: const Color(0xFF64748b),
@@ -141,7 +142,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
               },
               style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
               decoration: InputDecoration(
-                hintText: 'Search by complaint ID, type, or location...',
+                hintText: AppStrings.t(context, 'Search by complaint ID, type, or location...'),
                 hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b)),
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF64748b), size: 20),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -180,13 +181,13 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
         return Row(
           children: [
-            _buildStatChip('Pending', stats['pending']!, const Color(0xFFEAB308)),
+            _buildStatChip(AppStrings.t(context, 'Pending'), stats['pending']!, const Color(0xFFEAB308)),
             const SizedBox(width: 8),
-            _buildStatChip('Solved', stats['solved']!, const Color(0xFF22C55E)),
+            _buildStatChip(AppStrings.t(context, 'Solved'), stats['solved']!, const Color(0xFF22C55E)),
             const SizedBox(width: 8),
-            _buildStatChip('Rejected', stats['rejected']!, const Color(0xFF991B1B)),
+            _buildStatChip(AppStrings.t(context, 'Rejected'), stats['rejected']!, const Color(0xFF991B1B)),
             const SizedBox(width: 8),
-            _buildStatChip('Reopened', stats['reopened']!, const Color(0xFFEF4444)),
+            _buildStatChip(AppStrings.t(context, 'Reopened'), stats['reopened']!, const Color(0xFFEF4444)),
           ],
         );
       },
@@ -248,7 +249,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             children: [
               Icon(tab['icon'] as IconData, size: 16),
               const SizedBox(width: 6),
-              Text(tab['label'] as String),
+              Text(AppStrings.t(context, tab['label'] as String)),
             ],
           ),
         )).toList(),
@@ -274,7 +275,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 const Icon(Icons.error_outline, size: 64, color: Color(0xFFEF4444)),
                 const SizedBox(height: 16),
                 Text(
-                  'Error loading complaints',
+                  AppStrings.t(context, 'Error loading complaints'),
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -299,7 +300,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: Text(
-                    'Retry',
+                    AppStrings.t(context, 'Retry'),
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -342,7 +343,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   Widget _buildComplaintCard(Complaint complaint) {
     final statusColor = _getStatusColor(complaint.workStatus);
-    final statusText = _getStatusText(complaint.workStatus);
+    final statusText = AppStrings.t(context, _getStatusText(complaint.workStatus));
     final priorityColor = _getPriorityColor(complaint.priority);
 
     return Container(
@@ -561,7 +562,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     Icon(Icons.access_time, size: 16, color: const Color(0xFF64748b)),
                     const SizedBox(width: 4),
                     Text(
-                      _formatDate(complaint.createdAt.toIso8601String()),
+                      AppStrings.t(context, _formatDate(complaint.createdAt.toIso8601String())),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: const Color(0xFF64748b),
@@ -596,7 +597,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Assigned Department',
+                                AppStrings.t(context, 'Assigned Department'),
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   color: const Color(0xFF64748b),
@@ -677,7 +678,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                                 const Icon(Icons.refresh, size: 12, color: Color(0xFFEF4444)),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Reopen',
+                                  AppStrings.t(context, 'Reopen'),
                                   style: GoogleFonts.inter(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -712,7 +713,9 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           ),
           const SizedBox(height: 16),
           Text(
-            _selectedFilter == 'all' ? 'No complaints found' : 'No ${_selectedFilter} complaints',
+            _selectedFilter == 'all'
+                ? AppStrings.t(context, 'No complaints found')
+                : '${AppStrings.t(context, 'No')} ${AppStrings.t(context, _getStatusText(_selectedFilter))} ${AppStrings.t(context, 'complaints')}',
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -722,10 +725,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           const SizedBox(height: 8),
           Text(
             _searchQuery.isNotEmpty
-                ? 'Try adjusting your search terms'
-                : _selectedFilter == 'all' 
-                    ? 'You haven\'t submitted any complaints yet'
-                    : 'No complaints with ${_selectedFilter} status',
+                ? AppStrings.t(context, 'Try adjusting your search terms')
+                : _selectedFilter == 'all'
+                    ? AppStrings.t(context, "You haven't submitted any complaints yet")
+                    : '${AppStrings.t(context, 'No complaints with status')} ${AppStrings.t(context, _getStatusText(_selectedFilter))}',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
@@ -742,7 +745,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: Text(
-                'Submit Your First Complaint',
+                AppStrings.t(context, 'Submit Your First Complaint'),
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -930,7 +933,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Reopen Complaint',
+                    AppStrings.t(context, 'Reopen Complaint'),
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -945,7 +948,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
               ),
               const SizedBox(height: 8),
               Text(
-                'Complaint #${complaint.complaintNumber}',
+                '${AppStrings.t(context, 'Complaint ID')} #${complaint.complaintNumber}',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: const Color(0xFF6B7280),
@@ -953,7 +956,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
               ),
               const SizedBox(height: 20),
               Text(
-                'Reason for reopening:',
+                AppStrings.t(context, 'Reason for reopening:'),
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -965,7 +968,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 controller: reasonController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Please explain why you want to reopen this complaint...',
+                  hintText: AppStrings.t(context, 'Please explain why you want to reopen this complaint...'),
                   hintStyle: GoogleFonts.inter(
                     fontSize: 14,
                     color: const Color(0xFF9CA3AF),
@@ -996,7 +999,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         ),
                       ),
                       child: Text(
-                        'Cancel',
+                        AppStrings.t(context, 'Cancel'),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -1021,7 +1024,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         ),
                       ),
                       child: Text(
-                        'Submit',
+                        AppStrings.t(context, 'Submit'),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1056,7 +1059,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             ),
             const SizedBox(width: 12),
             Text(
-              'Submitting reopen request...',
+              AppStrings.t(context, 'Submitting reopen request...'),
               style: GoogleFonts.inter(color: Colors.white),
             ),
           ],
@@ -1074,7 +1077,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Reopen request submitted successfully!',
+              AppStrings.t(context, 'Reopen request submitted successfully!'),
               style: GoogleFonts.inter(color: Colors.white),
             ),
             backgroundColor: const Color(0xFF10B981),
@@ -1089,7 +1092,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to submit reopen request. Please try again.',
+              AppStrings.t(context, 'Failed to submit reopen request. Please try again.'),
               style: GoogleFonts.inter(color: Colors.white),
             ),
             backgroundColor: const Color(0xFFEF4444),

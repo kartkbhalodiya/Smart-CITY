@@ -5,6 +5,7 @@ import '../../config/routes.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
 import '../user_track_complaint_detail.dart';
+import '../../l10n/app_strings.dart';
 
 class TrackComplaintsScreen extends StatefulWidget {
   const TrackComplaintsScreen({super.key});
@@ -44,7 +45,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
               const SizedBox(height: 60),
               const Icon(Icons.wifi_off_outlined, size: 64, color: Color(0xFFcbd5e1)),
               const SizedBox(height: 16),
-              Text('Could not load complaints', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
+              Text(AppStrings.t(context, 'Could not load complaints'), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -56,7 +57,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),
-                  child: Text('Retry', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                  child: Text(AppStrings.t(context, 'Retry'), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                 ),
               ),
             ]);
@@ -90,7 +91,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
           child: Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFFF7F9FC), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.arrow_back, size: 20, color: Color(0xFF1a202c))),
         ),
         const SizedBox(width: 16),
-        Text('Track Complaints', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1a202c))),
+        Text(AppStrings.t(context, 'Track Complaints'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1a202c))),
         const Spacer(),
         Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFFF7F9FC), borderRadius: BorderRadius.circular(20)), child: const Icon(Icons.filter_list, size: 20, color: Color(0xFF1a202c))),
       ]),
@@ -108,7 +109,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
           onChanged: (_) => setState(() {}),
           style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1a202c)),
           decoration: InputDecoration(
-            hintText: 'Search by complaint ID, title...',
+            hintText: AppStrings.t(context, 'Search by complaint ID, title...'),
             hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF718096)),
             prefixIcon: const Icon(Icons.search, color: Color(0xFF718096), size: 20),
             border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -119,7 +120,13 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
   }
 
   Widget _filterTabs() {
-    final tabs = [('all', 'All'), ('pending', 'Pending'), ('confirmed', 'Confirmed'), ('process', 'In Progress'), ('solved', 'Completed')];
+    final tabs = [
+      ('all', AppStrings.t(context, 'All')),
+      ('pending', AppStrings.t(context, 'Pending')),
+      ('confirmed', AppStrings.t(context, 'Confirmed')),
+      ('process', AppStrings.t(context, 'In Progress')),
+      ('solved', AppStrings.t(context, 'Completed')),
+    ];
     return Container(
       height: 48, margin: const EdgeInsets.symmetric(vertical: 16),
       child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -238,7 +245,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const Icon(Icons.visibility_outlined, color: Colors.white, size: 16),
                   const SizedBox(width: 8),
-                  Text('View Details', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                  Text(AppStrings.t(context, 'View Details'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                 ]),
               ),
             ),
@@ -250,11 +257,11 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
 
   Map<String, dynamic> _statusConfig(String status) {
     switch (status) {
-      case 'pending': return {'label': 'Submitted', 'gradient': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)]};
-      case 'confirmed': return {'label': 'Assigned', 'gradient': [const Color(0xFFFB923C), const Color(0xFFEA580C)]};
-      case 'process': return {'label': 'In Progress', 'gradient': [const Color(0xFF60A5FA), const Color(0xFF2563EB)]};
-      case 'solved': return {'label': 'Resolved', 'gradient': [const Color(0xFF34D399), const Color(0xFF10B981)]};
-      case 'reopened': return {'label': 'Reopened', 'gradient': [const Color(0xFFF87171), const Color(0xFFDC2626)]};
+      case 'pending': return {'label': AppStrings.t(context, 'Submitted'), 'gradient': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)]};
+      case 'confirmed': return {'label': AppStrings.t(context, 'Assigned'), 'gradient': [const Color(0xFFFB923C), const Color(0xFFEA580C)]};
+      case 'process': return {'label': AppStrings.t(context, 'In Progress'), 'gradient': [const Color(0xFF60A5FA), const Color(0xFF2563EB)]};
+      case 'solved': return {'label': AppStrings.t(context, 'Resolved'), 'gradient': [const Color(0xFF34D399), const Color(0xFF10B981)]};
+      case 'reopened': return {'label': AppStrings.t(context, 'Reopened'), 'gradient': [const Color(0xFFF87171), const Color(0xFFDC2626)]};
       default: return {'label': status, 'gradient': [const Color(0xFF94a3b8), const Color(0xFF64748b)]};
     }
   }
@@ -263,18 +270,18 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       const Icon(Icons.inbox_outlined, size: 64, color: Color(0xFFcbd5e1)),
       const SizedBox(height: 16),
-      Text('No complaints found', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
+      Text(AppStrings.t(context, 'No complaints found'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF1a202c))),
       const SizedBox(height: 8),
-      Text("You haven't submitted any complaints yet", style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF718096))),
+      Text(AppStrings.t(context, "You haven't submitted any complaints yet"), style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF718096))),
     ]));
   }
 
   Widget _bottomNav() {
     final items = [
-      {'icon': Icons.home_outlined, 'label': 'Dashboard', 'route': AppRoutes.dashboard},
-      {'icon': Icons.add_circle_outline, 'label': 'Submit', 'route': AppRoutes.categorySelection},
-      {'icon': Icons.checklist_outlined, 'label': 'Track', 'route': AppRoutes.trackComplaints},
-      {'icon': Icons.person_outline, 'label': 'Profile', 'route': AppRoutes.profile},
+      {'icon': Icons.home_outlined, 'label': AppStrings.t(context, 'Dashboard'), 'route': AppRoutes.dashboard},
+      {'icon': Icons.add_circle_outline, 'label': AppStrings.t(context, 'Submit'), 'route': AppRoutes.categorySelection},
+      {'icon': Icons.checklist_outlined, 'label': AppStrings.t(context, 'Track'), 'route': AppRoutes.trackComplaints},
+      {'icon': Icons.person_outline, 'label': AppStrings.t(context, 'Profile'), 'route': AppRoutes.profile},
     ];
     return Container(
       decoration: const BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, -2))]),

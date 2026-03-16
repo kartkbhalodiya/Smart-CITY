@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/routes.dart';
+import '../../l10n/app_strings.dart';
 
 class CategorySelectionScreen extends StatelessWidget {
   const CategorySelectionScreen({super.key});
@@ -39,11 +40,11 @@ class CategorySelectionScreen extends StatelessWidget {
             Image.asset('assets/images/logo.png', height: 32),
             const SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Submit Complaint',
+              Text(AppStrings.t(context, 'Submit Complaint'),
                   style: GoogleFonts.poppins(
                       fontSize: 16, fontWeight: FontWeight.w700,
                       color: const Color(0xFF0f172a))),
-              Text('Choose a category',
+              Text(AppStrings.t(context, 'Choose a category'),
                   style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
             ]),
           ]),
@@ -70,7 +71,7 @@ class CategorySelectionScreen extends StatelessWidget {
     final bg = c['bg'] as Color;
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
-          arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
+          arguments: {'categoryKey': c['key'], 'categoryName': AppStrings.t(context, c['name'] as String)}),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -108,7 +109,7 @@ class CategorySelectionScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               child: Center(
-                child: Text(c['name'] as String,
+                child: Text(AppStrings.t(context, c['name'] as String),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

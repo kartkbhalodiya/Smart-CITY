@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/routes.dart';
+import '../../l10n/app_strings.dart';
 
 class DepartmentsListScreen extends StatelessWidget {
   const DepartmentsListScreen({super.key});
@@ -39,11 +40,11 @@ class DepartmentsListScreen extends StatelessWidget {
             Image.asset('assets/images/logo.png', height: 32),
             const SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Departments',
+              Text(AppStrings.t(context, 'Departments'),
                   style: GoogleFonts.poppins(
                       fontSize: 16, fontWeight: FontWeight.w700,
                       color: const Color(0xFF0f172a))),
-              Text('Select a category',
+              Text(AppStrings.t(context, 'Select a category'),
                   style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
             ]),
           ]),
@@ -73,7 +74,7 @@ class DepartmentsListScreen extends StatelessWidget {
       onTap: () => Navigator.pushNamed(
         context,
         AppRoutes.departmentsByCategory,
-        arguments: {'key': cat['key'], 'name': cat['name'], 'emoji': cat['emoji'], 'bg': bg},
+        arguments: {'key': cat['key'], 'name': AppStrings.t(context, cat['name'] as String), 'emoji': cat['emoji'], 'bg': bg},
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -112,7 +113,7 @@ class DepartmentsListScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(cat['name'] as String,
+                Text(AppStrings.t(context, cat['name'] as String),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -121,7 +122,7 @@ class DepartmentsListScreen extends StatelessWidget {
                         color: const Color(0xFF0f172a))),
                 const SizedBox(height: 4),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('View departments',
+                  Text(AppStrings.t(context, 'View departments'),
                       style: GoogleFonts.inter(
                           fontSize: 11, color: const Color(0xFF1E66F5),
                           fontWeight: FontWeight.w500)),

@@ -9,6 +9,7 @@ import '../../config/routes.dart';
 import '../../providers/complaint_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
+import '../../l10n/app_strings.dart';
 import './map_selection_screen.dart';
 
 class SubmitComplaintScreen extends StatefulWidget {
@@ -347,7 +348,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     if (!_isPreviewing) {
       if (_selectedSub == null && _subcategories.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a subcategory'), backgroundColor: Colors.orange),
+          SnackBar(content: Text(AppStrings.t(context, 'Please select a subcategory')), backgroundColor: Colors.orange),
         );
         return;
       }
@@ -361,7 +362,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           final required = f['is_required'] == true;
           if ((type == 'date' || type == 'datetime-local') && required && (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${f['label']} is required'), backgroundColor: Colors.orange),
+              SnackBar(content: Text('${f['label']} ${AppStrings.t(context, 'is required')}'), backgroundColor: Colors.orange),
             );
             return;
           }
@@ -421,7 +422,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       await provider.refresh();
       
       final complaint = res['complaint'];
-      final complaintId = complaint?['complaint_number'] ?? 'N/A';
+      final complaintId = complaint?['complaint_number'] ?? AppStrings.t(context, 'N/A');
       final title = complaint?['title'] ?? _titleCtrl.text;
       final desc = complaint?['description'] ?? _descCtrl.text;
 
@@ -436,7 +437,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? 'Failed to submit'), backgroundColor: Colors.red),
+        SnackBar(content: Text(provider.error ?? AppStrings.t(context, 'Failed to submit')), backgroundColor: Colors.red),
       );
     }
   }
@@ -445,34 +446,34 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Preview Your Complaint',
+        Text(AppStrings.t(context, 'Preview Your Complaint'),
             style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
         const SizedBox(height: 4),
-        Text('Please verify your details before confirming',
+        Text(AppStrings.t(context, 'Please verify your details before confirming'),
             style: GoogleFonts.inter(fontSize: 14, color: _textMuted)),
         const SizedBox(height: 24),
         
-        _previewCard('Issue Details', [
-          ('Title', _titleCtrl.text),
-          ('Category', widget.categoryName ?? 'Other'),
-          if (_selectedSub != null) ('Subcategory', _selectedSub!['name'] as String),
-          ('Priority', _priority.toUpperCase()),
-          ('Description', _descCtrl.text),
+        _previewCard(AppStrings.t(context, 'Issue Details'), [
+          (AppStrings.t(context, 'Title'), _titleCtrl.text),
+          (AppStrings.t(context, 'Category'), widget.categoryName ?? AppStrings.t(context, 'Other')),
+          if (_selectedSub != null) (AppStrings.t(context, 'Subcategory'), _selectedSub!['name'] as String),
+          (AppStrings.t(context, 'Priority'), _priority.toUpperCase()),
+          (AppStrings.t(context, 'Description'), _descCtrl.text),
         ]),
         const SizedBox(height: 16),
         
-        _previewCard('Location', [
-          ('Address', _addressCtrl.text),
-          ('City', _selectedCity ?? 'Not Selected'),
-          ('State', _selectedState ?? 'Not Selected'),
-          ('Pincode', _pincodeCtrl.text),
+        _previewCard(AppStrings.t(context, 'Location'), [
+          (AppStrings.t(context, 'Address'), _addressCtrl.text),
+          (AppStrings.t(context, 'City'), _selectedCity ?? AppStrings.t(context, 'Not Selected')),
+          (AppStrings.t(context, 'State'), _selectedState ?? AppStrings.t(context, 'Not Selected')),
+          (AppStrings.t(context, 'Pincode'), _pincodeCtrl.text),
         ]),
         const SizedBox(height: 16),
         
-        _previewCard('Personal Info', [
-          ('Name', _nameCtrl.text),
-          ('Mobile', _mobileCtrl.text),
-          if (_emailCtrl.text.isNotEmpty) ('Email', _emailCtrl.text),
+        _previewCard(AppStrings.t(context, 'Personal Info'), [
+          (AppStrings.t(context, 'Name'), _nameCtrl.text),
+          (AppStrings.t(context, 'Mobile'), _mobileCtrl.text),
+          if (_emailCtrl.text.isNotEmpty) (AppStrings.t(context, 'Email'), _emailCtrl.text),
         ]),
         const SizedBox(height: 32),
         
@@ -488,7 +489,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             ),
             child: _submitting
                 ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                : Text('Confirm & Submit', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+                : Text(AppStrings.t(context, 'Confirm & Submit'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
           ),
         ),
         const SizedBox(height: 12),
@@ -501,7 +502,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
               side: const BorderSide(color: _primary),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text('Edit Details', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _primary)),
+            child: Text(AppStrings.t(context, 'Edit Details'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _primary)),
           ),
         ),
       ]),
@@ -537,7 +538,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     final key = widget.categoryKey ?? 'other';
     final emoji = _emojiMap[key] ?? '📋';
     final bg = _bgMap[key] ?? const Color(0xFFF8FAFC);
-    final name = widget.categoryName ?? 'Complaint';
+    final name = widget.categoryName ?? AppStrings.t(context, 'Complaint');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -566,7 +567,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     // ── Step 1: Subcategory selection ─────────────────
     if (_subcategories.isNotEmpty) {
-      sections.add(_sectionTitle((step++).toString(), 'Select Subcategory'));
+      sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Select Subcategory')));
       sections.add(const SizedBox(height: 12));
       sections.add(_subcategoryGrid());
       sections.add(const SizedBox(height: 24));
@@ -574,7 +575,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     // ── Category-level fields ──────────────────────────
     if (_categoryFields.isNotEmpty) {
-      sections.add(_sectionTitle((step++).toString(), 'Additional Information'));
+      sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Additional Information')));
       sections.add(const SizedBox(height: 12));
       sections.add(_card(child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,38 +599,38 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     }
 
     // ── Step 3: Contact Information ──────────────────
-    sections.add(_sectionTitle((step++).toString(), 'Contact Information'));
+    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Contact Information')));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _label('Full Name'),
+      _label(AppStrings.t(context, 'Full Name')),
       const SizedBox(height: 6),
       _textField(
         controller: _nameCtrl,
-        hint: 'Your full name',
-        validator: (v) => (v ?? '').trim().isEmpty ? 'Name is required' : null,
+        hint: AppStrings.t(context, 'Your full name'),
+        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Name is required') : null,
       ),
       const SizedBox(height: 16),
-      _label('Mobile Number'),
+      _label(AppStrings.t(context, 'Mobile Number')),
       const SizedBox(height: 6),
       _textField(
         controller: _mobileCtrl,
-        hint: 'Your contact number',
+        hint: AppStrings.t(context, 'Your contact number'),
         keyboard: TextInputType.phone,
-        validator: (v) => (v ?? '').trim().isEmpty ? 'Mobile number is required' : null,
+        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Mobile number is required') : null,
       ),
       const SizedBox(height: 16),
-      _label('Email Address'),
+      _label(AppStrings.t(context, 'Email Address')),
       const SizedBox(height: 6),
       _textField(
         controller: _emailCtrl,
-        hint: 'Your email address',
+        hint: AppStrings.t(context, 'Your email address'),
         keyboard: TextInputType.emailAddress,
       ),
       const SizedBox(height: 16),
-      _label('State'),
+      _label(AppStrings.t(context, 'State')),
       const SizedBox(height: 6),
       _dropdownField(
-        hint: 'Select State',
+        hint: AppStrings.t(context, 'Select State'),
         value: _selectedState,
         items: _allStates.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
         onChanged: (v) => setState(() {
@@ -640,10 +641,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       const SizedBox(height: 16),
       Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _label('City'),
+          _label(AppStrings.t(context, 'City')),
           const SizedBox(height: 6),
           _dropdownField(
-            hint: 'Select City',
+            hint: AppStrings.t(context, 'Select City'),
             value: _selectedCity,
             items: (_citiesByState[_selectedState] ?? []).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (v) => setState(() => _selectedCity = v),
@@ -651,63 +652,63 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         ])),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _label('Pincode'),
+          _label(AppStrings.t(context, 'Pincode')),
           const SizedBox(height: 6),
-          _textField(controller: _pincodeCtrl, hint: 'Pincode', keyboard: TextInputType.number),
+          _textField(controller: _pincodeCtrl, hint: AppStrings.t(context, 'Pincode'), keyboard: TextInputType.number),
         ])),
       ]),
     ])));
     sections.add(const SizedBox(height: 24));
 
     // ── Step 4: Priority & Severity ───────────────────
-    sections.add(_sectionTitle((step++).toString(), 'Set Priority'));
+    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Set Priority')));
     sections.add(const SizedBox(height: 12));
     sections.add(_prioritySelector());
     sections.add(const SizedBox(height: 24));
 
     // ── Step 5: Complaint details ─────────────────────
-    sections.add(_sectionTitle((step++).toString(), 'Complaint Details'));
+    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Complaint Details')));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _label('Title'),
+      _label(AppStrings.t(context, 'Title')),
       const SizedBox(height: 6),
       _textField(
         controller: _titleCtrl,
-        hint: 'Brief title of your complaint',
-        validator: (v) => (v ?? '').trim().isEmpty ? 'Title is required' : null,
+        hint: AppStrings.t(context, 'Brief title of your complaint'),
+        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Title is required') : null,
       ),
       const SizedBox(height: 16),
-      _label('Description'),
+      _label(AppStrings.t(context, 'Description')),
       const SizedBox(height: 6),
       _textField(
         controller: _descCtrl,
-        hint: 'Describe the issue in detail...',
+        hint: AppStrings.t(context, 'Describe the issue in detail...'),
         maxLines: 4,
-        validator: (v) => (v ?? '').trim().isEmpty ? 'Description is required' : null,
+        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Description is required') : null,
       ),
       const SizedBox(height: 16),
-      _label('Location / Address'),
+      _label(AppStrings.t(context, 'Location / Address')),
       const SizedBox(height: 6),
       _textField(
         controller: _addressCtrl,
-        hint: 'Address of the issue',
+        hint: AppStrings.t(context, 'Address of the issue'),
         maxLines: 2,
       ),
       const SizedBox(height: 12),
       _locationButtons(),
       const SizedBox(height: 16),
-      _label('Geo Coordinates (Lat, Lng)'),
+      _label(AppStrings.t(context, 'Geo Coordinates (Lat, Lng)')),
       const SizedBox(height: 6),
       _textField(
         controller: _geoCtrl,
-        hint: 'Latitude, Longitude',
+        hint: AppStrings.t(context, 'Latitude, Longitude'),
         onChanged: _updateGeoFromText,
       ),
     ])));
     sections.add(const SizedBox(height: 24));
 
     // ── Step 6: Photos ────────────────────────────────
-    sections.add(_sectionTitle((step++).toString(), 'Evidence Photos'));
+    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Evidence Photos')));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: _photoSection()));
     sections.add(const SizedBox(height: 28));
@@ -727,7 +728,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         child: _submitting
             ? const SizedBox(width: 22, height: 22,
                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-            : Text(_isPreviewing ? 'Confirm & Submit' : 'Preview Complaint',
+            : Text(_isPreviewing ? AppStrings.t(context, 'Confirm & Submit') : AppStrings.t(context, 'Preview Complaint'),
                 style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
       ),
     ));
@@ -754,7 +755,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(name, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _textDark)),
-          Text('Submit a complaint', style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
+          Text(AppStrings.t(context, 'Submit a complaint'), style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
         ]),
       ]),
     );
@@ -820,7 +821,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   // ── Dynamic fields ────────────────────────────────────────────────────────
   List<Widget> _buildDynamicFields(List<Map<String, dynamic>> fields) {
     if (fields.isEmpty) return [
-      Text('No additional fields required.',
+      Text(AppStrings.t(context, 'No additional fields required.'),
           style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
     ];
 
@@ -851,14 +852,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         }
 
         widgets.add(_dropdownField(
-          hint: 'Select $label',
+          hint: '${AppStrings.t(context, 'Select')} $label',
           value: _dynDropdown[id],
           items: options.map((o) => DropdownMenuItem(
             value: o,
             child: Text(o, style: GoogleFonts.inter(fontSize: 14, color: _textDark)),
           )).toList(),
           onChanged: (v) => setState(() => _dynDropdown[id] = v),
-          validator: required ? (v) => (v == null || v.isEmpty) ? '$label is required' : null : null,
+          validator: required ? (v) => (v == null || v.isEmpty) ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
         ));
       } else if (type == 'date' || type == 'datetime-local') {
         widgets.add(_dateField(
@@ -870,19 +871,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       } else if (type == 'textarea') {
         widgets.add(_textField(
           controller: _dynCtrl[id]!,
-          hint: 'Enter $label',
+          hint: '${AppStrings.t(context, 'Enter')} $label',
           maxLines: 3,
-          validator: required ? (v) => (v ?? '').trim().isEmpty ? '$label is required' : null : null,
+          validator: required ? (v) => (v ?? '').trim().isEmpty ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
         ));
       } else {
         widgets.add(_textField(
           controller: _dynCtrl[id]!,
-          hint: 'Enter $label',
+          hint: '${AppStrings.t(context, 'Enter')} $label',
           keyboard: type == 'number' ? TextInputType.number
               : type == 'email' ? TextInputType.emailAddress
               : type == 'tel' ? TextInputType.phone
               : TextInputType.text,
-          validator: required ? (v) => (v ?? '').trim().isEmpty ? '$label is required' : null : null,
+          validator: required ? (v) => (v ?? '').trim().isEmpty ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
         ));
       }
     }
@@ -907,7 +908,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
               size: 18, color: value != null ? _primary : _textMuted),
           const SizedBox(width: 10),
           Expanded(child: Text(
-            value ?? (withTime ? 'Select date & time' : 'Select date'),
+            value ?? (withTime ? AppStrings.t(context, 'Select date & time') : AppStrings.t(context, 'Select date')),
             style: GoogleFonts.inter(
                 fontSize: 14,
                 color: value != null ? _textDark : _textMuted),
@@ -953,12 +954,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         const SizedBox(height: 12),
       ],
       Row(children: [
-        _photoBtn(Icons.camera_alt_rounded, 'Camera', () => _pickImage(ImageSource.camera)),
+        _photoBtn(Icons.camera_alt_rounded, AppStrings.t(context, 'Camera'), () => _pickImage(ImageSource.camera)),
         const SizedBox(width: 10),
-        _photoBtn(Icons.photo_library_rounded, 'Gallery', () => _pickImage(ImageSource.gallery)),
+        _photoBtn(Icons.photo_library_rounded, AppStrings.t(context, 'Gallery'), () => _pickImage(ImageSource.gallery)),
       ]),
       const SizedBox(height: 4),
-      Text('Add photos as evidence (optional)',
+      Text(AppStrings.t(context, 'Add photos as evidence (optional)'),
           style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
     ]);
   }
@@ -1037,11 +1038,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   Widget _prioritySelector() {
     return Row(children: [
-      _priorityBtn('high', 'High', Colors.red, const Color(0xFFFEF2F2)),
+      _priorityBtn('high', AppStrings.t(context, 'High'), Colors.red, const Color(0xFFFEF2F2)),
       const SizedBox(width: 10),
-      _priorityBtn('medium', 'Medium', Colors.orange, const Color(0xFFFFF7ED)),
+      _priorityBtn('medium', AppStrings.t(context, 'Medium'), Colors.orange, const Color(0xFFFFF7ED)),
       const SizedBox(width: 10),
-      _priorityBtn('normal', 'Normal', Colors.green, const Color(0xFFF0FDF4)),
+      _priorityBtn('normal', AppStrings.t(context, 'Normal'), Colors.green, const Color(0xFFF0FDF4)),
     ]);
   }
 
@@ -1073,11 +1074,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   Widget _locationButtons() {
     return Row(children: [
       Expanded(
-        child: _smallBtn(Icons.my_location_rounded, 'Detect Location', _detectLocation),
+        child: _smallBtn(Icons.my_location_rounded, AppStrings.t(context, 'Detect Location'), _detectLocation),
       ),
       const SizedBox(width: 10),
       Expanded(
-        child: _smallBtn(Icons.map_outlined, 'Select on Map', _selectOnMap),
+        child: _smallBtn(Icons.map_outlined, AppStrings.t(context, 'Select on Map'), _selectOnMap),
       ),
     ]);
   }

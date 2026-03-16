@@ -5,6 +5,7 @@ import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
+import '../../l10n/app_strings.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -91,7 +92,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       child: Row(children: [
         Image.asset('assets/images/logo.png', height: 36),
         const SizedBox(width: 10),
-        Text('Smart City',
+        Text(AppStrings.t(context, 'Smart City'),
             style: GoogleFonts.poppins(
                 fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const Spacer(),
@@ -158,7 +159,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Widget _tabNav() {
-    final tabs = ['Home', 'Submit'];
+    final tabs = [AppStrings.t(context, 'Home'), AppStrings.t(context, 'Submit')];
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(6),
@@ -226,15 +227,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           const SizedBox(width: 16),
           Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Welcome back! 👋',
+            Text(AppStrings.t(context, 'Welcome back! 👋'),
                 style: GoogleFonts.poppins(
                     fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.9))),
             const SizedBox(height: 2),
-            Text(user?.fullName ?? 'User',
+            Text(user?.fullName ?? AppStrings.t(context, 'User'),
                 style: GoogleFonts.poppins(
                     fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
             const SizedBox(height: 2),
-            Text('Track your complaints and view city statistics.',
+            Text(AppStrings.t(context, 'Track your complaints and view city statistics.'),
                 style: GoogleFonts.inter(
                     fontSize: 12, color: Colors.white.withOpacity(0.85))),
           ])),
@@ -244,7 +245,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
       // Live Stats — real data without blur
       Row(children: [
-        Text('Live Stats',
+        Text(AppStrings.t(context, 'Live Stats'),
             style: GoogleFonts.poppins(
                 fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const SizedBox(width: 8),
@@ -259,7 +260,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       const SizedBox(height: 24),
 
       // Departments
-      Text('Departments',
+      Text(AppStrings.t(context, 'Departments'),
           style: GoogleFonts.poppins(
               fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
       const SizedBox(height: 12),
@@ -310,7 +311,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   const Icon(Icons.notifications, color: Color(0xFF1E66F5), size: 24),
                   const SizedBox(width: 12),
                   Text(
-                    'Notifications',
+                    AppStrings.t(context, 'Notifications'),
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -374,7 +375,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ),
                     ),
                     child: Text(
-                      'Clear All Notifications',
+                      AppStrings.t(context, 'Clear All Notifications'),
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -432,7 +433,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              notification['title'] as String,
+                              AppStrings.t(context, notification['title'] as String),
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -453,7 +454,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        notification['message'] as String,
+                        AppStrings.t(context, notification['message'] as String),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: const Color(0xFF64748b),
@@ -462,7 +463,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        notification['time'] as String,
+                        AppStrings.t(context, notification['time'] as String),
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: const Color(0xFF94A3B8),
@@ -492,7 +493,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No notifications yet',
+            AppStrings.t(context, 'No notifications yet'),
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -501,7 +502,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'We\'ll notify you about complaint updates',
+            AppStrings.t(context, 'We\'ll notify you about complaint updates'),
             style: GoogleFonts.inter(
               fontSize: 14,
               color: const Color(0xFF64748b),
@@ -533,10 +534,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       final now = DateTime.now();
       final diff = now.difference(date);
       
-      if (diff.inDays > 0) return '${diff.inDays}d ago';
-      if (diff.inHours > 0) return '${diff.inHours}h ago';
-      if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-      return 'Just now';
+      if (diff.inDays > 0) return '${diff.inDays}${AppStrings.t(context, 'd ago')}';
+      if (diff.inHours > 0) return '${diff.inHours}${AppStrings.t(context, 'h ago')}';
+      if (diff.inMinutes > 0) return '${diff.inMinutes}${AppStrings.t(context, 'm ago')}';
+      return AppStrings.t(context, 'Just now');
     } catch (e) {
       return dateStr;
     }
@@ -544,10 +545,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   Widget _statsGrid(dynamic stats, bool isLoading) {
     final items = [
-      {'emoji': '📊', 'label': 'Total Complaints', 'count': stats?.totalComplaints ?? 0, 'color': const Color(0xFFEEF2FF)},
-      {'emoji': '⏳', 'label': 'Pending', 'count': stats?.pendingComplaints ?? 0, 'color': const Color(0xFFFFF1F2)},
-      {'emoji': '✅', 'label': 'Solved', 'count': stats?.resolvedComplaints ?? 0, 'color': const Color(0xFFF0FDF4)},
-      {'emoji': '🔄', 'label': 'In Progress', 'count': stats?.inProgressComplaints ?? 0, 'color': const Color(0xFFEFF6FF)},
+      {'emoji': '📊', 'label': AppStrings.t(context, 'Total Complaints'), 'count': stats?.totalComplaints ?? 0, 'color': const Color(0xFFEEF2FF)},
+      {'emoji': '⏳', 'label': AppStrings.t(context, 'Pending'), 'count': stats?.pendingComplaints ?? 0, 'color': const Color(0xFFFFF1F2)},
+      {'emoji': '✅', 'label': AppStrings.t(context, 'Solved'), 'count': stats?.resolvedComplaints ?? 0, 'color': const Color(0xFFF0FDF4)},
+      {'emoji': '🔄', 'label': AppStrings.t(context, 'In Progress'), 'count': stats?.inProgressComplaints ?? 0, 'color': const Color(0xFFEFF6FF)},
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -590,9 +591,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   Widget _departmentsGrid() {
     final depts = [
-      {'emoji': '🚓', 'name': 'Police', 'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': 'Traffic', 'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': 'Construction', 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'), 'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'), 'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'), 'bg': const Color(0xFFF0F9FF)},
     ];
     return Column(children: [
       Row(
@@ -633,7 +634,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.25)),
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('View All Departments',
+            Text(AppStrings.t(context, 'View All Departments'),
                 style: GoogleFonts.poppins(
                     fontSize: 13, fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E66F5))),
@@ -647,25 +648,25 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   Widget _submitTab() {
     final categories = [
-      {'emoji': '🚓', 'name': 'Police',          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': 'Traffic',         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': 'Construction',    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🚰', 'name': 'Water Supply',    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '💡', 'name': 'Electricity',     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
-      {'emoji': '🗑️', 'name': 'Garbage',         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
-      {'emoji': '🛣️', 'name': 'Road / Pothole',  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
-      {'emoji': '🌊', 'name': 'Drainage',        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
-      {'emoji': '⚠️', 'name': 'Illegal Activity','key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
-      {'emoji': '🚌', 'name': 'Transportation',  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🛡️', 'name': 'Cyber Crime',     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
-      {'emoji': '📋', 'name': 'Other',           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
+      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'),          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'),         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'),    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚰', 'name': AppStrings.t(context, 'Water Supply'),    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '💡', 'name': AppStrings.t(context, 'Electricity'),     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
+      {'emoji': '🗑️', 'name': AppStrings.t(context, 'Garbage'),         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
+      {'emoji': '🛣️', 'name': AppStrings.t(context, 'Road / Pothole'),  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
+      {'emoji': '🌊', 'name': AppStrings.t(context, 'Drainage'),        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
+      {'emoji': '⚠️', 'name': AppStrings.t(context, 'Illegal Activity'),'key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
+      {'emoji': '🚌', 'name': AppStrings.t(context, 'Transportation'),  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🛡️', 'name': AppStrings.t(context, 'Cyber Crime'),     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
+      {'emoji': '📋', 'name': AppStrings.t(context, 'Other'),           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Submit a Complaint',
+      Text(AppStrings.t(context, 'Submit a Complaint'),
           style: GoogleFonts.poppins(
               fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
       const SizedBox(height: 4),
-      Text('Choose a category to report an issue',
+      Text(AppStrings.t(context, 'Choose a category to report an issue'),
           style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
       const SizedBox(height: 20),
       GridView.count(
@@ -733,10 +734,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   Widget _bottomNav() {
     final items = [
-      {'emoji': '🏠', 'label': 'Home'},
-      {'emoji': '📝', 'label': 'Submit'},
-      {'emoji': '🔍', 'label': 'Track'},
-      {'emoji': '👤', 'label': 'Profile'},
+      {'emoji': '🏠', 'label': AppStrings.t(context, 'Home')},
+      {'emoji': '📝', 'label': AppStrings.t(context, 'Submit')},
+      {'emoji': '🔍', 'label': AppStrings.t(context, 'Track')},
+      {'emoji': '👤', 'label': AppStrings.t(context, 'Profile')},
     ];
     return Container(
       decoration: const BoxDecoration(

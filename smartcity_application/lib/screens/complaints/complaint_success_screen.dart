@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/routes.dart';
+import '../../l10n/app_strings.dart';
 
 class ComplaintSuccessScreen extends StatelessWidget {
   final String complaintId;
@@ -52,7 +53,7 @@ class ComplaintSuccessScreen extends StatelessWidget {
               const SizedBox(height: 32),
               
               Text(
-                'Complaint Submitted Successfully!',
+                AppStrings.t(context, 'Complaint Submitted Successfully!'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 22,
@@ -63,7 +64,7 @@ class ComplaintSuccessScreen extends StatelessWidget {
               const SizedBox(height: 12),
               
               Text(
-                'Thank you for your report. Your issue has been registered and assigned to the relevant department.',
+                AppStrings.t(context, 'Thank you for your report. Your issue has been registered and assigned to the relevant department.'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 14,
@@ -85,11 +86,11 @@ class ComplaintSuccessScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _detailRow('Complaint ID', complaintId, isHighlight: true),
+                    _detailRow(AppStrings.t(context, 'Complaint ID'), complaintId, isHighlight: true),
                     const Divider(height: 24, color: Color(0xFFE2E8F0)),
-                    _detailRow('Title', title),
+                    _detailRow(AppStrings.t(context, 'Title'), title),
                     const SizedBox(height: 16),
-                    _detailRow('Description', description, maxLines: 3),
+                    _detailRow(AppStrings.t(context, 'Description'), description, maxLines: 3),
                   ],
                 ),
               ),
@@ -109,7 +110,7 @@ class ComplaintSuccessScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Please keep the Complaint ID safe. Use it to track your complaint status in the "Track Complaint" section.',
+                        AppStrings.t(context, 'Please keep the Complaint ID safe. Use it to track your complaint status in the "Track Complaint" section.'),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: textDark,
@@ -144,7 +145,7 @@ class ComplaintSuccessScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'OK',
+                    AppStrings.t(context, 'OK'),
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

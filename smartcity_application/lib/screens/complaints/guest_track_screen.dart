@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_strings.dart';
 
 class GuestTrackScreen extends StatefulWidget {
   const GuestTrackScreen({super.key});
@@ -41,7 +42,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
 
   Future<void> _track() async {
     if (_complaintCtrl.text.trim().isEmpty || _phoneCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Please enter both complaint ID and mobile number');
+      setState(() => _error = AppStrings.t(context, 'Please enter both complaint ID and mobile number'));
       return;
     }
     setState(() { _isLoading = true; _error = null; _complaint = null; });
@@ -55,7 +56,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
       if (res['success'] == true) {
         _complaint = res['complaint'] as Map<String, dynamic>;
       } else {
-        _error = res['message'] ?? 'Complaint not found';
+        _error = res['message'] ?? AppStrings.t(context, 'Complaint not found');
       }
     });
   }
@@ -106,15 +107,15 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                     // Logo + heading
                     Image.asset('assets/images/logo.png', height: 60),
                     const SizedBox(height: 6),
-                    Text('COMPLAINT MANAGEMENT SYSTEM', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
+                    Text(AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
                     const SizedBox(height: 8),
-                    Text('Track Your Complaint', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                    Text(AppStrings.t(context, 'Track Your Complaint'), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
                     const SizedBox(height: 24),
 
                     // Complaint ID field
-                    _inputField(_complaintCtrl, 'Enter Complaint ID', Icons.tag),
+                    _inputField(_complaintCtrl, AppStrings.t(context, 'Enter Complaint ID'), Icons.tag),
                     const SizedBox(height: 12),
-                    _inputField(_phoneCtrl, 'Enter Mobile Number', Icons.phone_outlined, type: TextInputType.phone),
+                    _inputField(_phoneCtrl, AppStrings.t(context, 'Enter Mobile Number'), Icons.phone_outlined, type: TextInputType.phone),
                     const SizedBox(height: 16),
 
                     // Track button
@@ -135,7 +136,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                           ),
                           child: _isLoading
                               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : Text('TRACK COMPLAINT', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: Colors.white)),
+                              : Text(AppStrings.t(context, 'TRACK COMPLAINT'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: Colors.white)),
                         ),
                       ),
                     ),
@@ -146,7 +147,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       const Expanded(child: Divider(color: Color(0x1A000000))),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('OR', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF64748b))),
+                        child: Text(AppStrings.t(context, 'OR'), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF64748b))),
                       ),
                       const Expanded(child: Divider(color: Color(0x1A000000))),
                     ]),
@@ -156,9 +157,9 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR Scanner feature coming soon!'))),
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.t(context, 'QR Scanner feature coming soon!')))),
                         icon: const Icon(Icons.qr_code_scanner, size: 18, color: Color(0xFF1E66F5)),
-                        label: Text('Scan Complaint QR', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
+                        label: Text(AppStrings.t(context, 'Scan Complaint QR'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           side: const BorderSide(color: Color(0xFFe2e8f0), width: 1.5),
@@ -173,7 +174,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       const SizedBox(height: 24),
                       const Divider(color: Color(0x0D000000)),
                       const SizedBox(height: 16),
-                      Text('Complaint Status', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+                      Text(AppStrings.t(context, 'Complaint Status'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
                       const SizedBox(height: 16),
                       _infoGrid(_complaint!),
                       const SizedBox(height: 20),
@@ -189,7 +190,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         const Icon(Icons.arrow_back, size: 14, color: Color(0xFF1E66F5)),
                         const SizedBox(width: 6),
-                        Text('Back to Home', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
+                        Text(AppStrings.t(context, 'Back to Home'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
                       ]),
                     ),
                   ]),
@@ -210,7 +211,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Complaint Location', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+        Text(AppStrings.t(context, 'Complaint Location'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
         const SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -257,14 +258,14 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
 
   Widget _infoGrid(Map<String, dynamic> c) {
     final items = [
-      ('Complaint ID', '#${c['complaint_number']}'),
-      ('Category', c['complaint_type'] ?? ''),
-      if (c['assigned_department'] != null) ('Assigned To', c['assigned_department']),
-      ('Location', '${c['city']}, ${c['pincode']}'),
-      ('Date Submitted', c['created_at'] ?? ''),
-      ('Contact Person', c['contact_name'] ?? ''),
-      ('Mobile', c['mobile'] ?? ''),
-      ('Email', c['email'] ?? ''),
+      (AppStrings.t(context, 'Complaint ID'), '#${c['complaint_number']}'),
+      (AppStrings.t(context, 'Category'), c['complaint_type'] ?? ''),
+      if (c['assigned_department'] != null) (AppStrings.t(context, 'Assigned To'), c['assigned_department']),
+      (AppStrings.t(context, 'Location'), '${c['city']}, ${c['pincode']}'),
+      (AppStrings.t(context, 'Date Submitted'), c['created_at'] ?? ''),
+      (AppStrings.t(context, 'Contact Person'), c['contact_name'] ?? ''),
+      (AppStrings.t(context, 'Mobile'), c['mobile'] ?? ''),
+      (AppStrings.t(context, 'Email'), c['email'] ?? ''),
     ];
     return Column(
       children: items.map((item) => Container(
@@ -282,10 +283,10 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
 
   Widget _timeline(String status, Map<String, dynamic> c) {
     final steps = [
-      _TimelineStep('Pending', Icons.circle_outlined, _isCompleted(status, 'pending'), _statusColor('pending'), c['created_at'] ?? ''),
-      _TimelineStep('Confirmed', Icons.check_circle_outline, _isCompleted(status, 'confirmed'), _statusColor('confirmed'), _isCompleted(status, 'confirmed') ? (c['updated_at'] ?? 'Pending') : 'Pending'),
-      _TimelineStep('In Progress', Icons.autorenew, _isCompleted(status, 'process'), _statusColor('process'), _isCompleted(status, 'process') ? (c['updated_at'] ?? 'Pending') : 'Pending'),
-      _TimelineStep(status == 'reopened' ? 'Reopened' : 'Resolved', status == 'reopened' ? Icons.refresh : Icons.check_circle_outline, _isCompleted(status, 'solved'), _statusColor(status == 'reopened' ? 'reopened' : 'solved'), _isCompleted(status, 'solved') ? (c['updated_at'] ?? 'Pending') : 'Pending'),
+      _TimelineStep(AppStrings.t(context, 'Pending'), Icons.circle_outlined, _isCompleted(status, 'pending'), _statusColor('pending'), c['created_at'] ?? ''),
+      _TimelineStep(AppStrings.t(context, 'Confirmed'), Icons.check_circle_outline, _isCompleted(status, 'confirmed'), _statusColor('confirmed'), _isCompleted(status, 'confirmed') ? (c['updated_at'] ?? AppStrings.t(context, 'Pending')) : AppStrings.t(context, 'Pending')),
+      _TimelineStep(AppStrings.t(context, 'In Progress'), Icons.autorenew, _isCompleted(status, 'process'), _statusColor('process'), _isCompleted(status, 'process') ? (c['updated_at'] ?? AppStrings.t(context, 'Pending')) : AppStrings.t(context, 'Pending')),
+      _TimelineStep(status == 'reopened' ? AppStrings.t(context, 'Reopened') : AppStrings.t(context, 'Resolved'), status == 'reopened' ? Icons.refresh : Icons.check_circle_outline, _isCompleted(status, 'solved'), _statusColor(status == 'reopened' ? 'reopened' : 'solved'), _isCompleted(status, 'solved') ? (c['updated_at'] ?? AppStrings.t(context, 'Pending')) : AppStrings.t(context, 'Pending')),
     ];
 
     return Column(

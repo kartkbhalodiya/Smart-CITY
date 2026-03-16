@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
+import '../l10n/app_strings.dart';
 
 class _MapPatternPainter extends CustomPainter {
   @override
@@ -118,9 +119,9 @@ class _MapLoadingOverlayState extends State<_MapLoadingOverlay>
               const SizedBox(height: 14),
               Opacity(
                 opacity: _pulse.value,
-                child: const Text(
-                  'Loading map…',
-                  style: TextStyle(
+                child: Text(
+                  AppStrings.t(context, 'Loading map…'),
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF1E66F5),
@@ -174,13 +175,13 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
       body: Stack(
         children: [
           complaint.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      SizedBox(height: 16),
-                      Text('No complaint data available', style: TextStyle(fontSize: 18)),
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(AppStrings.t(context, 'No complaint data available'), style: const TextStyle(fontSize: 18)),
                     ],
                   ),
                 )
@@ -429,7 +430,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   _mapBtn(
                     icon: Icons.report,
                     color: const Color(0xFFEF4444),
-                    tooltip: 'Complaint',
+                    tooltip: AppStrings.t(context, 'Complaint'),
                     onTap: () => _mapController.move(LatLng(lat, lng), 15),
                   ),
                 if (hasComplaintCoords) const SizedBox(height: 6),
@@ -438,7 +439,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   _mapBtn(
                     icon: Icons.business,
                     color: const Color(0xFF1E66F5),
-                    tooltip: 'Department',
+                    tooltip: AppStrings.t(context, 'Department'),
                     onTap: () => _mapController.move(LatLng(deptLat, deptLng), 15),
                   ),
                 if (hasDeptCoords && hasComplaintCoords) const SizedBox(height: 6),
@@ -446,7 +447,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 if (hasComplaintCoords && hasDeptCoords)
                   _mapBtn(
                     icon: Icons.fit_screen,
-                    tooltip: 'Fit both',
+                    tooltip: AppStrings.t(context, 'Fit both'),
                     onTap: () {
                       _mapController.fitCamera(
                         CameraFit.bounds(
@@ -473,9 +474,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               ),
               child: Row(
                 children: [
-                  _legendDot(const Color(0xFFEF4444), 'Complaint'),
+                  _legendDot(const Color(0xFFEF4444), AppStrings.t(context, 'Complaint')),
                   const SizedBox(width: 12),
-                  if (hasDeptCoords) _legendDot(const Color(0xFF1E66F5), 'Department'),
+                  if (hasDeptCoords) _legendDot(const Color(0xFF1E66F5), AppStrings.t(context, 'Department')),
                   const Spacer(),
                   if (distance > 0)
                     Text(
@@ -492,12 +493,12 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                           color: const Color(0xFF1E66F5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.directions, color: Colors.white, size: 14),
-                            SizedBox(width: 4),
-                            Text('Directions', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                            const Icon(Icons.directions, color: Colors.white, size: 14),
+                            const SizedBox(width: 4),
+                            Text(AppStrings.t(context, 'Directions'), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -576,9 +577,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      complaint['title']?.isNotEmpty == true 
-                          ? complaint['title'].toString().toUpperCase() 
-                          : 'COMPLAINT DETAILS',
+                      complaint['title']?.isNotEmpty == true
+                          ? complaint['title'].toString().toUpperCase()
+                          : AppStrings.t(context, 'Complaint Details').toUpperCase(),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -597,7 +598,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                         ),
                       ),
                       child: Text(
-                        '${complaint['complaint_type']?.toString().toUpperCase() ?? 'GENERAL'} COMPLAINT',
+                        '${complaint['complaint_type']?.toString().toUpperCase() ?? AppStrings.t(context, 'General').toUpperCase()} ${AppStrings.t(context, 'Complaint').toUpperCase()}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -617,7 +618,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            '${complaint['city'] ?? 'VADODARA'}, ${complaint['state'] ?? 'GUJARAT'}',
+                            '${complaint['city'] ?? AppStrings.t(context, 'Unknown')}, ${complaint['state'] ?? AppStrings.t(context, 'Unknown')}',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF6B7280),
@@ -690,21 +691,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Interactive Map',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Interactive Map'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Tap and drag to explore locations',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Tap and drag to explore locations'),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
@@ -805,9 +806,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                         ),
                                       ],
                                     ),
-                                    child: const Text(
-                                      'Complaint Location',
-                                      style: TextStyle(
+                                    child: Text(
+                                      AppStrings.t(context, 'Complaint Location'),
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -844,9 +845,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                         ),
                                       ],
                                     ),
-                                    child: const Text(
-                                      'Department',
-                                      style: TextStyle(
+                                    child: Text(
+                                      AppStrings.t(context, 'Department'),
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -1008,7 +1009,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          'Lat: ${lat.toStringAsFixed(4)}, Lng: ${lng.toStringAsFixed(4)}',
+                                          '${AppStrings.t(context, 'Lat')}: ${lat.toStringAsFixed(4)}, ${AppStrings.t(context, 'Lng')}: ${lng.toStringAsFixed(4)}',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Color(0xFF6B7280),
@@ -1017,17 +1018,17 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                       ],
                                     ),
                                   ] else ...[
-                                    const Row(
+                                    Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.gps_off,
                                           size: 16,
                                           color: Color(0xFF9CA3AF),
                                         ),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'GPS coordinates not available',
-                                          style: TextStyle(
+                                          AppStrings.t(context, 'GPS coordinates not available'),
+                                          style: const TextStyle(
                                             fontSize: 12,
                                             color: Color(0xFF9CA3AF),
                                           ),
@@ -1047,18 +1048,18 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                               color: const Color(0xFF2B6CF6),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
-                                            child: const Row(
+                                            child: Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                Icon(
+                                                const Icon(
                                                   Icons.open_in_new,
                                                   color: Colors.white,
                                                   size: 16,
                                                 ),
-                                                SizedBox(width: 6),
+                                                const SizedBox(width: 6),
                                                 Text(
-                                                  'Open in Maps',
-                                                  style: TextStyle(
+                                                  AppStrings.t(context, 'Open in Maps'),
+                                                  style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w600,
@@ -1079,18 +1080,18 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                               color: const Color(0xFF10B981),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
-                                            child: const Row(
+                                            child: Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                Icon(
+                                                const Icon(
                                                   Icons.directions,
                                                   color: Colors.white,
                                                   size: 16,
                                                 ),
-                                                SizedBox(width: 6),
+                                                const SizedBox(width: 6),
                                                 Text(
-                                                  'Directions',
-                                                  style: TextStyle(
+                                                  AppStrings.t(context, 'Directions'),
+                                                  style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w600,
@@ -1162,7 +1163,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         border: Border.all(color: color),
       ),
       child: Text(
-        text,
+        AppStrings.t(context, text),
         style: TextStyle(
           color: color,
           fontSize: 12,
@@ -1212,8 +1213,8 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     List<Map<String, dynamic>> steps = [
       {
         'key': 'pending',
-        'title': 'Submitted',
-        'subtitle': 'Complaint received',
+        'title': AppStrings.t(context, 'Submitted'),
+        'subtitle': AppStrings.t(context, 'Complaint received'),
         'icon': Icons.assignment_turned_in,
         'color': const Color(0xFFEAB308),
         'time': _formatDateTime(createdAt),
@@ -1224,8 +1225,8 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     if (status == 'rejected') {
       steps.add({
         'key': 'rejected',
-        'title': 'Rejected',
-        'subtitle': 'Complaint rejected',
+        'title': AppStrings.t(context, 'Rejected'),
+        'subtitle': AppStrings.t(context, 'Complaint rejected'),
         'icon': Icons.cancel,
         'color': const Color(0xFFEF4444),
         'time': _getStatusTime(status, 'rejected'),
@@ -1234,24 +1235,24 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
       steps.addAll([
         {
           'key': 'confirmed',
-          'title': 'Confirmed',
-          'subtitle': 'Under review',
+          'title': AppStrings.t(context, 'Confirmed'),
+          'subtitle': AppStrings.t(context, 'Under review'),
           'icon': Icons.verified,
           'color': const Color(0xFF3B82F6),
           'time': _getStatusTime(status, 'confirmed'),
         },
         {
           'key': 'process',
-          'title': 'In Progress',
-          'subtitle': 'Being resolved',
+          'title': AppStrings.t(context, 'In Progress'),
+          'subtitle': AppStrings.t(context, 'Being resolved'),
           'icon': Icons.engineering,
           'color': const Color(0xFF8B5CF6),
           'time': _getStatusTime(status, 'process'),
         },
         {
           'key': 'solved',
-          'title': 'Resolved',
-          'subtitle': 'Complaint solved',
+          'title': AppStrings.t(context, 'Resolved'),
+          'subtitle': AppStrings.t(context, 'Complaint solved'),
           'icon': Icons.check_circle,
           'color': const Color(0xFF10B981),
           'time': _getStatusTime(status, 'solved'),
@@ -1263,8 +1264,8 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     if (status == 'reopened') {
       steps.add({
         'key': 'reopened',
-        'title': 'Reopened',
-        'subtitle': 'Complaint reopened for review',
+        'title': AppStrings.t(context, 'Reopened'),
+        'subtitle': AppStrings.t(context, 'Complaint reopened for review'),
         'icon': Icons.refresh,
         'color': const Color(0xFFFF6B35),
         'time': _getStatusTime(status, 'reopened'),
@@ -1304,21 +1305,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Progress Timeline',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Progress Timeline'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Track your complaint status',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Track your complaint status'),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
@@ -1472,21 +1473,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Complaint Details',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Complaint Details'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Complete information',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Complete information'),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
@@ -1499,33 +1500,33 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             const SizedBox(height: 16),
             _buildDetailItem(
               icon: Icons.title,
-              label: 'Title',
-              value: complaint['title'] ?? 'No title',
+              label: AppStrings.t(context, 'Title'),
+              value: complaint['title'] ?? AppStrings.t(context, 'No title'),
               color: const Color(0xFF3B82F6),
             ),
             _buildDetailItem(
               icon: Icons.category,
-              label: 'Category',
-              value: complaint['complaint_type'] ?? 'Unknown',
+              label: AppStrings.t(context, 'Category'),
+              value: complaint['complaint_type'] ?? AppStrings.t(context, 'Unknown'),
               color: const Color(0xFF8B5CF6),
             ),
             _buildDetailItem(
               icon: Icons.description,
-              label: 'Description',
-              value: complaint['description'] ?? 'No description',
+              label: AppStrings.t(context, 'Description'),
+              value: complaint['description'] ?? AppStrings.t(context, 'No description'),
               color: const Color(0xFF10B981),
               isLongText: true,
             ),
             _buildDetailItem(
               icon: Icons.location_on,
-              label: 'Address',
-              value: complaint['address'] ?? 'No address',
+              label: AppStrings.t(context, 'Address'),
+              value: complaint['address'] ?? AppStrings.t(context, 'No address'),
               color: const Color(0xFFEF4444),
               isLongText: true,
             ),
             _buildDetailItem(
               icon: Icons.access_time,
-              label: 'Submitted',
+              label: AppStrings.t(context, 'Submitted'),
               value: _formatDateTime(complaint['created_at'] ?? ''),
               color: const Color(0xFFEAB308),
             ),
@@ -1569,21 +1570,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Personal Information',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Personal Information'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Complainant details',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Complainant details'),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
@@ -1596,20 +1597,20 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             const SizedBox(height: 16),
             _buildDetailItem(
               icon: Icons.person_outline,
-              label: 'Name',
-              value: complaint['user_name'] ?? 'Anonymous',
+              label: AppStrings.t(context, 'Name'),
+              value: complaint['user_name'] ?? AppStrings.t(context, 'Anonymous'),
               color: const Color(0xFF8B5CF6),
             ),
             _buildDetailItem(
               icon: Icons.email,
-              label: 'Email',
-              value: complaint['user_email'] ?? 'Not provided',
+              label: AppStrings.t(context, 'Email'),
+              value: complaint['user_email'] ?? AppStrings.t(context, 'Not provided'),
               color: const Color(0xFF3B82F6),
             ),
             _buildDetailItem(
               icon: Icons.phone,
-              label: 'Phone',
-              value: complaint['user_phone'] ?? 'Not provided',
+              label: AppStrings.t(context, 'Mobile'),
+              value: complaint['user_phone'] ?? AppStrings.t(context, 'Not provided'),
               color: const Color(0xFF10B981),
             ),
           ],
@@ -1652,21 +1653,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Assigned Department',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Assigned Department'),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Contact information',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Contact information'),
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF6B7280),
                         ),
@@ -1679,20 +1680,20 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             const SizedBox(height: 20),
             _buildDetailItem(
               icon: Icons.business_center,
-              label: 'Department',
-              value: department['name'] ?? 'Not assigned',
+              label: AppStrings.t(context, 'Department'),
+              value: department['name'] ?? AppStrings.t(context, 'Not assigned'),
               color: const Color(0xFF10B981),
             ),
             _buildDetailItem(
               icon: Icons.email,
-              label: 'Email',
-              value: department['email'] ?? 'Not provided',
+              label: AppStrings.t(context, 'Email'),
+              value: department['email'] ?? AppStrings.t(context, 'Not provided'),
               color: const Color(0xFF3B82F6),
             ),
             _buildDetailItem(
               icon: Icons.phone,
-              label: 'Phone',
-              value: department['phone'] ?? 'Not provided',
+              label: AppStrings.t(context, 'Mobile'),
+              value: department['phone'] ?? AppStrings.t(context, 'Not provided'),
               color: const Color(0xFFF59E0B),
             ),
             const SizedBox(height: 16),
@@ -1702,7 +1703,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   child: ElevatedButton.icon(
                     onPressed: () => _makeCall(department['phone'] ?? ''),
                     icon: const Icon(Icons.phone, size: 18),
-                    label: const Text('Call'),
+                    label: Text(AppStrings.t(context, 'Call')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
@@ -1718,7 +1719,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   child: OutlinedButton.icon(
                     onPressed: () => _sendEmail(department['email'] ?? ''),
                     icon: const Icon(Icons.email, size: 18),
-                    label: const Text('Email'),
+                    label: Text(AppStrings.t(context, 'Email')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF3B82F6),
                       side: const BorderSide(color: Color(0xFF3B82F6)),
@@ -1822,21 +1823,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Rate This Resolution',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Rate This Resolution'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Help us improve our service',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Help us improve our service'),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
                         ),
@@ -1859,9 +1860,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Complaint Summary:',
-                    style: TextStyle(
+                  Text(
+                    AppStrings.t(context, 'Complaint Summary:'),
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF6B7280),
@@ -1869,7 +1870,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    complaint['title'] ?? 'No title',
+                    complaint['title'] ?? AppStrings.t(context, 'No title'),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -1878,7 +1879,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    complaint['complaint_type'] ?? 'Unknown type',
+                    complaint['complaint_type'] ?? AppStrings.t(context, 'Unknown type'),
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF6B7280),
@@ -1889,9 +1890,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             ),
             const SizedBox(height: 16),
             
-            const Text(
-              'How satisfied are you with the resolution?',
-              style: TextStyle(
+            Text(
+              AppStrings.t(context, 'How satisfied are you with the resolution?'),
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1F2937),
@@ -1928,7 +1929,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _selectedRating > 0 ? _getRatingText(_selectedRating) : 'Tap stars to rate',
+                    _selectedRating > 0 ? _getRatingText(_selectedRating) : AppStrings.t(context, 'Tap stars to rate'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1941,9 +1942,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             const SizedBox(height: 16),
             
             // Comment Section
-            const Text(
-              'Additional Comments (Optional):',
-              style: TextStyle(
+            Text(
+              AppStrings.t(context, 'Additional Comments (Optional):'),
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1F2937),
@@ -1958,14 +1959,14 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               child: TextField(
                 controller: _commentController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Share your experience or suggestions...',
-                  hintStyle: TextStyle(
+                decoration: InputDecoration(
+                  hintText: AppStrings.t(context, 'Share your experience or suggestions...'),
+                  hintStyle: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF9CA3AF),
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
+                  contentPadding: const EdgeInsets.all(16),
                 ),
               ),
             ),
@@ -1995,9 +1996,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Submit Rating',
-                        style: TextStyle(
+                    : Text(
+                        AppStrings.t(context, 'Submit Rating'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -2012,11 +2013,11 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   
   String _getRatingText(int rating) {
     switch (rating) {
-      case 1: return 'Poor';
-      case 2: return 'Fair';
-      case 3: return 'Good';
-      case 4: return 'Very Good';
-      case 5: return 'Excellent';
+      case 1: return AppStrings.t(context, 'Poor');
+      case 2: return AppStrings.t(context, 'Fair');
+      case 3: return AppStrings.t(context, 'Good');
+      case 4: return AppStrings.t(context, 'Very Good');
+      case 5: return AppStrings.t(context, 'Excellent');
       default: return '';
     }
   }
@@ -2059,21 +2060,21 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Your Rating',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Your Rating'),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
                       ),
                       Text(
-                        'Thank you for your feedback',
-                        style: TextStyle(
+                        AppStrings.t(context, 'Thank you for your feedback'),
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF6B7280),
                         ),
@@ -2095,7 +2096,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 }),
                 const SizedBox(width: 12),
                 Text(
-                  '$rating/5 Stars',
+                  '$rating/5 ${AppStrings.t(context, 'Stars')}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -2115,9 +2116,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Your Comment:',
-                      style: TextStyle(
+                    Text(
+                      AppStrings.t(context, 'Your Comment:'),
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF6B7280),
@@ -2149,9 +2150,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         child: ElevatedButton.icon(
           onPressed: () => setState(() => _showReopenDialog = true),
           icon: const Icon(Icons.refresh, size: 20),
-          label: const Text(
-            'Reopen Complaint',
-            style: TextStyle(
+          label: Text(
+            AppStrings.t(context, 'Reopen Complaint'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -2188,9 +2189,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Reopen Complaint',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                Text(
+                  AppStrings.t(context, 'Reopen Complaint'),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
                 ),
                 IconButton(
                   onPressed: () => setState(() => _showReopenDialog = false),
@@ -2206,12 +2207,12 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
               ),
               child: Text(
-                'Complaint #${widget.complaint['complaint_number'] ?? 'Unknown'}',
+                '${AppStrings.t(context, 'Complaint ID')} #${widget.complaint['complaint_number'] ?? AppStrings.t(context, 'Unknown')}',
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFEF4444)),
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Reason for reopening:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937))),
+            Text(AppStrings.t(context, 'Reason for reopening:'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937))),
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE5E7EB))),
@@ -2219,16 +2220,16 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 controller: _reopenReasonController,
                 maxLines: 4,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: 'Describe the issue in detail...',
-                  hintStyle: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                decoration: InputDecoration(
+                  hintText: AppStrings.t(context, 'Describe the issue in detail...'),
+                  hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
+                  contentPadding: const EdgeInsets.all(16),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Attach Photo Proof (Optional):', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937))),
+            Text(AppStrings.t(context, 'Attach Photo Proof (Optional):'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937))),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: _pickImage,
@@ -2260,13 +2261,13 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                           ],
                         ),
                       )
-                    : const Column(
+                    : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate, size: 36, color: Color(0xFF9CA3AF)),
-                          SizedBox(height: 8),
-                          Text('Tap to add photo', style: TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500)),
-                          Text('JPG, PNG up to 10MB', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+                          const Icon(Icons.add_photo_alternate, size: 36, color: Color(0xFF9CA3AF)),
+                          const SizedBox(height: 8),
+                          Text(AppStrings.t(context, 'Tap to add photo'), style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500)),
+                          Text(AppStrings.t(context, 'JPG, PNG up to 10MB'), style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
                         ],
                       ),
               ),
@@ -2282,7 +2283,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Cancel', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  child: Text(AppStrings.t(context, 'Cancel'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -2299,7 +2300,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                   child: _isSubmittingReopen
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Submit Request', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      : Text(AppStrings.t(context, 'Submit Request'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
               ),
             ]),
@@ -2490,7 +2491,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   String _getStatusTime(String currentStatus, String stepStatus) {
     // This would normally come from API with actual timestamps
     if (_isStepCompleted(stepStatus, currentStatus)) {
-      return 'Completed';
+      return AppStrings.t(context, 'Completed');
     }
     return '';
   }
@@ -2498,10 +2499,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   void _zoomIn() {
     // Implement zoom in functionality
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Zoom In - Map zoomed in'),
-        duration: Duration(seconds: 1),
-        backgroundColor: Color(0xFF10B981),
+      SnackBar(
+        content: Text(AppStrings.t(context, 'Zoom In - Map zoomed in')),
+        duration: const Duration(seconds: 1),
+        backgroundColor: const Color(0xFF10B981),
       ),
     );
   }
@@ -2509,10 +2510,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   void _zoomOut() {
     // Implement zoom out functionality
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Zoom Out - Map zoomed out'),
-        duration: Duration(seconds: 1),
-        backgroundColor: Color(0xFF2B6CF6),
+      SnackBar(
+        content: Text(AppStrings.t(context, 'Zoom Out - Map zoomed out')),
+        duration: const Duration(seconds: 1),
+        backgroundColor: const Color(0xFF2B6CF6),
       ),
     );
   }
@@ -2527,9 +2528,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open directions'),
-            backgroundColor: Color(0xFFEF4444),
+          SnackBar(
+            content: Text(AppStrings.t(context, 'Could not open directions')),
+            backgroundColor: const Color(0xFFEF4444),
           ),
         );
       }
@@ -2576,9 +2577,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rating submitted successfully!'),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(AppStrings.t(context, 'Rating submitted successfully!')),
+            backgroundColor: const Color(0xFF10B981),
           ),
         );
         setState(() {});
@@ -2586,9 +2587,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to submit rating. Please try again.'),
-            backgroundColor: Color(0xFFEF4444),
+          SnackBar(
+            content: Text(AppStrings.t(context, 'Failed to submit rating. Please try again.')),
+            backgroundColor: const Color(0xFFEF4444),
           ),
         );
       }
@@ -2608,9 +2609,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Reopen request submitted successfully!'),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(AppStrings.t(context, 'Reopen request submitted successfully!')),
+            backgroundColor: const Color(0xFF10B981),
           ),
         );
         setState(() => _showReopenDialog = false);
@@ -2619,9 +2620,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to submit reopen request. Please try again.'),
-            backgroundColor: Color(0xFFEF4444),
+          SnackBar(
+            content: Text(AppStrings.t(context, 'Failed to submit reopen request. Please try again.')),
+            backgroundColor: const Color(0xFFEF4444),
           ),
         );
       }
@@ -2666,9 +2667,9 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text(
-          'Interactive Map View',
-          style: TextStyle(
+        title: Text(
+          AppStrings.t(context, 'Interactive Map View'),
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -2677,7 +2678,7 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
           IconButton(
             onPressed: () => _openExternalMap(lat, lng),
             icon: const Icon(Icons.open_in_new),
-            tooltip: 'Open in External Map',
+            tooltip: AppStrings.t(context, 'Open in External Map'),
           ),
         ],
       ),
@@ -2722,9 +2723,9 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
                                 ),
                               ],
                             ),
-                            child: const Text(
-                              'Complaint Location',
-                              style: TextStyle(
+                            child: Text(
+                              AppStrings.t(context, 'Complaint Location'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -2760,9 +2761,9 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
                                   ),
                                 ],
                               ),
-                              child: const Text(
-                                'Department',
-                                style: TextStyle(
+                              child: Text(
+                                AppStrings.t(context, 'Department'),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -2836,9 +2837,9 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    widget.complaint['title']?.isNotEmpty == true 
-                        ? widget.complaint['title'] 
-                        : 'Complaint Details',
+                    widget.complaint['title']?.isNotEmpty == true
+                        ? widget.complaint['title']
+                        : AppStrings.t(context, 'Complaint Details'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class GuestDashboardScreen extends StatefulWidget {
@@ -91,10 +92,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         Image.asset('assets/images/logo.png', height: 36),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Guest Mode',
+          Text(AppStrings.t(context, 'Guest Mode'),
               style: GoogleFonts.poppins(
                   fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-          Text('Limited access',
+          Text(AppStrings.t(context, 'Limited access'),
               style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
         ]),
         const Spacer(),
@@ -104,7 +105,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
                 color: const Color(0xFF1E66F5), borderRadius: BorderRadius.circular(10)),
-            child: Text('Login',
+            child: Text(AppStrings.t(context, 'Login'),
                 style: GoogleFonts.poppins(
                     fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
           ),
@@ -114,7 +115,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Widget _tabNav() {
-    final tabs = ['Home', 'Submit', 'Track'];
+    final tabs = [AppStrings.t(context, 'Home'), AppStrings.t(context, 'Submit'), AppStrings.t(context, 'Track')];
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(6),
@@ -161,11 +162,11 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         child: Row(children: [
           Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Welcome, Guest! 👋',
+            Text(AppStrings.t(context, 'Welcome, Guest! 👋'),
                 style: GoogleFonts.poppins(
                     fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
             const SizedBox(height: 4),
-            Text('Submit complaints & view departments.\nLogin for full access.',
+            Text(AppStrings.t(context, 'Submit complaints & view departments.\nLogin for full access.'),
                 style: GoogleFonts.inter(
                     fontSize: 12, color: Colors.white.withOpacity(0.85))),
             const SizedBox(height: 12),
@@ -175,7 +176,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration:
                     BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                child: Text('Login / Register',
+                child: Text(AppStrings.t(context, 'Login / Register'),
                     style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -191,7 +192,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
       // Live Stats — hidden with blur + lock
       Row(children: [
-        Text('Live Stats',
+        Text(AppStrings.t(context, 'Live Stats'),
             style: GoogleFonts.poppins(
                 fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const SizedBox(width: 8),
@@ -206,7 +207,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       const SizedBox(height: 24),
 
       // Departments
-      Text('Departments',
+      Text(AppStrings.t(context, 'Departments'),
           style: GoogleFonts.poppins(
               fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
       const SizedBox(height: 12),
@@ -220,7 +221,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Future<void> _track() async {
     if (_trackComplaintCtrl.text.trim().isEmpty || _trackPhoneCtrl.text.trim().isEmpty) {
-      setState(() => _trackError = 'Please enter both complaint ID and mobile number');
+      setState(() => _trackError = AppStrings.t(context, 'Please enter both complaint ID and mobile number'));
       return;
     }
     setState(() { _trackLoading = true; _trackError = null; _trackResult = null; });
@@ -235,24 +236,24 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         if (res['success'] == true) {
           _trackResult = res['complaint'] as Map<String, dynamic>;
         } else {
-          _trackError = res['message'] ?? 'Complaint not found';
+          _trackError = res['message'] ?? AppStrings.t(context, 'Complaint not found');
         }
       });
     } catch (e) {
       setState(() {
         _trackLoading = false;
-        _trackError = 'Something went wrong. Please try again.';
+        _trackError = AppStrings.t(context, 'Something went wrong. Please try again.');
       });
     }
   }
 
   Widget _trackTab() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Track Complaint',
+      Text(AppStrings.t(context, 'Track Complaint'),
           style: GoogleFonts.poppins(
               fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
       const SizedBox(height: 4),
-      Text('Check the status of your reported issue',
+      Text(AppStrings.t(context, 'Check the status of your reported issue'),
           style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
       const SizedBox(height: 20),
       
@@ -264,9 +265,9 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
         ),
         child: Column(children: [
-          _inputField(_trackComplaintCtrl, 'Complaint ID (e.g. COMP123)', Icons.tag),
+          _inputField(_trackComplaintCtrl, AppStrings.t(context, 'Complaint ID (e.g. COMP123)'), Icons.tag),
           const SizedBox(height: 12),
-          _inputField(_trackPhoneCtrl, 'Mobile Number', Icons.phone_outlined, type: TextInputType.phone),
+          _inputField(_trackPhoneCtrl, AppStrings.t(context, 'Mobile Number'), Icons.phone_outlined, type: TextInputType.phone),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
@@ -279,7 +280,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               ),
               child: _trackLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text('TRACK NOW', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                  : Text(AppStrings.t(context, 'TRACK NOW'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
           if (_trackError != null) ...[
@@ -291,13 +292,13 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
       if (_trackResult != null) ...[
         const SizedBox(height: 24),
-        Text('Complaint Details',
+        Text(AppStrings.t(context, 'Complaint Details'),
             style: GoogleFonts.poppins(
                 fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const SizedBox(height: 12),
         _infoGrid(_trackResult!),
         const SizedBox(height: 24),
-        Text('Progress Status',
+        Text(AppStrings.t(context, 'Progress Status'),
             style: GoogleFonts.poppins(
                 fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const SizedBox(height: 16),
@@ -327,7 +328,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       child: Column(children: [
         const Text('🔄', style: TextStyle(fontSize: 24)),
         const SizedBox(height: 8),
-        Text('Not satisfied with the resolution?',
+        Text(AppStrings.t(context, 'Not satisfied with the resolution?'),
             style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF991B1B))),
         const SizedBox(height: 12),
         SizedBox(
@@ -341,7 +342,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('REOPEN COMPLAINT', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+            child: Text(AppStrings.t(context, 'REOPEN COMPLAINT'), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
           ),
         ),
       ]),
@@ -355,14 +356,14 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(children: [
           const Text('🔐 ', style: TextStyle(fontSize: 20)),
-          Text('Login Required', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+          Text(AppStrings.t(context, 'Login Required'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         ]),
-        content: Text('To reopen a complaint, you must be logged in to your account for verification and security purposes.',
+        content: Text(AppStrings.t(context, 'To reopen a complaint, you must be logged in to your account for verification and security purposes.'),
             style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748b), fontWeight: FontWeight.w600)),
+            child: Text(AppStrings.t(context, 'Cancel'), style: GoogleFonts.inter(color: const Color(0xFF64748b), fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -373,7 +374,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               backgroundColor: const Color(0xFF1E66F5),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Login Now', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
+            child: Text(AppStrings.t(context, 'Login Now'), style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -404,12 +405,12 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Widget _infoGrid(Map<String, dynamic> c) {
     final items = [
-      ('Complaint ID', '#${c['complaint_number']}'),
-      ('Category', c['complaint_type'] ?? ''),
-      ('Assigned Dept', c['assigned_department'] ?? 'Not Assigned Yet'),
-      ('Location', '${c['city']}, ${c['pincode']}'),
-      ('Submitted On', c['created_at'] ?? ''),
-      ('Contact Person', c['contact_name'] ?? ''),
+      (AppStrings.t(context, 'Complaint ID'), '#${c['complaint_number']}'),
+      (AppStrings.t(context, 'Category'), c['complaint_type'] ?? ''),
+      (AppStrings.t(context, 'Assigned Dept'), c['assigned_department'] ?? AppStrings.t(context, 'Not Assigned Yet')),
+      (AppStrings.t(context, 'Location'), '${c['city']}, ${c['pincode']}'),
+      (AppStrings.t(context, 'Submitted On'), c['created_at'] ?? ''),
+      (AppStrings.t(context, 'Contact Person'), c['contact_name'] ?? ''),
     ];
     return Container(
       padding: const EdgeInsets.all(16),
@@ -433,10 +434,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Widget _timeline(String status, Map<String, dynamic> c) {
     final steps = [
-      _TimelineStep('Submitted', Icons.assignment_outlined, _isCompleted(status, 'pending'), _statusColor('pending'), c['created_at'] ?? ''),
-      _TimelineStep('Confirmed', Icons.check_circle_outline, _isCompleted(status, 'confirmed'), _statusColor('confirmed'), _isCompleted(status, 'confirmed') ? (c['updated_at'] ?? 'Confirmed') : '-'),
-      _TimelineStep('Processing', Icons.autorenew, _isCompleted(status, 'process'), _statusColor('process'), _isCompleted(status, 'process') ? (c['updated_at'] ?? 'In Process') : '-'),
-      _TimelineStep(status == 'reopened' ? 'Reopened' : 'Solved', status == 'reopened' ? Icons.refresh : Icons.verified_outlined, _isCompleted(status, 'solved'), _statusColor(status == 'reopened' ? 'reopened' : 'solved'), _isCompleted(status, 'solved') ? (c['updated_at'] ?? 'Done') : '-'),
+      _TimelineStep(AppStrings.t(context, 'Submitted'), Icons.assignment_outlined, _isCompleted(status, 'pending'), _statusColor('pending'), c['created_at'] ?? ''),
+      _TimelineStep(AppStrings.t(context, 'Confirmed'), Icons.check_circle_outline, _isCompleted(status, 'confirmed'), _statusColor('confirmed'), _isCompleted(status, 'confirmed') ? (c['updated_at'] ?? AppStrings.t(context, 'Confirmed')) : '-'),
+      _TimelineStep(AppStrings.t(context, 'Processing'), Icons.autorenew, _isCompleted(status, 'process'), _statusColor('process'), _isCompleted(status, 'process') ? (c['updated_at'] ?? AppStrings.t(context, 'In Process')) : '-'),
+      _TimelineStep(status == 'reopened' ? AppStrings.t(context, 'Reopened') : AppStrings.t(context, 'Solved'), status == 'reopened' ? Icons.refresh : Icons.verified_outlined, _isCompleted(status, 'solved'), _statusColor(status == 'reopened' ? 'reopened' : 'solved'), _isCompleted(status, 'solved') ? (c['updated_at'] ?? AppStrings.t(context, 'Done')) : '-'),
     ];
 
     return Padding(
@@ -496,7 +497,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         Row(children: [
           const Icon(Icons.map_outlined, size: 20, color: Color(0xFF1E66F5)),
           const SizedBox(width: 8),
-          Text('Location Tracking',
+          Text(AppStrings.t(context, 'Location Tracking'),
               style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         ]),
         const SizedBox(height: 12),
@@ -538,7 +539,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
-                          child: Text('Issue', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700)),
+                          child: Text(AppStrings.t(context, 'Issue'), style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700)),
                         ),
                       ]),
                     ),
@@ -550,7 +551,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)]),
-                          child: Text('Dept', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
+                          child: Text(AppStrings.t(context, 'Dept'), style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
                         ),
                       ]),
                     ),
@@ -587,7 +588,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   }
 
   Widget _connectDeptSection(Map<String, dynamic> c) {
-    final deptName = c['assigned_department'] ?? 'Department';
+    final deptName = c['assigned_department'] ?? AppStrings.t(context, 'Department');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -606,10 +607,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           child: const Icon(Icons.business_rounded, color: Color(0xFF1E66F5), size: 30),
         ),
         const SizedBox(height: 12),
-        Text('Connect with Assigned Department',
+        Text(AppStrings.t(context, 'Connect with Assigned Department'),
             style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const SizedBox(height: 4),
-        Text('Get in touch with $deptName for updates',
+        Text('${AppStrings.t(context, 'Get in touch with')} $deptName ${AppStrings.t(context, 'for updates')}',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
         const SizedBox(height: 20),
@@ -618,7 +619,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             child: ElevatedButton.icon(
               onPressed: () => launchUrl(Uri.parse('tel:${c['assigned_department_phone']}')),
               icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
-              label: const Text('Call'),
+              label: Text(AppStrings.t(context, 'Call')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E66F5),
                 foregroundColor: Colors.white,
@@ -633,7 +634,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             child: ElevatedButton.icon(
               onPressed: () => launchUrl(Uri.parse('mailto:${c['assigned_department_email']}')),
               icon: const Icon(Icons.email_rounded, size: 18),
-              label: const Text('Email'),
+              label: Text(AppStrings.t(context, 'Email')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1E66F5),
@@ -671,10 +672,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   // ── Stats grid with blur overlay ──────────────────────────────────────────
   Widget _statsGrid() {
     final items = [
-      {'emoji': '📊', 'label': 'Total Complaints', 'count': _total, 'color': const Color(0xFFEEF2FF)},
-      {'emoji': '⏳', 'label': 'Pending', 'count': _pending, 'color': const Color(0xFFFFF1F2)},
-      {'emoji': '✅', 'label': 'Solved', 'count': _solved, 'color': const Color(0xFFF0FDF4)},
-      {'emoji': '🏢', 'label': 'Departments', 'count': _depts, 'color': const Color(0xFFEFF6FF)},
+      {'emoji': '📊', 'label': AppStrings.t(context, 'Total Complaints'), 'count': _total, 'color': const Color(0xFFEEF2FF)},
+      {'emoji': '⏳', 'label': AppStrings.t(context, 'Pending'), 'count': _pending, 'color': const Color(0xFFFFF1F2)},
+      {'emoji': '✅', 'label': AppStrings.t(context, 'Solved'), 'count': _solved, 'color': const Color(0xFFF0FDF4)},
+      {'emoji': '🏢', 'label': AppStrings.t(context, 'Departments'), 'count': _depts, 'color': const Color(0xFFEFF6FF)},
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -734,7 +735,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                             size: 20, color: Color(0xFF1E66F5)),
                       ),
                       const SizedBox(height: 6),
-                      Text('Login to view',
+                      Text(AppStrings.t(context, 'Login to view'),
                           style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -753,15 +754,15 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   // ── Departments grid — show only 3, with View All ──────────────────────
   Widget _departmentsGrid() {
     final depts = [
-      {'emoji': '🚓', 'name': 'Police', 'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': 'Traffic', 'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': 'Construction', 'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🚰', 'name': 'Water Supply', 'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '💡', 'name': 'Electricity', 'bg': const Color(0xFFFFFBEB)},
-      {'emoji': '🗑️', 'name': 'Garbage', 'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '🛣️', 'name': 'Road', 'bg': const Color(0xFFFAF5FF)},
-      {'emoji': '🌊', 'name': 'Drainage', 'bg': const Color(0xFFEFF6FF)},
-      {'emoji': '🚌', 'name': 'Transport', 'bg': const Color(0xFFFFF1F2)},
+      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'), 'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'), 'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'), 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚰', 'name': AppStrings.t(context, 'Water Supply'), 'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '💡', 'name': AppStrings.t(context, 'Electricity'), 'bg': const Color(0xFFFFFBEB)},
+      {'emoji': '🗑️', 'name': AppStrings.t(context, 'Garbage'), 'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '🛣️', 'name': AppStrings.t(context, 'Road'), 'bg': const Color(0xFFFAF5FF)},
+      {'emoji': '🌊', 'name': AppStrings.t(context, 'Drainage'), 'bg': const Color(0xFFEFF6FF)},
+      {'emoji': '🚌', 'name': AppStrings.t(context, 'Transport'), 'bg': const Color(0xFFFFF1F2)},
     ];
     final preview = depts.take(3).toList();
     return Column(children: [
@@ -803,7 +804,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.25)),
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('View All Departments',
+            Text(AppStrings.t(context, 'View All Departments'),
                 style: GoogleFonts.poppins(
                     fontSize: 13, fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E66F5))),
@@ -827,20 +828,20 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       child: Column(children: [
         const Text('🔒', style: TextStyle(fontSize: 32)),
         const SizedBox(height: 8),
-        Text('Login to unlock full features',
+        Text(AppStrings.t(context, 'Login to unlock full features'),
             style: GoogleFonts.poppins(
                 fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
         const SizedBox(height: 4),
-        Text('Track complaints • View profile • Get updates',
+        Text(AppStrings.t(context, 'Track complaints • View profile • Get updates'),
             style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b)),
             textAlign: TextAlign.center),
         const SizedBox(height: 14),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _lockedFeature('📋', 'Track'),
+          _lockedFeature('📋', AppStrings.t(context, 'Track')),
           const SizedBox(width: 20),
-          _lockedFeature('👤', 'Profile'),
+          _lockedFeature('👤', AppStrings.t(context, 'Profile')),
           const SizedBox(width: 20),
-          _lockedFeature('🔔', 'Updates'),
+          _lockedFeature('🔔', AppStrings.t(context, 'Updates')),
         ]),
       ]),
     );
@@ -864,25 +865,25 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Widget _submitTab() {
     final categories = [
-      {'emoji': '🚓', 'name': 'Police',          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': 'Traffic',         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': 'Construction',    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🚰', 'name': 'Water Supply',    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '💡', 'name': 'Electricity',     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
-      {'emoji': '🗑️', 'name': 'Garbage',         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
-      {'emoji': '🛣️', 'name': 'Road / Pothole',  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
-      {'emoji': '🌊', 'name': 'Drainage',        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
-      {'emoji': '⚠️', 'name': 'Illegal Activity','key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
-      {'emoji': '🚌', 'name': 'Transportation',  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🛡️', 'name': 'Cyber Crime',     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
-      {'emoji': '📋', 'name': 'Other',           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
+      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'),          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'),         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'),    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚰', 'name': AppStrings.t(context, 'Water Supply'),    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '💡', 'name': AppStrings.t(context, 'Electricity'),     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
+      {'emoji': '🗑️', 'name': AppStrings.t(context, 'Garbage'),         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
+      {'emoji': '🛣️', 'name': AppStrings.t(context, 'Road / Pothole'),  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
+      {'emoji': '🌊', 'name': AppStrings.t(context, 'Drainage'),        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
+      {'emoji': '⚠️', 'name': AppStrings.t(context, 'Illegal Activity'),'key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
+      {'emoji': '🚌', 'name': AppStrings.t(context, 'Transportation'),  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🛡️', 'name': AppStrings.t(context, 'Cyber Crime'),     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
+      {'emoji': '📋', 'name': AppStrings.t(context, 'Other'),           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Submit a Complaint',
+      Text(AppStrings.t(context, 'Submit a Complaint'),
           style: GoogleFonts.poppins(
               fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
       const SizedBox(height: 4),
-      Text('Choose a category to report an issue',
+      Text(AppStrings.t(context, 'Choose a category to report an issue'),
           style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
       const SizedBox(height: 20),
       GridView.count(
@@ -950,10 +951,10 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Widget _bottomNav() {
     final items = [
-      {'emoji': '🏠', 'label': 'Home'},
-      {'emoji': '📝', 'label': 'Submit'},
-      {'emoji': '🔍', 'label': 'Track'},
-      {'emoji': '🔑', 'label': 'Login'},
+      {'emoji': '🏠', 'label': AppStrings.t(context, 'Home')},
+      {'emoji': '📝', 'label': AppStrings.t(context, 'Submit')},
+      {'emoji': '🔍', 'label': AppStrings.t(context, 'Track')},
+      {'emoji': '🔑', 'label': AppStrings.t(context, 'Login')},
     ];
     return Container(
       decoration: const BoxDecoration(

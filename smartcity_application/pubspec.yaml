@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # UI & Icons
   cupertino_icons: ^1.0.6
@@ -32,7 +34,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
 
   # Forms & Validation
-  flutter_form_builder: ^9.1.1
+  flutter_form_builder: ^10.3.0+2
 
   # Image & Video
   image_picker: ^1.0.5
@@ -50,7 +52,7 @@ dependencies:
   supabase_flutter: ^2.0.0
 
   # Utils
-  intl: ^0.18.1
+  intl: ^0.20.2
   url_launcher: ^6.2.2
   share_plus: ^7.2.1
   permission_handler: ^11.0.1

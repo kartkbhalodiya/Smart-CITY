@@ -177,6 +177,17 @@ def send_otp(request):
                 'message': 'Email is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        # Block staff/admin from OTP login
+        try:
+            u = User.objects.get(email__iexact=email)
+            if u.is_superuser or CityAdmin.objects.filter(user=u).exists() or DepartmentUser.objects.filter(user=u).exists():
+                return Response({
+                    'success': False,
+                    'message': 'Staff/Admin accounts must login with password, not OTP.'
+                }, status=status.HTTP_403_FORBIDDEN)
+        except User.DoesNotExist:
+            pass
+
         # Generate 6-digit OTP
         otp_code = str(random.randint(100000, 999999))
         
@@ -262,11 +273,20 @@ def verify_otp(request):
             # Get or create token
             token, _ = Token.objects.get_or_create(user=user)
             
+            role = 'citizen'
+            if user.is_superuser:
+                role = 'superadmin'
+            elif CityAdmin.objects.filter(user=user).exists():
+                role = 'city_admin'
+            elif DepartmentUser.objects.filter(user=user).exists():
+                role = 'department'
+
             return Response({
                 'success': True,
                 'message': 'Verification successful',
                 'token': token.key,
                 'user': UserSerializer(user).data,
+                'role': role,
                 'is_new_user': created
             }, status=status.HTTP_200_OK)
             

@@ -7,6 +7,7 @@ class StorageService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String _localeKey = 'app_locale';
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -45,6 +46,14 @@ class StorageService {
 
   static bool isLoggedIn() {
     return _prefs.getBool(_isLoggedInKey) ?? false;
+  }
+
+  static Future<void> saveLocale(String localeCode) async {
+    await _prefs.setString(_localeKey, localeCode);
+  }
+
+  static String getLocale() {
+    return _prefs.getString(_localeKey) ?? 'en';
   }
 
   // Clear All Data

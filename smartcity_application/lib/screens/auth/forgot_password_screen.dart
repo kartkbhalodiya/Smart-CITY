@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_strings.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -42,7 +43,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   Future<void> _submit() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
-      setState(() => _error = 'Please enter your department email');
+      setState(() => _error = AppStrings.t(context, 'Please enter your department email'));
       return;
     }
     setState(() {
@@ -61,7 +62,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       if (res['success'] == true) {
         _sent = true;
       } else {
-        _error = res['message'] ?? 'Something went wrong. Try again.';
+        _error = res['message'] ?? AppStrings.t(context, 'Something went wrong. Try again.');
       }
     });
   }
@@ -120,7 +121,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       Image.asset('assets/images/logo.png', height: 60),
       const SizedBox(height: 6),
       Text(
-        'COMPLAINT MANAGEMENT SYSTEM',
+        AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'),
         style: GoogleFonts.poppins(
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -143,7 +144,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       const SizedBox(height: 14),
 
       Text(
-        'Forgot Password?',
+        AppStrings.t(context, 'Forgot Password?'),
         style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w700,
@@ -151,7 +152,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       ),
       const SizedBox(height: 6),
       Text(
-        'Enter your department email address.\nA new password will be sent instantly.',
+        AppStrings.t(context, 'Enter your department email address.\nA new password will be sent instantly.'),
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
             fontSize: 13,
@@ -176,7 +177,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'This is only for Department accounts. Citizens use OTP login.',
+              AppStrings.t(context, 'This is only for Department accounts. Citizens use OTP login.'),
               style: GoogleFonts.inter(
                   fontSize: 12,
                   color: const Color(0xFFEA580C),
@@ -227,7 +228,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           style: GoogleFonts.inter(
               fontSize: 14, color: const Color(0xFF0f172a)),
           decoration: InputDecoration(
-            hintText: 'Department Email Address',
+            hintText: AppStrings.t(context, 'Department Email Address'),
             hintStyle: GoogleFonts.inter(
                 fontSize: 13, color: const Color(0xFF64748b)),
             prefixIcon: const Icon(Icons.email_outlined,
@@ -253,7 +254,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                       color: Colors.white, strokeWidth: 2))
               : const Icon(Icons.send_rounded, size: 18),
           label: Text(
-            _isLoading ? 'Sending...' : 'SEND NEW PASSWORD',
+            _isLoading ? AppStrings.t(context, 'Sending...') : AppStrings.t(context, 'SEND NEW PASSWORD'),
             style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -281,7 +282,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
               size: 15, color: Color(0xFF1E66F5)),
           const SizedBox(width: 6),
           Text(
-            'Back to Login',
+            AppStrings.t(context, 'Back to Login'),
             style: GoogleFonts.inter(
                 fontSize: 13,
                 color: const Color(0xFF1E66F5),
@@ -311,7 +312,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       const SizedBox(height: 20),
 
       Text(
-        'Email Sent! ✅',
+        AppStrings.t(context, 'Email Sent! ✅'),
         style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w700,
@@ -319,7 +320,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       ),
       const SizedBox(height: 10),
       Text(
-        'A new password has been sent to',
+        AppStrings.t(context, 'A new password has been sent to'),
         style: GoogleFonts.inter(
             fontSize: 13, color: const Color(0xFF64748b)),
       ),
@@ -341,11 +342,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           border: Border.all(color: const Color(0xFFBBF7D0)),
         ),
         child: Column(children: [
-          _step('📧', 'Check your inbox for the new password'),
+          _step('📧', AppStrings.t(context, 'Check your inbox for the new password')),
           const SizedBox(height: 8),
-          _step('🔐', 'Login with the new password'),
+          _step('🔐', AppStrings.t(context, 'Login with the new password')),
           const SizedBox(height: 8),
-          _step('🔑', 'Change it from your profile settings'),
+          _step('🔑', AppStrings.t(context, 'Change it from your profile settings')),
         ]),
       ),
       const SizedBox(height: 24),
@@ -357,7 +358,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
               Navigator.pushReplacementNamed(context, AppRoutes.login),
           icon: const Icon(Icons.login_rounded, size: 18),
           label: Text(
-            'GO TO LOGIN',
+            AppStrings.t(context, 'GO TO LOGIN'),
             style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

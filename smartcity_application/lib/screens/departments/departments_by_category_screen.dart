@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../config/api_config.dart';
 import '../../config/routes.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_strings.dart';
 
 class DepartmentsByCategoryScreen extends StatefulWidget {
   final String categoryKey;
@@ -86,7 +87,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
               style: GoogleFonts.poppins(
                   fontSize: 16, fontWeight: FontWeight.w700,
                   color: const Color(0xFF0f172a))),
-          Text(_loading ? 'Loading...' : '${_departments.length} department${_departments.length == 1 ? '' : 's'}',
+          Text(_loading ? AppStrings.t(context, 'Loading...') : '${_departments.length} ${AppStrings.t(context, _departments.length == 1 ? 'department' : 'departments')}',
               style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
         ]),
       ]),
@@ -134,11 +135,11 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
             ),
           ),
           const SizedBox(height: 28),
-          Text('No Departments Found',
+          Text(AppStrings.t(context, 'No Departments Found'),
               style: GoogleFonts.poppins(
                   fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
           const SizedBox(height: 8),
-          Text('No ${widget.categoryName} departments\nhave been added by the admin yet.',
+          Text('${AppStrings.t(context, 'No')} ${widget.categoryName} ${AppStrings.t(context, 'departments')}\n${AppStrings.t(context, 'have been added by the admin yet.')}',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                   fontSize: 14, color: const Color(0xFF64748b), height: 1.5)),
@@ -155,7 +156,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
               const Text('ℹ️', style: TextStyle(fontSize: 20)),
               const SizedBox(width: 12),
               Expanded(child: Text(
-                  'Once the admin adds departments for this category, they will appear here.',
+                  AppStrings.t(context, 'Once the admin adds departments for this category, they will appear here.'),
                   style: GoogleFonts.inter(
                       fontSize: 12, color: const Color(0xFF1D4ED8), height: 1.5))),
             ]),

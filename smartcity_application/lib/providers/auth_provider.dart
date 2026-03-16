@@ -53,7 +53,7 @@ class AuthProvider with ChangeNotifier {
     return response;
   }
 
-  Future<bool> verifyOtp(String email, String otp) async {
+  Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -64,12 +64,11 @@ class AuthProvider with ChangeNotifier {
     if (response['success'] == true) {
       _user = User.fromJson(response['user']);
       notifyListeners();
-      return true;
     } else {
       _error = response['message'] ?? 'Invalid OTP';
       notifyListeners();
-      return false;
     }
+    return response;
   }
 
   Future<bool> register(Map<String, dynamic> data) async {

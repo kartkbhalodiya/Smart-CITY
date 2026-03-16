@@ -12,6 +12,7 @@ import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
 import '../../services/api_service.dart';
 import '../departments/department_detail_screen.dart';
+import '../../l10n/app_strings.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
   final int complaintId;
@@ -50,7 +51,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Complaint Details')),
+      appBar: AppBar(title: Text(AppStrings.t(context, 'Complaint Details'))),
       body: Consumer<ComplaintProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -58,7 +59,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           }
           final complaint = provider.selectedComplaint;
           if (complaint == null) {
-            return const Center(child: Text('Complaint not found'));
+            return Center(child: Text(AppStrings.t(context, 'Complaint not found')));
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -67,19 +68,19 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               children: [
                 _buildHeader(complaint),
                 const Divider(height: 40),
-                _buildInfoSection('Description', complaint.description),
-                _buildInfoSection('Location', complaint.address),
+                _buildInfoSection(AppStrings.t(context, 'Description'), complaint.description),
+                _buildInfoSection(AppStrings.t(context, 'Location'), complaint.address),
                 if (complaint.latitude != 0.0 && complaint.longitude != 0.0)
                   _buildMapSection(complaint),
                 _buildInfoSection(
-                  'Department',
-                  complaint.assignedDepartment?.name ?? 'Not Assigned',
+                  AppStrings.t(context, 'Department'),
+                  complaint.assignedDepartment?.name ?? AppStrings.t(context, 'Not assigned'),
                 ),
                 if (complaint.media != null && complaint.media!.isNotEmpty)
-                  _buildMediaSection('Evidence Photos', complaint.media!),
+                  _buildMediaSection(AppStrings.t(context, 'Evidence Photos'), complaint.media!),
                 // Dept work proof
                 if (complaint.workProof != null && complaint.workProof!.isNotEmpty)
-                  _buildMediaSection('Department Proof', complaint.workProof!),
+                  _buildMediaSection(AppStrings.t(context, 'Department Proof'), complaint.workProof!),
                 // Rating: show existing or form
                 if (complaint.citizenRating != null)
                   _buildExistingRating(complaint)
@@ -120,7 +121,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Text(
-          'Submitted on ${complaint.createdAt.toString().split(' ')[0]}',
+          '${AppStrings.t(context, 'Submitted on')} ${complaint.createdAt.toString().split(' ')[0]}',
           style:
               const TextStyle(color: AppColors.textMuted, fontSize: 13),
         ),
@@ -177,15 +178,15 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Interactive Map',
+                      Text(AppStrings.t(context, 'Interactive Map'),
                           style: GoogleFonts.poppins(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF1F2937))),
                       Text(
                         hasDept
-                            ? 'Complaint → Department location'
-                            : 'Complaint location',
+                            ? AppStrings.t(context, 'Complaint → Department location')
+                            : AppStrings.t(context, 'Complaint location'),
                         style: GoogleFonts.inter(
                             fontSize: 12, color: const Color(0xFF6B7280)),
                       ),
@@ -390,11 +391,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _legendDot(
-                              const Color(0xFFEF4444), 'Complaint'),
+                              const Color(0xFFEF4444), AppStrings.t(context, 'Complaint')),
                           if (hasDept) ...[
                             const SizedBox(height: 4),
                             _legendDot(
-                                const Color(0xFF1E66F5), 'Department'),
+                                const Color(0xFF1E66F5), AppStrings.t(context, 'Department')),
                           ],
                         ],
                       ),
@@ -515,7 +516,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Your Rating', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14, color: const Color(0xFF92400E))),
+          Text(AppStrings.t(context, 'Your Rating'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14, color: const Color(0xFF92400E))),
           const SizedBox(height: 8),
           Row(children: List.generate(5, (i) => Icon(
             i < r ? Icons.star : Icons.star_border,
@@ -542,7 +543,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Rate this Resolution', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15)),
+          Text(AppStrings.t(context, 'Rate This Resolution'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -559,7 +560,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
             controller: _commentCtrl,
             maxLines: 2,
             decoration: InputDecoration(
-              hintText: 'Comment (optional)',
+              hintText: AppStrings.t(context, 'Comment (optional)'),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               contentPadding: const EdgeInsets.all(12),
             ),
@@ -577,7 +578,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               ),
               child: _isSubmittingRating
                   ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Submit Rating', style: TextStyle(fontWeight: FontWeight.bold)),
+                  : Text(AppStrings.t(context, 'Submit Rating'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -593,7 +594,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         child: ElevatedButton.icon(
           onPressed: () => _showReopenDialog(complaint),
           icon: const Icon(Icons.refresh),
-          label: const Text('Reopen Complaint', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          label: Text(AppStrings.t(context, 'Reopen Complaint'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFEF4444),
             foregroundColor: Colors.white,
@@ -624,7 +625,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Reopen Complaint', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937))),
+                    Text(AppStrings.t(context, 'Reopen Complaint'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937))),
                     IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
                   ],
                 ),
@@ -638,20 +639,20 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                       style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFEF4444))),
                 ),
                 const SizedBox(height: 16),
-                Text('Reason for reopening *', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${AppStrings.t(context, 'Reason for reopening:')} *', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _reopenReasonCtrl,
                   maxLines: 4,
                   onChanged: (_) => setDlg(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Describe why you want to reopen...',
+                    hintText: AppStrings.t(context, 'Describe why you want to reopen...'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                     contentPadding: const EdgeInsets.all(12),
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text('Attach Proof (Optional)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                Text(AppStrings.t(context, 'Attach Photo Proof (Optional):'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () async {
@@ -686,12 +687,12 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                               ),
                             ],
                           )
-                        : const Column(
+                        : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_photo_alternate, size: 32, color: Color(0xFF9CA3AF)),
-                              SizedBox(height: 6),
-                              Text('Tap to add photo', style: TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                              const Icon(Icons.add_photo_alternate, size: 32, color: Color(0xFF9CA3AF)),
+                              const SizedBox(height: 6),
+                              Text(AppStrings.t(context, 'Tap to add photo'), style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
                             ],
                           ),
                   ),
@@ -705,7 +706,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text('Cancel'),
+                      child: Text(AppStrings.t(context, 'Cancel')),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -722,7 +723,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                       ),
                       child: _isSubmittingReopen
                           ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold)),
+                          : Text(AppStrings.t(context, 'Submit'), style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ]),
@@ -744,9 +745,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     if (!mounted) return;
     if (res['success'] == true) {
       Provider.of<ComplaintProvider>(context, listen: false).loadComplaintDetail(complaint.id);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rating submitted!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.t(context, 'Rating submitted successfully!')), backgroundColor: Colors.green));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? AppStrings.t(context, 'Failed')), backgroundColor: Colors.red));
     }
   }
 
@@ -761,9 +762,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     if (res['success'] == true) {
       Navigator.pop(ctx);
       Provider.of<ComplaintProvider>(context, listen: false).loadComplaintDetail(complaint.id);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reopen request submitted!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.t(context, 'Reopen request submitted successfully!')), backgroundColor: Colors.green));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? AppStrings.t(context, 'Failed')), backgroundColor: Colors.red));
     }
   }
 
@@ -858,7 +859,7 @@ class _DeptPopup extends StatelessWidget {
                 ],
               ),
               child: Text(
-                'View Details',
+                AppStrings.t(context, 'View Details'),
                 style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -911,7 +912,7 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
-      child: Text(statusText,
+      child: Text(AppStrings.t(context, statusText),
           style: TextStyle(
               color: color,
               fontSize: 12,

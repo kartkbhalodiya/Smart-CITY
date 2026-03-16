@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:async';
+import '../../l10n/app_strings.dart';
 
 class MapSelectionScreen extends StatefulWidget {
   final double? initialLat;
@@ -46,7 +47,7 @@ class _MapSelectionScreenState extends State<MapSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Location', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16)),
+        title: Text(AppStrings.t(context, 'Select Location'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16)),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
@@ -54,7 +55,7 @@ class _MapSelectionScreenState extends State<MapSelectionScreen> {
           if (_ready)
             TextButton(
               onPressed: () => Navigator.pop(context, _selectedLocation),
-              child: Text('CONFIRM', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
+              child: Text(AppStrings.t(context, 'CONFIRM'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5))),
             ),
         ],
       ),
@@ -101,7 +102,7 @@ class _MapSelectionScreenState extends State<MapSelectionScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Tap on the map to select the incident location',
+                    AppStrings.t(context, 'Tap on the map to select the incident location'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
                   ),
@@ -116,7 +117,7 @@ class _MapSelectionScreenState extends State<MapSelectionScreen> {
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: Text('Confirm Location', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                      child: Text(AppStrings.t(context, 'Confirm Location'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],

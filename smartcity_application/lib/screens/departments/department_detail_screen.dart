@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../l10n/app_strings.dart';
 
 class DepartmentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> department;
@@ -147,7 +148,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     final emoji = _emojiMap[type] ?? '🏢';
     final grads = _gradients[type] ?? [const Color(0xFF89f7fe), const Color(0xFF66a6ff)];
     final bg = _bgMap[type] ?? const Color(0xFFF8FAFC);
-    final name = (d['name'] ?? 'Department').toString();
+    final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
     final typeDisplay = (d['department_type_display'] ?? type).toString();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -223,11 +224,11 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           ),
         ),
         const SizedBox(height: 28),
-        Text('No Department Found',
+        Text(AppStrings.t(context, 'No Department Found'),
             style: GoogleFonts.poppins(
                 fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
         const SizedBox(height: 8),
-        Text('The $name department hasn\'t been\nset up by the admin yet.',
+        Text('${AppStrings.t(context, 'The')} $name ${AppStrings.t(context, 'department has not been')}\n${AppStrings.t(context, 'set up by the admin yet.')}',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(fontSize: 14, color: _textMuted, height: 1.5)),
         const SizedBox(height: 32),
@@ -239,15 +240,15 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
           ),
           child: Column(children: [
-            _infoRow('📋', 'Category', typeDisplay),
+            _infoRow('📋', AppStrings.t(context, 'Category'), typeDisplay),
             const SizedBox(height: 14),
             Divider(color: Colors.black.withOpacity(0.06), height: 1),
             const SizedBox(height: 14),
-            _infoRow('🔔', 'Status', 'Not yet configured'),
+            _infoRow('🔔', AppStrings.t(context, 'Status'), AppStrings.t(context, 'Not yet configured')),
             const SizedBox(height: 14),
             Divider(color: Colors.black.withOpacity(0.06), height: 1),
             const SizedBox(height: 14),
-            _infoRow('💡', 'Tip', 'Contact admin to add this department'),
+            _infoRow('💡', AppStrings.t(context, 'Tip'), AppStrings.t(context, 'Contact admin to add this department')),
           ]),
         ),
         const SizedBox(height: 24),
@@ -263,7 +264,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
             const Text('ℹ️', style: TextStyle(fontSize: 22)),
             const SizedBox(width: 12),
             Expanded(child: Text(
-                'Once the admin adds this department, you\'ll see full details, contact info, and location here.',
+                AppStrings.t(context, 'Once the admin adds this department, you\'ll see full details, contact info, and location here.'),
                 style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1D4ED8), height: 1.5))),
           ]),
         ),
@@ -284,7 +285,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
 
   // ── Full detail body ──────────────────────────────────────────────────────
   Widget _detailBody(Map<String, dynamic> d, String emoji, List<Color> grads, Color bg) {
-    final name = (d['name'] ?? 'Department').toString();
+    final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
     final typeDisplay = (d['department_type_display'] ?? '').toString();
     final city = (d['city'] ?? '').toString();
     final state = (d['state'] ?? '').toString();
@@ -372,7 +373,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                     const SizedBox(width: 12, height: 12,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E))),
                     const SizedBox(width: 6),
-                    Text('Locating...', style: GoogleFonts.inter(fontSize: 11, color: _textDark)),
+                    Text(AppStrings.t(context, 'Locating...'), style: GoogleFonts.inter(fontSize: 11, color: _textDark)),
                   ]),
                 ),
               ),
@@ -385,9 +386,9 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)]),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _legendDot(const Color(0xFF22C55E), 'You'),
+                  _legendDot(const Color(0xFF22C55E), AppStrings.t(context, 'You')),
                   const SizedBox(height: 3),
-                  _legendDot(_primary, 'Department'),
+                  _legendDot(_primary, AppStrings.t(context, 'Department')),
                 ]),
               ),
             ),
@@ -403,7 +404,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const Icon(Icons.directions_rounded, color: Colors.white, size: 15),
                     const SizedBox(width: 5),
-                    Text('Directions',
+                    Text(AppStrings.t(context, 'Directions'),
                         style: GoogleFonts.poppins(
                             fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
                   ]),
@@ -449,30 +450,30 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
 
             // ── Department details card ─────────────────────────────────
             _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Department Details',
+              Text(AppStrings.t(context, 'Department Details'),
                   style: GoogleFonts.poppins(
                       fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
               const SizedBox(height: 14),
               if (assignedAdmin.isNotEmpty) ...[
-                _detailRow('👤', 'Assigned Admin', assignedAdmin),
+                _detailRow('👤', AppStrings.t(context, 'Assigned Admin'), assignedAdmin),
                 const SizedBox(height: 12),
                 Divider(color: Colors.black.withOpacity(0.06), height: 1),
                 const SizedBox(height: 12),
               ],
               if (address.isNotEmpty) ...[
-                _detailRow('📍', 'Address', address),
+                _detailRow('📍', AppStrings.t(context, 'Address'), address),
                 const SizedBox(height: 12),
                 Divider(color: Colors.black.withOpacity(0.06), height: 1),
                 const SizedBox(height: 12),
               ],
               if (city.isNotEmpty || state.isNotEmpty)
-                _detailRow('🏙️', 'City / State',
+                _detailRow('🏙️', AppStrings.t(context, 'City / State'),
                     [city, state].where((s) => s.isNotEmpty).join(', ')),
               if (sla.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Divider(color: Colors.black.withOpacity(0.06), height: 1),
                 const SizedBox(height: 12),
-                _detailRow('⏱️', 'Response Time', '$sla hours'),
+                _detailRow('⏱️', AppStrings.t(context, 'Response Time'), '$sla ${AppStrings.t(context, 'hours')}'),
               ],
             ])),
             const SizedBox(height: 14),
@@ -480,12 +481,12 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
             // ── Contact card ────────────────────────────────────────────
             if (phone.isNotEmpty || emailAddr.isNotEmpty) ...[
               _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Contact Information',
+                Text(AppStrings.t(context, 'Contact Information'),
                     style: GoogleFonts.poppins(
                         fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
                 const SizedBox(height: 14),
                 if (phone.isNotEmpty) ...[
-                  _contactRow(Icons.phone_rounded, 'Phone Number', phone,
+                  _contactRow(Icons.phone_rounded, AppStrings.t(context, 'Phone Number'), phone,
                       const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
                   if (emailAddr.isNotEmpty) ...[
                     const SizedBox(height: 10),
@@ -494,7 +495,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   ],
                 ],
                 if (emailAddr.isNotEmpty)
-                  _contactRow(Icons.email_outlined, 'Email Address', emailAddr,
+                  _contactRow(Icons.email_outlined, AppStrings.t(context, 'Email Address'), emailAddr,
                       _primary, const Color(0xFFEFF6FF)),
               ])),
               const SizedBox(height: 14),
@@ -504,7 +505,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 if (phone.isNotEmpty)
                   Expanded(child: _actionBtn(
                     icon: Icons.phone_rounded,
-                    label: 'Call Now',
+                    label: AppStrings.t(context, 'Call Now'),
                     color: const Color(0xFF22C55E),
                     onTap: () => _call(phone),
                   )),
@@ -513,7 +514,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 if (emailAddr.isNotEmpty)
                   Expanded(child: _actionBtn(
                     icon: Icons.email_rounded,
-                    label: 'Send Email',
+                    label: AppStrings.t(context, 'Send Email'),
                     color: _primary,
                     onTap: () => _email(emailAddr),
                   )),
@@ -528,7 +529,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
               child: ElevatedButton.icon(
                 onPressed: _openDirections,
                 icon: const Icon(Icons.directions_rounded, size: 18),
-                label: Text('Get Directions',
+                label: Text(AppStrings.t(context, 'Get Directions'),
                     style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,

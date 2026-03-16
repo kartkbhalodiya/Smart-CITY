@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../l10n/app_strings.dart';
 
 class PermissionScreen extends StatefulWidget {
   final void Function(BuildContext context) onDone;
@@ -110,10 +111,10 @@ class _PermissionScreenState extends State<PermissionScreen>
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Permissions Blocked',
+        title: Text(AppStrings.t(context, 'Permissions Blocked'),
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16)),
         content: Text(
-          'Some permissions are permanently denied. Open App Settings to enable them.',
+          AppStrings.t(context, 'Some permissions are permanently denied. Open App Settings to enable them.'),
           style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
         ),
         actions: [
@@ -122,7 +123,7 @@ class _PermissionScreenState extends State<PermissionScreen>
               Navigator.pop(context);
               widget.onDone(context);
             },
-            child: Text('Skip', style: GoogleFonts.inter(color: const Color(0xFF94a3b8))),
+            child: Text(AppStrings.t(context, 'Skip'), style: GoogleFonts.inter(color: const Color(0xFF94a3b8))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -137,7 +138,7 @@ class _PermissionScreenState extends State<PermissionScreen>
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Open Settings',
+            child: Text(AppStrings.t(context, 'Open Settings'),
                 style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
           ),
         ],
@@ -148,14 +149,14 @@ class _PermissionScreenState extends State<PermissionScreen>
   @override
   Widget build(BuildContext context) {
     final items = [
-      _PermItem(Icons.location_on_rounded, 'Location',
-          'Detect & pin your address on map', const Color(0xFF1E66F5), _locStatus),
-      _PermItem(Icons.photo_library_rounded, 'Photos & Storage',
-          'Attach photos with complaints', const Color(0xFF7C3AED), _storageStatus),
-      _PermItem(Icons.camera_alt_rounded, 'Camera',
-          'Capture photos directly in app', const Color(0xFF059669), _camStatus),
-      _PermItem(Icons.notifications_rounded, 'Notifications',
-          'Get updates on your complaints', const Color(0xFFD97706), _notifStatus),
+      _PermItem(Icons.location_on_rounded, AppStrings.t(context, 'Location'),
+          AppStrings.t(context, 'Detect & pin your address on map'), const Color(0xFF1E66F5), _locStatus),
+      _PermItem(Icons.photo_library_rounded, AppStrings.t(context, 'Photos & Storage'),
+          AppStrings.t(context, 'Attach photos with complaints'), const Color(0xFF7C3AED), _storageStatus),
+      _PermItem(Icons.camera_alt_rounded, AppStrings.t(context, 'Camera'),
+          AppStrings.t(context, 'Capture photos directly in app'), const Color(0xFF059669), _camStatus),
+      _PermItem(Icons.notifications_rounded, AppStrings.t(context, 'Notifications'),
+          AppStrings.t(context, 'Get updates on your complaints'), const Color(0xFFD97706), _notifStatus),
     ];
 
     return Scaffold(
@@ -177,12 +178,12 @@ class _PermissionScreenState extends State<PermissionScreen>
                     child: const Icon(Icons.security_rounded, size: 38, color: _primary),
                   ),
                   const SizedBox(height: 18),
-                  Text('App Permissions',
+                  Text(AppStrings.t(context, 'App Permissions'),
                       style: GoogleFonts.poppins(
                           fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
                   const SizedBox(height: 6),
                   Text(
-                    'JanHelp needs these permissions for the best experience',
+                    AppStrings.t(context, 'JanHelp needs these permissions for the best experience'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b), height: 1.5),
                   ),
@@ -214,7 +215,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                                 Icon(_allGranted ? Icons.check_circle_rounded : Icons.security_rounded, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _allGranted ? 'Continue' : 'Allow Permissions',
+                                  _allGranted ? AppStrings.t(context, 'Continue') : AppStrings.t(context, 'Allow Permissions'),
                                   style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
                                 ),
                               ],
@@ -229,7 +230,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        'Skip for now',
+                        AppStrings.t(context, 'Skip for now'),
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             color: const Color(0xFF94a3b8),

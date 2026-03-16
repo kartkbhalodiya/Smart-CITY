@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
+import '../../l10n/app_strings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,14 +64,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   ),
                   padding: const EdgeInsets.all(30),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _languageSelector(),
+                    ),
+                    const SizedBox(height: 10),
                     // Logo
                     Image.asset('assets/images/logo.png', height: 60),
                     const SizedBox(height: 6),
-                    Text('COMPLAINT MANAGEMENT SYSTEM', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
+                    Text(AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
                     const SizedBox(height: 8),
-                    Text('Login to Your Account', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                    Text(AppStrings.t(context, 'Login to Your Account'), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
                     const SizedBox(height: 20),
-                    _inputField(_identifierController, 'Email / Mobile Number', Icons.person_outline, TextInputType.emailAddress),
+                    _inputField(_identifierController, AppStrings.t(context, 'Email / Mobile Number'), Icons.person_outline, TextInputType.emailAddress),
                     const SizedBox(height: 12),
                     _passwordField(),
                     const SizedBox(height: 8),
@@ -77,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
                         onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
-                        child: Text('Forgot Password?', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600)),
+                        child: Text(AppStrings.t(context, 'Forgot Password?'), style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600)),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -91,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       child: _isLoading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text('LOGIN', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                          : Text(AppStrings.t(context, 'LOGIN'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                     )),
                     const SizedBox(height: 12),
                     Container(
@@ -109,10 +116,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           child: RichText(text: TextSpan(
                             style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF1C1C1C), height: 1.5),
                             children: [
-                              const TextSpan(text: 'Citizen? ', style: TextStyle(fontWeight: FontWeight.w700)),
-                              const TextSpan(text: 'Just enter your email and tap '),
-                              const TextSpan(text: 'LOGIN', style: TextStyle(fontWeight: FontWeight.w700)),
-                              const TextSpan(text: ' — no password needed. An OTP will be sent to your email.'),
+                              TextSpan(text: AppStrings.t(context, 'Citizen? '), style: const TextStyle(fontWeight: FontWeight.w700)),
+                              TextSpan(text: AppStrings.t(context, 'Just enter your email and tap ')),
+                              TextSpan(text: AppStrings.t(context, 'LOGIN'), style: const TextStyle(fontWeight: FontWeight.w700)),
+                              TextSpan(text: AppStrings.t(context, ' — no password needed. An OTP will be sent to your email.')),
                             ],
                           )),
                         ),
@@ -122,11 +129,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     const Divider(color: Color(0x0D000000)),
                     const SizedBox(height: 12),
                     Row(children: [
-                      Expanded(child: _outlineBtn(Icons.person_outline, 'Guest', () {
+                      Expanded(child: _outlineBtn(Icons.person_outline, AppStrings.t(context, 'Guest'), () {
                         Navigator.pushReplacementNamed(context, AppRoutes.guestDashboard);
                       })),
                       const SizedBox(width: 8),
-                      Expanded(child: _outlineBtn(Icons.search, 'Track', () {
+                      Expanded(child: _outlineBtn(Icons.search, AppStrings.t(context, 'Track'), () {
                         Navigator.pushNamed(context, AppRoutes.guestTrack);
                       })),
                     ]),
@@ -134,13 +141,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, AppRoutes.register),
                       child: RichText(text: TextSpan(
-                        text: "Don't have an account? ",
+                        text: AppStrings.t(context, "Don't have an account? "),
                         style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b)),
-                        children: [TextSpan(text: 'Register Now', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600))],
+                        children: [TextSpan(text: AppStrings.t(context, 'Register Now'), style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E66F5), fontWeight: FontWeight.w600))],
                       )),
                     ),
                     const SizedBox(height: 14),
-                    Text('Designed by Kartik Bhalodiya.', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
+                    Text(AppStrings.t(context, 'Designed by Kartik Bhalodiya.'), style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
                   ]),
                 ),
               ),
@@ -169,12 +176,47 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         controller: _passwordController, obscureText: _obscure,
         style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
         decoration: InputDecoration(
-          hintText: 'Password (Staff/Admin only)', hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
+          hintText: AppStrings.t(context, 'Password (Staff/Admin only)'), hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
           prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF64748b), size: 18),
           suffixIcon: IconButton(icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: const Color(0xFF64748b), size: 18), onPressed: () => setState(() => _obscure = !_obscure)),
           border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
       ),
+    );
+  }
+
+  Widget _languageSelector() {
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, _) {
+        return Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: localeProvider.locale.languageCode,
+              icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF1E66F5)),
+              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a), fontWeight: FontWeight.w600),
+              dropdownColor: Colors.white,
+              items: const [
+                DropdownMenuItem(value: 'en', child: Text('English')),
+                DropdownMenuItem(value: 'hi', child: Text('हिंदी')),
+                DropdownMenuItem(value: 'gu', child: Text('ગુજરાતી')),
+              ],
+              onChanged: (value) async {
+                if (value == null) {
+                  return;
+                }
+                await localeProvider.setLocale(value);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -194,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _login() async {
-    if (_identifierController.text.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter email or mobile'))); return; }
+    if (_identifierController.text.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.t(context, 'Please enter email or mobile')))); return; }
     setState(() => _isLoading = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final password = _passwordController.text.trim();
@@ -212,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           Navigator.pushReplacementNamed(context, AppRoutes.userDashboard);
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Login failed')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Login failed'))));
       }
     } else {
       // OTP login (citizens)
@@ -221,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (success && mounted) {
         Navigator.pushNamed(context, AppRoutes.otp, arguments: {'email': _identifierController.text.trim()});
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? 'Failed to send OTP')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Failed to send OTP'))));
       }
     }
   }

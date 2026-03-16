@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
+import '../l10n/app_strings.dart';
 import 'permission_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -217,7 +218,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Smart City Complaint Management',
+                        AppStrings.t(context, 'Smart City Complaint Management'),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: const Color(0xFF64748B),
@@ -271,7 +272,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     ),
                   ),
                   child: Text(
-                    _quotes[_quoteIndex],
+                    AppStrings.t(context, _quotes[_quoteIndex]),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 14,
@@ -315,7 +316,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 child: Column(
                   children: [
                     Text(
-                      'Made with ❤️ in India 🇮🇳',
+                      AppStrings.t(context, 'Made with ❤️ in India 🇮🇳'),
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: const Color(0xFF94A3B8),
@@ -324,7 +325,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Designed by Kartik Bhalodiya',
+                      AppStrings.t(context, 'Designed by Kartik Bhalodiya'),
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         color: const Color(0xFFCBD5E1),

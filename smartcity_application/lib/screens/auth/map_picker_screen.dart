@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../services/location_service.dart';
+import '../../l10n/app_strings.dart';
 
 /// Result returned from MapPickerScreen
 class MapPickerResult {
@@ -99,7 +100,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     final addr = await LocationService.getAddressFromCoordinates(pos.latitude, pos.longitude);
     if (mounted) {
       setState(() {
-        _addressText = addr['address']!.isNotEmpty ? addr['address']! : 'Lat: ${pos.latitude.toStringAsFixed(5)}, Lng: ${pos.longitude.toStringAsFixed(5)}';
+        _addressText = addr['address']!.isNotEmpty
+            ? addr['address']!
+            : '${AppStrings.t(context, 'Lat')}: ${pos.latitude.toStringAsFixed(5)}, ${AppStrings.t(context, 'Lng')}: ${pos.longitude.toStringAsFixed(5)}';
         _city = addr['city'] ?? '';
         _state = addr['state'] ?? '';
         _pincode = addr['pincode'] ?? '';
@@ -176,12 +179,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      _detectingLocation ? 'Detecting Location...' : 'Loading Map...',
+                      _detectingLocation
+                          ? AppStrings.t(context, 'Detecting Location...')
+                          : AppStrings.t(context, 'Loading Map...'),
                       style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a)),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _detectingLocation ? 'Getting your current position' : 'Please wait',
+                      _detectingLocation
+                          ? AppStrings.t(context, 'Getting your current position')
+                          : AppStrings.t(context, 'Please wait'),
                       style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b)),
                     ),
                     const SizedBox(height: 24),
@@ -189,7 +196,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.location_searching_rounded, size: 16, color: _primary),
                         const SizedBox(width: 6),
-                        Text('Zooming to your location', style: GoogleFonts.inter(fontSize: 12, color: _primary)),
+                        Text(AppStrings.t(context, 'Zooming to your location'), style: GoogleFonts.inter(fontSize: 12, color: _primary)),
                       ]),
                   ],
                 ),
@@ -224,7 +231,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
                       ),
                       child: Text(
-                        'Pick Location on Map',
+                        AppStrings.t(context, 'Pick Location on Map'),
                         style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a)),
                       ),
                     ),
@@ -269,9 +276,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           ? Row(children: [
                               const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
                               const SizedBox(width: 8),
-                              Text('Getting address...', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
+                              Text(AppStrings.t(context, 'Getting address...'), style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
                             ])
-                          : Text(_addressText, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          : Text(AppStrings.t(context, _addressText), style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a)), maxLines: 2, overflow: TextOverflow.ellipsis),
                       ),
                     ],
                   ),
@@ -279,7 +286,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   Padding(
                     padding: const EdgeInsets.only(left: 40),
                     child: Text(
-                      'Lat: ${_pickedLocation.latitude.toStringAsFixed(6)},  Lng: ${_pickedLocation.longitude.toStringAsFixed(6)}',
+                      '${AppStrings.t(context, 'Lat')}: ${_pickedLocation.latitude.toStringAsFixed(6)},  ${AppStrings.t(context, 'Lng')}: ${_pickedLocation.longitude.toStringAsFixed(6)}',
                       style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94a3b8)),
                     ),
                   ),
@@ -297,7 +304,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                         pincode: _pincode,
                       )),
                       icon: const Icon(Icons.check_circle_rounded, size: 18),
-                      label: Text('Confirm Location', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
+                      label: Text(AppStrings.t(context, 'Confirm Location'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _primary,
                         foregroundColor: Colors.white,

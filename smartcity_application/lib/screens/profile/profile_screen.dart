@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../config/api_config.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../services/api_service.dart';
+import '../../l10n/app_strings.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,7 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   
   String? _selectedState;
   String? _selectedCity;
-  String _selectedLanguage = 'English';
+  String _selectedLanguage = 'en';
   
   List<Map<String, dynamic>> _states = [];
   List<Map<String, dynamic>> _cities = [];
@@ -45,9 +47,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
+      final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
       final user = auth.user;
       _fullNameController.text = user?.fullName ?? '';
       _emailController.text = user?.email ?? '';
+      _selectedLanguage = localeProvider.locale.languageCode;
     });
   }
   
@@ -168,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                     children: [
                                       const Icon(Icons.arrow_back, size: 16, color: Color(0xFF1E66F5)),
                                       const SizedBox(width: 6),
-                                      Text('Back', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
+                                      Text(AppStrings.t(context, 'Back'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
                                     ],
                                   ),
                                 ),
@@ -180,15 +184,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 const SizedBox(height: 25),
                                 
                                 // Personal Information Section
-                                _sectionTitle('Personal Information', Icons.person),
+                                _sectionTitle(AppStrings.t(context, 'Personal Information'), Icons.person),
                                 const SizedBox(height: 16),
-                                _inputField('Full Name', Icons.person, _fullNameController, TextInputType.name),
+                                _inputField(AppStrings.t(context, 'Full Name'), Icons.person, _fullNameController, TextInputType.name),
                                 const SizedBox(height: 14),
-                                _inputField('Email', Icons.email, _emailController, TextInputType.emailAddress),
+                                _inputField(AppStrings.t(context, 'Email'), Icons.email, _emailController, TextInputType.emailAddress),
                                 const SizedBox(height: 14),
-                                _inputField('Mobile', Icons.phone_android, _mobileController, TextInputType.phone),
+                                _inputField(AppStrings.t(context, 'Mobile'), Icons.phone_android, _mobileController, TextInputType.phone),
                                 const SizedBox(height: 14),
-                                _dropdownMap('State', Icons.map, _states, _selectedState, (v) {
+                                _dropdownMap(AppStrings.t(context, 'State'), Icons.map, _states, _selectedState, (v) {
                                   setState(() {
                                     _selectedState = v;
                                     _selectedCity = null;
@@ -197,19 +201,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   if (v != null) _fetchCities(v);
                                 }),
                                 const SizedBox(height: 14),
-                                _dropdownMap('City', Icons.location_city, _cities, _selectedCity, (v) {
+                                _dropdownMap(AppStrings.t(context, 'City'), Icons.location_city, _cities, _selectedCity, (v) {
                                   setState(() => _selectedCity = v);
                                 }),
                                 const SizedBox(height: 14),
-                                _textAreaField('Address', Icons.home, _addressController),
+                                _textAreaField(AppStrings.t(context, 'Address'), Icons.home, _addressController),
                                 const SizedBox(height: 14),
-                                _inputField('Aadhaar Number (Optional)', Icons.credit_card, _aadhaarController, TextInputType.number),
+                                _inputField(AppStrings.t(context, 'Aadhaar Number (Optional)'), Icons.credit_card, _aadhaarController, TextInputType.number),
                                 const SizedBox(height: 14),
-                                _infoField('Member Since', Icons.calendar_today, user?.email != null ? 'Jan 15, 2024' : 'N/A'),
+                                _infoField(AppStrings.t(context, 'Member Since'), Icons.calendar_today, user?.email != null ? 'Jan 15, 2024' : 'N/A'),
                                 
                                 // Language Settings Section
                                 const SizedBox(height: 24),
-                                _sectionTitle('Language Settings', Icons.language),
+                                _sectionTitle(AppStrings.t(context, 'Language Settings'), Icons.language),
                                 const SizedBox(height: 16),
                                 _languageSelector(),
                                 
@@ -224,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             // Footer
                             const SizedBox(height: 16),
                             Text(
-                              'Designed by Kartik Bhalodiya.',
+                              AppStrings.t(context, 'Designed by Kartik Bhalodiya.'),
                               style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b), fontWeight: FontWeight.w500),
                               textAlign: TextAlign.center,
                             ),
@@ -405,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: items.any((item) => item['id'].toString() == value) ? value : null,
-              hint: Text('Select $label', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
+              hint: Text('${AppStrings.t(context, 'Select ')}$label', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
               isExpanded: true,
               icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF64748b)),
               style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a), fontWeight: FontWeight.w500),
@@ -451,6 +455,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _languageSelector() {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -465,10 +470,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF1E66F5)),
           style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF0f172a), fontWeight: FontWeight.w500),
           dropdownColor: Colors.white,
-          items: ['English', 'हिंदी (Hindi)', 'ગુજરાતી (Gujarati)']
-              .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
-              .toList(),
-          onChanged: (value) => setState(() => _selectedLanguage = value!),
+          items: [
+            DropdownMenuItem(value: 'en', child: Text(AppStrings.t(context, 'English'))),
+            DropdownMenuItem(value: 'hi', child: Text(AppStrings.t(context, 'Hindi'))),
+            DropdownMenuItem(value: 'gu', child: Text(AppStrings.t(context, 'Gujarati'))),
+          ],
+          onChanged: (value) async {
+            if (value == null) {
+              return;
+            }
+            setState(() => _selectedLanguage = value);
+            await localeProvider.setLocale(value);
+          },
         ),
       ),
     );
@@ -495,7 +508,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 children: [
                   const Icon(Icons.save, size: 16, color: Colors.white),
                   const SizedBox(width: 8),
-                  Text('SAVE', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
+                  Text(AppStrings.t(context, 'SAVE'), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
                 ],
               ),
       ),
@@ -522,7 +535,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           children: [
             const Icon(Icons.logout, size: 16, color: Color(0xFFdc2626)),
             const SizedBox(width: 8),
-            Text('LOGOUT', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFdc2626), letterSpacing: 0.5)),
+            Text(AppStrings.t(context, 'LOGOUT'), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFdc2626), letterSpacing: 0.5)),
           ],
         ),
       ),
@@ -536,7 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Profile updated successfully!'),
+        content: Text(AppStrings.t(context, 'Profile updated successfully!')),
         backgroundColor: const Color(0xFF2ECC71),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
