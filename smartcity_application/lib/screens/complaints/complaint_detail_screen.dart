@@ -1,12 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/api_config.dart';
 import '../../config/theme.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
+import '../../services/api_service.dart';
 import '../departments/department_detail_screen.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
@@ -20,6 +24,19 @@ class ComplaintDetailScreen extends StatefulWidget {
 class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   bool _showDeptPopup = false;
   final MapController _mapController = MapController();
+  int _selectedRating = 0;
+  bool _isSubmittingRating = false;
+  bool _isSubmittingReopen = false;
+  final _commentCtrl = TextEditingController();
+  final _reopenReasonCtrl = TextEditingController();
+  String? _reopenProofPath;
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    _reopenReasonCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -59,10 +76,19 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                   complaint.assignedDepartment?.name ?? 'Not Assigned',
                 ),
                 if (complaint.media != null && complaint.media!.isNotEmpty)
-                  _buildMediaSection(complaint.media!),
-                if (complaint.workStatus == 'resolved' &&
-                    complaint.citizenRating == null)
-                  _buildRatingSection(complaint),
+                  _buildMediaSection('Evidence Photos', complaint.media!),
+                // Dept work proof
+                if (complaint.workProof != null && complaint.workProof!.isNotEmpty)
+                  _buildMediaSection('Department Proof', complaint.workProof!),
+                // Rating: show existing or form
+                if (complaint.citizenRating != null)
+                  _buildExistingRating(complaint)
+                else if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved')
+                  _buildRatingForm(complaint),
+                // Reopen button — show if solved/resolved (before or after rating)
+                if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved' ||
+                    complaint.canReopen == true)
+                  _buildReopenButton(complaint),
               ],
             ),
           );
@@ -441,12 +467,12 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
-  Widget _buildMediaSection(List<ComplaintMedia> media) {
+  Widget _buildMediaSection(String title, List<ComplaintMedia> media) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Evidence',
-            style: TextStyle(
+        Text(title,
+            style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
                 color: AppColors.primaryBlue)),
@@ -459,10 +485,13 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(media[index].fileUrl,
-                      width: 120, height: 120, fit: BoxFit.cover),
+                child: GestureDetector(
+                  onTap: () => _openUrl(media[index].fileUrl),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(media[index].fileUrl,
+                        width: 120, height: 120, fit: BoxFit.cover),
+                  ),
                 ),
               );
             },
@@ -473,8 +502,37 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
-  Widget _buildRatingSection(Complaint complaint) {
+  Widget _buildExistingRating(Complaint complaint) {
+    final r = complaint.citizenRating!;
     return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFCD34D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Your Rating', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14, color: const Color(0xFF92400E))),
+          const SizedBox(height: 8),
+          Row(children: List.generate(5, (i) => Icon(
+            i < r ? Icons.star : Icons.star_border,
+            color: const Color(0xFFF59E0B), size: 26,
+          ))),
+          if (complaint.citizenFeedback != null && complaint.citizenFeedback!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(complaint.citizenFeedback!, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF78350F))),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingForm(Complaint complaint) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.green.withOpacity(0.05),
@@ -482,26 +540,235 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         border: Border.all(color: Colors.green.withOpacity(0.2)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Rate this Resolution',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          const Row(
+          Text('Rate this Resolution', style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15)),
+          const SizedBox(height: 12),
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.star_border, size: 32, color: Colors.orange),
-              Icon(Icons.star_border, size: 32, color: Colors.orange),
-              Icon(Icons.star_border, size: 32, color: Colors.orange),
-              Icon(Icons.star_border, size: 32, color: Colors.orange),
-              Icon(Icons.star_border, size: 32, color: Colors.orange),
-            ],
+            children: List.generate(5, (i) => GestureDetector(
+              onTap: () => setState(() => _selectedRating = i + 1),
+              child: Icon(
+                i < _selectedRating ? Icons.star : Icons.star_border,
+                size: 34, color: Colors.orange,
+              ),
+            )),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _commentCtrl,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Comment (optional)',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.all(12),
+            ),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-              onPressed: () {}, child: const Text('Submit Rating')),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _selectedRating > 0 && !_isSubmittingRating
+                  ? () => _submitRating(complaint)
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: _isSubmittingRating
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Submit Rating', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildReopenButton(Complaint complaint) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _showReopenDialog(complaint),
+          icon: const Icon(Icons.refresh),
+          label: const Text('Reopen Complaint', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFEF4444),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReopenDialog(Complaint complaint) {
+    _reopenReasonCtrl.clear();
+    _reopenProofPath = null;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Reopen Complaint', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937))),
+                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('#${complaint.complaintNumber}',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFEF4444))),
+                ),
+                const SizedBox(height: 16),
+                Text('Reason for reopening *', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _reopenReasonCtrl,
+                  maxLines: 4,
+                  onChanged: (_) => setDlg(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Describe why you want to reopen...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Attach Proof (Optional)', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () async {
+                    final img = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    if (img != null) setDlg(() => _reopenProofPath = img.path);
+                  },
+                  child: Container(
+                    height: 100,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
+                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xFFF9FAFB),
+                    ),
+                    child: _reopenProofPath != null
+                        ? Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.file(File(_reopenProofPath!), fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                              ),
+                              Positioned(
+                                top: 6, right: 6,
+                                child: GestureDetector(
+                                  onTap: () => setDlg(() => _reopenProofPath = null),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate, size: 32, color: Color(0xFF9CA3AF)),
+                              SizedBox(height: 6),
+                              Text('Tap to add photo', style: TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                            ],
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _reopenReasonCtrl.text.trim().isEmpty || _isSubmittingReopen
+                          ? null
+                          : () => _submitReopen(complaint, ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: _isSubmittingReopen
+                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Submit', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitRating(Complaint complaint) async {
+    setState(() => _isSubmittingRating = true);
+    final res = await ApiService.post(
+      ApiConfig.rateComplaint(complaint.id),
+      {'rating': _selectedRating.toString(), 'feedback': _commentCtrl.text.trim()},
+    );
+    setState(() => _isSubmittingRating = false);
+    if (!mounted) return;
+    if (res['success'] == true) {
+      Provider.of<ComplaintProvider>(context, listen: false).loadComplaintDetail(complaint.id);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rating submitted!'), backgroundColor: Colors.green));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _submitReopen(Complaint complaint, BuildContext ctx) async {
+    setState(() => _isSubmittingReopen = true);
+    final res = await ApiService.post(
+      ApiConfig.reopenComplaint(complaint.id),
+      {'reason': _reopenReasonCtrl.text.trim()},
+    );
+    setState(() => _isSubmittingReopen = false);
+    if (!mounted) return;
+    if (res['success'] == true) {
+      Navigator.pop(ctx);
+      Provider.of<ComplaintProvider>(context, listen: false).loadComplaintDetail(complaint.id);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reopen request submitted!'), backgroundColor: Colors.green));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed'), backgroundColor: Colors.red));
+    }
+  }
+
+  void _openUrl(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) launchUrl(Uri.parse(url));
   }
 
   void _openMap(double lat, double lng) async {

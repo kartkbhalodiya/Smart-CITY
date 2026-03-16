@@ -166,69 +166,66 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     print('UserTrackComplaintDetail - Complaint data received: $complaint');
     
     final isSolved = complaint['work_status'] == 'solved';
-    final canReopen = _canReopenComplaint(complaint);
+    final canReopen = complaint['can_reopen'] == true || _canReopenComplaint(complaint);
     final hasRating = complaint['citizen_rating'] != null;
     
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: complaint.isEmpty 
-        ? const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text('No complaint data available', style: TextStyle(fontSize: 18)),
-              ],
-            ),
-          )
-        : Column(
-            children: [
-              // App Bar with Map
-              _buildMapAppBar(complaint),
-              
-              // Scrollable Content
-              Expanded(
-                child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          complaint.isEmpty
+              ? const Center(
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Complaint Title Card
-                      _buildComplaintTitleCard(complaint),
-                      
-                      // Department Details Card
-                      if (complaint['assigned_department'] != null)
-                        _buildDepartmentDetailsCard(complaint['assigned_department']),
-                      
-                      // Status Timeline
-                      _buildStatusTimeline(complaint),
-                      
-                      // Complaint Details Card
-                      _buildComplaintDetailsCard(complaint),
-                      
-                      // Personal Details Card
-                      _buildPersonalDetailsCard(complaint),
-                      
-                      // Rating Section (if solved and no rating yet)
-                      if (isSolved && !hasRating)
-                        _buildRatingSection(complaint),
-                      
-                      // Show Rating (if already rated)
-                      if (hasRating)
-                        _buildExistingRatingCard(complaint),
-                      
-                      // Reopen Button (if can reopen)
-                      if (canReopen)
-                        _buildReopenSection(),
-                      
-                      const SizedBox(height: 100),
+                      Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      SizedBox(height: 16),
+                      Text('No complaint data available', style: TextStyle(fontSize: 18)),
                     ],
+                  ),
+                )
+              : Column(
+                  children: [
+                    _buildMapAppBar(complaint),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            _buildComplaintTitleCard(complaint),
+                            if (complaint['assigned_department'] != null)
+                              _buildDepartmentDetailsCard(complaint['assigned_department']),
+                            _buildStatusTimeline(complaint),
+                            _buildComplaintDetailsCard(complaint),
+                            _buildPersonalDetailsCard(complaint),
+                            if (isSolved && !hasRating)
+                              _buildRatingSection(complaint),
+                            if (hasRating)
+                              _buildExistingRatingCard(complaint),
+                            if (canReopen)
+                              _buildReopenSection(),
+                            const SizedBox(height: 100),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+          // Reopen Dialog — centered modal
+          if (_showReopenDialog)
+            GestureDetector(
+              onTap: () => setState(() => _showReopenDialog = false),
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: _buildReopenDialog(),
                   ),
                 ),
               ),
-            ],
-          ),
-      // Reopen Dialog
-      bottomSheet: _showReopenDialog ? _buildReopenDialog() : null,
+            ),
+        ],
+      ),
     );
   }
 
@@ -2174,14 +2171,17 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
 
   Widget _buildReopenDialog() {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20)],
       ),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
@@ -2190,11 +2190,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               children: [
                 const Text(
                   'Reopen Complaint',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
                 ),
                 IconButton(
                   onPressed: () => setState(() => _showReopenDialog = false),
@@ -2202,7 +2198,6 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -2212,206 +2207,103 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               ),
               child: Text(
                 'Complaint #${widget.complaint['complaint_number'] ?? 'Unknown'}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFEF4444),
-                ),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFEF4444)),
               ),
             ),
             const SizedBox(height: 20),
-            
-            // Reason Section
-            const Text(
-              'Reason for reopening:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
-              ),
-            ),
+            const Text('Reason for reopening:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937))),
             const SizedBox(height: 8),
-            const Text(
-              'Please provide a detailed explanation for why you want to reopen this complaint.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-            const SizedBox(height: 12),
             Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE5E7EB))),
               child: TextField(
                 controller: _reopenReasonController,
                 maxLines: 4,
+                onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
                   hintText: 'Describe the issue in detail...',
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF9CA3AF),
-                  ),
+                  hintStyle: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(16),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            
-            // Photo Attachment Section
-            const Text(
-              'Attach Photo Proof (Optional):',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add photos to support your reopen request.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B7280),
-              ),
-            ),
+            const Text('Attach Photo Proof (Optional):', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937))),
             const SizedBox(height: 12),
             GestureDetector(
               onTap: _pickImage,
               child: Container(
-                height: 120,
+                height: 110,
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFFE5E7EB),
-                    width: 2,
-                  ),
+                  border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
                   borderRadius: BorderRadius.circular(12),
                   color: const Color(0xFFF9FAFB),
                 ),
                 child: _selectedProofPath != null
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                         child: Stack(
                           children: [
-                            Image.file(
-                              File(_selectedProofPath!),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
+                            Image.file(File(_selectedProofPath!), fit: BoxFit.cover, width: double.infinity, height: double.infinity),
                             Positioned(
-                              top: 8,
-                              right: 8,
+                              top: 8, right: 8,
                               child: GestureDetector(
                                 onTap: () => setState(() => _selectedProofPath = null),
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
+                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                                 ),
                               ),
                             ),
                           ],
                         ),
                       )
-                    : const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate,
-                              size: 40,
-                              color: Color(0xFF9CA3AF),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Tap to add photo',
-                              style: TextStyle(
-                                color: Color(0xFF6B7280),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              'JPG, PNG up to 10MB',
-                              style: TextStyle(
-                                color: Color(0xFF9CA3AF),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
+                    : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate, size: 36, color: Color(0xFF9CA3AF)),
+                          SizedBox(height: 8),
+                          Text('Tap to add photo', style: TextStyle(color: Color(0xFF6B7280), fontSize: 14, fontWeight: FontWeight.w500)),
+                          Text('JPG, PNG up to 10MB', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12)),
+                        ],
                       ),
               ),
             ),
-            const Spacer(),
-            
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _showReopenDialog = false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF6B7280),
-                      side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => setState(() => _showReopenDialog = false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF6B7280),
+                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  child: const Text('Cancel', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _reopenReasonController.text.isNotEmpty && !_isSubmittingReopen
-                        ? _submitReopen
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF4444),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isSubmittingReopen
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Submit Request',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _reopenReasonController.text.trim().isNotEmpty && !_isSubmittingReopen
+                      ? _submitReopen
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  child: _isSubmittingReopen
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Submit Request', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
-              ],
-            ),
+              ),
+            ]),
+            const SizedBox(height: 8),
           ],
         ),
       ),

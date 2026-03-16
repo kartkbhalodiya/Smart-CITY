@@ -4,7 +4,6 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
-import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/complaints/category_selection_screen.dart';
 import '../screens/complaints/submit_complaint_screen.dart';
 import '../screens/complaints/track_complaints_screen.dart';
@@ -61,8 +60,6 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       
       case dashboard:
-        return MaterialPageRoute(builder: (_) => const DashboardScreen());
-
       case userDashboard:
         return MaterialPageRoute(builder: (_) => const UserDashboardScreen());
 

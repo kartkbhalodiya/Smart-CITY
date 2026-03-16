@@ -28,6 +28,8 @@ class Complaint {
   final Department? assignedDepartment;
   final bool? canReopen;
   final DateTime? reopenDeadline;
+  final List<ComplaintMedia>? workProof;
+  final String? citizenFeedback;
 
   Complaint({
     required this.id,
@@ -59,6 +61,8 @@ class Complaint {
     this.assignedDepartment,
     this.canReopen,
     this.reopenDeadline,
+    this.workProof,
+    this.citizenFeedback,
   });
 
   factory Complaint.fromJson(Map<String, dynamic> json) {
@@ -98,6 +102,10 @@ class Complaint {
       reopenDeadline: json['reopen_deadline'] != null
           ? DateTime.parse(json['reopen_deadline'])
           : null,
+      workProof: json['work_proof'] != null
+          ? (json['work_proof'] as List).map((m) => ComplaintMedia.fromJson(m)).toList()
+          : null,
+      citizenFeedback: json['citizen_feedback'],
     );
   }
 }

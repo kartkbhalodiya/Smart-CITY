@@ -504,7 +504,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _logoutButton(auth) {
     return GestureDetector(
-      onTap: () => _showLogoutDialog(auth),
+      onTap: () async {
+        await auth.logout();
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -539,37 +544,5 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  void _showLogoutDialog(auth) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: AlertDialog(
-            backgroundColor: Colors.white.withOpacity(0.95),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('Logout', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF0f172a))),
-            content: Text('Are you sure you want to logout?', style: GoogleFonts.inter(color: const Color(0xFF64748b))),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748b))),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context); // close dialog
-                  await auth.logout();
-                  if (mounted) {
-                    Navigator.pushNamedAndRemoveUntil(
-                      this.context, AppRoutes.login, (_) => false);
-                  }
-                },
-                child: Text('Logout', style: GoogleFonts.inter(color: const Color(0xFFdc2626), fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+
 }

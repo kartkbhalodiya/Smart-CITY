@@ -23,7 +23,7 @@ class ComplaintSuccessScreen extends StatelessWidget {
     const textMuted = Color(0xFF64748B);
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final nextRoute = auth.isAuthenticated ? AppRoutes.dashboard : AppRoutes.guestDashboard;
+    final nextRoute = auth.isAuthenticated ? AppRoutes.userDashboard : AppRoutes.guestDashboard;
 
     return Scaffold(
       backgroundColor: Colors.white,
