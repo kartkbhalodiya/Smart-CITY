@@ -534,17 +534,17 @@
                 
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" name="full_name" value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}" required>
+                    <input type="text" name="full_name" value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}" placeholder="Enter your full name" required>
                 </div>
 
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="tel" name="phone" value="{% if user.is_authenticated %}{{ user.citizenprofile.mobile_no }}{% endif %}" pattern="[0-9]{10}" required>
+                    <input type="tel" name="phone" value="{% if user.is_authenticated and user.citizenprofile %}{{ user.citizenprofile.mobile_no }}{% endif %}" placeholder="Enter 10-digit phone number" pattern="[0-9]{10}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" name="email" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" required>
+                    <input type="email" name="email" value="{% if user.is_authenticated %}{{ user.email }}{% endif %}" placeholder="Enter your email address" required>
                 </div>
 
                 <div class="form-group">

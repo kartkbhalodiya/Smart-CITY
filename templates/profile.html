@@ -387,31 +387,24 @@
                     
                     <div class="input-group">
                         <label class="input-label"><i class="fa-solid fa-map"></i> State</label>
-                        <select name="state" id="stateSelect" class="input-field">
+                        <select name="state" id="stateSelect" class="input-field" required>
                             <option value="">Select State</option>
                             {% for state in states %}
-                            <option value="{{ state.name }}" {% if user.citizenprofile.state == state.name %}selected{% endif %}>{{ state.name }}</option>
+                            <option value="{{ state.name }}" {% if user.citizenprofile and user.citizenprofile.state == state.name %}selected{% endif %}>{{ state.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     
                     <div class="input-group">
-                        <label class="input-label"><i class="fa-solid fa-map-pin"></i> District</label>
-                        <select name="district" id="districtSelect" class="input-field">
-                            <option value="">Select District</option>
-                        </select>
-                    </div>
-                    
-                    <div class="input-group">
                         <label class="input-label"><i class="fa-solid fa-city"></i> City</label>
-                        <select name="city" id="citySelect" class="input-field">
+                        <select name="city" id="citySelect" class="input-field" required>
                             <option value="">Select City</option>
                         </select>
                     </div>
                     
                     <div class="input-group">
                         <label class="input-label"><i class="fa-solid fa-location-dot"></i> Address</label>
-                        <textarea name="address" class="input-field" placeholder="Enter full address">{% if user.citizenprofile %}{{ user.citizenprofile.address|default:'' }}{% endif %}</textarea>
+                        <textarea name="address" class="input-field" placeholder="Enter full address" required>{% if user.citizenprofile %}{{ user.citizenprofile.address|default:'' }}{% endif %}</textarea>
                     </div>
                     
                     <div class="input-group">
@@ -469,53 +462,49 @@
     </div>
 
     <script>
-        const stateSelect = document.getElementById('stateSelect');
-        const districtSelect = document.getElementById('districtSelect');
-        const citySelect = document.getElementById('citySelect');
-
+        // Build city lookup from template (block scope prevents const re-declaration error)
         const cityData = {};
         {% for city in cities %}
-        if (!cityData['{{ city.state.name|escapejs }}']) {
-            cityData['{{ city.state.name|escapejs }}'] = [];
-        }
-        cityData['{{ city.state.name|escapejs }}'].push('{{ city.name|escapejs }}');
+        { let s = '{{ city.state.name|escapejs }}';
+          if (!cityData[s]) cityData[s] = [];
+          cityData[s].push('{{ city.name|escapejs }}'); }
         {% endfor %}
 
-        function updateCityOptions(state, selectedDistrict = '', selectedCity = '') {
-            districtSelect.innerHTML = '<option value="">Select District</option>';
-            citySelect.innerHTML = '<option value="">Select City</option>';
-            
-            if (state && cityData[state]) {
-                cityData[state].forEach(city => {
-                    const opt1 = document.createElement('option');
-                    opt1.value = city;
-                    opt1.textContent = city;
-                    if (city === selectedDistrict) opt1.selected = true;
-                    districtSelect.appendChild(opt1);
+        document.addEventListener('DOMContentLoaded', function() {
+            var stateSelect = document.getElementById('stateSelect');
+            var citySelect = document.getElementById('citySelect');
+            if (!stateSelect || !citySelect) return;
 
-                    const opt2 = document.createElement('option');
-                    opt2.value = city;
-                    opt2.textContent = city;
-                    if (city === selectedCity) opt2.selected = true;
-                    citySelect.appendChild(opt2);
-                });
+            function updateCityOptions(state, selectedCity) {
+                citySelect.innerHTML = '<option value="">Select City</option>';
+                if (state && cityData[state]) {
+                    cityData[state].forEach(function(city) {
+                        var opt = document.createElement('option');
+                        opt.value = city;
+                        opt.textContent = city;
+                        if (city === selectedCity) opt.selected = true;
+                        citySelect.appendChild(opt);
+                    });
+                }
             }
-        }
 
-        stateSelect.addEventListener('change', function() {
-            updateCityOptions(this.value);
-        });
+            stateSelect.addEventListener('change', function() {
+                updateCityOptions(this.value, '');
+            });
 
-        // Initialize if data exists
-        window.addEventListener('load', () => {
             {% if user.citizenprofile %}
-            updateCityOptions('{{ user.citizenprofile.state }}', '{{ user.citizenprofile.district }}', '{{ user.citizenprofile.city }}');
+            var savedState = '{{ user.citizenprofile.state|escapejs }}';
+            var savedCity = '{{ user.citizenprofile.city|escapejs }}';
+            if (savedState) {
+                stateSelect.value = savedState;
+                updateCityOptions(savedState, savedCity);
+            }
             {% endif %}
         });
 
         function changeLanguage(lang) {
             localStorage.setItem('selectedLanguage', lang);
-            location.reload();
+            translatePage(lang);
         }
 
         function translatePage(lang) {
@@ -530,13 +519,18 @@
                     'Email': 'ईमेल',
                     'Mobile': 'मोबाइल',
                     'State': 'राज्य',
-                    'District': 'जिला',
                     'City': 'शहर',
                     'Address': 'पता',
+                    'Aadhaar Number (Optional)': 'आधार नंबर (वैकल्पिक)',
                     'Member Since': 'सदस्य बने',
                     'Language Settings': 'भाषा सेटिंग्स',
                     'Logout': 'लॉगआउट',
-                    'Not provided': 'प्रदान नहीं किया गया'
+                    'Save': 'सहेजें',
+                    'Select State': 'राज्य चुनें',
+                    'Select City': 'शहर चुनें',
+                    'Enter full address': 'पूरा पता दर्ज करें',
+                    'Enter mobile number': 'मोबाइल नंबर दर्ज करें',
+                    'XXXX XXXX XXXX': 'XXXX XXXX XXXX'
                 },
                 'gu': {
                     'Profile': 'પ્રોફાઇલ',
@@ -546,39 +540,51 @@
                     'Email': 'ઇમેઇલ',
                     'Mobile': 'મોબાઇલ',
                     'State': 'રાજ્ય',
-                    'District': 'જિલ્લો',
                     'City': 'શહેર',
                     'Address': 'સરનામું',
+                    'Aadhaar Number (Optional)': 'આધાર નંબર (વૈકલ્પિક)',
                     'Member Since': 'સભ્ય બન્યા',
                     'Language Settings': 'ભાષા સેટિંગ્સ',
                     'Logout': 'લૉગઆઉટ',
-                    'Not provided': 'આપવામાં આવ્યું નથી'
+                    'Save': 'સંગ્રહ કરો',
+                    'Select State': 'રાજ્ય પસંદ કરો',
+                    'Select City': 'શહેર પસંદ કરો',
+                    'Enter full address': 'પૂરું સરનામું દર્જ કરો',
+                    'Enter mobile number': 'મોબાઇલ નંબર દર્જ કરો',
+                    'XXXX XXXX XXXX': 'XXXX XXXX XXXX'
                 }
             };
 
             const langTranslations = translations[lang];
             if (!langTranslations) return;
 
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const key = element.getAttribute('data-translate');
-                if (langTranslations[key]) {
-                    element.textContent = langTranslations[key];
+            document.querySelectorAll('.input-label, .section-title, label').forEach(element => {
+                const text = element.textContent.trim();
+                if (langTranslations[text]) {
+                    element.textContent = langTranslations[text];
                 }
             });
 
-            // Translate common text
-            document.querySelectorAll('.info-label, .section-title, .header h1, .back-btn, .logout-btn').forEach(element => {
+            document.querySelectorAll('input, textarea, select').forEach(element => {
+                if (element.placeholder && langTranslations[element.placeholder]) {
+                    element.placeholder = langTranslations[element.placeholder];
+                }
+            });
+
+            document.querySelectorAll('button, .btn, .logout-btn').forEach(element => {
                 const text = element.textContent.trim();
                 if (langTranslations[text]) {
-                    element.innerHTML = element.innerHTML.replace(text, langTranslations[text]);
+                    element.textContent = langTranslations[text];
                 }
             });
         }
 
-        // Load saved language
         window.addEventListener('load', () => {
             const savedLang = localStorage.getItem('selectedLanguage') || 'en';
-            document.querySelector('.language-selector').value = savedLang;
+            const langSelector = document.querySelector('.language-selector');
+            if (langSelector) {
+                langSelector.value = savedLang;
+            }
             translatePage(savedLang);
         });
     </script>

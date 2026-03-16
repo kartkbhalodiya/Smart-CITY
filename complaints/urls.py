@@ -72,4 +72,6 @@ urlpatterns = [
     path('test-translations/', views.translation_test, name='translation_test'),
     path('test-dynamic-fields/', views.dynamic_fields_test, name='dynamic_fields_test'),
     path('delete-complaint/<int:complaint_id>/', views.delete_complaint, name='delete_complaint'),
+    path('api/notifications/mark-read/', views.mark_notifications_read, name='mark_notifications_read'),
+    path('api/notifications/count/', views.get_unread_notifications_count, name='get_unread_notifications_count'),
 ]

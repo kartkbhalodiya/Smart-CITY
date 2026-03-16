@@ -881,6 +881,7 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
+@login_required
 def user_dashboard(request):
     # Check if guest mode
     is_guest = request.GET.get('guest') == 'true'
@@ -898,6 +899,7 @@ def user_dashboard(request):
             'solved_complaints': 0,
             'recent_complaints': [],
             'all_complaints': [],
+            'unread_notifications': 0,
         })
     
     # Regular user dashboard (requires login)
@@ -934,6 +936,11 @@ def user_dashboard(request):
     # Get recent complaints (last 5)
     recent_complaints = complaints[:5]
     
+    # Count unread notifications (complaints with status changes)
+    unread_notifications = complaints.filter(
+        work_status__in=['confirmed', 'process', 'solved']
+    ).count()
+    
     return render(request, 'user_dashboard.html', {
         'complaints': complaints,
         'is_guest': False,
@@ -945,6 +952,7 @@ def user_dashboard(request):
         'recent_complaints': recent_complaints,
         'all_complaints': complaints,
         'search_query': search_query,
+        'unread_notifications': unread_notifications,
     })
 
 def track_complaints(request):
@@ -3789,12 +3797,12 @@ def profile_view(request):
         # Only update CitizenProfile for regular citizens
         if not is_city_admin and not is_dept_user and not user.is_superuser:
             profile, created = CitizenProfile.objects.get_or_create(user=user)
-            profile.mobile_no = request.POST.get('mobile', profile.mobile_no or '')
-            profile.state = request.POST.get('state', profile.state or '')
-            profile.district = request.POST.get('district', profile.district or '')
-            profile.city = request.POST.get('city', profile.city or '')
-            profile.address = request.POST.get('address', profile.address or '')
-            profile.aadhaar_number = request.POST.get('aadhaar', profile.aadhaar_number or '')
+            profile.mobile_no = request.POST.get('mobile') or profile.mobile_no or ''
+            profile.state = request.POST.get('state', '')
+            profile.district = request.POST.get('district') or profile.district or ''
+            profile.city = request.POST.get('city', '')
+            profile.address = request.POST.get('address') or profile.address or ''
+            profile.aadhaar_number = request.POST.get('aadhaar') or profile.aadhaar_number or ''
             profile.save()
         
         messages.success(request, 'Profile updated successfully!')
@@ -4769,28 +4777,29 @@ def city_admin_department_detail(request, department_id):
 
 @login_required
 @login_required
-def super_admin_delete_user(request, user_id):
-    if not request.user.is_superuser:
-        messages.error(request, 'Permission denied.')
-        return redirect('user_dashboard')
+@require_http_methods(["POST"])
+def mark_notifications_read(request):
+    """Mark all notifications as read for the user"""
+    try:
+        # Update session to mark notifications as read
+        request.session['notifications_read'] = True
+        return JsonResponse({'success': True, 'message': 'Notifications marked as read'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+@login_required
+def get_unread_notifications_count(request):
+    """Get count of unread notifications"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'count': 0})
     
-    user_to_delete = get_object_or_404(User, id=user_id)
+    # Count complaints with status changes
+    unread_count = Complaint.objects.filter(
+        user=request.user,
+        work_status__in=['confirmed', 'process', 'solved']
+    ).count()
     
-    # Don't allow deleting yourself
-    if user_to_delete == request.user:
-        messages.error(request, 'You cannot delete your own super admin account.')
-        return redirect('super_admin_users')
-    
-    # Safety check: Don't allow deleting other superusers through this view
-    if user_to_delete.is_superuser:
-        messages.error(request, 'You cannot delete another superuser through this dashboard.')
-        return redirect('super_admin_users')
-        
-    username = user_to_delete.username
-    user_to_delete.delete()
-    
-    messages.success(request, f'User {username} and all their associated data have been deleted.')
-    return redirect('super_admin_users')
+    return JsonResponse({'count': unread_count})
 
 def user_view_department(request, department_type):
     """View department details page"""
