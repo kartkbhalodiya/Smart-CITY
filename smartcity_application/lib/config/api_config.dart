@@ -24,6 +24,7 @@ class ApiConfig {
   static String complaintDetail(int id) => '$baseUrl/complaints/$id/';
   static String rateComplaint(int id) => '$baseUrl/complaints/$id/rate/';
   static String reopenComplaint(int id) => '$baseUrl/complaints/$id/reopen/';
+  static const String verifyProof = '$baseUrl/complaints/verify-proof/';
   
   // Category Endpoints
   static const String categories = '$baseUrl/categories/';

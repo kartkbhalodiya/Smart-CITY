@@ -80,6 +80,22 @@
             transition: all 0.3s;
             border: none;
             cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        .btn-bypass {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: #fff;
+            color: #4b5563;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
         }
 
         .btn-thank-you:hover {
@@ -87,7 +103,12 @@
             transform: translateY(-2px);
         }
 
-        .btn-thank-you:active {
+        .btn-bypass:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .btn-thank-you:active, .btn-bypass:active {
             transform: translateY(0);
         }
     </style>
@@ -106,6 +127,13 @@
         </div>
 
         <a href="{% url 'user_dashboard' %}" class="btn-thank-you">Thank You</a>
+        
+        <form action="{% url 'preview_complaint' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="confirm" value="true">
+            <input type="hidden" name="bypass_duplicate" value="true">
+            <button type="submit" class="btn-bypass">No, my issue is different</button>
+        </form>
     </div>
 </body>
 </html>

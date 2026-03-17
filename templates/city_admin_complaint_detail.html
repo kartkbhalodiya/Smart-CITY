@@ -489,6 +489,22 @@
                     <div class="issue-description-label">Description</div>
                     <div class="issue-description-value">{{ complaint.description|linebreaksbr }}</div>
                 </div>
+
+                {% if complaint.field_responses.all %}
+                <div class="info-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #f0f9ff; border: 1px solid #e0f2fe; border-radius: 12px; box-shadow: none;">
+                    <h3 style="margin-top:0; border-bottom: 2px solid #bae6fd; color: #0369a1; padding-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
+                        <i class="fa-solid fa-list-check"></i> Additional Form Data
+                    </h3>
+                    <div class="meta-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        {% for response in complaint.field_responses.all %}
+                        <div class="meta-card" style="background: white; border: 1px solid #e0f2fe; padding: 0.85rem 1rem; border-radius: 10px;">
+                            <div class="meta-label" style="color: #0369a1; font-weight: 800; font-size: 0.68rem; text-transform: uppercase; margin-bottom: 0.3rem; letter-spacing: 0.04em;">{{ response.field.label }}</div>
+                            <div class="meta-value" style="color: #0f172a; font-size: 0.95rem; line-height: 1.5; font-weight: 700;">{{ response.value|linebreaksbr }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
             {% if complaint.resolution_notes %}

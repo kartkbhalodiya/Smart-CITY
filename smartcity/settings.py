@@ -192,6 +192,9 @@ TWILIO_FROM_NUMBER = os.getenv('TWILIO_FROM_NUMBER', '')
 MAPPLE_API_KEY = os.getenv('MAPPLE_API_KEY', '')
 MAPMYINDIA_API_KEY = os.getenv('MAPPLE_API_KEY', '')  # Alias
 
+# Gemini AI API Key
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyAim_9cK7zrtRe0UfNnf3b_wiwugHlOIjc')
+
 # Login URL
 LOGIN_URL = '/login/'
 

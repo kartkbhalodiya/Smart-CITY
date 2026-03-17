@@ -424,7 +424,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}');
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool bypassDuplicate = false}) async {
     if (!_isPreviewing) {
       if (_selectedSub == null && _subcategories.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -449,7 +449,68 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           }
         }
       }
-      setState(() => _isPreviewing = true);
+      
+      // AI Proof Verification before Preview
+      setState(() => _submitting = true);
+      
+      // Show loading dialog
+      _loadingMessageIndex = 0;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted && _submitting && !_isPreviewing) {
+                setDialogState(() {
+                  _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
+                });
+              }
+            });
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: _primary),
+                    const SizedBox(height: 24),
+                    Text(
+                      AppStrings.t(context, _loadingMessages[_loadingMessageIndex]),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: _textDark),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppStrings.t(context, 'Please wait, we are verifying your proof'),
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(fontSize: 13, color: _textMuted),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+
+      final provider = Provider.of<ComplaintProvider>(context, listen: false);
+      final verifyRes = await provider.verifyProof(widget.categoryKey ?? 'other', _images);
+      
+      if (mounted) Navigator.pop(context); // Close loading dialog
+      setState(() => _submitting = false);
+
+      if (verifyRes != null && verifyRes['success'] == true) {
+        setState(() => _isPreviewing = true);
+      } else {
+        final errorMsg = verifyRes?['message'] ?? AppStrings.t(context, 'Invalid proof detected');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+          );
+        }
+      }
       return;
     }
 
@@ -514,6 +575,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       'state': _selectedState ?? '',
       'city': _selectedCity ?? '',
       if (_selectedSub != null) 'subcategory': _selectedSub!['name'] as String,
+      if (bypassDuplicate) 'bypass_duplicate': 'true',
     };
 
     // Collect dynamic fields from both category and subcategory
@@ -577,8 +639,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   }
 
   void _showDuplicateDialog(String ticketId) {
-    String maskedId = ticketId.length > 4 
-        ? '${ticketId.substring(0, 4)}XXXXXX' 
+    String maskedId = ticketId.length > 3 
+        ? '${ticketId.substring(0, 3)}XXXXXX' 
         : '${ticketId}XXXX';
 
     showDialog(
@@ -642,6 +704,25 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                     elevation: 0,
                   ),
                   child: Text(AppStrings.t(context, 'Thank You'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx); // Close dialog
+                    _submit(bypassDuplicate: true);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFD1D5DB)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text(
+                    AppStrings.t(context, 'No, my issue is different'),
+                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF4B5563)),
+                  ),
                 ),
               ),
             ],

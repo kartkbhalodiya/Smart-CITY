@@ -100,24 +100,52 @@ class Complaint(models.Model):
     )
     
     @staticmethod
-    def check_duplicate(latitude, longitude, complaint_type, subcategory):
+    def check_duplicate(latitude, longitude, complaint_type, subcategory, description=None):
         """
-        Checks for duplicate complaints within 100m radius with same type and subcategory.
-        Returns the existing active complaint if found.
+        Checks for duplicate complaints with category-specific radii and description matching.
+        - Public Issues (Road, Garbage, etc.): 50m (0.05 km)
+        - Private Issues (Water, Electricity): 5m (0.005 km)
+        - Unique Issues (Police, Cyber, Other): Skip check
         """
-        # 100 meters = 0.1 km
-        DISTANCE_THRESHOLD = 0.1
+        # Mapping radii for categories (in km)
+        radius_mapping = {
+            'road': 0.05,
+            'garbage': 0.05,
+            'drainage': 0.05,
+            'traffic': 0.05,
+            'construction': 0.05,
+            'illegal': 0.05,
+            'transportation': 0.05,
+            'water': 0.005,      # 5 meters
+            'electricity': 0.005, # 5 meters
+        }
+        
+        # If category is not in mapping (Police, Cyber, Other), it's always unique
+        if complaint_type not in radius_mapping:
+            return None
+            
+        threshold = radius_mapping[complaint_type]
         
         # Base query for active complaints of the same type and subcategory
         active_complaints = Complaint.objects.filter(
             complaint_type=complaint_type,
             subcategory=subcategory
         ).exclude(work_status__in=['solved', 'rejected'])
+
+        # If description is provided, we can also look for very similar descriptions
+        # (Simple keyword match or exact match for now)
         
         for comp in active_complaints:
             dist = Complaint._distance_km(latitude, longitude, comp.latitude, comp.longitude)
-            if dist <= DISTANCE_THRESHOLD:
+            if dist <= threshold:
+                # If they are very close and same category, it's likely a duplicate
                 return comp
+            
+            # If they are within 100m AND have exactly the same description (if provided)
+            if description and dist <= 0.1: # 100 meters
+                if description.strip().lower() == comp.description.strip().lower():
+                    return comp
+
         return None
 
     def save(self, *args, **kwargs):

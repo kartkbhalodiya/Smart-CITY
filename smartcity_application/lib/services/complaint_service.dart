@@ -64,6 +64,17 @@ class ComplaintService {
     );
   }
 
+  static Future<Map<String, dynamic>> verifyProof(
+    String categoryKey,
+    List<File> files,
+  ) async {
+    return await ApiService.postMultipart(
+      ApiConfig.verifyProof,
+      {'complaint_type': categoryKey},
+      files,
+    );
+  }
+
   static Future<Map<String, dynamic>> getCategories() async {
     return await ApiService.get(ApiConfig.categories);
   }

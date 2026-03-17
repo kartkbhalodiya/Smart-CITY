@@ -166,6 +166,27 @@ class ComplaintProvider with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> verifyProof(
+    String categoryKey,
+    List<File> files,
+  ) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await ComplaintService.verifyProof(categoryKey, files);
+      _isLoading = false;
+      notifyListeners();
+      return response;
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> rateComplaint(int id, int rating, String feedback) async {
     final response = await ComplaintService.rateComplaint(id, rating, feedback);
     if (response['success'] == true) {

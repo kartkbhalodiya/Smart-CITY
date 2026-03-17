@@ -998,16 +998,20 @@ def preview_complaint(request):
             
             ctype = complaint_data.get('complaint_type')
             subcat = complaint_data.get('subcategory', '')
+            desc = complaint_data.get('description', '')
             
-            duplicate = Complaint.check_duplicate(lat, lon, ctype, subcat)
+            # Check for duplicate unless user explicitly bypasses it
+            bypass = request.POST.get('bypass_duplicate') == 'true'
+            duplicate = None if bypass else Complaint.check_duplicate(lat, lon, ctype, subcat, description=desc)
+            
             if duplicate:
                 # Clear draft as they don't need to submit it again
                 if 'complaint_draft' in request.session:
                     del request.session['complaint_draft']
-                
-                # Mask ID: first 4 chars + XXXXXX
+
+                # Mask ID: first 3 chars + XXXXXX
                 orig_id = duplicate.complaint_number
-                masked_id = f"{orig_id[:4]}XXXXXX" if len(orig_id) > 4 else f"{orig_id}XXXX"
+                masked_id = f"{orig_id[:3]}XXXXXX" if len(orig_id) > 3 else f"{orig_id}XXXX"
                 
                 return render(request, 'duplicate_found.html', {
                     'masked_id': masked_id,
@@ -1083,8 +1087,11 @@ def preview_complaint(request):
             # Clear draft
             del request.session['complaint_draft']
             
-            messages.success(request, 'Complaint submitted successfully! Confirmation email and SMS sent.')
-            return redirect('user_dashboard')
+            # Store ID in session for success page
+            request.session['last_complaint_id'] = complaint.id
+            
+            messages.success(request, 'Complaint submitted successfully!')
+            return redirect('complaint_success')
         elif 'back' in request.POST:
             if complaint_data.get('is_guest'):
                 return redirect('/submit-complaint/?guest=true')
@@ -1178,6 +1185,29 @@ def submit_complaint(request):
             path = default_storage.save(f'temp_media/{f.name}', ContentFile(f.read()))
             media_paths.append(path)
         complaint_data['media_paths'] = media_paths
+        
+        # --- AI Image Verification (New: Before Preview) ---
+        from .ai_utils import verify_complaint_proof
+        ctype = request.POST.get('complaint_type')
+        category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
+        if media_paths:
+            # Check first image for validity
+            is_valid, ai_msg = verify_complaint_proof(media_paths[0], category_label)
+            if not is_valid:
+                messages.error(request, f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.")
+                # We stay on same page to let them re-upload
+                return render(request, 'submit_complaint.html', {
+                    'initial_type': ctype,
+                    'draft': complaint_data,
+                    'managed_categories': managed_category_options,
+                    'managed_subcategories_json': json.dumps(managed_sub_map),
+                    'managed_field_map_json': json.dumps(managed_field_map),
+                    'has_managed_categories': has_managed_categories,
+                    'fallback_complaint_types': Complaint.COMPLAINT_TYPES,
+                    'states': ManagedState.objects.all().order_by('name'),
+                    'cities': ManagedCity.objects.select_related('state').all().order_by('name'),
+                })
+        # ----------------------------------------------------
         
         # Save dynamic fields
         for key, value in request.POST.items():
@@ -4958,4 +4988,21 @@ def forgot_password(request):
         return redirect('login')
     
     return render(request, 'forgot_password.html')
+
+def complaint_success(request):
+    complaint_id = request.session.get('last_complaint_id')
+    if not complaint_id:
+        return redirect('user_dashboard')
+    
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    
+    # Get phone for display
+    phone = complaint.guest_phone
+    if not phone and complaint.user and hasattr(complaint.user, 'citizenprofile'):
+        phone = complaint.user.citizenprofile.mobile_no
+        
+    return render(request, 'guest_success.html', {
+        'complaint_number': complaint.complaint_number,
+        'phone': phone or "Not Provided"
+    })
 

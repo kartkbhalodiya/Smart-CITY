@@ -582,6 +582,20 @@
                     <div class="issue-description-label">Description</div>
                     <div class="issue-description-value">{{ complaint.description|linebreaksbr }}</div>
                 </div>
+
+                {% if complaint.field_responses.all %}
+                <div class="info-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #fffbeb; border: 1px solid #fef3c7;">
+                    <h3 style="border-bottom-color: #fef3c7; color: #92400e;"><i class="fa-solid fa-list-check"></i> Additional User Filled Fields</h3>
+                    <div class="meta-grid">
+                        {% for response in complaint.field_responses.all %}
+                        <div class="meta-card" style="background: white; border-color: #fef3c7;">
+                            <div class="meta-label" style="color: #b45309;">{{ response.field.label }}</div>
+                            <div class="meta-value">{{ response.value|linebreaksbr }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% if complaint.resolution_notes %}
             <div class="info-item" style="margin-top: 1.5rem;">

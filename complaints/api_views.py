@@ -479,6 +479,28 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         
         return queryset.prefetch_related('media', 'resolution_proofs', 'assigned_department')
     
+    @action(detail=False, methods=['post'], url_path='verify-proof')
+    def verify_proof(self, request):
+        """Verify if the uploaded image matches the category without creating a complaint."""
+        ctype = request.data.get('complaint_type')
+        category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
+        images = request.FILES.getlist('media')
+        
+        if not images:
+            return Response({'success': True, 'message': 'No images to verify'})
+
+        from .ai_utils import verify_complaint_proof
+        is_valid, ai_msg = verify_complaint_proof(images[0], category_label)
+        
+        if not is_valid:
+            return Response({
+                'success': False,
+                'message': f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.",
+                'ai_verification_failed': True
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response({'success': True, 'message': 'Proof verified'})
+
     def create(self, request, *args, **kwargs):
         try:
             serializer = self.get_serializer(data=request.data, context={'request': request})
@@ -492,14 +514,40 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 
                 ctype = request.data.get('complaint_type')
                 subcat = request.data.get('subcategory', '')
+                desc = request.data.get('description', '')
                 
-                duplicate = Complaint.check_duplicate(lat, lon, ctype, subcat)
+                # --- AI Image Verification (New) ---
+                from .ai_utils import verify_complaint_proof
+                # Get human-readable category name for the prompt
+                category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
+                images = request.FILES.getlist('media')
+                
+                if images:
+                    # Check first uploaded image
+                    is_valid, ai_msg = verify_complaint_proof(images[0], category_label)
+                    if not is_valid:
+                        return Response({
+                            'success': False,
+                            'message': f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.",
+                            'ai_verification_failed': True
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                # ------------------------------------
+
+                # Check for duplicate unless user explicitly bypasses it
+                bypass = request.data.get('bypass_duplicate') == True or request.data.get('bypass_duplicate') == 'true'
+                duplicate = None if bypass else Complaint.check_duplicate(lat, lon, ctype, subcat, description=desc)
+                
                 if duplicate:
+                    # Mask ID: first 3 chars + XXXXXX
+                    orig_id = duplicate.complaint_number
+                    masked_id = f"{orig_id[:3]}XXXXXX" if len(orig_id) > 3 else f"{orig_id}XXXX"
+                    
                     return Response({
                         'success': False,
-                        'message': f'This complaint has already been submitted by another citizen in this area. Please be patient while we resolve it. (Ticket: {duplicate.complaint_number})',
+                        'message': f'Thank you for applied complaint! This issue has already been reported by another citizen in this area. Our team is already working on it. (Ticket: {masked_id})',
                         'duplicate_found': True,
-                        'existing_ticket': duplicate.complaint_number
+                        'existing_ticket': masked_id,
+                        'original_ticket': orig_id
                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 complaint = serializer.save()
