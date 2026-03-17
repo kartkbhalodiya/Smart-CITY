@@ -876,7 +876,6 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-@login_required
 def user_dashboard(request):
     # Check if guest mode
     is_guest = request.GET.get('guest') == 'true'

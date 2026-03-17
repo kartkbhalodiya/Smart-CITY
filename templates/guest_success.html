@@ -229,14 +229,14 @@
                 Track Complaint
             </a>
             
-            <a href="{% url 'guest_complaint' %}" class="btn btn-outline">
+            <a href="{% url 'user_dashboard' %}?guest=true" class="btn btn-outline">
                 <i class="fa-solid fa-plus"></i>
                 New Complaint
             </a>
         </div>
         
         <div style="margin-top: 20px;">
-            <a href="{% url 'login' %}" class="btn btn-outline">
+            <a href="{% url 'user_dashboard' %}?guest=true" class="btn btn-outline">
                 <i class="fa-solid fa-home"></i>
                 Back to Home
             </a>
