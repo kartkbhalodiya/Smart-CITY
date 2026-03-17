@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
 import '../../l10n/app_strings.dart';
+import '../ai_assistant/ai_call_screen.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -744,36 +745,74 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           color: Colors.white,
           boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, -2))]),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).padding.bottom, top: 8, left: 16, right: 16),
-      child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(4, (i) {
-            final active = _navIndex == i;
-            return GestureDetector(
-              onTap: () {
-                if (i == 0) setState(() { _navIndex = 0; _tab = 0; });
-                else if (i == 1) setState(() { _navIndex = 1; _tab = 1; });
-                else if (i == 2) Navigator.pushNamed(context, AppRoutes.userTrack);
-                else Navigator.pushNamed(context, AppRoutes.profile);
-              },
+          bottom: MediaQuery.of(context).padding.bottom, top: 8, left: 8, right: 8),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navItem(0, items[0]),
+              _navItem(1, items[1]),
+              const SizedBox(width: 80),
+              _navItem(2, items[2]),
+              _navItem(3, items[3]),
+            ],
+          ),
+          Positioned(
+            bottom: 10,
+            child: GestureDetector(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AICallScreen())),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                width: 70,
+                height: 70,
                 decoration: BoxDecoration(
-                    color: active ? const Color(0x1A1E66F5) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12)),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(items[i]['emoji'] as String,
-                      style: TextStyle(fontSize: active ? 24 : 22)),
-                  const SizedBox(height: 3),
-                  Text(items[i]['label'] as String,
-                      style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: active ? const Color(0xFF1E66F5) : const Color(0xFF64748b))),
-                ]),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E66F5), Color(0xFF154ec7)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1E66F5).withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.phone, color: Colors.white, size: 32),
               ),
-            );
-          })),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem(int index, Map item) {
+    final active = _navIndex == index;
+    return GestureDetector(
+      onTap: () {
+        if (index == 0) setState(() { _navIndex = 0; _tab = 0; });
+        else if (index == 1) setState(() { _navIndex = 1; _tab = 1; });
+        else if (index == 2) Navigator.pushNamed(context, AppRoutes.userTrack);
+        else Navigator.pushNamed(context, AppRoutes.profile);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? const Color(0x1A1E66F5) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(item['emoji'] as String, style: TextStyle(fontSize: active ? 24 : 22)),
+          const SizedBox(height: 3),
+          Text(item['label'] as String,
+              style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: active ? const Color(0xFF1E66F5) : const Color(0xFF64748b))),
+        ]),
+      ),
     );
   }
 }

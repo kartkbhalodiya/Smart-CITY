@@ -752,7 +752,7 @@
 
         // Wait for DOM to be ready
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, Leaflet ready');
+            // DOM ready
         });
 
         function setPriority(level) {
@@ -988,10 +988,8 @@
 
         async function updateAddressFromCoordinates(lat, lng) {
             try {
-                console.log('Fetching address for:', lat, lng);
                 const response = await fetch(`/api/reverse-geocode/?lat=${lat}&lng=${lng}`);
                 const data = await response.json();
-                console.log('Address response:', data);
                 
                 if (data.results && data.results[0]) {
                     const addr = data.results[0];
@@ -1006,13 +1004,9 @@
                         if (pinMatch) pincode = pinMatch[0];
                     }
                     document.getElementById('pincodeInput').value = pincode;
-                    
-                    console.log('Only pincode filled successfully');
-                } else {
-                    console.log('No address results found');
                 }
             } catch (error) {
-                console.error('Address update failed:', error);
+                // Address update failed silently
             }
         }
 
@@ -1022,13 +1016,10 @@
 
         async function confirmMapLocation() {
             try {
-                console.log('confirmMapLocation called');
-                
                 // Get coordinates directly from marker position
                 let lat, lng;
                 
                 if (marker) {
-                    console.log('Getting coordinates from Leaflet marker');
                     const pos = marker.getLatLng();
                     lat = pos.lat;
                     lng = pos.lng;
@@ -1038,12 +1029,9 @@
                     document.getElementById('longitudeInput').value = lng;
                     document.getElementById('coordinatesDisplay').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
                 } else {
-                    console.log('No marker found, getting from input fields');
                     lat = document.getElementById('latitudeInput').value;
                     lng = document.getElementById('longitudeInput').value;
                 }
-                
-                console.log('Final coordinates:', lat, lng);
                 
                 if (lat && lng) {
                     await updateAddressFromCoordinates(lat, lng);
@@ -1053,8 +1041,7 @@
                     alert('Please select a location on the map first.');
                 }
             } catch (error) {
-                console.error('confirmMapLocation error:', error);
-                alert('Error confirming location: ' + error.message);
+                alert('Error confirming location. Please try again.');
             }
         }
         const subcategories = {
@@ -1761,12 +1748,8 @@
 
         const managedSubcategories = {{ managed_subcategories_json|safe }};
         const managedFieldConfig = {{ managed_field_map_json|safe }};
-        console.log('DEBUG: Managed subcategories loaded:', managedSubcategories);
-        console.log('DEBUG: Managed field config loaded:', managedFieldConfig);
         const effectiveSubcategories = Object.keys(managedSubcategories).length ? managedSubcategories : subcategories;
         const effectiveDynamicFields = Object.keys(managedFieldConfig).length ? managedFieldConfig : dynamicFieldsConfig;
-        console.log('DEBUG: Effective subcategories:', effectiveSubcategories);
-        console.log('DEBUG: Effective dynamic fields:', effectiveDynamicFields);
 
         const stateSelect = document.getElementById('stateInput');
         const citySelect = document.getElementById('cityInput');
@@ -1837,12 +1820,8 @@
 
         mainCategory.addEventListener('change', function() {
             const category = this.value;
-            console.log('Category changed to:', category);
-            console.log('Effective subcategories:', effectiveSubcategories);
-            console.log('Looking for subcategories[' + category + ']:', effectiveSubcategories[category]);
             
             if (category && effectiveSubcategories[category]) {
-                console.log('Subcategories found:', effectiveSubcategories[category]);
                 subcategorySection.style.display = 'block';
                 subcategoryDropdown.innerHTML = '<option value="">Select Subcategory</option>';
                 
@@ -1858,8 +1837,6 @@
                 
                 applyTranslations();
             } else {
-                console.log('No subcategories found for:', category);
-                console.log('Available categories:', Object.keys(effectiveSubcategories));
                 subcategorySection.style.display = 'none';
             }
             dynamicFields.classList.remove('show');
@@ -1869,7 +1846,6 @@
         // Trigger change if category is already selected (e.g. initial_type)
         window.addEventListener('DOMContentLoaded', function() {
             if (mainCategory.value) {
-                console.log('Initial category value detected:', mainCategory.value);
                 // Small delay to ensure everything is initialized
                 setTimeout(() => {
                     mainCategory.dispatchEvent(new Event('change'));
