@@ -908,7 +908,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           child: _textField(
             controller: _dateOfOccurrenceCtrl,
             hint: AppStrings.t(context, 'Select date'),
-            suffixIcon: const Icon(Icons.calendar_today, size: 20, color: _primary),
+            suffix: const Icon(Icons.calendar_today, size: 20, color: _primary),
             validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Date is required') : null,
           ),
         ),
