@@ -1762,8 +1762,12 @@
 
         const managedSubcategories = {{ managed_subcategories_json|safe }};
         const managedFieldConfig = {{ managed_field_map_json|safe }};
+        console.log('DEBUG: Managed subcategories loaded:', managedSubcategories);
+        console.log('DEBUG: Managed field config loaded:', managedFieldConfig);
         const effectiveSubcategories = Object.keys(managedSubcategories).length ? managedSubcategories : subcategories;
         const effectiveDynamicFields = Object.keys(managedFieldConfig).length ? managedFieldConfig : dynamicFieldsConfig;
+        console.log('DEBUG: Effective subcategories:', effectiveSubcategories);
+        console.log('DEBUG: Effective dynamic fields:', effectiveDynamicFields);
 
         const stateSelect = document.getElementById('stateInput');
         const citySelect = document.getElementById('cityInput');
@@ -1835,6 +1839,8 @@
         mainCategory.addEventListener('change', function() {
             const category = this.value;
             console.log('Category changed to:', category);
+            console.log('Effective subcategories:', effectiveSubcategories);
+            console.log('Looking for subcategories[' + category + ']:', effectiveSubcategories[category]);
             
             if (category && effectiveSubcategories[category]) {
                 console.log('Subcategories found:', effectiveSubcategories[category]);
@@ -1854,6 +1860,7 @@
                 applyTranslations();
             } else {
                 console.log('No subcategories found for:', category);
+                console.log('Available categories:', Object.keys(effectiveSubcategories));
                 subcategorySection.style.display = 'none';
             }
             dynamicFields.classList.remove('show');
