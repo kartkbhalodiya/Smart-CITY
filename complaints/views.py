@@ -1317,14 +1317,22 @@ def track_guest_complaint(request):
             messages.error(request, 'Please enter both complaint ID and mobile number!')
             return render(request, 'track_guest.html', {'complaint': None})
         
+        # Normalize phone number (remove spaces, dashes, etc.)
+        normalized_phone = re.sub(r'\D', '', phone)
+        
         # Try guest complaint first
         try:
             complaint = Complaint.objects.select_related('assigned_department').prefetch_related('resolution_proofs', 'reopen_proofs').get(
                 complaint_number=complaint_number,
-                guest_phone=phone
+                guest_phone__icontains=normalized_phone
             )
         except Complaint.DoesNotExist:
             pass
+        except Complaint.MultipleObjectsReturned:
+            complaint = Complaint.objects.select_related('assigned_department').prefetch_related('resolution_proofs', 'reopen_proofs').filter(
+                complaint_number=complaint_number,
+                guest_phone__icontains=normalized_phone
+            ).order_by('-created_at').first()
         
         # If not found, try registered user complaint
         if not complaint:
@@ -1336,7 +1344,8 @@ def track_guest_complaint(request):
                 
                 for comp in possible_complaints:
                     if comp.user and hasattr(comp.user, 'citizenprofile'):
-                        if comp.user.citizenprofile.mobile_no == phone:
+                        user_phone = re.sub(r'\D', '', comp.user.citizenprofile.mobile_no or '')
+                        if user_phone == normalized_phone:
                             complaint = comp
                             break
             except Exception:
