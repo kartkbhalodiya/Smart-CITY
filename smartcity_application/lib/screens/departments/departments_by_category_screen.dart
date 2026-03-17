@@ -83,7 +83,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
         ),
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(widget.categoryName,
+          Text(AppStrings.t(context, widget.categoryName),
               style: GoogleFonts.poppins(
                   fontSize: 16, fontWeight: FontWeight.w700,
                   color: const Color(0xFF0f172a))),
@@ -167,7 +167,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
   }
 
   Widget _deptCard(Map<String, dynamic> d) {
-    final name = (d['name'] ?? 'Department').toString();
+    final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
     final city = (d['city'] ?? '').toString();
     final state = (d['state'] ?? '').toString();
     final address = (d['address'] ?? '').toString();

@@ -230,6 +230,105 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     );
   }
 
+  String _localizedMapValue(Map<String, dynamic> source, String baseKey) {
+    final lang = Localizations.localeOf(context).languageCode;
+
+    if (lang == 'hi') {
+      final hi = source['${baseKey}_hi'] ?? source['hi_$baseKey'];
+      if ((hi ?? '').toString().trim().isNotEmpty) {
+        return hi.toString().trim();
+      }
+    }
+
+    if (lang == 'gu') {
+      final gu = source['${baseKey}_gu'] ?? source['gu_$baseKey'];
+      if ((gu ?? '').toString().trim().isNotEmpty) {
+        return gu.toString().trim();
+      }
+    }
+
+    final base = (source[baseKey] ?? '').toString().trim();
+    if (base.isEmpty) {
+      return '';
+    }
+    return AppStrings.t(context, base);
+  }
+
+  String _categoryKeyToText(String categoryKey) {
+    switch (categoryKey.toLowerCase()) {
+      case 'police':
+        return 'Police';
+      case 'traffic':
+        return 'Traffic';
+      case 'construction':
+        return 'Construction';
+      case 'water':
+      case 'water supply':
+        return 'Water Supply';
+      case 'electricity':
+        return 'Electricity';
+      case 'garbage':
+        return 'Garbage';
+      case 'road':
+      case 'pothole':
+        return 'Road / Pothole';
+      case 'drainage':
+        return 'Drainage';
+      case 'illegal':
+      case 'illegal activity':
+        return 'Illegal Activity';
+      case 'transportation':
+        return 'Transportation';
+      case 'cyber':
+      case 'cyber crime':
+        return 'Cyber Crime';
+      default:
+        return categoryKey;
+    }
+  }
+
+  String _localizedComplaintType(Map<String, dynamic> complaint) {
+    final display = (complaint['complaint_type_display'] ?? '').toString().trim();
+    if (display.isNotEmpty) {
+      return AppStrings.t(context, display);
+    }
+
+    final code = (complaint['complaint_type'] ?? '').toString().trim();
+    if (code.isEmpty) {
+      return AppStrings.t(context, 'Unknown');
+    }
+
+    return AppStrings.t(context, _categoryKeyToText(code));
+  }
+
+  String _localizedSubcategory(Map<String, dynamic> complaint) {
+    final fromLocalized = _localizedMapValue(complaint, 'subcategory');
+    if (fromLocalized.isNotEmpty) {
+      return fromLocalized;
+    }
+
+    final sub = (complaint['subcategory'] ?? '').toString().trim();
+    if (sub.isEmpty) {
+      return '';
+    }
+
+    return AppStrings.t(context, sub);
+  }
+
+  String _localizedFieldResponseLabel(Map<String, dynamic> fieldResponse) {
+    final localized = _localizedMapValue(fieldResponse, 'field_label');
+    if (localized.isNotEmpty) {
+      return localized;
+    }
+
+    final label = (fieldResponse['field_label'] ?? '').toString().trim();
+    if (label.isEmpty) {
+      return AppStrings.t(context, 'Additional Information');
+    }
+
+    return AppStrings.t(context, label);
+  }
+
   Widget _buildMapAppBar(Map<String, dynamic> complaint) {
     final lat = (complaint['latitude'] ?? 0.0) is double
         ? complaint['latitude'] ?? 0.0
@@ -598,7 +697,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                         ),
                       ),
                       child: Text(
-                        '${complaint['complaint_type']?.toString().toUpperCase() ?? AppStrings.t(context, 'General').toUpperCase()} ${AppStrings.t(context, 'Complaint').toUpperCase()}',
+                        '${_localizedComplaintType(complaint).toUpperCase()} ${AppStrings.t(context, 'Complaint').toUpperCase()}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -1507,9 +1606,32 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             _buildDetailItem(
               icon: Icons.category,
               label: AppStrings.t(context, 'Category'),
-              value: complaint['complaint_type'] ?? AppStrings.t(context, 'Unknown'),
+              value: _localizedComplaintType(complaint),
               color: const Color(0xFF8B5CF6),
             ),
+            if (_localizedSubcategory(complaint).isNotEmpty)
+              _buildDetailItem(
+                icon: Icons.account_tree,
+                label: AppStrings.t(context, 'Subcategory'),
+                value: _localizedSubcategory(complaint),
+                color: const Color(0xFF6366F1),
+              ),
+            ...((complaint['field_responses'] as List?) ?? const [])
+                .whereType<Map>()
+                .map((rawField) {
+              final field = Map<String, dynamic>.from(rawField);
+              final value = (field['value'] ?? '').toString().trim();
+              if (value.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return _buildDetailItem(
+                icon: Icons.tune,
+                label: _localizedFieldResponseLabel(field),
+                value: value,
+                color: const Color(0xFF0EA5E9),
+                isLongText: true,
+              );
+            }),
             _buildDetailItem(
               icon: Icons.description,
               label: AppStrings.t(context, 'Description'),
@@ -1879,7 +2001,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    complaint['complaint_type'] ?? AppStrings.t(context, 'Unknown type'),
+                    _localizedComplaintType(complaint),
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF6B7280),

@@ -835,7 +835,7 @@ class _DeptPopup extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  dept.departmentTypeDisplay,
+                  AppStrings.t(context, dept.departmentTypeDisplay),
                   style: GoogleFonts.inter(
                       fontSize: 11, color: const Color(0xFF64748b)),
                 ),

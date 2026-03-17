@@ -199,7 +199,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     for (final f in fields) {
       final id = f['id'] as int;
       final type = f['field_type'] as String;
-      
+
       // Don't re-init if already exists (from category fields)
       if (_dynCtrl.containsKey(id) || _dynDropdown.containsKey(id) || _dynDate.containsKey(id)) continue;
 
@@ -212,6 +212,77 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       }
     }
     setState(() => _selectedSub = sub);
+  }
+
+  String _localizedValue(Map<String, dynamic> source, String baseKey) {
+    final lang = Localizations.localeOf(context).languageCode;
+
+    if (lang == 'hi') {
+      final hi = source['${baseKey}_hi'] ?? source['hi_$baseKey'];
+      if ((hi ?? '').toString().trim().isNotEmpty) {
+        return hi.toString().trim();
+      }
+    }
+
+    if (lang == 'gu') {
+      final gu = source['${baseKey}_gu'] ?? source['gu_$baseKey'];
+      if ((gu ?? '').toString().trim().isNotEmpty) {
+        return gu.toString().trim();
+      }
+    }
+
+    final base = (source[baseKey] ?? '').toString().trim();
+    if (base.isEmpty) {
+      return '';
+    }
+    return AppStrings.t(context, base);
+  }
+
+  List<String> _extractOptionsFromAny(dynamic raw) {
+    if (raw is List) {
+      return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    }
+    if (raw is String && raw.trim().isNotEmpty) {
+      return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    return [];
+  }
+
+  List<String> _baseOptionsForField(Map<String, dynamic> field) {
+    final fromOptions = _extractOptionsFromAny(field['options']);
+    if (fromOptions.isNotEmpty) {
+      return fromOptions;
+    }
+    return _extractOptionsFromAny(field['options_list']);
+  }
+
+  String _localizedOption(Map<String, dynamic> field, int optionIndex, String fallback) {
+    final lang = Localizations.localeOf(context).languageCode;
+    dynamic localizedRaw;
+
+    if (lang == 'hi') {
+      localizedRaw = field['options_hi'] ?? field['hi_options'];
+    } else if (lang == 'gu') {
+      localizedRaw = field['options_gu'] ?? field['gu_options'];
+    }
+
+    final localizedOptions = _extractOptionsFromAny(localizedRaw);
+    if (optionIndex >= 0 && optionIndex < localizedOptions.length) {
+      final value = localizedOptions[optionIndex].trim();
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return AppStrings.t(context, fallback);
+  }
+
+  String _localizedSubcategoryName(Map<String, dynamic> sub) {
+    return _localizedValue(sub, 'name');
+  }
+
+  String _localizedFieldLabel(Map<String, dynamic> field) {
+    return _localizedValue(field, 'label');
   }
 
   Future<void> _detectLocation() async {
@@ -361,8 +432,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           final type = f['field_type'] as String;
           final required = f['is_required'] == true;
           if ((type == 'date' || type == 'datetime-local') && required && (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
+            final label = _localizedFieldLabel(f);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${f['label']} ${AppStrings.t(context, 'is required')}'), backgroundColor: Colors.orange),
+              SnackBar(content: Text('$label ${AppStrings.t(context, 'is required')}'), backgroundColor: Colors.orange),
             );
             return;
           }
@@ -456,7 +528,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         _previewCard(AppStrings.t(context, 'Issue Details'), [
           (AppStrings.t(context, 'Title'), _titleCtrl.text),
           (AppStrings.t(context, 'Category'), widget.categoryName ?? AppStrings.t(context, 'Other')),
-          if (_selectedSub != null) (AppStrings.t(context, 'Subcategory'), _selectedSub!['name'] as String),
+          if (_selectedSub != null) (AppStrings.t(context, 'Subcategory'), _localizedSubcategoryName(_selectedSub!)),
           (AppStrings.t(context, 'Priority'), _priority.toUpperCase()),
           (AppStrings.t(context, 'Description'), _descCtrl.text),
         ]),
@@ -588,7 +660,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     if (_selectedSub != null) {
       final subFields = _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
       if (subFields.isNotEmpty) {
-        sections.add(_sectionTitle((step++).toString(), _selectedSub!['name'] as String));
+        sections.add(_sectionTitle((step++).toString(), _localizedSubcategoryName(_selectedSub!)));
         sections.add(const SizedBox(height: 12));
         sections.add(_card(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,6 +857,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       runSpacing: 10,
       children: _subcategories.map((sub) {
         final selected = _selectedSub?['id'] == sub['id'];
+        final subName = _localizedSubcategoryName(sub);
         return GestureDetector(
           onTap: () => _selectSub(sub),
           child: AnimatedContainer(
@@ -807,7 +880,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                 ),
               ],
             ),
-            child: Text(sub['name'] as String,
+            child: Text(subName,
                 style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -829,7 +902,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     for (int i = 0; i < fields.length; i++) {
       final f = fields[i];
       final id = f['id'] as int;
-      final label = f['label'] as String;
+      final label = _localizedFieldLabel(f);
       final type = f['field_type'] as String;
       final required = f['is_required'] == true;
 
@@ -840,13 +913,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (type == 'select') {
         List<String> options = [];
         try {
-          if (f['options'] is List) {
-            options = (f['options'] as List).map((o) => o.toString()).toList();
-          } else if (f['options_list'] is List) {
-            options = (f['options_list'] as List).map((o) => o.toString()).toList();
-          } else if (f['options'] is String && (f['options'] as String).isNotEmpty) {
-            options = (f['options'] as String).split(',').map((e) => e.trim()).toList();
-          }
+          options = _baseOptionsForField(f);
         } catch (e) {
           debugPrint('Error parsing options for field $label: $e');
         }
@@ -854,10 +921,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         widgets.add(_dropdownField(
           hint: '${AppStrings.t(context, 'Select')} $label',
           value: _dynDropdown[id],
-          items: options.map((o) => DropdownMenuItem(
-            value: o,
-            child: Text(o, style: GoogleFonts.inter(fontSize: 14, color: _textDark)),
-          )).toList(),
+          items: List.generate(options.length, (index) {
+            final rawOption = options[index];
+            final displayOption = _localizedOption(f, index, rawOption);
+            return DropdownMenuItem(
+              value: rawOption,
+              child: Text(displayOption, style: GoogleFonts.inter(fontSize: 14, color: _textDark)),
+            );
+          }),
           onChanged: (v) => setState(() => _dynDropdown[id] = v),
           validator: required ? (v) => (v == null || v.isEmpty) ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
         ));

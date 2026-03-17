@@ -149,7 +149,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     final grads = _gradients[type] ?? [const Color(0xFF89f7fe), const Color(0xFF66a6ff)];
     final bg = _bgMap[type] ?? const Color(0xFFF8FAFC);
     final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
-    final typeDisplay = (d['department_type_display'] ?? type).toString();
+    final typeDisplay = AppStrings.t(context, (d['department_type_display'] ?? type).toString());
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -286,7 +286,6 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   // ── Full detail body ──────────────────────────────────────────────────────
   Widget _detailBody(Map<String, dynamic> d, String emoji, List<Color> grads, Color bg) {
     final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
-    final typeDisplay = (d['department_type_display'] ?? '').toString();
     final city = (d['city'] ?? '').toString();
     final state = (d['state'] ?? '').toString();
     final address = (d['address'] ?? '').toString();

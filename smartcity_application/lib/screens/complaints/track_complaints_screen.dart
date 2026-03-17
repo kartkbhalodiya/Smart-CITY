@@ -184,7 +184,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
             Row(children: [
               const Icon(Icons.tag, size: 16, color: Color(0xFF2B6CF6)),
               const SizedBox(width: 8),
-              Text(c.complaintType, style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF718096))),
+              Text(_localizedComplaintType(c), style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF718096))),
             ]),
             const SizedBox(height: 8),
             Row(children: [
@@ -211,6 +211,8 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                         'title': c.title,
                         'description': c.description,
                         'complaint_type': c.complaintType,
+                        'complaint_type_display': c.complaintTypeDisplay,
+                        'subcategory': c.subcategory,
                         'work_status': c.workStatus,
                         'created_at': c.createdAt.toString(),
                         'address': c.address,
@@ -234,6 +236,17 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
                         'citizen_rating': c.citizenRating,
                         'citizen_feedback': null,
                         'can_reopen': c.canReopen ?? false,
+                        'field_responses': c.fieldResponses
+                            ?.map((f) => {
+                                  'id': f.id,
+                                  'field': f.field,
+                                  'field_label': f.fieldLabel,
+                                  'field_label_hi': f.fieldLabelHi,
+                                  'field_label_gu': f.fieldLabelGu,
+                                  'field_type': f.fieldType,
+                                  'value': f.value,
+                                })
+                            .toList(),
                       },
                     ),
                   ),
@@ -253,6 +266,47 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
         ),
       ]),
     );
+  }
+
+  String _localizedComplaintType(Complaint complaint) {
+    final display = complaint.complaintTypeDisplay.trim();
+    if (display.isNotEmpty) {
+      return AppStrings.t(context, display);
+    }
+    return AppStrings.t(context, _categoryKeyToText(complaint.complaintType));
+  }
+
+  String _categoryKeyToText(String categoryKey) {
+    switch (categoryKey.toLowerCase()) {
+      case 'police':
+        return 'Police';
+      case 'traffic':
+        return 'Traffic';
+      case 'construction':
+        return 'Construction';
+      case 'water':
+      case 'water supply':
+        return 'Water Supply';
+      case 'electricity':
+        return 'Electricity';
+      case 'garbage':
+        return 'Garbage';
+      case 'road':
+      case 'pothole':
+        return 'Road / Pothole';
+      case 'drainage':
+        return 'Drainage';
+      case 'illegal':
+      case 'illegal activity':
+        return 'Illegal Activity';
+      case 'transportation':
+        return 'Transportation';
+      case 'cyber':
+      case 'cyber crime':
+        return 'Cyber Crime';
+      default:
+        return categoryKey;
+    }
   }
 
   Map<String, dynamic> _statusConfig(String status) {

@@ -30,6 +30,7 @@ class Complaint {
   final DateTime? reopenDeadline;
   final List<ComplaintMedia>? workProof;
   final String? citizenFeedback;
+  final List<ComplaintFieldResponse>? fieldResponses;
 
   Complaint({
     required this.id,
@@ -63,6 +64,7 @@ class Complaint {
     this.reopenDeadline,
     this.workProof,
     this.citizenFeedback,
+    this.fieldResponses,
   });
 
   factory Complaint.fromJson(Map<String, dynamic> json) {
@@ -106,6 +108,11 @@ class Complaint {
           ? (json['work_proof'] as List).map((m) => ComplaintMedia.fromJson(m)).toList()
           : null,
       citizenFeedback: json['citizen_feedback'],
+      fieldResponses: json['field_responses'] != null
+          ? (json['field_responses'] as List)
+              .map((f) => ComplaintFieldResponse.fromJson(f))
+              .toList()
+          : null,
     );
   }
 }
@@ -129,6 +136,38 @@ class ComplaintMedia {
       file: json['file'] ?? '',
       fileUrl: json['file_url'] ?? '',
       fileType: json['file_type'] ?? 'image',
+    );
+  }
+}
+
+class ComplaintFieldResponse {
+  final int id;
+  final int field;
+  final String fieldLabel;
+  final String? fieldLabelHi;
+  final String? fieldLabelGu;
+  final String fieldType;
+  final String value;
+
+  ComplaintFieldResponse({
+    required this.id,
+    required this.field,
+    required this.fieldLabel,
+    this.fieldLabelHi,
+    this.fieldLabelGu,
+    required this.fieldType,
+    required this.value,
+  });
+
+  factory ComplaintFieldResponse.fromJson(Map<String, dynamic> json) {
+    return ComplaintFieldResponse(
+      id: json['id'] ?? 0,
+      field: json['field'] ?? 0,
+      fieldLabel: json['field_label'] ?? '',
+      fieldLabelHi: json['field_label_hi'],
+      fieldLabelGu: json['field_label_gu'],
+      fieldType: json['field_type'] ?? 'text',
+      value: (json['value'] ?? '').toString(),
     );
   }
 }

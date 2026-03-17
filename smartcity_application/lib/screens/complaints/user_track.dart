@@ -373,6 +373,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     'title': complaint.title,
                     'description': complaint.description,
                     'complaint_type': complaint.complaintType,
+                    'complaint_type_display': complaint.complaintTypeDisplay,
+                    'subcategory': complaint.subcategory,
                     'work_status': complaint.workStatus,
                     'created_at': complaint.createdAt.toString(),
                     'address': complaint.address,
@@ -396,6 +398,17 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     'citizen_rating': complaint.citizenRating,
                     'citizen_feedback': null,
                     'can_reopen': complaint.canReopen ?? false,
+                    'field_responses': complaint.fieldResponses
+                        ?.map((f) => {
+                              'id': f.id,
+                              'field': f.field,
+                              'field_label': f.fieldLabel,
+                              'field_label_hi': f.fieldLabelHi,
+                              'field_label_gu': f.fieldLabelGu,
+                              'field_type': f.fieldType,
+                              'value': f.value,
+                            })
+                        .toList(),
                   },
                 ),
               ),
@@ -487,7 +500,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            complaint.complaintType,
+                            _localizedComplaintType(complaint),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -516,7 +529,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         Icon(Icons.category, size: 14, color: const Color(0xFF1E66F5)),
                         const SizedBox(width: 6),
                         Text(
-                          complaint.subcategory!,
+                          _localizedSubcategory(complaint.subcategory),
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -862,6 +875,56 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       case 'medium': return const Color(0xFFEAB308);
       case 'low': return const Color(0xFF22C55E);
       default: return const Color(0xFF64748b);
+    }
+  }
+
+  String _localizedComplaintType(Complaint complaint) {
+    final display = complaint.complaintTypeDisplay.trim();
+    if (display.isNotEmpty) {
+      return AppStrings.t(context, display);
+    }
+
+    return AppStrings.t(context, _categoryKeyToText(complaint.complaintType));
+  }
+
+  String _localizedSubcategory(String? subcategory) {
+    final value = (subcategory ?? '').trim();
+    if (value.isEmpty) {
+      return AppStrings.t(context, 'Other');
+    }
+    return AppStrings.t(context, value);
+  }
+
+  String _categoryKeyToText(String categoryKey) {
+    switch (categoryKey.toLowerCase()) {
+      case 'police':
+        return 'Police';
+      case 'traffic':
+        return 'Traffic';
+      case 'construction':
+        return 'Construction';
+      case 'water':
+      case 'water supply':
+        return 'Water Supply';
+      case 'electricity':
+        return 'Electricity';
+      case 'garbage':
+        return 'Garbage';
+      case 'road':
+      case 'pothole':
+        return 'Road / Pothole';
+      case 'drainage':
+        return 'Drainage';
+      case 'illegal':
+      case 'illegal activity':
+        return 'Illegal Activity';
+      case 'transportation':
+        return 'Transportation';
+      case 'cyber':
+      case 'cyber crime':
+        return 'Cyber Crime';
+      default:
+        return categoryKey;
     }
   }
 

@@ -259,7 +259,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
   Widget _infoGrid(Map<String, dynamic> c) {
     final items = [
       (AppStrings.t(context, 'Complaint ID'), '#${c['complaint_number']}'),
-      (AppStrings.t(context, 'Category'), c['complaint_type'] ?? ''),
+      (AppStrings.t(context, 'Category'), _localizedComplaintType(c)),
       if (c['assigned_department'] != null) (AppStrings.t(context, 'Assigned To'), c['assigned_department']),
       (AppStrings.t(context, 'Location'), '${c['city']}, ${c['pincode']}'),
       (AppStrings.t(context, 'Date Submitted'), c['created_at'] ?? ''),
@@ -279,6 +279,49 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
         ]),
       )).toList(),
     );
+  }
+
+  String _localizedComplaintType(Map<String, dynamic> complaint) {
+    final display = (complaint['complaint_type_display'] ?? '').toString().trim();
+    if (display.isNotEmpty) {
+      return AppStrings.t(context, display);
+    }
+
+    final code = (complaint['complaint_type'] ?? '').toString().trim();
+    return AppStrings.t(context, _categoryKeyToText(code));
+  }
+
+  String _categoryKeyToText(String categoryKey) {
+    switch (categoryKey.toLowerCase()) {
+      case 'police':
+        return 'Police';
+      case 'traffic':
+        return 'Traffic';
+      case 'construction':
+        return 'Construction';
+      case 'water':
+      case 'water supply':
+        return 'Water Supply';
+      case 'electricity':
+        return 'Electricity';
+      case 'garbage':
+        return 'Garbage';
+      case 'road':
+      case 'pothole':
+        return 'Road / Pothole';
+      case 'drainage':
+        return 'Drainage';
+      case 'illegal':
+      case 'illegal activity':
+        return 'Illegal Activity';
+      case 'transportation':
+        return 'Transportation';
+      case 'cyber':
+      case 'cyber crime':
+        return 'Cyber Crime';
+      default:
+        return categoryKey;
+    }
   }
 
   Widget _timeline(String status, Map<String, dynamic> c) {
