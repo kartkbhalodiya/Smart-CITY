@@ -137,7 +137,7 @@ class ComplaintListSerializer(serializers.ModelSerializer):
         fields = ['id', 'complaint_number', 'title', 'complaint_type', 
                   'complaint_type_display', 'subcategory', 'status', 'status_display',
                   'work_status', 'work_status_display', 'priority', 'priority_display',
-                  'city', 'state', 'latitude', 'longitude', 'address',
+                  'language', 'city', 'state', 'latitude', 'longitude', 'address',
                   'created_at', 'updated_at', 'user_name',
                   'media_count', 'thumbnail', 'citizen_rating']
     
@@ -201,7 +201,7 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Complaint
-        fields = ['complaint_type', 'subcategory', 'priority', 'title', 'description',
+        fields = ['complaint_type', 'subcategory', 'priority', 'language', 'title', 'description',
                   'latitude', 'longitude', 'city', 'state', 'pincode', 'address',
                   'preferred_contact_phone', 'preferred_contact_email', 
                   'preferred_contact_sms', 'media_files', 'guest_name', 'guest_email', 'guest_phone']

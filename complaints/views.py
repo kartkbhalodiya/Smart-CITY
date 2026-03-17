@@ -399,7 +399,7 @@ def get_detailed_fields_blueprint():
 
 def ensure_unique_fields_for_each_subcategory(category):
     blueprint = get_detailed_fields_blueprint()
-    category_slug = category.slug
+    category_slug = category.key
     
     subcategories = list(
         category.subcategories.filter(is_active=True).order_by('display_order', 'name')
