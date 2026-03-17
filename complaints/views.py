@@ -989,6 +989,31 @@ def preview_complaint(request):
     
     if request.method == 'POST':
         if 'confirm' in request.POST:
+            # Check for duplicate complaint before creating
+            try:
+                lat = float(complaint_data.get('latitude') or 0)
+                lon = float(complaint_data.get('longitude') or 0)
+            except (ValueError, TypeError):
+                lat, lon = 0.0, 0.0
+            
+            ctype = complaint_data.get('complaint_type')
+            subcat = complaint_data.get('subcategory', '')
+            
+            duplicate = Complaint.check_duplicate(lat, lon, ctype, subcat)
+            if duplicate:
+                # Clear draft as they don't need to submit it again
+                if 'complaint_draft' in request.session:
+                    del request.session['complaint_draft']
+                
+                # Mask ID: first 4 chars + XXXXXX
+                orig_id = duplicate.complaint_number
+                masked_id = f"{orig_id[:4]}XXXXXX" if len(orig_id) > 4 else f"{orig_id}XXXX"
+                
+                return render(request, 'duplicate_found.html', {
+                    'masked_id': masked_id,
+                    'original_id': orig_id
+                })
+
             # Create complaint
             complaint = Complaint.objects.create(
                 user=request.user if request.user.is_authenticated else None,

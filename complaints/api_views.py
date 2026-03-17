@@ -483,6 +483,25 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         try:
             serializer = self.get_serializer(data=request.data, context={'request': request})
             if serializer.is_valid():
+                # Check for duplicates before saving
+                try:
+                    lat = float(request.data.get('latitude') or 0)
+                    lon = float(request.data.get('longitude') or 0)
+                except (ValueError, TypeError):
+                    lat, lon = 0.0, 0.0
+                
+                ctype = request.data.get('complaint_type')
+                subcat = request.data.get('subcategory', '')
+                
+                duplicate = Complaint.check_duplicate(lat, lon, ctype, subcat)
+                if duplicate:
+                    return Response({
+                        'success': False,
+                        'message': f'This complaint has already been submitted by another citizen in this area. Please be patient while we resolve it. (Ticket: {duplicate.complaint_number})',
+                        'duplicate_found': True,
+                        'existing_ticket': duplicate.complaint_number
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
                 complaint = serializer.save()
                 detail_serializer = ComplaintDetailSerializer(complaint, context={'request': request})
                 return Response({

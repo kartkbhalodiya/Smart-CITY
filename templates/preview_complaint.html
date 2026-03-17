@@ -130,6 +130,57 @@
             color: #856404;
         }
 
+        /* Loading Overlay Styles */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            height: 27px;
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .loader-container {
+            padding: 40px;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
         @media (max-width: 480px) {
             .preview-row {
                 flex-direction: column;
@@ -142,6 +193,14 @@
     </style>
 </head>
 <body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <div class="loading-text" id="loadingText">Analyzing your complaint...</div>
+            <div class="loading-subtext">Please wait, we are processing your request</div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1><i class="fa-solid fa-eye"></i> Preview Your Complaint</h1>
@@ -227,7 +286,7 @@
             </div>
         </div>
 
-        <form method="post">
+        <form method="post" id="complaintForm" onsubmit="return showLoader()">
             {% csrf_token %}
             <div class="btn-group">
                 <button type="submit" name="back" class="btn btn-back">
@@ -245,5 +304,39 @@
             </div>
         </form>
     </div>
+
+    <script>
+        const messages = [
+            "Analyzing your complaint...",
+            "Checking for similar reports nearby...",
+            "Authenticating your request...",
+            "Connecting with local authorities...",
+            "Assigning appropriate department...",
+            "Finalizing your submission..."
+        ];
+
+        let messageIndex = 0;
+        let isSubmitting = false;
+
+        function showLoader() {
+            // Only show loader for the 'confirm' action
+            const submitButton = document.activeElement;
+            if (submitButton && submitButton.name === 'confirm') {
+                if (isSubmitting) return false;
+                isSubmitting = true;
+
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                // Cycle messages
+                setInterval(() => {
+                    messageIndex = (messageIndex + 1) % messages.length;
+                    document.getElementById('loadingText').innerText = messages[messageIndex];
+                }, 2000);
+
+                return true;
+            }
+            return true;
+        }
+    </script>
 </body>
 </html>

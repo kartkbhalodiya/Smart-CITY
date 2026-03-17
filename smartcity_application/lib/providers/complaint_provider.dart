@@ -157,6 +157,11 @@ class ComplaintProvider with ChangeNotifier {
     } else {
       _error = response['message'] ?? 'Failed to submit complaint';
       notifyListeners();
+      
+      // If duplicate found, return the response so UI can show the specific dialog
+      if (response['duplicate_found'] == true) {
+        return response;
+      }
       return null;
     }
   }

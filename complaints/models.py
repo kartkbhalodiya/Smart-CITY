@@ -39,10 +39,18 @@ class Complaint(models.Model):
     ]
     REOPEN_WINDOW_DAYS = 7
     
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('hi', 'Hindi'),
+        ('gu', 'Gujarati'),
+        ('mr', 'Marathi'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     complaint_type = models.CharField(max_length=20, choices=COMPLAINT_TYPES)
     subcategory = models.CharField(max_length=200, blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
+    language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en')
     preferred_contact_phone = models.BooleanField(default=False)
     preferred_contact_email = models.BooleanField(default=False)
     preferred_contact_sms = models.BooleanField(default=False)
@@ -91,6 +99,27 @@ class Complaint(models.Model):
         related_name='reopened_requests'
     )
     
+    @staticmethod
+    def check_duplicate(latitude, longitude, complaint_type, subcategory):
+        """
+        Checks for duplicate complaints within 100m radius with same type and subcategory.
+        Returns the existing active complaint if found.
+        """
+        # 100 meters = 0.1 km
+        DISTANCE_THRESHOLD = 0.1
+        
+        # Base query for active complaints of the same type and subcategory
+        active_complaints = Complaint.objects.filter(
+            complaint_type=complaint_type,
+            subcategory=subcategory
+        ).exclude(work_status__in=['solved', 'rejected'])
+        
+        for comp in active_complaints:
+            dist = Complaint._distance_km(latitude, longitude, comp.latitude, comp.longitude)
+            if dist <= DISTANCE_THRESHOLD:
+                return comp
+        return None
+
     def save(self, *args, **kwargs):
         if not self.complaint_number:
             import random

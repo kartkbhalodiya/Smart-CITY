@@ -60,6 +60,15 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   bool _submitting = false;
   bool _isPreviewing = false;
   double? _lat, _lng;
+  int _loadingMessageIndex = 0;
+  final List<String> _loadingMessages = [
+    'Analyzing your complaint...',
+    'Checking for similar reports nearby...',
+    'Authenticating your request...',
+    'Connecting with local authorities...',
+    'Assigning appropriate department...',
+    'Finalizing your submission...'
+  ];
 
   static const _emojiMap = {
     'police': '🚓', 'traffic': '🚦', 'construction': '🏗️',
@@ -446,6 +455,50 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     setState(() => _submitting = true);
 
+    // Show persistent loading dialog with message cycler
+    _loadingMessageIndex = 0;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          // Update message every 2 seconds
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted && _submitting) {
+              setDialogState(() {
+                _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
+              });
+            }
+          });
+          
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: _primary),
+                  const SizedBox(height: 24),
+                  Text(
+                    AppStrings.t(context, _loadingMessages[_loadingMessageIndex]),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: _textDark),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppStrings.t(context, 'Please be patient, we are processing your request'),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(fontSize: 13, color: _textMuted),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
     final data = <String, String>{
       'title': _titleCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
@@ -487,10 +540,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
     final res = await provider.createComplaint(data, _images);
+    
+    // Dismiss loading dialog
+    if (mounted) Navigator.pop(context);
+    
     setState(() => _submitting = false);
 
     if (!mounted) return;
     if (res != null) {
+      if (res['duplicate_found'] == true) {
+        _showDuplicateDialog(res['existing_ticket'] ?? '');
+        return;
+      }
+
       await provider.refresh();
       
       final complaint = res['complaint'];
@@ -512,6 +574,81 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         SnackBar(content: Text(provider.error ?? AppStrings.t(context, 'Failed to submit')), backgroundColor: Colors.red),
       );
     }
+  }
+
+  void _showDuplicateDialog(String ticketId) {
+    String maskedId = ticketId.length > 4 
+        ? '${ticketId.substring(0, 4)}XXXXXX' 
+        : '${ticketId}XXXX';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 70, height: 70,
+                decoration: const BoxDecoration(color: Color(0xFFF0FDF4), shape: BoxShape.circle),
+                child: const Center(child: Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 40)),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                AppStrings.t(context, 'Thank You for Applied Complaint!'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.t(context, 'This issue has already been reported by another citizen in this area. Our team is already working on it.'),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 14, color: _textMuted, height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  children: [
+                    Text(
+                      AppStrings.t(context, 'EXISTING TICKET ID'),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF), letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      maskedId,
+                      style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF374151), letterSpacing: 2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx); // Close dialog
+                    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: Text(AppStrings.t(context, 'Thank You'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _previewSection() {
