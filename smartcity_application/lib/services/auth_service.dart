@@ -20,9 +20,12 @@ class AuthService {
       includeAuth: false,
     );
     if (response['success'] == true) {
-      final token = response['token'];
+      final token = response['access'] ?? response['token'];
+      final refreshToken = response['refresh'];
       final userData = response['user'];
+      
       if (token != null) await StorageService.saveToken(token);
+      if (refreshToken != null) await StorageService.saveRefreshToken(refreshToken);
       if (userData != null) await StorageService.saveUserData(jsonEncode(userData));
       await StorageService.setLoggedIn(true);
     }
@@ -38,11 +41,13 @@ class AuthService {
 
     if (response['success'] == true) {
       // Save token and user data
-      final token = response['token'];
+      final token = response['access'] ?? response['token'];
+      final refreshToken = response['refresh'];
       final userData = response['user'];
 
-      await StorageService.saveToken(token);
-      await StorageService.saveUserData(jsonEncode(userData));
+      if (token != null) await StorageService.saveToken(token);
+      if (refreshToken != null) await StorageService.saveRefreshToken(refreshToken);
+      if (userData != null) await StorageService.saveUserData(jsonEncode(userData));
       await StorageService.setLoggedIn(true);
     }
 
@@ -57,12 +62,16 @@ class AuthService {
     );
 
     if (response['success'] == true) {
-      final token = response['token'];
+      final token = response['access'] ?? response['token'];
+      final refreshToken = response['refresh'];
       final userData = response['user'];
 
       if (token != null) {
         await StorageService.saveToken(token);
         await StorageService.setLoggedIn(true);
+      }
+      if (refreshToken != null) {
+        await StorageService.saveRefreshToken(refreshToken);
       }
       if (userData != null) {
         await StorageService.saveUserData(jsonEncode(userData));
@@ -76,6 +85,30 @@ class AuthService {
     final response = await ApiService.post(ApiConfig.logout, {});
     await StorageService.clearAll();
     return response;
+  }
+
+  static Future<bool> refreshToken() async {
+    final refreshToken = await StorageService.getRefreshToken();
+    if (refreshToken == null) return false;
+
+    try {
+      final response = await ApiService.post(
+        '${ApiConfig.baseUrl}/auth/token/refresh/',
+        {'refresh': refreshToken},
+        includeAuth: false,
+      );
+
+      if (response['access'] != null) {
+        await StorageService.saveToken(response['access']);
+        return true;
+      }
+    } catch (e) {
+      print('Token refresh failed: $e');
+    }
+    
+    // If refresh fails, log out
+    await logout();
+    return false;
   }
 
   static Future<User?> getCurrentUser() async {

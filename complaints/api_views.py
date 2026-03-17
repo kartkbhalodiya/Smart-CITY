@@ -3,6 +3,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db.models import Q, Count
@@ -10,6 +11,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
+import secrets
 
 from .models import (
     Complaint, ComplaintMedia, ComplaintResolutionProof, ComplaintReopenProof,
@@ -121,7 +123,8 @@ def register_user(request):
                 defaults=profile_kwargs
             )
             
-            token, _ = Token.objects.get_or_create(user=user)
+            # Generate JWT Token
+            refresh = RefreshToken.for_user(user)
 
             try:
                 send_welcome_email(
@@ -137,7 +140,9 @@ def register_user(request):
             return Response({
                 'success': True,
                 'message': 'Registration successful',
-                'token': token.key,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'token': str(refresh.access_token), # Backward compatibility
                 'user': UserSerializer(user).data,
             }, status=status.HTTP_201_CREATED)
 
@@ -188,8 +193,8 @@ def send_otp(request):
         except User.DoesNotExist:
             pass
 
-        # Generate 6-digit OTP
-        otp_code = str(random.randint(100000, 999999))
+        # Generate 6-digit OTP (Cryptographically Secure)
+        otp_code = ''.join(secrets.choice('0123456789') for _ in range(6))
         
         # Delete old OTPs for this email
         OTP.objects.filter(email=email).delete()
@@ -270,8 +275,8 @@ def verify_otp(request):
                 }
             )
             
-            # Get or create token
-            token, _ = Token.objects.get_or_create(user=user)
+            # Generate JWT Token
+            refresh = RefreshToken.for_user(user)
             
             role = 'citizen'
             if user.is_superuser:
@@ -284,7 +289,9 @@ def verify_otp(request):
             return Response({
                 'success': True,
                 'message': 'Verification successful',
-                'token': token.key,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'token': str(refresh.access_token), # Backward compatibility
                 'user': UserSerializer(user).data,
                 'role': role,
                 'is_new_user': created
@@ -334,11 +341,14 @@ def login_with_password(request):
     elif DepartmentUser.objects.filter(user=user).exists():
         role = 'department'
 
-    token, _ = Token.objects.get_or_create(user=user)
+    # Generate JWT Token
+    refresh = RefreshToken.for_user(user)
     return Response({
         'success': True,
         'message': 'Login successful',
-        'token': token.key,
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
+        'token': str(refresh.access_token), # Backward compatibility
         'user': UserSerializer(user).data,
         'role': role,
     }, status=status.HTTP_200_OK)
@@ -347,9 +357,9 @@ def login_with_password(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_user(request):
-    """Logout user"""
+    """Logout user - with JWT we don't necessarily delete anything on server unless using blacklist"""
     try:
-        request.user.auth_token.delete()
+        # If using blacklist, you could blacklist the refresh token here if passed in request
         return Response({
             'success': True,
             'message': 'Logged out successfully'

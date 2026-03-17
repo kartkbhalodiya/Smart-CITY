@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'storage_service.dart';
+import 'auth_service.dart';
 
 class ApiService {
   static Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
@@ -13,7 +14,7 @@ class ApiService {
     if (includeAuth) {
       final token = await StorageService.getToken();
       if (token != null) {
-        headers['Authorization'] = 'Token $token';
+        headers['Authorization'] = 'Bearer $token';
       }
     }
 
@@ -27,6 +28,10 @@ class ApiService {
         Uri.parse(url),
         headers: headers,
       ).timeout(ApiConfig.receiveTimeout);
+
+      if (response.statusCode == 401 && includeAuth) {
+        return await _retryWithRefresh('GET', url);
+      }
 
       return _handleResponse(response);
     } catch (e) {
@@ -47,6 +52,10 @@ class ApiService {
         body: jsonEncode(body),
       ).timeout(ApiConfig.receiveTimeout);
 
+      if (response.statusCode == 401 && includeAuth) {
+        return await _retryWithRefresh('POST', url, body: body);
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
@@ -66,6 +75,10 @@ class ApiService {
         body: jsonEncode(body),
       ).timeout(ApiConfig.receiveTimeout);
 
+      if (response.statusCode == 401 && includeAuth) {
+        return await _retryWithRefresh('PUT', url, body: body);
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
@@ -80,10 +93,30 @@ class ApiService {
         headers: headers,
       ).timeout(ApiConfig.receiveTimeout);
 
+      if (response.statusCode == 401 && includeAuth) {
+        return await _retryWithRefresh('DELETE', url);
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
     }
+  }
+
+  static Future<Map<String, dynamic>> _retryWithRefresh(
+    String method,
+    String url, {
+    Map<String, dynamic>? body,
+  }) async {
+    final refreshed = await AuthService.refreshToken();
+    if (refreshed) {
+      // Retry the original request
+      if (method == 'GET') return await get(url);
+      if (method == 'POST') return await post(url, body!);
+      if (method == 'PUT') return await put(url, body!);
+      if (method == 'DELETE') return await delete(url);
+    }
+    return {'success': false, 'message': 'Session expired. Please login again.'};
   }
 
   static Future<Map<String, dynamic>> postMultipart(
@@ -97,7 +130,7 @@ class ApiService {
       final request = http.MultipartRequest('POST', Uri.parse(url));
 
       if (token != null) {
-        request.headers['Authorization'] = 'Token $token';
+        request.headers['Authorization'] = 'Bearer $token';
       }
 
       // Add fields

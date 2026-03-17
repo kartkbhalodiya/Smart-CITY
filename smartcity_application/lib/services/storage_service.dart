@@ -1,10 +1,13 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StorageService {
   static late SharedPreferences _prefs;
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   // Keys
   static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
   static const String _userKey = 'user_data';
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _localeKey = 'app_locale';
@@ -13,17 +16,30 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  // Token — saved in SharedPreferences so it persists across reinstalls
+  // Tokens — saved in FlutterSecureStorage for encrypted security
   static Future<void> saveToken(String token) async {
-    await _prefs.setString(_tokenKey, token);
+    await _secureStorage.write(key: _tokenKey, value: token);
   }
 
   static Future<String?> getToken() async {
-    return _prefs.getString(_tokenKey);
+    return await _secureStorage.read(key: _tokenKey);
   }
 
   static Future<void> deleteToken() async {
-    await _prefs.remove(_tokenKey);
+    await _secureStorage.delete(key: _tokenKey);
+  }
+
+  // Refresh Token
+  static Future<void> saveRefreshToken(String token) async {
+    await _secureStorage.write(key: _refreshTokenKey, value: token);
+  }
+
+  static Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(key: _refreshTokenKey);
+  }
+
+  static Future<void> deleteRefreshToken() async {
+    await _secureStorage.delete(key: _refreshTokenKey);
   }
 
   // User Data
@@ -59,5 +75,6 @@ class StorageService {
   // Clear All Data
   static Future<void> clearAll() async {
     await _prefs.clear();
+    await _secureStorage.deleteAll();
   }
 }

@@ -8,3 +8,5 @@ django-cloudinary-storage
 dj-database-url
 whitenoise
 gunicorn
+djangorestframework-simplejwt
+PyJWT

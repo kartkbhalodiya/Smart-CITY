@@ -24,6 +24,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 import random
+import secrets
 import urllib.request
 import json
 import re
@@ -44,7 +45,7 @@ from django.urls import reverse
 from datetime import timedelta, datetime
 
 def generate_otp():
-    return str(random.randint(100000, 999999))
+    return ''.join(secrets.choice('0123456789') for _ in range(6))
 
 
 def generate_strong_password(length=14):
@@ -54,15 +55,19 @@ def generate_strong_password(length=14):
     pool_lower = string.ascii_lowercase
     pool_digits = string.digits
     pool_symbols = '!@#$%^&*()-_=+'
+    
     password_chars = [
-        random.choice(pool_upper),
-        random.choice(pool_lower),
-        random.choice(pool_digits),
-        random.choice(pool_symbols),
+        secrets.choice(pool_upper),
+        secrets.choice(pool_lower),
+        secrets.choice(pool_digits),
+        secrets.choice(pool_symbols),
     ]
     full_pool = pool_upper + pool_lower + pool_digits + pool_symbols
-    password_chars.extend(random.choice(full_pool) for _ in range(length - 4))
-    random.shuffle(password_chars)
+    password_chars.extend(secrets.choice(full_pool) for _ in range(length - 4))
+    
+    # Shuffle to ensure the first 4 aren't always in same categories
+    # secrets doesn't have shuffle, but we can use random.SystemRandom().shuffle
+    random.SystemRandom().shuffle(password_chars)
     return ''.join(password_chars)
 
 

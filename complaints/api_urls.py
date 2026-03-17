@@ -1,5 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import (
+    TokenRefreshView,
+    TokenVerifyView,
+)
 from .api_views import (
     ComplaintViewSet,
     register_user, send_otp, verify_otp, logout_user, login_with_password,
@@ -19,6 +23,8 @@ urlpatterns = [
     path('auth/send-otp/', send_otp, name='api_send_otp'),
     path('auth/verify-otp/', verify_otp, name='api_verify_otp'),
     path('auth/logout/', logout_user, name='api_logout'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     
     # User Profile
     path('user/profile/', user_profile, name='api_user_profile'),
