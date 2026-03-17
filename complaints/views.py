@@ -1035,6 +1035,7 @@ def preview_complaint(request):
                 city=complaint_data.get('city', ''),
                 pincode=complaint_data.get('pincode', ''),
                 address=complaint_data.get('address', ''),
+                date_of_occurrence=complaint_data.get('date_of_occurrence') if complaint_data.get('date_of_occurrence') else None,
                 guest_name=complaint_data.get('full_name', '') if not request.user.is_authenticated else '',
                 guest_email=complaint_data.get('email', '') if not request.user.is_authenticated else '',
                 guest_phone=complaint_data.get('phone', '') if not request.user.is_authenticated else ''
@@ -1161,6 +1162,7 @@ def submit_complaint(request):
             'subcategory': request.POST.get('subcategory'),
             'title': request.POST.get('title'),
             'description': request.POST.get('description'),
+            'date_of_occurrence': request.POST.get('date_of_occurrence'),
             'state': request.POST.get('state'),
             'city': request.POST.get('city'),
             'pincode': request.POST.get('pincode'),
@@ -1189,10 +1191,15 @@ def submit_complaint(request):
         # --- AI Image Verification (New: Before Preview) ---
         from .ai_utils import verify_complaint_proof
         ctype = request.POST.get('complaint_type')
+        print(f"DEBUG Web: Category Key received: {ctype}")
         category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
+        
+        # Categories that MUST have a proof image
+        skip_keys = ['police', 'cyber', 'other']
+        
         if media_paths:
             # Check first image for validity
-            is_valid, ai_msg = verify_complaint_proof(media_paths[0], category_label)
+            is_valid, ai_msg = verify_complaint_proof(media_paths[0], category_label, category_key=ctype)
             if not is_valid:
                 messages.error(request, f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.")
                 # We stay on same page to let them re-upload
@@ -1207,6 +1214,20 @@ def submit_complaint(request):
                     'states': ManagedState.objects.all().order_by('name'),
                     'cities': ManagedCity.objects.select_related('state').all().order_by('name'),
                 })
+        elif ctype not in skip_keys:
+            # No media provided for a category that requires it
+            messages.error(request, f"Proof Required: Please upload a photo of the {category_label} issue.")
+            return render(request, 'submit_complaint.html', {
+                'initial_type': ctype,
+                'draft': complaint_data,
+                'managed_categories': managed_category_options,
+                'managed_subcategories_json': json.dumps(managed_sub_map),
+                'managed_field_map_json': json.dumps(managed_field_map),
+                'has_managed_categories': has_managed_categories,
+                'fallback_complaint_types': Complaint.COMPLAINT_TYPES,
+                'states': ManagedState.objects.all().order_by('name'),
+                'cities': ManagedCity.objects.select_related('state').all().order_by('name'),
+            })
         # ----------------------------------------------------
         
         # Save dynamic fields

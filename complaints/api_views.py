@@ -486,11 +486,21 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
         images = request.FILES.getlist('media')
         
+        # Categories that skip AI but still might have images
+        skip_keys = ['police', 'cyber', 'other']
+
         if not images:
-            return Response({'success': True, 'message': 'No images to verify'})
+            if ctype in skip_keys:
+                return Response({'success': True, 'message': 'No images to verify (optional for this category)'})
+            else:
+                return Response({
+                    'success': False,
+                    'message': f"Proof Required: Please upload a photo of the {category_label} issue.",
+                    'ai_verification_failed': True
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         from .ai_utils import verify_complaint_proof
-        is_valid, ai_msg = verify_complaint_proof(images[0], category_label)
+        is_valid, ai_msg = verify_complaint_proof(images[0], category_label, category_key=ctype)
         
         if not is_valid:
             return Response({
@@ -513,6 +523,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                     lat, lon = 0.0, 0.0
                 
                 ctype = request.data.get('complaint_type')
+                print(f"DEBUG API: Category Key received: {ctype}")
                 subcat = request.data.get('subcategory', '')
                 desc = request.data.get('description', '')
                 
@@ -522,15 +533,25 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
                 images = request.FILES.getlist('media')
                 
+                # Categories that skip AI but still might have images
+                skip_keys = ['police', 'cyber', 'other']
+
                 if images:
                     # Check first uploaded image
-                    is_valid, ai_msg = verify_complaint_proof(images[0], category_label)
+                    is_valid, ai_msg = verify_complaint_proof(images[0], category_label, category_key=ctype)
                     if not is_valid:
                         return Response({
                             'success': False,
                             'message': f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.",
                             'ai_verification_failed': True
                         }, status=status.HTTP_400_BAD_REQUEST)
+                elif ctype not in skip_keys:
+                    # No image provided for infrastructure categories
+                    return Response({
+                        'success': False,
+                        'message': f"Proof Required: Please upload a photo of the {category_label} issue.",
+                        'ai_verification_failed': True
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 # ------------------------------------
 
                 # Check for duplicate unless user explicitly bypasses it

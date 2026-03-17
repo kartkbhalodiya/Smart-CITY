@@ -15,6 +15,7 @@ class Complaint {
   final String? pincode;
   final String address;
   final String status;
+  final DateTime? dateOfOccurrence;
   final String statusDisplay;
   final String workStatus;
   final String workStatusDisplay;
@@ -49,6 +50,7 @@ class Complaint {
     this.pincode,
     required this.address,
     required this.status,
+    this.dateOfOccurrence,
     required this.statusDisplay,
     required this.workStatus,
     required this.workStatusDisplay,
@@ -85,6 +87,7 @@ class Complaint {
       pincode: json['pincode'],
       address: json['address'] ?? '',
       status: json['status'] ?? 'pending',
+      dateOfOccurrence: json['date_of_occurrence'] != null ? DateTime.parse(json['date_of_occurrence']) : null,
       statusDisplay: json['status_display'] ?? 'Pending',
       workStatus: json['work_status'] ?? 'pending',
       workStatusDisplay: json['work_status_display'] ?? 'Pending',

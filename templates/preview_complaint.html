@@ -196,8 +196,8 @@
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loader-container">
             <div class="loader"></div>
-            <div class="loading-text" id="loadingText">Analyzing your complaint...</div>
-            <div class="loading-subtext">Please wait, we are processing your request</div>
+            <div class="loading-text" id="loadingText">Processing your submission...</div>
+            <div class="loading-subtext">Please be patient, we are processing your request</div>
         </div>
     </div>
 
@@ -233,6 +233,12 @@
                     <div class="preview-label">Description:</div>
                     <div class="preview-value">{{ data.description }}</div>
                 </div>
+                {% if data.date_of_occurrence %}
+                <div class="preview-row">
+                    <div class="preview-label">Date of Occurrence:</div>
+                    <div class="preview-value">{{ data.date_of_occurrence }}</div>
+                </div>
+                {% endif %}
             </div>
 
             {% if data.field_item_stolen or data.field_estimated_value %}
@@ -307,12 +313,13 @@
 
     <script>
         const messages = [
-            "Analyzing your complaint...",
-            "Checking for similar reports nearby...",
-            "Authenticating your request...",
+            "Processing your submission...",
+            "Checking for duplicate reports nearby...",
             "Connecting with local authorities...",
             "Assigning appropriate department...",
-            "Finalizing your submission..."
+            "Finalizing your complaint...",
+            "Almost done, please wait...",
+            "Thank you for being a responsible citizen!"
         ];
 
         let messageIndex = 0;

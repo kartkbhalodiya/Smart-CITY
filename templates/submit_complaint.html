@@ -307,6 +307,58 @@
             background: rgba(30, 102, 245, 0.05);
         }
 
+        /* Loading Overlay Styles */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 10000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .main-loader {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+
+        .loading-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            height: 30px;
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .loader-container {
+            padding: 40px;
+            border-radius: 24px;
+            background: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .contact-method-label input[type="checkbox"] {
             width: auto;
             accent-color: var(--primary-blue);
@@ -430,9 +482,9 @@
 <body>
     <div class="loading-overlay" id="submitLoadingOverlay">
         <div class="loader-container">
-            <div class="loader"></div>
-            <div class="loading-text" id="submitLoadingText">Analyzing your proof...</div>
-            <div class="loading-subtext">Please wait, we are verifying your complaint details</div>
+            <div class="main-loader"></div>
+            <div class="loading-text" id="submitLoadingText">Analyzing your complaint...</div>
+            <div class="loading-subtext">Please be patient, we are analyzing your proof & details</div>
         </div>
     </div>
     <div class="container">
@@ -446,6 +498,32 @@
         <form method="post" enctype="multipart/form-data" id="complaintForm" onsubmit="return showSubmitLoader()">
             {% csrf_token %}
             
+            <div class="form-card">
+                <h3><i class="fa-solid fa-circle-info"></i> Basic Details</h3>
+                
+                <div class="form-group">
+                    <label>Complaint Title</label>
+                    <input type="text" name="title" placeholder="Brief title of your complaint" value="{{ draft.title }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Detailed Description</label>
+                    <textarea name="description" placeholder="Provide detailed information..." required>{{ draft.description }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Date of Occurrence</label>
+                    <input type="date" name="date_of_occurrence" value="{{ draft.date_of_occurrence }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label id="mediaLabel">Upload Evidence (Required for AI Verification)</label>
+                    <input type="file" id="mediaInput" name="media" class="file-input" accept="image/*" multiple style="margin-bottom: 10px;" required>
+                    <div id="filePreviewContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 10px;"></div>
+                    <small style="color: #6c757d;">Max 10MB. Please upload a clear photo of the issue (no selfies/indoors).</small>
+                </div>
+            </div>
+
             <div class="form-card">
                 <div class="form-group">
                     <label>Main Category</label>
@@ -475,27 +553,6 @@
                 </div>
 
                 <div id="dynamicFields" class="dynamic-fields"></div>
-            </div>
-
-            <div class="form-card">
-                <h3><i class="fa-solid fa-circle-info"></i> Common Details</h3>
-                
-                <div class="form-group">
-                    <label>Complaint Title</label>
-                    <input type="text" name="title" placeholder="Brief title of your complaint" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Detailed Description</label>
-                    <textarea name="description" placeholder="Provide detailed information..." required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Upload Evidence (Optional)</label>
-                    <input type="file" id="mediaInput" name="media" class="file-input" accept="image/*,video/*,.pdf" multiple style="margin-bottom: 10px;">
-                    <div id="filePreviewContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 10px;"></div>
-                    <small style="color: #6c757d;">Max 10MB per file. Formats: JPG, PNG, PDF, MP4</small>
-                </div>
             </div>
 
             <div class="form-card">
@@ -656,11 +713,13 @@
         let mapLoaded = true;
 
         const submitMessages = [
-            "Analyzing your proof...",
+            "Analyzing your complaint details...",
+            "Verifying evidence with AI...",
             "Checking image quality...",
             "Verifying category match...",
             "Validating location data...",
-            "Almost there, please wait..."
+            "Almost there! Processing your request...",
+            "Please be patient, we are working on it."
         ];
 
         let submitMessageIndex = 0;
@@ -1062,7 +1121,7 @@
                 {name: 'Since When Power Is Not Available', type: 'select', options: ['Few Minutes', '1 Hour', 'Several Hours', 'More Than 1 Day']},
                 {name: 'Affected Area Size', type: 'select', options: ['Single House', 'Building', 'Entire Street', 'Entire Area']},
                 {name: 'Is Emergency', type: 'select', options: ['Yes', 'No']},
-                {name: 'Date & Time of Issue', type: 'datetime-local'}
+                
             ],
             'Frequent Power Cuts': [
                 {name: 'Area Name', type: 'text'},
@@ -1116,7 +1175,7 @@
                 {name: 'Area / Locality Name', type: 'text'},
                 {name: 'Street / Building Name', type: 'text'},
                 {name: 'Landmark Nearby', type: 'text'},
-                {name: 'Last Garbage Collection Date', type: 'date'},
+                ,
                 {name: 'Number of Days Garbage Not Collected', type: 'select', options: ['1 Day', '2-3 Days', 'More Than 3 Days']},
                 {name: 'Waste Type', type: 'select', options: ['Household Waste', 'Mixed Waste', 'Organic Waste']}
             ],
@@ -1174,7 +1233,7 @@
                 {name: 'Pothole Size', type: 'select', options: ['Small', 'Medium', 'Large', 'Very Large']},
                 {name: 'Road Type', type: 'select', options: ['Main Road', 'Internal Road', 'Highway', 'Service Road']},
                 {name: 'Danger Level', type: 'select', options: ['Low', 'Medium', 'High', 'Accident Risk']},
-                {name: 'Date of Issue', type: 'date'}
+                
             ],
             'Broken Road / Damaged Road': [
                 {name: 'Area Name', type: 'text'},
@@ -1194,8 +1253,8 @@
                 {name: 'Road Name', type: 'text'},
                 {name: 'Area Name', type: 'text'},
                 {name: 'Construction Type', type: 'select', options: ['New Road', 'Road Repair', 'Road Expansion']},
-                {name: 'Work Start Date', type: 'date'},
-                {name: 'Expected Completion Date', type: 'date'},
+                ,
+                ,
                 {name: 'Current Status', type: 'select', options: ['Work Not Started', 'Slow Progress', 'Stopped']}
             ],
             'Road Blocked by Construction Materials': [
@@ -1236,7 +1295,7 @@
                 {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain', 'Underground Sewer']},
                 {name: 'Blockage Severity', type: 'select', options: ['Minor', 'Moderate', 'Severe']},
                 {name: 'Water Overflow', type: 'select', options: ['Yes', 'No']},
-                {name: 'Date of Issue', type: 'date'}
+                
             ],
             'Drain Overflow / Sewage Overflow': [
                 {name: 'Area Name', type: 'text'},
@@ -1281,7 +1340,7 @@
             'Drain Cleaning Required': [
                 {name: 'Area Name', type: 'text'},
                 {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain']},
-                {name: 'Last Cleaning Date', type: 'date'},
+                ,
                 {name: 'Waste Type', type: 'select', options: ['Plastic Waste', 'Mud', 'Leaves', 'Mixed Waste']}
             ],
             'Manhole Issue': [
@@ -1296,7 +1355,7 @@
                 {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain', 'Underground Sewer']},
                 {name: 'Blockage Severity', type: 'select', options: ['Minor', 'Moderate', 'Severe']},
                 {name: 'Water Overflow', type: 'select', options: ['Yes', 'No']},
-                {name: 'Date of Issue', type: 'date'}
+                
             ],
             'Drain Overflow / Sewage Overflow': [
                 {name: 'Area Name', type: 'text'},
@@ -1341,7 +1400,7 @@
             'Drain Cleaning Required': [
                 {name: 'Area Name', type: 'text'},
                 {name: 'Drain Type', type: 'select', options: ['Open Drain', 'Covered Drain']},
-                {name: 'Last Cleaning Date', type: 'date'},
+                ,
                 {name: 'Waste Type', type: 'select', options: ['Plastic Waste', 'Mud', 'Leaves', 'Mixed Waste']}
             ],
             'Manhole Issue': [
@@ -1356,7 +1415,7 @@
                 {name: 'Since When Water Is Not Available', type: 'select', options: ['Few Hours', '1 Day', '2-3 Days', 'More Than 3 Days']},
                 {name: 'Water Source Type', type: 'select', options: ['Municipal Supply', 'Tanker', 'Borewell', 'Society Tank']},
                 {name: 'Number of Houses Affected', type: 'number'},
-                {name: 'Date & Time of Issue', type: 'datetime-local'}
+                
             ],
             'Low Water Pressure': [
                 {name: 'Area Name', type: 'text'},
@@ -1411,7 +1470,7 @@
                 {name: 'Severity Level', type: 'select', options: ['Low', 'Medium', 'High', 'Dangerous']},
                 {name: 'Number of Potholes', type: 'number'},
                 {name: 'Approximate Size', type: 'select', options: ['Small', 'Medium', 'Large']},
-                {name: 'Date of Issue', type: 'date'}
+                
             ],
             'Footpath / Sidewalk Damage': [
                 {name: 'Type of Issue', type: 'select', options: ['Broken Tiles', 'Blocked Path', 'Uneven Surface']},
@@ -1443,26 +1502,26 @@
                 {name: 'Issue Type', type: 'select', options: ['Wall Crack', 'Ceiling Damage', 'Broken Structure']},
                 {name: 'Risk Level', type: 'select', options: ['Low', 'Medium', 'High']}
             ],
-            'Theft / Robbery': [{name: 'Item Stolen', type: 'text'}, {name: 'Estimated Value', type: 'text'}, {name: 'Date & Time', type: 'datetime-local'}],
+            'Theft / Robbery': [{name: 'Item Stolen', type: 'text'}, {name: 'Estimated Value', type: 'text'}, ],
             'Cyber Crime': [{name: 'Website/Platform', type: 'text'}, {name: 'Type of Cyber Crime', type: 'text'}, {name: 'Transaction Details', type: 'text'}],
             'Domestic Violence': [{name: 'Victim Name', type: 'text'}, {name: 'Relationship with Accused', type: 'text'}, {name: 'Is Victim Safe?', type: 'select', options: ['Yes', 'No']}],
-            'Missing Person': [{name: 'Person Name', type: 'text'}, {name: 'Age', type: 'number'}, {name: 'Last Seen Location', type: 'text'}, {name: 'Last Seen Date', type: 'date'}, {name: 'Physical Description', type: 'text'}],
+            'Missing Person': [{name: 'Person Name', type: 'text'}, {name: 'Age', type: 'number'}, {name: 'Last Seen Location', type: 'text'}, , {name: 'Physical Description', type: 'text'}],
             'Physical Assault': [{name: 'Attacker Name', type: 'text'}, {name: 'Injury Details', type: 'text'}, {name: 'Hospital Visited', type: 'text'}],
             'Fraud / Scam': [{name: 'Scam Type', type: 'text'}, {name: 'Amount Lost', type: 'number'}, {name: 'Payment Method', type: 'text'}, {name: 'Transaction ID', type: 'text'}],
-            'Harassment / Threat': [{name: 'Person Threatening', type: 'text'}, {name: 'Method', type: 'select', options: ['Call', 'Message', 'In Person']}, {name: 'Date of Incident', type: 'date'}, {name: 'Frequency of Harassment', type: 'text'}],
-            'Property Damage': [{name: 'Property Type', type: 'text'}, {name: 'Damage Type', type: 'text'}, {name: 'Estimated Repair Cost', type: 'number'}, {name: 'Date of Damage', type: 'date'}],
-            'Illegal Activity': [{name: 'Activity Type', type: 'text'}, {name: 'Date/Time Observed', type: 'datetime-local'}, {name: 'Number of People Involved', type: 'number'}, {name: 'Ongoing or One-time', type: 'select', options: ['Ongoing', 'One-time']}],
-            'Signal Jumping': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Signal Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Direction of Vehicle', type: 'text'}, {name: 'Date of Incident', type: 'date'}, {name: 'Time of Incident', type: 'time'}],
-            'Wrong Side Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Exact Location', type: 'text'}, {name: 'City / Area', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'Overspeeding': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Estimated Speed', type: 'text'}, {name: 'Speed Limit of Area', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'Illegal Parking': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Parking Location', type: 'text'}, {name: 'Blocking Traffic', type: 'select', options: ['Yes', 'No']}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'No Helmet / Triple Riding': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Number of Riders', type: 'number'}, {name: 'Helmet Status', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'No Seatbelt': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'Drunk Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}, {name: 'Driver Behavior Description', type: 'text'}, {name: 'Witness Available', type: 'select', options: ['Yes', 'No']}],
-            'Rash / Dangerous Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}, {name: 'Describe Driving Behavior', type: 'text'}],
-            'Using Mobile While Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'Heavy Vehicle Violation': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'select', options: ['Truck', 'Bus', 'Trailer']}, {name: 'Violation Type', type: 'text'}, {name: 'Company Name (Optional)', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
-            'Road Block / Traffic Obstruction': [{name: 'Obstruction Type', type: 'text'}, {name: 'Vehicle Involved (Optional)', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Date', type: 'date'}, {name: 'Time', type: 'time'}],
+            'Harassment / Threat': [{name: 'Person Threatening', type: 'text'}, {name: 'Method', type: 'select', options: ['Call', 'Message', 'In Person']}, , {name: 'Frequency of Harassment', type: 'text'}],
+            'Property Damage': [{name: 'Property Type', type: 'text'}, {name: 'Damage Type', type: 'text'}, {name: 'Estimated Repair Cost', type: 'number'}, ],
+            'Illegal Activity': [{name: 'Activity Type', type: 'text'}, , {name: 'Number of People Involved', type: 'number'}, {name: 'Ongoing or One-time', type: 'select', options: ['Ongoing', 'One-time']}],
+            'Signal Jumping': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Signal Location', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Direction of Vehicle', type: 'text'}, , ],
+            'Wrong Side Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Exact Location', type: 'text'}, {name: 'City / Area', type: 'text'}, , ],
+            'Overspeeding': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Estimated Speed', type: 'text'}, {name: 'Speed Limit of Area', type: 'text'}, {name: 'Road Name', type: 'text'}, {name: 'Location', type: 'text'}, , ],
+            'Illegal Parking': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Parking Location', type: 'text'}, {name: 'Blocking Traffic', type: 'select', options: ['Yes', 'No']}, {name: 'Road Name', type: 'text'}, , ],
+            'No Helmet / Triple Riding': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Number of Riders', type: 'number'}, {name: 'Helmet Status', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , ],
+            'No Seatbelt': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , ],
+            'Drunk Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , , {name: 'Driver Behavior Description', type: 'text'}, {name: 'Witness Available', type: 'select', options: ['Yes', 'No']}],
+            'Rash / Dangerous Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , , {name: 'Describe Driving Behavior', type: 'text'}],
+            'Using Mobile While Driving': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , ],
+            'Heavy Vehicle Violation': [{name: 'Vehicle Number', type: 'text'}, {name: 'Vehicle Type', type: 'select', options: ['Truck', 'Bus', 'Trailer']}, {name: 'Violation Type', type: 'text'}, {name: 'Company Name (Optional)', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , ],
+            'Road Block / Traffic Obstruction': [{name: 'Obstruction Type', type: 'text'}, {name: 'Vehicle Involved (Optional)', type: 'text'}, {name: 'Location', type: 'text'}, {name: 'Road Name', type: 'text'}, , ],
             'Illegal Construction': [
                 {name: 'Building / Property Address', type: 'text'},
                 {name: 'Area / Locality Name', type: 'text'},
@@ -1470,7 +1529,7 @@
                 {name: 'Type of Violation', type: 'select', options: ['No Construction Permit', 'Extra Floors', 'Encroachment on Public Land']},
                 {name: 'Building Type', type: 'select', options: ['Residential', 'Commercial', 'Industrial']},
                 {name: 'Safety Risk', type: 'select', options: ['Low', 'Medium', 'High']},
-                {name: 'Date of Observation', type: 'date'}
+                
             ],
             'Unauthorized Street Vendors / Encroachment': [
                 {name: 'Location of Vendor', type: 'text'},
@@ -1531,8 +1590,8 @@
                 {name: 'Bus Stop Name', type: 'text'},
                 {name: 'Area / Locality Name', type: 'text'},
                 {name: 'Issue Type', type: 'select', options: ['Bus Not Arriving', 'Late Bus', 'Overcrowded Bus', 'Bus Skipped Stop']},
-                {name: 'Time of Incident', type: 'time'},
-                {name: 'Date of Incident', type: 'date'}
+                ,
+                
             ],
             'Bus Stop Infrastructure Issue': [
                 {name: 'Bus Stop Name', type: 'text'},
@@ -1605,7 +1664,7 @@
                 {name: 'Website URL', type: 'text'},
                 {name: 'Information Requested', type: 'select', options: ['Bank Details', 'OTP', 'Password']},
                 {name: 'Did You Share Information?', type: 'select', options: ['Yes', 'No']},
-                {name: 'Date of Incident', type: 'date'}
+                
             ],
             'OTP / Banking Fraud': [
                 {name: 'Bank Name', type: 'text'},
@@ -1619,7 +1678,7 @@
                 {name: 'Platform', type: 'select', options: ['Facebook', 'Instagram', 'Twitter', 'WhatsApp', 'Other']},
                 {name: 'Account Username', type: 'text'},
                 {name: 'Issue Type', type: 'select', options: ['Account Hacked', 'Unauthorized Access', 'Fake Profile Created']},
-                {name: 'Date of Incident', type: 'date'}
+                
             ],
             'Online Shopping Fraud': [
                 {name: 'Website / App Name', type: 'text'},
@@ -1660,7 +1719,7 @@
                 {name: 'Facility Name', type: 'text'},
                 {name: 'Area / Locality Name', type: 'text'},
                 {name: 'Issue Type', type: 'select', options: ['Damaged Facility', 'Not Maintained', 'Closed Facility']},
-                {name: 'Date of Issue', type: 'date'}
+                
             ],
             'Animal Related Issue': [
                 {name: 'Area Name', type: 'text'},
@@ -1684,7 +1743,7 @@
                 {name: 'Department Name', type: 'text'},
                 {name: 'Service Type', type: 'select', options: ['Document Service', 'Permit Issue', 'Office Delay']},
                 {name: 'Issue Type', type: 'select', options: ['Delay', 'Misbehavior', 'Service Not Provided']},
-                {name: 'Date of Incident', type: 'date'}
+                
             ],
             'Public Park / Recreation Area Issue': [
                 {name: 'Park Name', type: 'text'},
@@ -1707,7 +1766,7 @@
             'General Complaint': [
                 {name: 'Area / Locality Name', type: 'text'},
                 {name: 'Issue Category', type: 'select', options: ['Infrastructure', 'Public Safety', 'Service Issue', 'Other']},
-                {name: 'Date of Issue', type: 'date'}
+                
             ],
         };
 
@@ -2177,8 +2236,33 @@
             });
         }
 
-        // Load saved language on page load
+        // AI Verification Category Handling
+        const mediaInput = document.getElementById('mediaInput');
+        const mediaLabel = document.getElementById('mediaLabel');
+        const categorySelect = document.getElementById('categorySelect'); // Need to ensure this ID exists
+
+        function updateEvidenceRequirement() {
+            const skipCategories = ['police', 'cyber', 'other'];
+            const selectedType = document.querySelector('input[name="complaint_type"]')?.value || '';
+            
+            if (skipCategories.includes(selectedType)) {
+                mediaInput.required = false;
+                mediaLabel.innerHTML = 'Upload Evidence (Optional for this category)';
+            } else {
+                mediaInput.required = true;
+                mediaLabel.innerHTML = 'Upload Evidence (Required for AI Verification)';
+            }
+        }
+
+        // Run on priority changes or initial load
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.category-card')) {
+                setTimeout(updateEvidenceRequirement, 100);
+            }
+        });
+        
         window.addEventListener('load', () => {
+            updateEvidenceRequirement();
             const savedLang = localStorage.getItem('selectedLanguage') || 'en';
             if (typeof translatePageComprehensive === 'function') {
                 translatePageComprehensive(savedLang);

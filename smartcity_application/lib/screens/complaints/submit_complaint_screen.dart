@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,6 +39,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final _stateCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _geoCtrl = TextEditingController();
+  final _dateOfOccurrenceCtrl = TextEditingController();
 
   String _priority = 'medium'; // high, medium, normal
 
@@ -62,12 +64,13 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   double? _lat, _lng;
   int _loadingMessageIndex = 0;
   final List<String> _loadingMessages = [
-    'Analyzing your complaint...',
+    'Analyzing your complaint details...',
+    'Verifying evidence with AI...',
     'Checking for similar reports nearby...',
-    'Authenticating your request...',
     'Connecting with local authorities...',
     'Assigning appropriate department...',
-    'Finalizing your submission...'
+    'Almost there! Processing your request...',
+    'Finalizing your submission...',
   ];
 
   static const _emojiMap = {
@@ -105,6 +108,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     _stateCtrl.dispose();
     _cityCtrl.dispose();
     _geoCtrl.dispose();
+    _dateOfOccurrenceCtrl.dispose();
     for (final c in _dynCtrl.values) c.dispose();
     super.dispose();
   }
@@ -455,16 +459,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       
       // Show loading dialog
       _loadingMessageIndex = 0;
+      Timer? timer;
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => StatefulBuilder(
           builder: (context, setDialogState) {
-            Future.delayed(const Duration(seconds: 2), () {
-              if (mounted && _submitting && !_isPreviewing) {
+            timer ??= Timer.periodic(const Duration(seconds: 2), (t) {
+              if (mounted && _submitting) {
                 setDialogState(() {
                   _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
                 });
+              } else {
+                t.cancel();
               }
             });
             return Dialog(
@@ -483,7 +490,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      AppStrings.t(context, 'Please wait, we are verifying your proof'),
+                      AppStrings.t(context, 'Please be patient, we are analyzing your complaint...'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(fontSize: 13, color: _textMuted),
                     ),
@@ -518,17 +525,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     // Show persistent loading dialog with message cycler
     _loadingMessageIndex = 0;
+    Timer? submitTimer;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
-          // Update message every 2 seconds
-          Future.delayed(const Duration(seconds: 2), () {
+          submitTimer ??= Timer.periodic(const Duration(seconds: 2), (t) {
             if (mounted && _submitting) {
               setDialogState(() {
                 _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
               });
+            } else {
+              t.cancel();
             }
           });
           
@@ -563,6 +572,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     final data = <String, String>{
       'title': _titleCtrl.text.trim(),
       'description': _descCtrl.text.trim(),
+      'date_of_occurrence': _dateOfOccurrenceCtrl.text.trim(),
       'address': _addressCtrl.text.trim(),
       'latitude': (_lat ?? 20.5937).toString(),
       'longitude': (_lng ?? 78.9629).toString(),
@@ -745,6 +755,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         
         _previewCard(AppStrings.t(context, 'Issue Details'), [
           (AppStrings.t(context, 'Title'), _titleCtrl.text),
+          (AppStrings.t(context, 'Date of Occurrence'), _dateOfOccurrenceCtrl.text),
           (AppStrings.t(context, 'Category'), widget.categoryName ?? AppStrings.t(context, 'Other')),
           if (_selectedSub != null) (AppStrings.t(context, 'Subcategory'), _localizedSubcategoryName(_selectedSub!)),
           (AppStrings.t(context, 'Priority'), _priority.toUpperCase()),
@@ -855,7 +866,81 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     final sections = <Widget>[];
     int step = 1;
 
-    // ── Step 1: Subcategory selection ─────────────────
+    // ── Step 1: Basic details ─────────────────────
+    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Basic Details')));
+    sections.add(const SizedBox(height: 12));
+    sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _label(AppStrings.t(context, 'Title')),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _titleCtrl,
+        hint: AppStrings.t(context, 'Brief title of your complaint'),
+        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Title is required') : null,
+      ),
+      const SizedBox(height: 16),
+      _label(AppStrings.t(context, 'Description')),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _descCtrl,
+        hint: AppStrings.t(context, 'Describe the issue in detail...'),
+        maxLines: 4,
+        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Description is required') : null,
+      ),
+      const SizedBox(height: 16),
+      _label(AppStrings.t(context, 'Date of Occurrence')),
+      const SizedBox(height: 6),
+      GestureDetector(
+        onTap: () async {
+          final now = DateTime.now();
+          final date = await showDatePicker(
+            context: context,
+            initialDate: now,
+            firstDate: DateTime(2000),
+            lastDate: now,
+          );
+          if (date != null && mounted) {
+            setState(() {
+              _dateOfOccurrenceCtrl.text = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+            });
+          }
+        },
+        child: AbsorbPointer(
+          child: _textField(
+            controller: _dateOfOccurrenceCtrl,
+            hint: AppStrings.t(context, 'Select date'),
+            suffixIcon: const Icon(Icons.calendar_today, size: 20, color: _primary),
+            validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Date is required') : null,
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      _label(AppStrings.t(context, 'Location / Address')),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _addressCtrl,
+        hint: AppStrings.t(context, 'Address of the issue'),
+        maxLines: 2,
+      ),
+      const SizedBox(height: 12),
+      _locationButtons(),
+      const SizedBox(height: 16),
+      _label(AppStrings.t(context, 'Geo Coordinates (Lat, Lng)')),
+      const SizedBox(height: 6),
+      _textField(
+        controller: _geoCtrl,
+        hint: AppStrings.t(context, 'Latitude, Longitude'),
+        onChanged: _updateGeoFromText,
+      ),
+    ])));
+    sections.add(const SizedBox(height: 24));
+
+    // ── Step 2: Evidence Photos ────────────────────────────────
+    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Evidence Photos')));
+    sections.add(const SizedBox(height: 12));
+    sections.add(_card(child: _photoSection()));
+    sections.add(const SizedBox(height: 24));
+
+    // ── Step 3: Subcategory selection ─────────────────
     if (_subcategories.isNotEmpty) {
       sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Select Subcategory')));
       sections.add(const SizedBox(height: 12));
@@ -955,53 +1040,6 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     sections.add(const SizedBox(height: 12));
     sections.add(_prioritySelector());
     sections.add(const SizedBox(height: 24));
-
-    // ── Step 5: Complaint details ─────────────────────
-    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Complaint Details')));
-    sections.add(const SizedBox(height: 12));
-    sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _label(AppStrings.t(context, 'Title')),
-      const SizedBox(height: 6),
-      _textField(
-        controller: _titleCtrl,
-        hint: AppStrings.t(context, 'Brief title of your complaint'),
-        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Title is required') : null,
-      ),
-      const SizedBox(height: 16),
-      _label(AppStrings.t(context, 'Description')),
-      const SizedBox(height: 6),
-      _textField(
-        controller: _descCtrl,
-        hint: AppStrings.t(context, 'Describe the issue in detail...'),
-        maxLines: 4,
-        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Description is required') : null,
-      ),
-      const SizedBox(height: 16),
-      _label(AppStrings.t(context, 'Location / Address')),
-      const SizedBox(height: 6),
-      _textField(
-        controller: _addressCtrl,
-        hint: AppStrings.t(context, 'Address of the issue'),
-        maxLines: 2,
-      ),
-      const SizedBox(height: 12),
-      _locationButtons(),
-      const SizedBox(height: 16),
-      _label(AppStrings.t(context, 'Geo Coordinates (Lat, Lng)')),
-      const SizedBox(height: 6),
-      _textField(
-        controller: _geoCtrl,
-        hint: AppStrings.t(context, 'Latitude, Longitude'),
-        onChanged: _updateGeoFromText,
-      ),
-    ])));
-    sections.add(const SizedBox(height: 24));
-
-    // ── Step 6: Photos ────────────────────────────────
-    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Evidence Photos')));
-    sections.add(const SizedBox(height: 12));
-    sections.add(_card(child: _photoSection()));
-    sections.add(const SizedBox(height: 28));
 
     // ── Submit ────────────────────────────────────────
     sections.add(SizedBox(

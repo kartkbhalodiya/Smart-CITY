@@ -202,7 +202,7 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Complaint
         fields = ['complaint_type', 'subcategory', 'priority', 'language', 'title', 'description',
-                  'latitude', 'longitude', 'city', 'state', 'pincode', 'address',
+                  'date_of_occurrence', 'latitude', 'longitude', 'city', 'state', 'pincode', 'address',
                   'preferred_contact_phone', 'preferred_contact_email', 
                   'preferred_contact_sms', 'media_files', 'guest_name', 'guest_email', 'guest_phone']
     

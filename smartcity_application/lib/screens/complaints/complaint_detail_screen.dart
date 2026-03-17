@@ -69,6 +69,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 _buildHeader(complaint),
                 const Divider(height: 40),
                 _buildInfoSection(AppStrings.t(context, 'Description'), complaint.description),
+                if (complaint.dateOfOccurrence != null)
+                  _buildInfoSection(AppStrings.t(context, 'Date of Occurrence'), 
+                    "${complaint.dateOfOccurrence!.day.toString().padLeft(2, '0')} ${_getMonthName(complaint.dateOfOccurrence!.month)} ${complaint.dateOfOccurrence!.year}"),
                 _buildInfoSection(AppStrings.t(context, 'Location'), complaint.address),
                 if (complaint.latitude != 0.0 && complaint.longitude != 0.0)
                   _buildMapSection(complaint),
@@ -96,6 +99,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         },
       ),
     );
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
   }
 
   Widget _buildHeader(Complaint complaint) {
