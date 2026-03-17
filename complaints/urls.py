@@ -43,7 +43,6 @@ urlpatterns = [
     path('super-admin/city-admins/<int:city_admin_id>/delete/', views.super_admin_delete_city_admin, name='super_admin_delete_city_admin'),
     path('super-admin/users/', views.super_admin_users, name='super_admin_users'),
     path('super-admin/users/<int:user_id>/', views.super_admin_user_detail, name='super_admin_user_detail'),
-    path('super-admin/users/<int:user_id>/delete/', views.super_admin_delete_user, name='super_admin_delete_user'),
     path('super-admin/total-problems/', views.super_admin_total, name='super_admin_total'),
     path('super-admin/complaint/<int:complaint_id>/', views.super_admin_complaint_detail, name='super_admin_complaint_detail'),
     path('super-admin/departments/<int:department_id>/', views.super_admin_department_detail, name='super_admin_department_detail'),

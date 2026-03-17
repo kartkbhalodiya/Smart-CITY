@@ -4776,7 +4776,6 @@ def city_admin_department_detail(request, department_id):
     return render(request, 'city_admin_department_detail.html', context)
 
 @login_required
-@login_required
 @require_http_methods(["POST"])
 def mark_notifications_read(request):
     """Mark all notifications as read for the user"""
