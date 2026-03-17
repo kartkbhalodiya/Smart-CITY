@@ -1861,13 +1861,15 @@
         });
 
         // Trigger change if category is already selected (e.g. initial_type)
-        if (mainCategory.value) {
-            console.log('Initial category value detected:', mainCategory.value);
-            // Small delay to ensure everything is initialized
-            setTimeout(() => {
-                mainCategory.dispatchEvent(new Event('change'));
-            }, 100);
-        }
+        window.addEventListener('DOMContentLoaded', function() {
+            if (mainCategory.value) {
+                console.log('Initial category value detected:', mainCategory.value);
+                // Small delay to ensure everything is initialized
+                setTimeout(() => {
+                    mainCategory.dispatchEvent(new Event('change'));
+                }, 200);
+            }
+        });
 
         subcategoryDropdown.addEventListener('change', function() {
             const sub = this.value;
