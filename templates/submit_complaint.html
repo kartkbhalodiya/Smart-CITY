@@ -1685,11 +1685,9 @@
             ]
         };
 
-        const mediaInput = document.getElementById('mediaInput');
-        const filePreviewContainer = document.getElementById('filePreviewContainer');
         let selectedFiles = [];
 
-        mediaInput.addEventListener('change', function() {
+        document.getElementById('mediaInput').addEventListener('change', function() {
             const files = Array.from(this.files);
             selectedFiles = [...selectedFiles, ...files];
             updateFilePreviews();
@@ -1697,6 +1695,7 @@
         });
 
         function updateFilePreviews() {
+            const filePreviewContainer = document.getElementById('filePreviewContainer');
             filePreviewContainer.innerHTML = '';
             selectedFiles.forEach((file, index) => {
                 const div = document.createElement('div');
@@ -1757,7 +1756,7 @@
         function updateInputFiles() {
             const dataTransfer = new DataTransfer();
             selectedFiles.forEach(file => dataTransfer.items.add(file));
-            mediaInput.files = dataTransfer.files;
+            document.getElementById('mediaInput').files = dataTransfer.files;
         }
 
         const managedSubcategories = {{ managed_subcategories_json|safe }};
@@ -2161,13 +2160,11 @@
 
 
         // AI Verification Category Handling
-        const mediaInput = document.getElementById('mediaInput');
-        const mediaLabel = document.getElementById('mediaLabel');
-        const categorySelect = document.getElementById('categorySelect'); // Need to ensure this ID exists
-
         function updateEvidenceRequirement() {
             const skipCategories = ['police', 'cyber', 'other'];
             const selectedType = document.querySelector('input[name="complaint_type"]')?.value || '';
+            const mediaInput = document.getElementById('mediaInput');
+            const mediaLabel = document.getElementById('mediaLabel');
             
             if (skipCategories.includes(selectedType)) {
                 mediaInput.required = false;
