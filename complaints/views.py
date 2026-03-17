@@ -314,7 +314,6 @@ def get_detailed_fields_blueprint():
         'police': {
             'Theft / Robbery': [
                 {'label': 'Incident Location', 'type': 'text'},
-                {'label': 'Date & Time of Incident', 'type': 'datetime-local'},
                 {'label': 'Type of Property Stolen', 'type': 'text'},
                 {'label': 'Estimated Value of Loss', 'type': 'text'},
                 {'label': 'Suspect Description (if known)', 'type': 'textarea'},
@@ -325,14 +324,12 @@ def get_detailed_fields_blueprint():
                 {'label': 'Fraud Type', 'type': 'select', 'options': 'UPI Fraud,Credit Card,Bank Transfer,Social Media,Other'},
                 {'label': 'Amount Lost', 'type': 'text'},
                 {'label': 'Transaction ID', 'type': 'text'},
-                {'label': 'Date of Incident', 'type': 'date'},
                 {'label': 'Contact Number Used', 'type': 'text'},
             ],
             'Domestic Violence': [
                 {'label': 'Victim Name', 'type': 'text'},
                 {'label': 'Incident Location', 'type': 'text'},
                 {'label': 'Relationship to Accused', 'type': 'text'},
-                {'label': 'Date of Incident', 'type': 'date'},
                 {'label': 'Type of Abuse', 'type': 'select', 'options': 'Physical,Emotional,Financial,Other'},
                 {'label': 'Immediate Danger', 'type': 'select', 'options': 'Yes,No'},
             ],
@@ -340,13 +337,11 @@ def get_detailed_fields_blueprint():
                 {'label': 'Name of Missing Person', 'type': 'text'},
                 {'label': 'Age', 'type': 'number'},
                 {'label': 'Last Seen Location', 'type': 'text'},
-                {'label': 'Date Last Seen', 'type': 'date'},
                 {'label': 'Physical Description', 'type': 'textarea'},
                 {'label': 'Contact Person', 'type': 'text'},
             ],
             'Physical Assault': [
                 {'label': 'Incident Location', 'type': 'text'},
-                {'label': 'Date & Time', 'type': 'datetime-local'},
                 {'label': 'Number of Attackers', 'type': 'number'},
                 {'label': 'Injury Details', 'type': 'textarea'},
                 {'label': 'Suspect Description', 'type': 'textarea'},
@@ -357,13 +352,11 @@ def get_detailed_fields_blueprint():
             'Signal Jumping': [
                 {'label': 'Vehicle Number', 'type': 'text'},
                 {'label': 'Signal Location', 'type': 'text'},
-                {'label': 'Date & Time', 'type': 'datetime-local'},
                 {'label': 'Vehicle Type', 'type': 'select', 'options': 'Two Wheeler,Four Wheeler,Heavy Vehicle,Other'},
             ],
             'Wrong Side Driving': [
                 {'label': 'Vehicle Number', 'type': 'text'},
                 {'label': 'Road Location', 'type': 'text'},
-                {'label': 'Date & Time', 'type': 'datetime-local'},
                 {'label': 'Traffic Risk Level', 'type': 'select', 'options': 'Low,Medium,High,Very Dangerous'},
             ],
             'Overspeeding': [
@@ -371,7 +364,6 @@ def get_detailed_fields_blueprint():
                 {'label': 'Road Location', 'type': 'text'},
                 {'label': 'Estimated Speed', 'type': 'text'},
                 {'label': 'Speed Limit Area', 'type': 'text'},
-                {'label': 'Date & Time', 'type': 'datetime-local'},
             ],
             'Illegal Parking': [
                 {'label': 'Vehicle Number', 'type': 'text'},
@@ -434,10 +426,8 @@ def ensure_unique_fields_for_each_subcategory(category):
         else:
             # Fallback to generic fields
             generic_fields = [
-                ('Issue Details', 'textarea', '', True),
                 ('Location Landmark', 'text', '', True),
                 ('Severity Level', 'select', 'Low,Medium,High', True),
-                ('Date of Incident', 'date', '', False),
                 ('Additional Remarks', 'text', '', False),
             ]
             for label, ftype, opts, req in generic_fields:
