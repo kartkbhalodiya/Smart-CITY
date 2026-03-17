@@ -1807,9 +1807,37 @@
         const dynamicFields = document.getElementById('dynamicFields');
         const pageTitle = document.getElementById('pageTitle');
 
+        function applyTranslations() {
+            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
+            if (savedLang === 'en') return;
+            const langTranslations = translations[savedLang];
+            if (!langTranslations) return;
+
+            // Translate all elements
+            document.querySelectorAll('label, option, h3, h4, .btn span, .back-btn, #pageTitle').forEach(element => {
+                // For buttons and headers with icons, we need to handle carefully
+                if (element.children.length === 0 || element.tagName === 'SPAN' || element.tagName === 'OPTION') {
+                    const text = element.textContent.trim();
+                    if (text && langTranslations[text]) {
+                        element.textContent = langTranslations[text];
+                    }
+                }
+            });
+
+            // Translate placeholders
+            document.querySelectorAll('input, textarea').forEach(element => {
+                if (element.placeholder && langTranslations[element.placeholder]) {
+                    element.placeholder = langTranslations[element.placeholder];
+                }
+            });
+        }
+
         mainCategory.addEventListener('change', function() {
             const category = this.value;
+            console.log('Category changed to:', category);
+            
             if (category && effectiveSubcategories[category]) {
+                console.log('Subcategories found:', effectiveSubcategories[category]);
                 subcategorySection.style.display = 'block';
                 subcategoryDropdown.innerHTML = '<option value="">Select Subcategory</option>';
                 
@@ -1820,19 +1848,26 @@
                     subcategoryDropdown.appendChild(option);
                 });
 
-                pageTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1) + ' Complaint';
+                const displayName = category.charAt(0).toUpperCase() + category.slice(1);
+                pageTitle.innerHTML = `<i class="fa-solid fa-file-circle-plus"></i> ${displayName} Complaint`;
                 
-                // Apply translation to subcategory options
-                const savedLang = localStorage.getItem('selectedLanguage') || 'en';
-                if (typeof translatePageComprehensive === 'function') {
-                    translatePageComprehensive(savedLang);
-                }
+                applyTranslations();
             } else {
+                console.log('No subcategories found for:', category);
                 subcategorySection.style.display = 'none';
             }
             dynamicFields.classList.remove('show');
             dynamicFields.innerHTML = '';
         });
+
+        // Trigger change if category is already selected (e.g. initial_type)
+        if (mainCategory.value) {
+            console.log('Initial category value detected:', mainCategory.value);
+            // Small delay to ensure everything is initialized
+            setTimeout(() => {
+                mainCategory.dispatchEvent(new Event('change'));
+            }, 100);
+        }
 
         subcategoryDropdown.addEventListener('change', function() {
             const sub = this.value;
@@ -1871,11 +1906,7 @@
                     dynamicFields.appendChild(div);
                 });
                 dynamicFields.classList.add('show');
-                
-                // Apply translation to new elements
-                setTimeout(() => {
-                    translateDynamicContent();
-                }, 100);
+                applyTranslations();
             } else {
                 dynamicFields.classList.remove('show');
                 dynamicFields.innerHTML = '';
@@ -1884,12 +1915,7 @@
 
 
 
-        // Auto-select category if initial_type is set
-        {% if initial_type %}
-        window.addEventListener('load', () => {
-            mainCategory.dispatchEvent(new Event('change'));
-        });
-        {% endif %}
+
 
         // Language translation system
         const translations = {
@@ -2123,33 +2149,7 @@
             }
         };
 
-        function translatePage(lang) {
-            if (lang === 'en') return;
-            
-            const langTranslations = translations[lang];
-            if (!langTranslations) return;
 
-            // Translate all text elements
-            document.querySelectorAll('*').forEach(element => {
-                // Skip elements with children to avoid overwriting
-                if (element.children.length === 0) {
-                    const text = element.textContent.trim();
-                    if (text && langTranslations[text]) {
-                        element.textContent = langTranslations[text];
-                    }
-                }
-                
-                // Translate placeholders
-                if (element.placeholder && langTranslations[element.placeholder]) {
-                    element.placeholder = langTranslations[element.placeholder];
-                }
-                
-                // Translate option values
-                if (element.tagName === 'OPTION' && langTranslations[element.textContent.trim()]) {
-                    element.textContent = langTranslations[element.textContent.trim()];
-                }
-            });
-        }
 
         // AI Verification Category Handling
         const mediaInput = document.getElementById('mediaInput');
@@ -2178,10 +2178,7 @@
         
         window.addEventListener('load', () => {
             updateEvidenceRequirement();
-            const savedLang = localStorage.getItem('selectedLanguage') || 'en';
-            if (typeof translatePageComprehensive === 'function') {
-                translatePageComprehensive(savedLang);
-            }
+            applyTranslations();
         });
     </script>
 </body>
