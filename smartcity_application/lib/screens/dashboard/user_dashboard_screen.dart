@@ -737,6 +737,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     final items = [
       {'emoji': '🏠', 'label': AppStrings.t(context, 'Home')},
       {'emoji': '📝', 'label': AppStrings.t(context, 'Submit')},
+      {'emoji': '📞', 'label': AppStrings.t(context, 'Call')},
       {'emoji': '🔍', 'label': AppStrings.t(context, 'Track')},
       {'emoji': '👤', 'label': AppStrings.t(context, 'Profile')},
     ];
@@ -746,43 +747,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, -2))]),
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).padding.bottom, top: 8, left: 8, right: 8),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(0, items[0]),
-              _navItem(1, items[1]),
-              const SizedBox(width: 80),
-              _navItem(2, items[2]),
-              _navItem(3, items[3]),
-            ],
-          ),
-          Positioned(
-            bottom: 10,
-            child: GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AICallScreen())),
-              child: Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1E66F5), Color(0xFF154ec7)],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1E66F5).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.phone, color: Colors.white, size: 32),
-              ),
-            ),
-          ),
+          _navItem(0, items[0]),
+          _navItem(1, items[1]),
+          _navItem(2, items[2]),
+          _navItem(3, items[3]),
+          _navItem(4, items[4]),
         ],
       ),
     );
@@ -794,7 +766,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       onTap: () {
         if (index == 0) setState(() { _navIndex = 0; _tab = 0; });
         else if (index == 1) setState(() { _navIndex = 1; _tab = 1; });
-        else if (index == 2) Navigator.pushNamed(context, AppRoutes.userTrack);
+        else if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => AICallScreen()));
+        else if (index == 3) Navigator.pushNamed(context, AppRoutes.userTrack);
         else Navigator.pushNamed(context, AppRoutes.profile);
       },
       child: Container(

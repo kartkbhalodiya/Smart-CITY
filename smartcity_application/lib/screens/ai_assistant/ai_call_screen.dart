@@ -43,6 +43,13 @@ class _AICallScreenState extends State<AICallScreen> with TickerProviderStateMix
       });
     });
     _speechService.startListening(_onSpeechResult);
+    
+    // Auto-greet user with warm, human-like greeting
+    Future.delayed(Duration(milliseconds: 500), () {
+      String greeting = "Hello there! I'm Maya, your AI assistant. I'm here to help you with any city-related problems you're facing. What's going on today?";
+      _addMessage(greeting, false);
+      _speechService.speak(greeting, mood: 'happy');
+    });
   }
 
   void _onSpeechResult(String text) {
@@ -55,13 +62,19 @@ class _AICallScreenState extends State<AICallScreen> with TickerProviderStateMix
       _aiService.processUserInput(text).then((response) {
         _addMessage(response, false);
         
-        // Speak in detected language
+        // Get user mood and complaint urgency for contextual speech
+        String userMood = _aiService.getUserMood();
+        Map<String, dynamic> complaintData = _aiService.getComplaintData();
+        String urgency = complaintData['urgency'] ?? 'medium';
+        String complaintType = complaintData['category'] ?? '';
+        
+        // Speak with emotional context
         if (detectedLang == 'hi') {
-          _speechService.speakHindi(response);
+          _speechService.speakHindi(response, mood: userMood);
         } else if (detectedLang == 'gu') {
-          _speechService.speakGujarati(response);
+          _speechService.speakGujarati(response, mood: userMood);
         } else {
-          _speechService.speak(response);
+          _speechService.speakContextual(response, complaintType, urgency);
         }
       });
     }
@@ -162,26 +175,25 @@ class _AICallScreenState extends State<AICallScreen> with TickerProviderStateMix
           ),
         ),
         SizedBox(height: 24),
-        Text("AI Assistant", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+        Text("Maya - AI Assistant", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
-        Text("Smart City Helper", style: TextStyle(color: Colors.white70, fontSize: 16)),
+        Text("Your Caring City Helper", style: TextStyle(color: Colors.white70, fontSize: 16)),
         SizedBox(height: 24),
-        if (_speechService.isListening)
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.mic, color: Colors.red, size: 20),
-                SizedBox(width: 8),
-                Text("Listening...", style: TextStyle(color: Colors.red)),
-              ],
-            ),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
           ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.keyboard, color: Colors.blue, size: 20),
+              SizedBox(width: 8),
+              Text("Type your message below", style: TextStyle(color: Colors.blue)),
+            ],
+          ),
+        ),
       ],
     );
   }
