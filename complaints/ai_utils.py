@@ -1,6 +1,12 @@
-import google.generativeai as genai
 from django.conf import settings
 import os
+
+try:
+    from google import genai as google_genai
+except Exception:  # pragma: no cover
+    google_genai = None
+
+legacy_genai = None
 
 def verify_complaint_proof(image_path_or_file, category_label, category_key=None):
     """
@@ -23,8 +29,7 @@ def verify_complaint_proof(image_path_or_file, category_label, category_key=None
         return True, "API Key missing"
 
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model_name = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
 
         # Read image data
         if hasattr(image_path_or_file, 'read'):
@@ -59,12 +64,31 @@ def verify_complaint_proof(image_path_or_file, category_label, category_key=None
         if str(image_path_or_file).lower().endswith('.png'):
             mime_type = 'image/png'
 
-        response = model.generate_content([
-            prompt,
-            {'mime_type': mime_type, 'data': image_data}
-        ])
+        result_text = ""
+        if google_genai is not None:
+            client = google_genai.Client(api_key=api_key)
+            part = google_genai.types.Part.from_bytes(
+                data=image_data,
+                mime_type=mime_type,
+            )
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[prompt, part],
+            )
+            result_text = (getattr(response, "text", "") or "").strip()
+        else:
+            global legacy_genai
+            if legacy_genai is None:
+                import google.generativeai as legacy_genai  # type: ignore
+            legacy_genai.configure(api_key=api_key)
+            model = legacy_genai.GenerativeModel(model_name)
+            response = model.generate_content([
+                prompt,
+                {'mime_type': mime_type, 'data': image_data}
+            ])
+            result_text = (response.text or "").strip()
 
-        result = response.text.strip().upper()
+        result = result_text.upper()
         print(f"--- AI LOG START ---")
         print(f"Category: {category_label}")
         print(f"AI Result: {result}")

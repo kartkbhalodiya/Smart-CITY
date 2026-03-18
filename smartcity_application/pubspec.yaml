@@ -57,6 +57,7 @@ dependencies:
   share_plus: ^7.2.1
   permission_handler: ^11.0.1
   flutter_tts: ^4.0.2
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -88,4 +89,3 @@ flutter:
   assets:
     - assets/images/logo.png
     - assets/images/login_bg.jpg
-

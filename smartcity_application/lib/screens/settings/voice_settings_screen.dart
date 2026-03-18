@@ -10,12 +10,16 @@ class VoiceSettingsScreen extends StatefulWidget {
 
 class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
   final SpeechService _speechService = SpeechService();
+  final TextEditingController _customVoiceIdController =
+      TextEditingController();
   Map<String, dynamic> _currentConfig = {};
-  String _selectedPersonality = 'maya_caring';
+  String _selectedPersonality = 'janhelp_caring';
   String _selectedQuality = 'balanced';
-  bool _isElevenLabsEnabled = false;
+  bool _isElevenLabsSelected = false;
+  bool _isElevenLabsReady = false;
   bool _isTesting = false;
-  
+  bool _isSaving = false;
+
   // Voice parameter sliders
   double _stability = 0.8;
   double _similarityBoost = 0.8;
@@ -28,54 +32,100 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     _loadCurrentConfig();
   }
 
+  @override
+  void dispose() {
+    _customVoiceIdController.dispose();
+    _speechService.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadCurrentConfig() async {
     final config = await VoiceConfigService.getVoiceConfig();
-    final isEnabled = await VoiceConfigService.isElevenLabsEnabled();
-    
+    var provider = (config['provider']?.toString() ?? 'elevenlabs').trim();
+    if (provider != 'elevenlabs') {
+      await VoiceConfigService.setVoiceProvider('elevenlabs');
+      config['provider'] = 'elevenlabs';
+      provider = 'elevenlabs';
+    }
+    final apiKey = await VoiceConfigService.getElevenLabsApiKey();
+    final isReady = provider == 'elevenlabs' &&
+        apiKey != null &&
+        apiKey.trim().isNotEmpty &&
+        apiKey.trim() != 'YOUR_ELEVENLABS_API_KEY';
+    final configuredVoiceId = config['voice_id']?.toString() ?? '';
+
     setState(() {
       _currentConfig = config;
-      _isElevenLabsEnabled = isEnabled;
+      _isElevenLabsSelected = provider == 'elevenlabs';
+      _isElevenLabsReady = isReady;
       _stability = config['stability']?.toDouble() ?? 0.8;
       _similarityBoost = config['similarity_boost']?.toDouble() ?? 0.8;
       _style = config['style']?.toDouble() ?? 0.5;
       _useSpeakerBoost = config['use_speaker_boost'] ?? true;
     });
+
+    if (_customVoiceIdController.text != configuredVoiceId) {
+      _customVoiceIdController.text = configuredVoiceId;
+    }
   }
 
   Future<void> _testVoice() async {
     setState(() => _isTesting = true);
-    
+
     try {
-      await _speechService.speak(
-        VoiceConfigService.getTestPhrase(),
-        mood: 'happy'
-      );
+      await _speechService.speak(VoiceConfigService.getTestPhrase(),
+          mood: 'happy');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Voice test failed: $e')),
       );
     }
-    
+
     setState(() => _isTesting = false);
   }
 
   Future<void> _saveSettings() async {
-    await VoiceConfigService.updateVoiceSettings(
-      stability: _stability,
-      similarityBoost: _similarityBoost,
-      style: _style,
-      useSpeakerBoost: _useSpeakerBoost,
-    );
-    
-    await VoiceConfigService.setVoicePersonality(_selectedPersonality);
-    await VoiceConfigService.setQualityPreset(_selectedQuality);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Voice settings saved successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (_isSaving) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isSaving = true);
+
+    try {
+      await VoiceConfigService.updateVoiceSettings(
+        stability: _stability,
+        similarityBoost: _similarityBoost,
+        style: _style,
+        useSpeakerBoost: _useSpeakerBoost,
+      );
+
+      if (_isElevenLabsSelected) {
+        await VoiceConfigService.setVoicePersonality(_selectedPersonality);
+        await VoiceConfigService.setCustomVoiceId(
+            _customVoiceIdController.text);
+        await VoiceConfigService.setQualityPreset(_selectedQuality);
+      }
+
+      await _loadCurrentConfig();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Voice settings saved successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save settings: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
@@ -99,9 +149,9 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: _saveSettings,
+            onPressed: _isSaving ? null : _saveSettings,
             child: Text(
-              'Save',
+              _isSaving ? 'Saving...' : 'Save',
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -118,8 +168,21 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
           children: [
             _buildVoiceProviderSection(),
             const SizedBox(height: 24),
-            if (_isElevenLabsEnabled) ...[
+            if (_isElevenLabsSelected) ...[
+              if (!_isElevenLabsReady)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'ElevenLabs selected, but API key is missing. Voice output is disabled until key is set.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: const Color(0xFFF59E0B),
+                    ),
+                  ),
+                ),
               _buildPersonalitySection(),
+              const SizedBox(height: 24),
+              _buildCustomVoiceIdSection(),
               const SizedBox(height: 24),
               _buildQualitySection(),
               const SizedBox(height: 24),
@@ -143,20 +206,13 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
         children: [
           _buildProviderTile(
             title: 'ElevenLabs AI Voice',
-            subtitle: 'Premium human-like voice synthesis',
+            subtitle: _isElevenLabsReady
+                ? 'Premium human-like voice synthesis'
+                : 'Tap to add API key and voice ID',
             value: 'elevenlabs',
-            isSelected: _isElevenLabsEnabled,
-            onTap: () => _showApiKeyDialog(),
-          ),
-          const SizedBox(height: 12),
-          _buildProviderTile(
-            title: 'Flutter TTS',
-            subtitle: 'Built-in text-to-speech engine',
-            value: 'flutter_tts',
-            isSelected: !_isElevenLabsEnabled,
-            onTap: () async {
-              await VoiceConfigService.setVoiceProvider('flutter_tts');
-              _loadCurrentConfig();
+            isSelected: _isElevenLabsSelected,
+            onTap: () {
+              _showApiKeyDialog();
             },
           ),
         ],
@@ -176,13 +232,42 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     );
   }
 
+  Widget _buildCustomVoiceIdSection() {
+    return _buildSection(
+      title: 'Custom Voice ID',
+      icon: Icons.mic,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Set the exact ElevenLabs voice ID to use for all personalities.',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: const Color(0xFF64748b),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _customVoiceIdController,
+            decoration: const InputDecoration(
+              hintText: 'e.g. QZlSvAAnrDxLbn7n3NqM',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPersonalityTile(Map<String, dynamic> voice) {
     final isSelected = _selectedPersonality == voice['key'];
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF1E66F5).withOpacity(0.1) : Colors.white,
+        color: isSelected
+            ? const Color(0xFF1E66F5).withOpacity(0.1)
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected ? const Color(0xFF1E66F5) : const Color(0xFFE2E8F0),
@@ -204,9 +289,10 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             color: const Color(0xFF64748b),
           ),
         ),
-        trailing: isSelected 
-          ? const Icon(Icons.check_circle, color: Color(0xFF1E66F5))
-          : const Icon(Icons.radio_button_unchecked, color: Color(0xFFCBD5E1)),
+        trailing: isSelected
+            ? const Icon(Icons.check_circle, color: Color(0xFF1E66F5))
+            : const Icon(Icons.radio_button_unchecked,
+                color: Color(0xFFCBD5E1)),
         onTap: () {
           setState(() => _selectedPersonality = voice['key']);
         },
@@ -220,9 +306,12 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
       icon: Icons.high_quality,
       child: Column(
         children: [
-          _buildQualityTile('High Quality', 'Best quality, slower generation', 'high_quality'),
-          _buildQualityTile('Balanced', 'Good quality, moderate speed', 'balanced'),
-          _buildQualityTile('Fast', 'Lower quality, fastest generation', 'fast'),
+          _buildQualityTile('High Quality', 'Best quality, slower generation',
+              'high_quality'),
+          _buildQualityTile(
+              'Balanced', 'Good quality, moderate speed', 'balanced'),
+          _buildQualityTile(
+              'Fast', 'Lower quality, fastest generation', 'fast'),
         ],
       ),
     );
@@ -230,22 +319,26 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
 
   Widget _buildQualityTile(String title, String subtitle, String value) {
     final isSelected = _selectedQuality == value;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF1E66F5).withOpacity(0.1) : Colors.white,
+        color: isSelected
+            ? const Color(0xFF1E66F5).withOpacity(0.1)
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected ? const Color(0xFF1E66F5) : const Color(0xFFE2E8F0),
         ),
       ),
       child: ListTile(
-        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(title,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle, style: GoogleFonts.inter(fontSize: 13)),
-        trailing: isSelected 
-          ? const Icon(Icons.check_circle, color: Color(0xFF1E66F5))
-          : const Icon(Icons.radio_button_unchecked, color: Color(0xFFCBD5E1)),
+        trailing: isSelected
+            ? const Icon(Icons.check_circle, color: Color(0xFF1E66F5))
+            : const Icon(Icons.radio_button_unchecked,
+                color: Color(0xFFCBD5E1)),
         onTap: () => setState(() => _selectedQuality = value),
       ),
     );
@@ -276,8 +369,10 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             (value) => setState(() => _style = value),
           ),
           SwitchListTile(
-            title: Text('Speaker Boost', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-            subtitle: Text('Enhance voice clarity and volume', style: GoogleFonts.inter(fontSize: 13)),
+            title: Text('Speaker Boost',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            subtitle: Text('Enhance voice clarity and volume',
+                style: GoogleFonts.inter(fontSize: 13)),
             value: _useSpeakerBoost,
             onChanged: (value) => setState(() => _useSpeakerBoost = value),
             activeColor: const Color(0xFF1E66F5),
@@ -287,12 +382,15 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     );
   }
 
-  Widget _buildSlider(String title, String subtitle, double value, Function(double) onChanged) {
+  Widget _buildSlider(
+      String title, String subtitle, double value, Function(double) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        Text(subtitle, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748b))),
+        Text(subtitle,
+            style: GoogleFonts.inter(
+                fontSize: 13, color: const Color(0xFF64748b))),
         Slider(
           value: value,
           onChanged: onChanged,
@@ -331,19 +429,21 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _isTesting ? null : _testVoice,
-              icon: _isTesting 
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.play_arrow),
+              icon: _isTesting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.play_arrow),
               label: Text(_isTesting ? 'Testing...' : 'Test Voice'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E66F5),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -376,7 +476,8 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                 foregroundColor: const Color(0xFFEF4444),
                 side: const BorderSide(color: Color(0xFFEF4444)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -385,7 +486,8 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required IconData icon, required Widget child}) {
+  Widget _buildSection(
+      {required String title, required IconData icon, required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -436,35 +538,44 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF1E66F5).withOpacity(0.1) : const Color(0xFFF8FAFC),
+        color: isSelected
+            ? const Color(0xFF1E66F5).withOpacity(0.1)
+            : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected ? const Color(0xFF1E66F5) : const Color(0xFFE2E8F0),
         ),
       ),
       child: ListTile(
-        title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(title,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle, style: GoogleFonts.inter(fontSize: 13)),
-        trailing: isSelected 
-          ? const Icon(Icons.check_circle, color: Color(0xFF1E66F5))
-          : const Icon(Icons.radio_button_unchecked, color: Color(0xFFCBD5E1)),
+        trailing: isSelected
+            ? const Icon(Icons.check_circle, color: Color(0xFF1E66F5))
+            : const Icon(Icons.radio_button_unchecked,
+                color: Color(0xFFCBD5E1)),
         onTap: onTap,
       ),
     );
   }
 
-  void _showApiKeyDialog() {
-    final controller = TextEditingController();
-    
+  Future<void> _showApiKeyDialog() async {
+    final existingApiKey = await VoiceConfigService.getElevenLabsApiKey() ?? '';
+    final controller = TextEditingController(text: existingApiKey);
+    final voiceIdController = TextEditingController(
+      text: _currentConfig['voice_id']?.toString() ?? '',
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('ElevenLabs API Key', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('ElevenLabs API Key',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Enter your ElevenLabs API key to enable premium voice synthesis.',
+              'Enter your own ElevenLabs API key and optional Voice ID.',
               style: GoogleFonts.inter(fontSize: 14),
             ),
             const SizedBox(height: 16),
@@ -476,6 +587,14 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
               ),
               obscureText: true,
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: voiceIdController,
+              decoration: const InputDecoration(
+                hintText: 'Voice ID (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -485,12 +604,48 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await VoiceConfigService.setElevenLabsApiKey(controller.text);
-                await VoiceConfigService.setVoiceProvider('elevenlabs');
-                _loadCurrentConfig();
-                Navigator.pop(context);
+              final enteredApiKey = controller.text.trim();
+              final enteredVoiceId = voiceIdController.text.trim();
+
+              if (enteredApiKey.isEmpty && enteredVoiceId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Enter API key or Voice ID to save.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
               }
+
+              final existingApiKey =
+                  await VoiceConfigService.getElevenLabsApiKey();
+
+              if (enteredApiKey.isNotEmpty) {
+                await VoiceConfigService.setElevenLabsApiKey(enteredApiKey);
+              }
+              if (enteredVoiceId.isNotEmpty) {
+                await VoiceConfigService.setCustomVoiceId(enteredVoiceId);
+              }
+
+              await VoiceConfigService.setVoiceProvider('elevenlabs');
+
+              final effectiveApiKey = enteredApiKey.isNotEmpty
+                  ? enteredApiKey
+                  : (existingApiKey ?? '');
+              final hasApiKey = effectiveApiKey.trim().isNotEmpty;
+
+              await _loadCurrentConfig();
+              if (!mounted) return;
+
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(hasApiKey
+                      ? 'ElevenLabs settings saved and enabled.'
+                      : 'Saved, but add API key to enable ElevenLabs audio.'),
+                  backgroundColor: hasApiKey ? Colors.green : Colors.orange,
+                ),
+              );
             },
             child: const Text('Save'),
           ),
@@ -503,7 +658,8 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Reset Settings', style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text('Reset Settings',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         content: Text(
           'Are you sure you want to reset all voice settings to default values?',
           style: GoogleFonts.inter(fontSize: 14),
@@ -522,7 +678,8 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                 const SnackBar(content: Text('Settings reset to defaults')),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444)),
             child: const Text('Reset'),
           ),
         ],

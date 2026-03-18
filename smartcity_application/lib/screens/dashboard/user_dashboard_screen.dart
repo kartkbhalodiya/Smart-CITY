@@ -22,7 +22,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     {
       'id': 1,
       'title': 'Complaint Status Updated',
-      'message': 'Your complaint #COMP123 has been confirmed and assigned to Traffic Department.',
+      'message':
+          'Your complaint #COMP123 has been confirmed and assigned to Traffic Department.',
       'type': 'status_change',
       'time': '2 hours ago',
       'icon': Icons.check_circle,
@@ -33,7 +34,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       'id': 2,
       'title': 'Complaint In Progress',
       'message': 'Work has started on your road repair complaint #COMP124.',
-      'type': 'status_change', 
+      'type': 'status_change',
       'time': '1 day ago',
       'icon': Icons.construction,
       'color': Color(0xFFEAB308),
@@ -42,9 +43,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     {
       'id': 3,
       'title': 'Complaint Resolved',
-      'message': 'Your garbage collection complaint #COMP122 has been marked as solved.',
+      'message':
+          'Your garbage collection complaint #COMP122 has been marked as solved.',
       'type': 'status_change',
-      'time': '3 days ago', 
+      'time': '3 days ago',
       'icon': Icons.verified,
       'color': Color(0xFF1E66F5),
       'isRead': true,
@@ -66,7 +68,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: Column(children: [
         _topNav(),
-        Expanded(child: RefreshIndicator(
+        Expanded(
+            child: RefreshIndicator(
           color: const Color(0xFF1E66F5),
           onRefresh: () => context.read<ComplaintProvider>().refresh(),
           child: SingleChildScrollView(
@@ -89,13 +92,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top, left: 16, right: 16, bottom: 12),
+          top: MediaQuery.of(context).padding.top,
+          left: 16,
+          right: 16,
+          bottom: 12),
       child: Row(children: [
         Image.asset('assets/images/logo.png', height: 36),
         const SizedBox(width: 10),
         Text(AppStrings.t(context, 'Smart City'),
             style: GoogleFonts.poppins(
-                fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0f172a))),
         const Spacer(),
         GestureDetector(
           onTap: _showNotifications,
@@ -104,8 +112,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.notifications_outlined, size: 20, color: Color(0xFF64748b)),
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.notifications_outlined,
+                    size: 20, color: Color(0xFF64748b)),
               ),
               if (_notificationCount > 0)
                 Positioned(
@@ -122,7 +132,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       minHeight: 18,
                     ),
                     child: Text(
-                      _notificationCount > 99 ? '99+' : _notificationCount.toString(),
+                      _notificationCount > 99
+                          ? '99+'
+                          : _notificationCount.toString(),
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -150,7 +162,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               child: Text(
                 _getUserInitials(user),
                 style: GoogleFonts.poppins(
-                    fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white),
               ),
             ),
           ),
@@ -160,14 +174,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Widget _tabNav() {
-    final tabs = [AppStrings.t(context, 'Home'), AppStrings.t(context, 'Submit')];
+    final tabs = [
+      AppStrings.t(context, 'Home'),
+      AppStrings.t(context, 'Submit')
+    ];
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)
+          ]),
       child: Row(
           children: List.generate(
               2,
@@ -180,14 +199,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
-                            color: _tab == i ? const Color(0xFF1E66F5) : Colors.transparent,
+                            color: _tab == i
+                                ? const Color(0xFF1E66F5)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(8)),
                         child: Text(tabs[i],
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: _tab == i ? Colors.white : const Color(0xFF64748b))),
+                                color: _tab == i
+                                    ? Colors.white
+                                    : const Color(0xFF64748b))),
                       ),
                     ),
                   ))),
@@ -198,14 +221,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     final stats = context.watch<ComplaintProvider>().stats;
     final isLoading = context.watch<ComplaintProvider>().isLoading;
     final user = context.watch<AuthProvider>().user;
-    
+
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       // Welcome banner with user name
       Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF154ec7)]),
+          gradient: const LinearGradient(
+              colors: [Color(0xFF1E66F5), Color(0xFF154ec7)]),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(children: [
@@ -221,25 +245,35 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               child: Text(
                 _getUserInitials(user),
                 style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white),
               ),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(AppStrings.t(context, 'Welcome back! 👋'),
-                style: GoogleFonts.poppins(
-                    fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.9))),
-            const SizedBox(height: 2),
-            Text(user?.fullName ?? AppStrings.t(context, 'User'),
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-            const SizedBox(height: 2),
-            Text(AppStrings.t(context, 'Track your complaints and view city statistics.'),
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: Colors.white.withOpacity(0.85))),
-          ])),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(AppStrings.t(context, 'Welcome back! 👋'),
+                    style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.9))),
+                const SizedBox(height: 2),
+                Text(user?.fullName ?? AppStrings.t(context, 'User'),
+                    style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white)),
+                const SizedBox(height: 2),
+                Text(
+                    AppStrings.t(context,
+                        'Track your complaints and view city statistics.'),
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: Colors.white.withOpacity(0.85))),
+              ])),
         ]),
       ),
       const SizedBox(height: 24),
@@ -248,13 +282,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       Row(children: [
         Text(AppStrings.t(context, 'Live Stats'),
             style: GoogleFonts.poppins(
-                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0f172a))),
         const SizedBox(width: 8),
         if (isLoading)
           const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E66F5))),
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Color(0xFF1E66F5))),
       ]),
       const SizedBox(height: 12),
       _statsGrid(stats, isLoading),
@@ -263,7 +300,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       // Departments
       Text(AppStrings.t(context, 'Departments'),
           style: GoogleFonts.poppins(
-              fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0f172a))),
       const SizedBox(height: 12),
       _departmentsGrid(),
     ]);
@@ -271,20 +310,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   String _getUserInitials(user) {
     if (user == null) return 'U';
-    
+
     final firstName = user.firstName?.trim() ?? '';
     final lastName = user.lastName?.trim() ?? '';
-    
+
     String initials = '';
-    
+
     if (firstName.isNotEmpty) {
       initials += firstName[0].toUpperCase();
     }
-    
+
     if (lastName.isNotEmpty) {
       initials += lastName[0].toUpperCase();
     }
-    
+
     return initials.isEmpty ? 'U' : initials;
   }
 
@@ -309,7 +348,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.notifications, color: Color(0xFF1E66F5), size: 24),
+                  const Icon(Icons.notifications,
+                      color: Color(0xFF1E66F5), size: 24),
                   const SizedBox(width: 12),
                   Text(
                     AppStrings.t(context, 'Notifications'),
@@ -322,7 +362,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   const Spacer(),
                   if (_notificationCount > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEF4444),
                         borderRadius: BorderRadius.circular(12),
@@ -400,7 +441,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         color: isRead ? Colors.white : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isRead ? const Color(0xFFE2E8F0) : const Color(0xFF1E66F5).withOpacity(0.2),
+          color: isRead
+              ? const Color(0xFFE2E8F0)
+              : const Color(0xFF1E66F5).withOpacity(0.2),
         ),
       ),
       child: Material(
@@ -434,7 +477,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              AppStrings.t(context, notification['title'] as String),
+                              AppStrings.t(
+                                  context, notification['title'] as String),
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -455,7 +499,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        AppStrings.t(context, notification['message'] as String),
+                        AppStrings.t(
+                            context, notification['message'] as String),
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: const Color(0xFF64748b),
@@ -534,10 +579,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       final date = DateTime.parse(dateStr);
       final now = DateTime.now();
       final diff = now.difference(date);
-      
-      if (diff.inDays > 0) return '${diff.inDays}${AppStrings.t(context, 'd ago')}';
-      if (diff.inHours > 0) return '${diff.inHours}${AppStrings.t(context, 'h ago')}';
-      if (diff.inMinutes > 0) return '${diff.inMinutes}${AppStrings.t(context, 'm ago')}';
+
+      if (diff.inDays > 0)
+        return '${diff.inDays}${AppStrings.t(context, 'd ago')}';
+      if (diff.inHours > 0)
+        return '${diff.inHours}${AppStrings.t(context, 'h ago')}';
+      if (diff.inMinutes > 0)
+        return '${diff.inMinutes}${AppStrings.t(context, 'm ago')}';
       return AppStrings.t(context, 'Just now');
     } catch (e) {
       return dateStr;
@@ -546,10 +594,30 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   Widget _statsGrid(dynamic stats, bool isLoading) {
     final items = [
-      {'emoji': '📊', 'label': AppStrings.t(context, 'Total Complaints'), 'count': stats?.totalComplaints ?? 0, 'color': const Color(0xFFEEF2FF)},
-      {'emoji': '⏳', 'label': AppStrings.t(context, 'Pending'), 'count': stats?.pendingComplaints ?? 0, 'color': const Color(0xFFFFF1F2)},
-      {'emoji': '✅', 'label': AppStrings.t(context, 'Solved'), 'count': stats?.resolvedComplaints ?? 0, 'color': const Color(0xFFF0FDF4)},
-      {'emoji': '🔄', 'label': AppStrings.t(context, 'In Progress'), 'count': stats?.inProgressComplaints ?? 0, 'color': const Color(0xFFEFF6FF)},
+      {
+        'emoji': '📊',
+        'label': AppStrings.t(context, 'Total Complaints'),
+        'count': stats?.totalComplaints ?? 0,
+        'color': const Color(0xFFEEF2FF)
+      },
+      {
+        'emoji': '⏳',
+        'label': AppStrings.t(context, 'Pending'),
+        'count': stats?.pendingComplaints ?? 0,
+        'color': const Color(0xFFFFF1F2)
+      },
+      {
+        'emoji': '✅',
+        'label': AppStrings.t(context, 'Solved'),
+        'count': stats?.resolvedComplaints ?? 0,
+        'color': const Color(0xFFF0FDF4)
+      },
+      {
+        'emoji': '🔄',
+        'label': AppStrings.t(context, 'In Progress'),
+        'count': stats?.inProgressComplaints ?? 0,
+        'color': const Color(0xFFEFF6FF)
+      },
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -568,7 +636,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)
+        ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(item['emoji'] as String, style: const TextStyle(fontSize: 36)),
@@ -577,51 +647,80 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           const SizedBox(
             width: 20,
             height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E66F5)),
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Color(0xFF1E66F5)),
           )
         else
           Text('${item['count']}',
               style: GoogleFonts.poppins(
-                  fontSize: 26, fontWeight: FontWeight.w800, color: const Color(0xFF0f172a))),
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF0f172a))),
         Text(item['label'] as String,
             style: GoogleFonts.inter(
-                fontSize: 11, color: const Color(0xFF64748b), fontWeight: FontWeight.w500)),
+                fontSize: 11,
+                color: const Color(0xFF64748b),
+                fontWeight: FontWeight.w500)),
       ]),
     );
   }
 
   Widget _departmentsGrid() {
     final depts = [
-      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'), 'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'), 'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'), 'bg': const Color(0xFFF0F9FF)},
+      {
+        'emoji': '🚓',
+        'name': AppStrings.t(context, 'Police'),
+        'bg': const Color(0xFFEEF2FF)
+      },
+      {
+        'emoji': '🚦',
+        'name': AppStrings.t(context, 'Traffic'),
+        'bg': const Color(0xFFFFF7ED)
+      },
+      {
+        'emoji': '🏗️',
+        'name': AppStrings.t(context, 'Construction'),
+        'bg': const Color(0xFFF0F9FF)
+      },
     ];
     return Column(children: [
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: depts.map((d) => Expanded(child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: d['bg'] as Color,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
-              ),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(d['emoji'] as String, style: const TextStyle(fontSize: 34)),
-                const SizedBox(height: 6),
-                Text(d['name'] as String,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                        fontSize: 11, fontWeight: FontWeight.w600,
-                        color: const Color(0xFF0f172a))),
-              ]),
-            ),
-          ),
-        ))).toList(),
+        children: depts
+            .map((d) => Expanded(
+                    child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: GestureDetector(
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.departmentsList),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: d['bg'] as Color,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 6)
+                        ],
+                      ),
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(d['emoji'] as String,
+                                style: const TextStyle(fontSize: 34)),
+                            const SizedBox(height: 6),
+                            Text(d['name'] as String,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF0f172a))),
+                          ]),
+                    ),
+                  ),
+                )))
+            .toList(),
       ),
       const SizedBox(height: 12),
       GestureDetector(
@@ -632,15 +731,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFF1E66F5).withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.25)),
+            border:
+                Border.all(color: const Color(0xFF1E66F5).withOpacity(0.25)),
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Text(AppStrings.t(context, 'View All Departments'),
                 style: GoogleFonts.poppins(
-                    fontSize: 13, fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E66F5))),
             const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF1E66F5)),
+            const Icon(Icons.arrow_forward_rounded,
+                size: 16, color: Color(0xFF1E66F5)),
           ]),
         ),
       ),
@@ -649,26 +751,89 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
   Widget _submitTab() {
     final categories = [
-      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'),          'key': 'police',         'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'),         'key': 'traffic',        'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'),    'key': 'construction',   'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🚰', 'name': AppStrings.t(context, 'Water Supply'),    'key': 'water',          'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '💡', 'name': AppStrings.t(context, 'Electricity'),     'key': 'electricity',    'bg': const Color(0xFFFFFBEB)},
-      {'emoji': '🗑️', 'name': AppStrings.t(context, 'Garbage'),         'key': 'garbage',        'bg': const Color(0xFFECFDF5)},
-      {'emoji': '🛣️', 'name': AppStrings.t(context, 'Road / Pothole'),  'key': 'road',           'bg': const Color(0xFFFAF5FF)},
-      {'emoji': '🌊', 'name': AppStrings.t(context, 'Drainage'),        'key': 'drainage',       'bg': const Color(0xFFEFF6FF)},
-      {'emoji': '⚠️', 'name': AppStrings.t(context, 'Illegal Activity'),'key': 'illegal',        'bg': const Color(0xFFFFF1F2)},
-      {'emoji': '🚌', 'name': AppStrings.t(context, 'Transportation'),  'key': 'transportation', 'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🛡️', 'name': AppStrings.t(context, 'Cyber Crime'),     'key': 'cyber',          'bg': const Color(0xFFF5F3FF)},
-      {'emoji': '📋', 'name': AppStrings.t(context, 'Other'),           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
+      {
+        'emoji': '🚓',
+        'name': AppStrings.t(context, 'Police'),
+        'key': 'police',
+        'bg': const Color(0xFFEEF2FF)
+      },
+      {
+        'emoji': '🚦',
+        'name': AppStrings.t(context, 'Traffic'),
+        'key': 'traffic',
+        'bg': const Color(0xFFFFF7ED)
+      },
+      {
+        'emoji': '🏗️',
+        'name': AppStrings.t(context, 'Construction'),
+        'key': 'construction',
+        'bg': const Color(0xFFF0F9FF)
+      },
+      {
+        'emoji': '🚰',
+        'name': AppStrings.t(context, 'Water Supply'),
+        'key': 'water',
+        'bg': const Color(0xFFF0FDF4)
+      },
+      {
+        'emoji': '💡',
+        'name': AppStrings.t(context, 'Electricity'),
+        'key': 'electricity',
+        'bg': const Color(0xFFFFFBEB)
+      },
+      {
+        'emoji': '🗑️',
+        'name': AppStrings.t(context, 'Garbage'),
+        'key': 'garbage',
+        'bg': const Color(0xFFECFDF5)
+      },
+      {
+        'emoji': '🛣️',
+        'name': AppStrings.t(context, 'Road / Pothole'),
+        'key': 'road',
+        'bg': const Color(0xFFFAF5FF)
+      },
+      {
+        'emoji': '🌊',
+        'name': AppStrings.t(context, 'Drainage'),
+        'key': 'drainage',
+        'bg': const Color(0xFFEFF6FF)
+      },
+      {
+        'emoji': '⚠️',
+        'name': AppStrings.t(context, 'Illegal Activity'),
+        'key': 'illegal',
+        'bg': const Color(0xFFFFF1F2)
+      },
+      {
+        'emoji': '🚌',
+        'name': AppStrings.t(context, 'Transportation'),
+        'key': 'transportation',
+        'bg': const Color(0xFFF0F9FF)
+      },
+      {
+        'emoji': '🛡️',
+        'name': AppStrings.t(context, 'Cyber Crime'),
+        'key': 'cyber',
+        'bg': const Color(0xFFF5F3FF)
+      },
+      {
+        'emoji': '📋',
+        'name': AppStrings.t(context, 'Other'),
+        'key': 'other',
+        'bg': const Color(0xFFF8FAFC)
+      },
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(AppStrings.t(context, 'Submit a Complaint'),
           style: GoogleFonts.poppins(
-              fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0f172a))),
       const SizedBox(height: 4),
       Text(AppStrings.t(context, 'Choose a category to report an issue'),
-          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
+          style:
+              GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
       const SizedBox(height: 20),
       GridView.count(
         crossAxisCount: 2,
@@ -681,12 +846,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           final bg = c['bg'] as Color;
           return GestureDetector(
             onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
-                arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
+                arguments: {
+                  'categoryKey': c['key'],
+                  'categoryName': c['name']
+                }),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4))
+                ],
               ),
               child: Column(children: [
                 Expanded(
@@ -695,32 +868,39 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: bg,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(18)),
                     ),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(c['emoji'] as String, style: const TextStyle(fontSize: 48)),
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 36, height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ]),
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(c['emoji'] as String,
+                              style: const TextStyle(fontSize: 48)),
+                          const SizedBox(height: 6),
+                          Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ]),
                   ),
                 ),
                 Expanded(
                   flex: 4,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
                     child: Center(
                       child: Text(c['name'] as String,
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
-                              fontSize: 13, fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                               color: const Color(0xFF0f172a))),
                     ),
                   ),
@@ -737,16 +917,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     final items = [
       {'emoji': '🏠', 'label': AppStrings.t(context, 'Home')},
       {'emoji': '📝', 'label': AppStrings.t(context, 'Submit')},
-      {'emoji': '📞', 'label': AppStrings.t(context, 'Call')},
+      {'emoji': '💬', 'label': 'Chat'},
       {'emoji': '🔍', 'label': AppStrings.t(context, 'Track')},
       {'emoji': '👤', 'label': AppStrings.t(context, 'Profile')},
     ];
     return Container(
-      decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, -2))]),
+      decoration: const BoxDecoration(color: Colors.white, boxShadow: [
+        BoxShadow(
+            color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, -2))
+      ]),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).padding.bottom, top: 8, left: 8, right: 8),
+          bottom: MediaQuery.of(context).padding.bottom,
+          top: 8,
+          left: 8,
+          right: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -764,11 +948,23 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     final active = _navIndex == index;
     return GestureDetector(
       onTap: () {
-        if (index == 0) setState(() { _navIndex = 0; _tab = 0; });
-        else if (index == 1) setState(() { _navIndex = 1; _tab = 1; });
-        else if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => AICallScreen()));
-        else if (index == 3) Navigator.pushNamed(context, AppRoutes.userTrack);
-        else Navigator.pushNamed(context, AppRoutes.profile);
+        if (index == 0)
+          setState(() {
+            _navIndex = 0;
+            _tab = 0;
+          });
+        else if (index == 1)
+          setState(() {
+            _navIndex = 1;
+            _tab = 1;
+          });
+        else if (index == 2)
+          Navigator.push(
+              context, MaterialPageRoute(builder: (_) => AICallScreen()));
+        else if (index == 3)
+          Navigator.pushNamed(context, AppRoutes.userTrack);
+        else
+          Navigator.pushNamed(context, AppRoutes.profile);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -777,13 +973,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(item['emoji'] as String, style: TextStyle(fontSize: active ? 24 : 22)),
+          Text(item['emoji'] as String,
+              style: TextStyle(fontSize: active ? 24 : 22)),
           const SizedBox(height: 3),
           Text(item['label'] as String,
               style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: active ? const Color(0xFF1E66F5) : const Color(0xFF64748b))),
+                  color: active
+                      ? const Color(0xFF1E66F5)
+                      : const Color(0xFF64748b))),
         ]),
       ),
     );

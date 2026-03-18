@@ -44,22 +44,22 @@ class AppRoutes {
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
-      
+
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
-      
+
       case otp:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => OtpScreen(email: args?['email'] ?? ''),
         );
-      
+
       case register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
 
       case forgotPassword:
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
-      
+
       case dashboard:
       case userDashboard:
         return MaterialPageRoute(builder: (_) => const UserDashboardScreen());
@@ -86,10 +86,11 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => DepartmentDetailScreen(department: args ?? {}),
         );
-      
+
       case categorySelection:
-        return MaterialPageRoute(builder: (_) => const CategorySelectionScreen());
-      
+        return MaterialPageRoute(
+            builder: (_) => const CategorySelectionScreen());
+
       case submitComplaint:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -98,16 +99,16 @@ class AppRoutes {
             categoryName: args?['categoryName'],
           ),
         );
-      
+
       case guestTrack:
         return MaterialPageRoute(builder: (_) => const GuestTrackScreen());
-      
+
       case trackComplaints:
         return MaterialPageRoute(builder: (_) => const TrackComplaintsScreen());
-      
+
       case userTrack:
         return MaterialPageRoute(builder: (_) => const UserTrackScreen());
-      
+
       case complaintDetail:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -115,7 +116,7 @@ class AppRoutes {
             complaintId: args?['complaintId'] ?? 0,
           ),
         );
-      
+
       case complaintSuccess:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -125,15 +126,16 @@ class AppRoutes {
             description: args?['description'] ?? '',
           ),
         );
-      
+
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
-      
+
       default:
         return MaterialPageRoute(
           builder: (context) => Scaffold(
             body: Center(
-              child: Text(AppStrings.t(context, 'No route defined for ${settings.name}')),
+              child: Text(AppStrings.t(
+                  context, 'No route defined for ${settings.name}')),
             ),
           ),
         );

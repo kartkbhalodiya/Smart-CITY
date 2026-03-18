@@ -27,13 +27,20 @@ cd smartcity_application
 flutter pub get
 ```
 
-### 2. Add Gemini API Key
-Edit `lib/services/ai_service.dart`:
-```dart
-static const String _apiKey = 'YOUR_GEMINI_API_KEY_HERE';
+### 2. Add Gemini API Key (Secure)
+Do not hardcode keys in source code.
+
+Run app with `--dart-define`:
+```bash
+flutter run --dart-define=GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 ```
 
-Get API key from: https://makersuite.google.com/app/apikey
+Optional model override:
+```bash
+flutter run --dart-define=GEMINI_API_KEY=YOUR_GEMINI_API_KEY --dart-define=GEMINI_MODEL=gemini-2.5-flash
+```
+
+If key is not provided, assistant automatically uses advanced offline intelligence mode.
 
 ### 3. Android Permissions
 Add to `android/app/src/main/AndroidManifest.xml`:

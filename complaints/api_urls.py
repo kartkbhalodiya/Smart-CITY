@@ -10,7 +10,8 @@ from .api_views import (
     user_profile, dashboard_stats,
     get_categories, get_subcategories, get_departments,
     track_guest_complaint_api, department_forgot_password,
-    get_states_cities, guest_stats
+    get_states_cities, guest_stats,
+    ai_chat, ai_extract_complaint, ai_voice_chat, ai_history, ai_reset
 )
 
 router = DefaultRouter()
@@ -48,6 +49,13 @@ urlpatterns = [
     # States & Cities
     path('states-cities/', get_states_cities, name='api_states_cities'),
     path('guest/stats/', guest_stats, name='api_guest_stats'),
+    
+    # AI Assistant
+    path('ai/chat/', ai_chat, name='api_ai_chat'),
+    path('ai/extract-complaint/', ai_extract_complaint, name='api_ai_extract'),
+    path('ai/voice-chat/', ai_voice_chat, name='api_ai_voice_chat'),
+    path('ai/history/', ai_history, name='api_ai_history'),
+    path('ai/reset/', ai_reset, name='api_ai_reset'),
     
     # Router URLs
     path('', include(router.urls)),

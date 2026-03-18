@@ -27,6 +27,7 @@ from .serializers import (
 from .email_utils import (
     send_welcome_email, send_otp_email, send_password_reset_credentials_email
 )
+from .conversational_ai import SmartCityAI
 
 
 # Authentication Views
@@ -850,3 +851,145 @@ def department_forgot_password(request):
     )
 
     return Response({'success': True, 'message': 'New password sent to your email'}, status=status.HTTP_200_OK)
+
+
+# AI Assistant Views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_chat(request):
+    """Chat with AI assistant for complaint booking"""
+    try:
+        user_input = request.data.get('message', '').strip()
+        session_id = request.data.get('session_id', 'default')
+        user_email = request.data.get('user_email')
+        
+        if not user_input:
+            return Response({
+                'success': False,
+                'message': 'Message is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Initialize or get existing AI session
+        ai_assistant = SmartCityAI.for_session(session_id)
+        
+        # Generate response
+        response_data = ai_assistant.generate_response(user_input, user_email)
+        
+        return Response({
+            'success': True,
+            'response': response_data['response'],
+            'detected_category': response_data.get('detected_category'),
+            'urgency': response_data.get('urgency'),
+            'emotion': response_data.get('emotion'),
+            'language': response_data.get('language'),
+            'next_step': response_data.get('next_step'),
+            'session_id': session_id
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'AI Chat Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_extract_complaint(request):
+    """Extract structured complaint data from AI conversation"""
+    try:
+        session_id = request.data.get('session_id', 'default')
+        
+        # Initialize AI assistant with persisted session
+        ai_assistant = SmartCityAI.for_session(session_id)
+        
+        # Extract complaint information
+        complaint_info = ai_assistant.extract_complaint_info()
+        
+        return Response({
+            'success': True,
+            'complaint_data': complaint_info
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Extraction Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_voice_chat(request):
+    """Voice-enabled AI chat for complaint booking"""
+    try:
+        # This would handle voice input/output
+        # For now, treating it as text input
+        user_input = request.data.get('message', '').strip()
+        voice_enabled = request.data.get('voice_enabled', False)
+        language = request.data.get('language', 'english')
+        
+        if not user_input:
+            return Response({
+                'success': False,
+                'message': 'Message is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        session_id = request.data.get('session_id', 'default')
+        ai_assistant = SmartCityAI.for_session(session_id)
+        response_data = ai_assistant.generate_response(user_input)
+        
+        # Add voice-specific metadata
+        response_data['voice_enabled'] = voice_enabled
+        response_data['suggested_voice_tone'] = 'caring' if response_data.get('emotion') in ['worried', 'frustrated'] else 'friendly'
+        
+        return Response({
+            'success': True,
+            'session_id': session_id,
+            **response_data
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Voice Chat Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_history(request):
+    """Return AI conversation history for a session."""
+    try:
+        session_id = request.data.get('session_id', 'default')
+        ai_assistant = SmartCityAI.for_session(session_id)
+        return Response({
+            'success': True,
+            'session_id': session_id,
+            'history': ai_assistant.get_history(),
+            'complaint_data': ai_assistant.extract_complaint_info(),
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'AI History Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_reset(request):
+    """Reset AI session conversation."""
+    try:
+        session_id = request.data.get('session_id', 'default')
+        SmartCityAI.clear_session(session_id)
+        return Response({
+            'success': True,
+            'session_id': session_id,
+            'message': 'AI session reset'
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'AI Reset Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
