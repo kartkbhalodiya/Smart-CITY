@@ -147,9 +147,10 @@ class AIService {
 
   static const String _groqApiKey = String.fromEnvironment(
     'GROQ_API_KEY',
-    defaultValue: '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',
+    defaultValue: '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',
   );
-  static const String _groqModel = 'llama-3.3-70b-versatile';
+  // Using smaller, faster model to avoid rate limits
+  static const String _groqModel = 'llama-3.1-8b-instant';
   static const int _groqMaxRetries = 3;
   static const Duration _groqTimeout = Duration(seconds: 25);
   static const Duration _groqInitialBackoff = Duration(milliseconds: 600);
@@ -469,13 +470,14 @@ class AIService {
     String userInput,
     _OfflineAnalysis analysis,
   ) async {
-    if (!await _hasInternetConnection()) {
-      return _offlineReply(
-        analysis,
-        modelTextFallback:
-            'Internet not available. This is an offline fallback response.',
-      );
-    }
+    // Skip internet check - let HTTP request handle connectivity
+    // if (!await _hasInternetConnection()) {
+    //   return _offlineReply(
+    //     analysis,
+    //     modelTextFallback:
+    //         'Internet not available. This is an offline fallback response.',
+    //   );
+    // }
 
     final cacheKey = _buildCacheKey(userInput, analysis);
     if (_groqResponseCache.containsKey(cacheKey)) {
@@ -486,10 +488,10 @@ class AIService {
     final body = jsonEncode({
       'model': _groqModel,
       'messages': [
-        {'role': 'user', 'content': _buildGeminiPrompt(userInput, analysis)}
+        {'role': 'user', 'content': _buildCompactPrompt(userInput, analysis)}
       ],
       'temperature': 0.6,
-      'max_tokens': 800,
+      'max_tokens': 600,
       'top_p': 0.9,
       'frequency_penalty': 0.0,
       'presence_penalty': 0.1,
@@ -505,7 +507,8 @@ class AIService {
         },
         body: body,
       );
-    } catch (_) {
+    } catch (e) {
+      print('Groq API connection error: $e');
       return _offlineReply(
         analysis,
         modelTextFallback:
@@ -514,11 +517,11 @@ class AIService {
     }
 
     if (response.statusCode != 200) {
-      return _offlineReply(
-        analysis,
-        modelTextFallback:
-            'Unable to reach AI server. Using local assistant mode.',
-      );
+      print('Groq API error: ${response.statusCode} - ${response.body}');
+      final errorMsg = response.statusCode == 429
+          ? 'Rate limit reached. Using offline mode with smart detection.'
+          : 'Unable to reach AI server. Using local assistant mode.';
+      return _offlineReply(analysis, modelTextFallback: errorMsg);
     }
 
     final payload = <String, dynamic>{};
@@ -618,51 +621,6 @@ class AIService {
 
   AssistantReply _offlineReply(_OfflineAnalysis analysis,
       {String? modelTextFallback}) {
-    final fallbackMessage = modelTextFallback != null && modelTextFallback.isNotEmpty
-        ? modelTextFallback
-        : null;
-
-    final content = fallbackMessage?.trim().isNotEmpty == true
-        ? fallbackMessage
-        : '${_baseMessage(analysis)}\n\n${_nextQuestion(analysis, _missingFields(analysis))}';
-
-    final draft = Map<String, dynamic>.from(_complaintData);
-    if (analysis.category != null) {
-      draft['category'] = analysis.category;
-    }
-    if (analysis.subcategory != null) {
-      draft['subcategory'] = analysis.subcategory;
-    }
-    if (analysis.locationHint != null) {
-      draft['location_hint'] = analysis.locationHint;
-    }
-    if (analysis.timeHint != null) {
-      draft['time_hint'] = analysis.timeHint;
-    }
-    draft['urgency'] = analysis.urgency;
-    draft['is_emergency'] = analysis.isEmergency;
-    if (analysis.alternatives.isNotEmpty) {
-      draft['category_alternatives'] = analysis.alternatives;
-    }
-    if (analysis.matchedSignals.isNotEmpty) {
-      draft['matched_signals'] = analysis.matchedSignals;
-    }
-
-    return AssistantReply(
-      response: _humanize(content, analysis.mood, analysis.urgency),
-      language: analysis.language,
-      mood: _normalizeMood(analysis.mood),
-      urgency: _normalizeUrgency(analysis.urgency),
-      category: analysis.category,
-      subcategory: analysis.subcategory,
-      missingFields: _missingFields(analysis),
-      actionChecklist: _actions(analysis),
-      isEmergency: analysis.isEmergency,
-      confidence: _confidence(analysis.confidence, _missingFields(analysis).length),
-      complaintDraft: draft,
-      nextQuestion: _nextQuestion(analysis, _missingFields(analysis)),
-    );
-  }
     final missing = _missingFields(analysis);
     final nextQuestion = _nextQuestion(analysis, missing);
     final actions = _actions(analysis);
@@ -1019,6 +977,53 @@ class AIService {
     );
   }
 
+  String _buildCompactPrompt(String userInput, _OfflineAnalysis analysis) {
+    final draft = Map<String, dynamic>.from(_complaintData);
+    if (analysis.category != null) draft['category'] = analysis.category;
+    if (analysis.subcategory != null) draft['subcategory'] = analysis.subcategory;
+    if (analysis.locationHint != null) draft['location_hint'] = analysis.locationHint;
+    draft['urgency'] = analysis.urgency;
+    draft['is_emergency'] = analysis.isEmergency;
+
+    return '''
+You are JanHelp - Smart City complaint assistant for India.
+
+🎯 TASK: Analyze user input and extract complaint details instantly.
+
+📋 CATEGORIES: Police, Traffic, Construction, Electricity, Water Supply, Garbage/Sanitation, Road/Pothole, Drainage/Sewage, Cyber Crime, Street Light, Public Toilet, Stray Animals
+
+🧠 RULES:
+1. Extract category, location, description from user message
+2. If complete info provided → confirm and ask for location picker
+3. If partial info → ask for missing details naturally
+4. Respond in user's language (en/hi/gu/hinglish)
+5. Handle emergencies with safety-first approach
+
+📊 CURRENT STATE:
+Draft: ${jsonEncode(draft)}
+Detected: category=${analysis.category ?? 'none'}, location=${analysis.locationHint ?? 'none'}, urgency=${analysis.urgency}
+
+User: "$userInput"
+
+📤 RESPOND IN JSON:
+{
+  "language": "en|hi|gu|hinglish",
+  "mood": "neutral|calm|concerned|urgent",
+  "urgency": "low|medium|high|critical",
+  "category": "exact category or null",
+  "subcategory": "exact subcategory or null",
+  "missing_fields": ["list missing"],
+  "action_checklist": ["next actions"],
+  "next_question": "follow-up question",
+  "response_text": "natural response in user's language",
+  "safety_alert": true/false,
+  "action": "COLLECT_INFO|REQUEST_LOCATION|REQUEST_PROOF|SUBMIT_COMPLAINT",
+  "showConfirmation": true/false,
+  "confirmationQuestion": "question or null"
+}
+''';
+  }
+
   String _buildGeminiPrompt(String userInput, _OfflineAnalysis analysis) {
     final historyText = _history
         .map((h) => '${h['role'] == 'user' ? 'Citizen' : 'JanHelp'}: ${h['content']}')
@@ -1293,11 +1298,18 @@ Analyze deeply and respond intelligently with appropriate action.
 
   Future<bool> _hasInternetConnection() async {
     try {
-      final result = await InternetAddress.lookup('example.com')
-          .timeout(const Duration(seconds: 5));
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 3));
       return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
     } catch (_) {
-      return false;
+      // Fallback: try alternative DNS
+      try {
+        final result = await InternetAddress.lookup('1.1.1.1')
+            .timeout(const Duration(seconds: 2));
+        return result.isNotEmpty;
+      } catch (_) {
+        return false;
+      }
     }
   }
 
@@ -1314,20 +1326,26 @@ Analyze deeply and respond intelligently with appropriate action.
     while (attempt < maxAttempts) {
       attempt++;
       try {
+        print('Groq API attempt $attempt/$maxAttempts...');
         final response = await http
             .post(uri, headers: headers, body: body)
             .timeout(_groqTimeout);
 
+        print('Groq API response: ${response.statusCode}');
         if (response.statusCode == 200) return response;
         lastResponse = response;
       } catch (error) {
+        print('Groq API attempt $attempt failed: $error');
         if (attempt >= maxAttempts) {
           return http.Response('Network unavailable for Groq run', 503);
         }
       }
 
-      await Future.delayed(backoff);
-      backoff *= 2;
+      if (attempt < maxAttempts) {
+        print('Retrying in ${backoff.inMilliseconds}ms...');
+        await Future.delayed(backoff);
+        backoff *= 2;
+      }
     }
 
     return lastResponse ?? http.Response('Network unavailable for Groq run', 503);
