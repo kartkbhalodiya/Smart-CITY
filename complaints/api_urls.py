@@ -13,6 +13,7 @@ from .api_views import (
     get_states_cities, guest_stats,
     ai_chat, ai_extract_complaint, ai_voice_chat, ai_history, ai_reset, ai_nudge
 )
+from .enhanced_ai_views import enhanced_ai_chat, ai_reset_session, ai_session_status
 from .test_cityfix import test_cityfix_llm
 
 router = DefaultRouter()
@@ -51,8 +52,11 @@ urlpatterns = [
     path('states-cities/', get_states_cities, name='api_states_cities'),
     path('guest/stats/', guest_stats, name='api_guest_stats'),
     
-    # AI Assistant
-    path('ai/chat/', ai_chat, name='api_ai_chat'),
+    # AI Assistant (Enhanced Step-by-Step)
+    path('ai/chat/', enhanced_ai_chat, name='api_enhanced_ai_chat'),
+    path('ai/chat/legacy/', ai_chat, name='api_ai_chat_legacy'),  # Keep old endpoint for compatibility
+    path('ai/session/reset/', ai_reset_session, name='api_ai_reset_session'),
+    path('ai/session/status/', ai_session_status, name='api_ai_session_status'),
     path('ai/nudge/', ai_nudge, name='api_ai_nudge'),
     path('ai/extract-complaint/', ai_extract_complaint, name='api_ai_extract'),
     path('ai/voice-chat/', ai_voice_chat, name='api_ai_voice_chat'),
