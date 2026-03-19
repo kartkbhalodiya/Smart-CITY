@@ -12,6 +12,7 @@ from datetime import timedelta
 import random
 import string
 import secrets
+import requests
 
 from .models import (
     Complaint, ComplaintMedia, ComplaintResolutionProof, ComplaintReopenProof,
@@ -28,6 +29,7 @@ from .email_utils import (
     send_welcome_email, send_otp_email, send_password_reset_credentials_email
 )
 from .conversational_ai import SmartCityAI
+from .cityfix_client import cityfix_llm
 
 
 # Authentication Views
@@ -857,13 +859,13 @@ def department_forgot_password(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def ai_chat(request):
-    """Chat with AI assistant for complaint booking"""
+    """Chat with AI assistant for complaint booking - now using CityFix LLM"""
     try:
         user_input = request.data.get('message', '').strip()
         session_id = request.data.get('session_id', 'default')
         user_email = request.data.get('user_email')
         user_name = request.data.get('user_name')
-        preferred_language = request.data.get('preferred_language')
+        preferred_language = request.data.get('preferred_language', 'english')
         
         if not user_input:
             return Response({
@@ -871,29 +873,58 @@ def ai_chat(request):
                 'message': 'Message is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Initialize or get existing AI session
-        ai_assistant = SmartCityAI.for_session(session_id)
-        
-        # Generate response
-        response_data = ai_assistant.generate_response(
-            user_input,
-            user_email=user_email,
-            user_name=user_name,
-            preferred_language=preferred_language,
-        )
-        
-        return Response({
-            'success': True,
-            'response': response_data['response'],
-            'detected_category': response_data.get('detected_category'),
-            'urgency': response_data.get('urgency'),
-            'emotion': response_data.get('emotion'),
-            'language': response_data.get('language'),
-            'next_step': response_data.get('next_step'),
-            'session_id': session_id
-        })
+        # Check if CityFix LLM is available
+        if cityfix_llm.health_check():
+            # Use CityFix LLM
+            llm_response = cityfix_llm.chat(
+                message=user_input,
+                session_id=session_id,
+                user_name=user_name,
+                preferred_language=preferred_language
+            )
+            
+            return Response({
+                'success': True,
+                'response': llm_response.get('response', 'I understand your concern. How can I help you today?'),
+                'detected_category': llm_response.get('detected_category'),
+                'detected_subcategory': llm_response.get('detected_subcategory'),
+                'urgency': llm_response.get('urgency', 'medium'),
+                'emotion': llm_response.get('emotion', 'neutral'),
+                'language': llm_response.get('language', preferred_language),
+                'is_emergency': llm_response.get('is_emergency', False),
+                'confidence': llm_response.get('confidence', 0.5),
+                'next_step': llm_response.get('next_step', 'intake'),
+                'missing_fields': llm_response.get('missing_fields', []),
+                'alternatives': llm_response.get('alternatives', []),
+                'processing_ms': llm_response.get('processing_ms', 0),
+                'session_id': llm_response.get('session_id', session_id),
+                'llm_powered': True
+            })
+        else:
+            # Fallback to rule-based AI
+            ai_assistant = SmartCityAI.for_session(session_id)
+            response_data = ai_assistant.generate_response(
+                user_input,
+                user_email=user_email,
+                user_name=user_name,
+                preferred_language=preferred_language,
+            )
+            
+            return Response({
+                'success': True,
+                'response': response_data['response'],
+                'detected_category': response_data.get('detected_category'),
+                'urgency': response_data.get('urgency'),
+                'emotion': response_data.get('emotion'),
+                'language': response_data.get('language'),
+                'next_step': response_data.get('next_step'),
+                'session_id': session_id,
+                'llm_powered': False
+            })
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
             'message': f'AI Chat Error: {str(e)}'
@@ -933,15 +964,37 @@ def ai_nudge(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def ai_extract_complaint(request):
-    """Extract structured complaint data from AI conversation"""
+    """Extract structured complaint data from AI conversation - now using CityFix LLM"""
     try:
         session_id = request.data.get('session_id', 'default')
         
-        # Initialize AI assistant with persisted session
-        ai_assistant = SmartCityAI.for_session(session_id)
-        
-        # Extract complaint information
-        complaint_info = ai_assistant.extract_complaint_info()
+        # Check if CityFix LLM is available
+        if cityfix_llm.health_check():
+            # Get session data from CityFix LLM
+            try:
+                import requests
+                response = requests.get(
+                    f"{cityfix_llm.base_url}/session/{session_id}",
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    session_data = response.json()
+                    complaint_info = {
+                        'category': session_data.get('category'),
+                        'subcategory': session_data.get('subcategory'),
+                        'location': session_data.get('location'),
+                        'description': session_data.get('description'),
+                        'urgency': session_data.get('urgency'),
+                        'language': session_data.get('language'),
+                    }
+                else:
+                    complaint_info = {}
+            except:
+                complaint_info = {}
+        else:
+            # Fallback to rule-based AI
+            ai_assistant = SmartCityAI.for_session(session_id)
+            complaint_info = ai_assistant.extract_complaint_info()
         
         return Response({
             'success': True,

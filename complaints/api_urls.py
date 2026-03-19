@@ -13,6 +13,7 @@ from .api_views import (
     get_states_cities, guest_stats,
     ai_chat, ai_extract_complaint, ai_voice_chat, ai_history, ai_reset, ai_nudge
 )
+from .test_cityfix import test_cityfix_llm
 
 router = DefaultRouter()
 router.register(r'complaints', ComplaintViewSet, basename='complaint')
@@ -57,6 +58,9 @@ urlpatterns = [
     path('ai/voice-chat/', ai_voice_chat, name='api_ai_voice_chat'),
     path('ai/history/', ai_history, name='api_ai_history'),
     path('ai/reset/', ai_reset, name='api_ai_reset'),
+    
+    # Test CityFix LLM
+    path('test/cityfix-llm/', test_cityfix_llm, name='test_cityfix_llm'),
     
     # Router URLs
     path('', include(router.urls)),

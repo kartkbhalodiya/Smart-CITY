@@ -1,11 +1,11 @@
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
 import '../config/ai_training_data.dart';
+import '../config/api_config.dart';
 import 'storage_service.dart';
 
 class AssistantReply {
@@ -145,22 +145,14 @@ class AIService {
   static final AIService instance = AIService._internal();
   factory AIService() => instance;
 
-  static const String _groqApiKey = String.fromEnvironment(
-    'GROQ_API_KEY',
-    defaultValue: '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',
-  );
-  // Using smaller, faster model to avoid rate limits
-  static const String _groqModel = 'llama-3.1-8b-instant';
-  static const int _groqMaxRetries = 3;
-  static const Duration _groqTimeout = Duration(seconds: 25);
-  static const Duration _groqInitialBackoff = Duration(milliseconds: 600);
-  static const int _groqCacheMaxEntries = 120;
+  static const int _cacheMaxEntries = 200;
 
   final List<Map<String, String>> _history = [];
   final Map<String, dynamic> _complaintData = {};
-  final LinkedHashMap<String, AssistantReply> _groqResponseCache = LinkedHashMap();
+  final LinkedHashMap<String, AssistantReply> _responseCache = LinkedHashMap();
   String _currentLanguage = 'en';
   String _userMood = 'neutral';
+  String _sessionId = 'default';
 
   static const Map<String, List<String>> _categoryAliases = {
     'Road/Pothole': [
@@ -394,9 +386,7 @@ class AIService {
 
     AssistantReply reply;
     try {
-      reply = _groqApiKey.isEmpty
-          ? _offlineReply(analysis)
-          : await _replyFromGroq(input, analysis);
+      reply = await _replyFromBackend(input, analysis);
     } catch (_) {
       reply = _offlineReply(analysis);
     }
@@ -412,10 +402,10 @@ class AIService {
   AssistantReply _emptyReply() {
     return AssistantReply(
       response: _localized(
-        en: 'Tell me what issue you want to report. I will guide you step by step.',
-        hi: 'कृपया समस्या बताइए, मैं आपको चरण-दर-चरण मदद करूंगी।',
-        gu: 'કૃપા કરીને સમસ્યા કહો, હું તમને પગલા પ્રમાણે મદદ કરીશ.',
-        hinglish: 'Problem bataiye, main step-by-step help karunga.',
+        en: '👋 Tell me what issue you want to report. I will guide you step by step.',
+        hi: '👋 कृपया समस्या बताइए, मैं आपको चरण-दर-चरण मदद करूंगी।',
+        gu: '👋 કૃપા કરીને સમસ્યા કહો, હું તમને પગલા પ્રમાણે મદદ કરીશ.',
+        hinglish: '👋 Problem bataiye, main step-by-step help karunga.',
       ),
       language: _currentLanguage,
       mood: 'calm',
@@ -423,15 +413,15 @@ class AIService {
       category: _complaintData['category'],
       subcategory: _complaintData['subcategory'],
       missingFields: const ['issue_category', 'exact_location'],
-      actionChecklist: const ['Describe issue', 'Share exact location'],
+      actionChecklist: const ['📝 Describe issue', '📍 Share exact location'],
       isEmergency: false,
       confidence: 0.3,
       complaintDraft: Map<String, dynamic>.from(_complaintData),
       nextQuestion: _localized(
-        en: 'What issue should I register?',
-        hi: 'मैं कौन सी समस्या दर्ज करूं?',
-        gu: 'હું કઈ સમસ્યા નોંધાવું?',
-        hinglish: 'Kaunsi problem register karun?',
+        en: '📝 What issue should I register?',
+        hi: '📝 मैं कौन सी समस्या दर्ज करूं?',
+        gu: '📝 હું કઈ સમસ્યા નોંધાવું?',
+        hinglish: '📝 Kaunsi problem register karun?',
       ),
     );
   }
@@ -466,158 +456,6 @@ class AIService {
     );
   }
 
-  Future<AssistantReply> _replyFromGroq(
-    String userInput,
-    _OfflineAnalysis analysis,
-  ) async {
-    // Skip internet check - let HTTP request handle connectivity
-    // if (!await _hasInternetConnection()) {
-    //   return _offlineReply(
-    //     analysis,
-    //     modelTextFallback:
-    //         'Internet not available. This is an offline fallback response.',
-    //   );
-    // }
-
-    final cacheKey = _buildCacheKey(userInput, analysis);
-    if (_groqResponseCache.containsKey(cacheKey)) {
-      return _groqResponseCache[cacheKey]!;
-    }
-
-    final uri = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
-    final body = jsonEncode({
-      'model': _groqModel,
-      'messages': [
-        {'role': 'user', 'content': _buildCompactPrompt(userInput, analysis)}
-      ],
-      'temperature': 0.6,
-      'max_tokens': 600,
-      'top_p': 0.9,
-      'frequency_penalty': 0.0,
-      'presence_penalty': 0.1,
-    });
-
-    http.Response response;
-    try {
-      response = await _postWithRetry(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_groqApiKey',
-        },
-        body: body,
-      );
-    } catch (e) {
-      print('Groq API connection error: $e');
-      return _offlineReply(
-        analysis,
-        modelTextFallback:
-            'Unable to connect to the Groq API. Working offline for now.',
-      );
-    }
-
-    if (response.statusCode != 200) {
-      print('Groq API error: ${response.statusCode} - ${response.body}');
-      final errorMsg = response.statusCode == 429
-          ? 'Rate limit reached. Using offline mode with smart detection.'
-          : 'Unable to reach AI server. Using local assistant mode.';
-      return _offlineReply(analysis, modelTextFallback: errorMsg);
-    }
-
-    final payload = <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) payload.addAll(decoded);
-    } catch (_) {
-      return _offlineReply(
-        analysis,
-        modelTextFallback:
-            'Unable to parse AI response. Using local assistant mode.',
-      );
-    }
-
-    final text = _extractGroqText(payload);
-    final jsonText = _extractJson(text);
-
-    if (jsonText == null) {
-      final cleanText = text.trim();
-      return _cacheHelper(
-        cacheKey,
-        _offlineReply(
-          analysis,
-          modelTextFallback: cleanText.isNotEmpty ? cleanText : null,
-        ),
-      );
-    }
-
-    try {
-      final obj = jsonDecode(jsonText) as Map<String, dynamic>;
-      final reply = _fromModelObject(obj, analysis);
-      return _cacheHelper(cacheKey, reply);
-    } catch (_) {
-      return _cacheHelper(cacheKey, _offlineReply(analysis));
-    }
-  }
-
-  AssistantReply _fromModelObject(
-    Map<String, dynamic> obj,
-    _OfflineAnalysis analysis,
-  ) {
-    final language =
-        _normalizeLanguage(_asString(obj['language']) ?? analysis.language);
-    final mood = _normalizeMood(_asString(obj['mood']) ?? analysis.mood);
-    final urgency =
-        _normalizeUrgency(_asString(obj['urgency']) ?? analysis.urgency);
-    final category = _asString(obj['category']) ?? analysis.category;
-    final subcategory = _asString(obj['subcategory']) ?? analysis.subcategory;
-
-    final missing = _asStringList(obj['missing_fields']);
-    final safeMissing = missing.isEmpty ? _missingFields(analysis) : missing;
-    final actions = _asStringList(obj['action_checklist']);
-    final safeActions = actions.isEmpty ? _actions(analysis) : actions;
-
-    final response =
-        _asString(obj['response_text']) ?? _offlineReply(analysis).response;
-    final nextQuestion =
-        _asString(obj['next_question']) ?? _nextQuestion(analysis, safeMissing);
-    final action = _asString(obj['action']) ?? 'COLLECT_INFO';
-    final showConfirmation = obj['showConfirmation'] == true;
-    final confirmationQuestion = _asString(obj['confirmationQuestion']);
-
-    final draft = Map<String, dynamic>.from(_complaintData);
-    if (category != null) {
-      draft['category'] = category;
-    }
-    if (subcategory != null) {
-      draft['subcategory'] = subcategory;
-    }
-    if (analysis.locationHint != null) {
-      draft['location_hint'] = analysis.locationHint;
-    }
-    if (analysis.timeHint != null) {
-      draft['time_hint'] = analysis.timeHint;
-    }
-    draft['urgency'] = urgency;
-    draft['is_emergency'] = obj['safety_alert'] == true || analysis.isEmergency;
-
-    return AssistantReply(
-      response: _humanize(response, mood, urgency),
-      language: language,
-      mood: mood,
-      urgency: urgency,
-      category: category,
-      subcategory: subcategory,
-      missingFields: safeMissing,
-      actionChecklist: safeActions,
-      isEmergency: draft['is_emergency'] == true,
-      confidence: _confidence(analysis.confidence, safeMissing.length),
-      complaintDraft: draft,
-      nextQuestion: nextQuestion,
-      action: action,
-      showConfirmation: showConfirmation,
-      confirmationQuestion: confirmationQuestion,
-    );
-  }
 
   AssistantReply _offlineReply(_OfflineAnalysis analysis,
       {String? modelTextFallback}) {
@@ -670,44 +508,35 @@ class AIService {
   String _baseMessage(_OfflineAnalysis analysis) {
     if (analysis.isEmergency) {
       return _localized(
-        en: 'Your safety comes first. If there is immediate danger, call 112 now.',
-        hi: 'Suraksha sabse pehle hai. Turant khatra ho to abhi 112 call karein.',
-        gu: 'Suraksha pehla chhe. Turant jokham hoy to 112 par call karo.',
-        hinglish: 'Safety first. Immediate danger ho to abhi 112 call kariye.',
+        en: '🚨 Your safety comes first! If there is immediate danger, call 112 now.',
+        hi: '🚨 Suraksha sabse pehle hai! Turant khatra ho to abhi 112 call karein.',
+        gu: '🚨 Suraksha pehla chhe! Turant jokham hoy to 112 par call karo.',
+        hinglish: '🚨 Safety first! Immediate danger ho to abhi 112 call kariye.',
       );
     }
     if (analysis.category == null && analysis.alternatives.isNotEmpty) {
       final options = analysis.alternatives.take(3).join(', ');
       return _localized(
-        en: 'I found close matches: $options. Please confirm the best one so I can file correctly.',
-        hi: 'Mujhe close matches mile: $options. Sahi option confirm kijiye.',
-        gu: 'Mane close matches malya: $options. Sacho option confirm karo.',
-        hinglish:
-            'Mujhe close matches mile: $options. Sahi option confirm karo.',
+        en: '🔍 I found close matches: $options. Please confirm the best one.',
+        hi: '🔍 Mujhe close matches mile: $options. Sahi option confirm kijiye.',
+        gu: '🔍 Mane close matches malya: $options. Sacho option confirm karo.',
+        hinglish: '🔍 Close matches mile: $options. Sahi option confirm karo.',
       );
     }
     if (analysis.category != null) {
-      final confidenceLabel = analysis.confidence < 0.5
-          ? 'Likely'
-          : analysis.confidence < 0.75
-              ? 'Probable'
-              : 'Detected';
-      final signalText = analysis.matchedSignals.isNotEmpty
-          ? ' (signals: ${analysis.matchedSignals.take(3).join(', ')})'
-          : '';
+      final emoji = _getCategoryEmoji(analysis.category!);
       return _localized(
-        en: '$confidenceLabel match: ${analysis.subcategory ?? analysis.category}$signalText. I will file this correctly with you.',
-        hi: '$confidenceLabel match: ${analysis.subcategory ?? analysis.category}$signalText. Main ise sahi tarike se file karunga.',
-        gu: '$confidenceLabel match: ${analysis.subcategory ?? analysis.category}$signalText. Hu aa ne sachi rite file karish.',
-        hinglish:
-            '$confidenceLabel match: ${analysis.subcategory ?? analysis.category}$signalText. Main proper filing mein help karunga.',
+        en: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. I will help you file this correctly.',
+        hi: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Main ise sahi tarike se file karunga.',
+        gu: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Hu aa ne sachi rite file karish.',
+        hinglish: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Main proper filing mein help karunga.',
       );
     }
     return _localized(
-      en: 'I am here to help. Tell me the exact issue in one line.',
-      hi: 'Main madad ke liye yahan hoon. Kripya issue ek line mein batayein.',
-      gu: 'Hu madad mate chhu. Krupaya issue ek line ma kaho.',
-      hinglish: 'Main help ke liye hoon. Problem ek line mein batao.',
+      en: '👋 I am here to help. Tell me the exact issue in one line.',
+      hi: '👋 Main madad ke liye yahan hoon. Kripya issue ek line mein batayein.',
+      gu: '👋 Hu madad mate chhu. Krupaya issue ek line ma kaho.',
+      hinglish: '👋 Main help ke liye hoon. Problem ek line mein batao.',
     );
   }
 
@@ -977,310 +806,66 @@ class AIService {
     );
   }
 
-  String _buildCompactPrompt(String userInput, _OfflineAnalysis analysis) {
-    final draft = Map<String, dynamic>.from(_complaintData);
-    if (analysis.category != null) draft['category'] = analysis.category;
-    if (analysis.subcategory != null) draft['subcategory'] = analysis.subcategory;
-    if (analysis.locationHint != null) draft['location_hint'] = analysis.locationHint;
-    draft['urgency'] = analysis.urgency;
-    draft['is_emergency'] = analysis.isEmergency;
+  Future<AssistantReply> _replyFromBackend(
+    String userInput,
+    _OfflineAnalysis analysis,
+  ) async {
+    final cacheKey = _buildCacheKey(userInput, analysis);
+    if (_responseCache.containsKey(cacheKey)) return _responseCache[cacheKey]!;
 
-    return '''
-You are JanHelp - Smart City complaint assistant for India.
-
-🎯 TASK: Analyze user input and extract complaint details instantly.
-
-📋 CATEGORIES: Police, Traffic, Construction, Electricity, Water Supply, Garbage/Sanitation, Road/Pothole, Drainage/Sewage, Cyber Crime, Street Light, Public Toilet, Stray Animals
-
-🧠 RULES:
-1. Extract category, location, description from user message
-2. If complete info provided → confirm and ask for location picker
-3. If partial info → ask for missing details naturally
-4. Respond in user's language (en/hi/gu/hinglish)
-5. Handle emergencies with safety-first approach
-
-📊 CURRENT STATE:
-Draft: ${jsonEncode(draft)}
-Detected: category=${analysis.category ?? 'none'}, location=${analysis.locationHint ?? 'none'}, urgency=${analysis.urgency}
-
-User: "$userInput"
-
-📤 RESPOND IN JSON:
-{
-  "language": "en|hi|gu|hinglish",
-  "mood": "neutral|calm|concerned|urgent",
-  "urgency": "low|medium|high|critical",
-  "category": "exact category or null",
-  "subcategory": "exact subcategory or null",
-  "missing_fields": ["list missing"],
-  "action_checklist": ["next actions"],
-  "next_question": "follow-up question",
-  "response_text": "natural response in user's language",
-  "safety_alert": true/false,
-  "action": "COLLECT_INFO|REQUEST_LOCATION|REQUEST_PROOF|SUBMIT_COMPLAINT",
-  "showConfirmation": true/false,
-  "confirmationQuestion": "question or null"
-}
-''';
-  }
-
-  String _buildGeminiPrompt(String userInput, _OfflineAnalysis analysis) {
-    final historyText = _history
-        .map((h) => '${h['role'] == 'user' ? 'Citizen' : 'JanHelp'}: ${h['content']}')
-        .join('\n');
-    final categoryCatalog = _buildCategoryCatalogForPrompt();
-    final draft = Map<String, dynamic>.from(_complaintData);
-    if (analysis.category != null) draft['category'] = analysis.category;
-    if (analysis.subcategory != null) draft['subcategory'] = analysis.subcategory;
-    if (analysis.locationHint != null) draft['location_hint'] = analysis.locationHint;
-    if (analysis.timeHint != null) draft['time_hint'] = analysis.timeHint;
-    draft['urgency'] = analysis.urgency;
-    draft['is_emergency'] = analysis.isEmergency;
-    final userName = _loadUserName();
-
-    return '''
-You are JanHelp — an ADVANCED AI assistant for Smart City complaint registration in India.
-
-🧠 ADVANCED INTELLIGENCE RULES:
-
-1. **INSTANT FULL ANALYSIS** - If user provides complete info in ONE message, extract EVERYTHING:
-   Example: "mere ghar ke paas MG Road par bahut kachra pada hai, koi nahi uthata"
-   → Extract: category=Garbage/Sanitation, location="MG Road", description="garbage piling up, not being collected"
-   → Respond: "Got it! Garbage issue at MG Road. Should I register this complaint now?"
-   → Set: showConfirmation=true, action=COLLECT_INFO (ready for location picker next)
-
-2. **SEMANTIC UNDERSTANDING** (not just keywords):
-   - "बहुत गंदगी है" = "lot of dirt" = "very dirty" = "kachra bahut hai" → Garbage
-   - "रास्ता टूटा है" = "road broken" = "sadak kharab" = "pothole" → Road/Pothole
-   - "बिजली नहीं आ रही" = "no electricity" = "power cut" = "light nahi" → Electricity
-   - "पानी नहीं आता" = "no water" = "tap dry" = "pani nahi" → Water Supply
-   - "शोर बहुत है" = "too much noise" = "construction shor" → Construction/Noise
-   - "चोरी हो गई" = "theft happened" = "someone stole" → Police/Crime
-   - "accident हो गया" = "गाड़ी टकरा गई" = "car crash" → Traffic
-   - "कुत्ता काटा" = "dog bite" = "stray dog" → Stray Animals
-   - "toilet गंदा है" = "washroom dirty" → Public Toilet
-   - "light नहीं जल रही" = "street light not working" → Street Light
-
-3. **CONTEXT INFERENCE FROM VAGUE INPUT**:
-   - "my area is very dirty" → Garbage/Sanitation
-   - "can't sleep at night" + mentions "construction" → Noise Pollution
-   - "kids getting sick" + mentions "water" → Water Quality
-   - "road is bad" → Road/Pothole
-   - "no light" → Electricity or Street Light
-   - "smell is terrible" → Drainage/Sewage
-   - "dog attacked" → Stray Animals
-   - "toilet is dirty" → Public Toilet
-
-4. **EXTRACT LOCATION FROM NATURAL SPEECH**:
-   - "mere ghar ke paas" → location_hint: "near my house"
-   - "MG Road par" → location_hint: "MG Road"
-   - "Satellite area mein" → location_hint: "Satellite area"
-   - "school ke samne" → location_hint: "in front of school"
-   - "market ke piche" → location_hint: "behind market"
-
-5. **HANDLE TYPOS & SLANG**:
-   - "gabage" = garbage, "bijly" = bijli, "rasta" = road
-   - "panni" = pani, "thif" = thief, "acident" = accident
-   - "bhai", "yaar", "boss" = casual tone, respond casually
-
-6. **SMART STEP DETECTION**:
-   - If category detected but no location → ask for location OR set action=REQUEST_LOCATION
-   - If category + location detected → ask for more details OR set action=REQUEST_PROOF
-   - If everything collected → show summary with showConfirmation=true
-   - If user confirms summary → set action=SUBMIT_COMPLAINT
-
-7. **MULTILINGUAL RESPONSE MATCHING**:
-   - User speaks Hindi → respond in Hindi
-   - User speaks Hinglish → respond in Hinglish
-   - User speaks Gujarati → respond in Gujarati
-   - User mixes languages → mix languages in response
-
-📚 TRAINING EXAMPLES:
-
-**Example 1: Complete info in one message**
-User: "bhai mere ghar ke samne Satellite area mein bahut kachra pada hai, 2 hafte se koi nahi uthata"
-AI Analysis:
-- category: "Garbage/Sanitation"
-- subcategory: "Waste Collection"
-- location_hint: "Satellite area, in front of my house"
-- description: "Garbage piling up for 2 weeks, not being collected"
-- language: "hinglish"
-AI Response: "Samajh gaya bhai! Satellite area mein 2 hafte se kachra jama hai aur koi collect nahi kar raha. Ye Garbage/Sanitation complaint hai. Kya main exact location ke liye map dikhaun? 📍"
-Action: REQUEST_LOCATION
-showConfirmation: false
-
-**Example 2: Vague input**
-User: "problem hai mere area me"
-AI Response: "Main help karna chahta hoon! Problem kis type ki hai?
-- Kachra/safai 🗑️
-- Sadak/gadda 🛣️
-- Pani 💧
-- Bijli ⚡
-- Traffic 🚦
-- Construction shor 🏗️
-- Police/safety 👮
-- Street light 💡
-- Stray animals 🐕
-- Public toilet 🚻
-Bataiye kaunsi problem hai?"
-Action: COLLECT_INFO
-
-**Example 3: Only category mentioned**
-User: "garbage problem"
-AI Response: "Got it! Garbage issue. Can you tell me the exact location? Like which area, street, or landmark? 📍"
-Action: COLLECT_INFO
-
-**Example 4: Category + location**
-User: "MG Road par pothole hai"
-AI Response: "Samajh gaya! MG Road par pothole ki problem hai. Ye Road/Pothole complaint hai. Kya main location confirm karne ke liye map dikhaun? 📍"
-Action: REQUEST_LOCATION
-showConfirmation: false
-
-**Example 5: Everything provided**
-User: "મારા ઘર આગળ Vastrapur lake પાસે કચરો પડ્યો છે, 1 મહિનાથી કોઈ સાફ નથી કરતું"
-AI Analysis:
-- category: "Garbage/Sanitation"
-- location_hint: "Vastrapur lake, in front of my house"
-- description: "Garbage for 1 month, not cleaned"
-- language: "gu"
-AI Response: "સમજાયું! Vastrapur lake પાસે 1 મહિનાથી કચરો જમા છે. આ Garbage/Sanitation ફરિયાદ છે. શું હું exact location માટે map બતાવું? 📍"
-Action: REQUEST_LOCATION
-
-**Example 6: Emergency**
-User: "bijli ka wire toot gaya hai, bahut dangerous hai"
-AI Response: "⚠️ DANGER! Broken wire is emergency. Please stay away and call 112 immediately for safety! ⚡🚨\n\nShould I also register an Electricity complaint for repair? This will help get it fixed."
-Action: COLLECT_INFO
-showConfirmation: true
-confirmationQuestion: "Should I register Electricity complaint for wire repair?"
-
-**Example 7: Stray Animals**
-User: "mere ghar ke paas ek kutta hai jo sabko darta hai"
-AI Response: "Samajh gaya! Aapke area mein stray dog ki problem hai. Ye Stray Animals complaint hai. Exact location bataiye? 📍"
-Action: COLLECT_INFO
-
-**Example 8: Street Light**
-User: "raat ko rasta andhera rehta hai light nahi jalti"
-AI Response: "Samajh gaya! Street light nahi jal rahi hai aur raat ko andhera rehta hai. Ye Street Light complaint hai. Kaunse area ki baat kar rahe ho? 📍"
-Action: COLLECT_INFO
-
-**Example 9: Public Toilet**
-User: "public toilet bahut ganda hai, koi saaf nahi karta"
-AI Response: "Got it! Public toilet dirty hai aur maintenance nahi ho rahi. Ye Public Toilet complaint hai. Toilet kahan hai? 📍"
-Action: COLLECT_INFO
-
-🎯 ALL 12 COMPLAINT CATEGORIES:
-1. **Police**: crime, theft, चोरी, લૂંટ, safety, violence, harassment, मारपीट, દબાણ
-2. **Traffic**: accident, signal, parking, અકસ્માત, ટ્રાફિક, सड़क, road rage, challan
-3. **Construction**: illegal building, noise, કચરો, कूड़ा, debris, અવાજ, शोर, safety hazards
-4. **Electricity**: bijli, વીજળી, बिजली, wire, transformer, power cut
-5. **Water Supply**: pani, પાણી, पानी, tap, pipeline, leakage, pressure
-6. **Garbage/Sanitation**: kachra, કચરો, कूड़ा, dustbin, sanitation, waste, gandagi
-7. **Road/Pothole**: sadak, રસ્તો, सड़क, gadda, pothole, waterlogging, broken road
-8. **Drainage/Sewage**: nali, નાળી, नाली, sewer, gutter, manhole, bad smell, overflow
-9. **Cyber Crime**: online fraud, UPI scam, phishing, hacking, digital fraud
-10. **Street Light**: street light, lamp, pole light, રસ્તાની લાઇટ, सड़क की बत्ती, dark
-11. **Public Toilet**: toilet, washroom, શૌચાલય, शौचालय, dirty toilet, public toilet
-12. **Stray Animals**: stray dog, dog bite, આવારા કૂતરા, आवारा कुत्ता, cattle, cow
-
-📊 CURRENT STATE:
-Complaint Data: ${jsonEncode(draft)}
-Conversation: $historyText
-
-🎯 YOUR TASK:
-1. Analyze user input deeply - extract category, location, description
-2. If user gives complete info → extract everything, confirm, move to location picker
-3. If user gives partial info → ask for missing pieces naturally
-4. If user is vague → give options with emojis
-5. Always respond in user's language
-6. Be smart, empathetic, and efficient
-
-📤 RESPONSE FORMAT (JSON only):
-{
-  "language": "en|hi|gu|hinglish",
-  "mood": "neutral|calm|concerned|frustrated|angry|urgent",
-  "urgency": "low|medium|high|critical",
-  "category": "exact category name or null",
-  "subcategory": "exact subcategory name or null",
-  "missing_fields": ["list missing info"],
-  "action_checklist": ["next 1-2 actions"],
-  "next_question": "natural follow-up",
-  "response_text": "warm natural response in user's language",
-  "safety_alert": true/false,
-  "action": "COLLECT_INFO|REQUEST_LOCATION|REQUEST_PROOF|SUBMIT_COMPLAINT",
-  "showConfirmation": true/false,
-  "confirmationQuestion": "question for Yes/No/Maybe or null"
-}
-
-Category catalog:
-$categoryCatalog
-
-Analysis context:
-- Language: ${analysis.language}
-- Mood: $_userMood
-- Urgency: ${analysis.urgency}
-- Emergency: ${analysis.isEmergency}
-- Detected category: ${analysis.category ?? 'not detected'}
-- Detected subcategory: ${analysis.subcategory ?? 'not detected'}
-- Location hint: ${analysis.locationHint ?? 'not provided'}
-- Alternatives: ${analysis.alternatives.join(', ')}
-- Signals: ${analysis.matchedSignals.join(', ')}
-
-User: $userName
-
-Citizen said: "$userInput"
-
-Analyze deeply and respond intelligently with appropriate action.
-''';
-  }
-
-  String _loadUserName() {
     try {
-      final raw = StorageService.getUserData();
-      if (raw == null || raw.trim().isEmpty) return 'Citizen';
-      final obj = jsonDecode(raw) as Map<String, dynamic>;
-      final firstName = _asString(obj['first_name'])?.trim();
-      if (firstName != null && firstName.isNotEmpty) return firstName;
-      final username = _asString(obj['username'])?.trim();
-      return username ?? 'Citizen';
-    } catch (_) {
-      return 'Citizen';
-    }
-  }
+      final response = await http.post(
+        Uri.parse(ApiConfig.aiChat),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'message': userInput,
+          'session_id': _sessionId,
+          'preferred_language': _currentLanguage,
+        }),
+      ).timeout(const Duration(seconds: 15));
 
-  String _buildCategoryCatalogForPrompt() {
-    final catalog = <String>[];
-    complaintCategories.forEach((category, value) {
-      if (value is! Map) return;
-      final subs = value.keys.map((e) => e.toString()).join(', ');
-      catalog.add('$category => [$subs]');
-    });
-    return catalog.join('\n');
-  }
-
-  String _extractGroqText(Map<String, dynamic> payload) {
-    final choices = payload['choices'];
-    if (choices is! List || choices.isEmpty) return '';
-    final choice = choices.first;
-    if (choice is! Map) return '';
-    final message = choice['message'];
-    if (message is! Map) return '';
-    return (message['content'] as String?)?.trim() ?? '';
-  }
-
-  String? _extractJson(String text) {
-    final trimmed = text.trim();
-    if (trimmed.startsWith('{') && trimmed.endsWith('}')) return trimmed;
-    final fenced = RegExp(r'```(?:json)?\s*([\s\S]*?)```').firstMatch(text);
-    if (fenced != null) {
-      final inside = fenced.group(1)?.trim();
-      if (inside != null && inside.startsWith('{') && inside.endsWith('}')) {
-        return inside;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        if (data['success'] == true) {
+          final reply = _buildReplyFromBackend(data, analysis);
+          return _cacheHelper(cacheKey, reply);
+        }
       }
-    }
-    final start = text.indexOf('{');
-    final end = text.lastIndexOf('}');
-    if (start >= 0 && end > start) return text.substring(start, end + 1);
-    return null;
+    } catch (_) {}
+
+    return _offlineReply(analysis);
+  }
+
+  AssistantReply _buildReplyFromBackend(
+    Map<String, dynamic> data,
+    _OfflineAnalysis analysis,
+  ) {
+    final category = (data['detected_category'] as String?) ?? analysis.category;
+    final urgency = _normalizeUrgency((data['urgency'] as String?) ?? analysis.urgency);
+    final language = _normalizeLanguage((data['language'] as String?) ?? analysis.language);
+    final response = (data['response'] as String?)?.trim() ?? _offlineReply(analysis).response;
+    final nextStep = (data['next_step'] as String?) ?? 'COLLECT_INFO';
+
+    final draft = Map<String, dynamic>.from(_complaintData);
+    if (category != null) draft['category'] = category;
+    draft['urgency'] = urgency;
+
+    final missing = _missingFields(analysis);
+    return AssistantReply(
+      response: response,
+      language: language,
+      mood: _normalizeMood((data['emotion'] as String?) ?? analysis.mood),
+      urgency: urgency,
+      category: category,
+      subcategory: analysis.subcategory,
+      missingFields: missing,
+      actionChecklist: _actions(analysis),
+      isEmergency: analysis.isEmergency,
+      confidence: _confidence(analysis.confidence, missing.length),
+      complaintDraft: draft,
+      nextQuestion: _nextQuestion(analysis, missing),
+      action: nextStep,
+    );
   }
 
   String _buildCacheKey(String userInput, _OfflineAnalysis analysis) {
@@ -1289,66 +874,11 @@ Analyze deeply and respond intelligently with appropriate action.
   }
 
   AssistantReply _cacheHelper(String key, AssistantReply reply) {
-    if (_groqResponseCache.length >= _groqCacheMaxEntries) {
-      _groqResponseCache.remove(_groqResponseCache.keys.first);
+    if (_responseCache.length >= _cacheMaxEntries) {
+      _responseCache.remove(_responseCache.keys.first);
     }
-    _groqResponseCache[key] = reply;
+    _responseCache[key] = reply;
     return reply;
-  }
-
-  Future<bool> _hasInternetConnection() async {
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
-    } catch (_) {
-      // Fallback: try alternative DNS
-      try {
-        final result = await InternetAddress.lookup('1.1.1.1')
-            .timeout(const Duration(seconds: 2));
-        return result.isNotEmpty;
-      } catch (_) {
-        return false;
-      }
-    }
-  }
-
-  Future<http.Response> _postWithRetry(
-    Uri uri, {
-    required Map<String, String> headers,
-    required String body,
-    int maxAttempts = _groqMaxRetries,
-  }) async {
-    var attempt = 0;
-    var backoff = _groqInitialBackoff;
-    http.Response? lastResponse;
-
-    while (attempt < maxAttempts) {
-      attempt++;
-      try {
-        print('Groq API attempt $attempt/$maxAttempts...');
-        final response = await http
-            .post(uri, headers: headers, body: body)
-            .timeout(_groqTimeout);
-
-        print('Groq API response: ${response.statusCode}');
-        if (response.statusCode == 200) return response;
-        lastResponse = response;
-      } catch (error) {
-        print('Groq API attempt $attempt failed: $error');
-        if (attempt >= maxAttempts) {
-          return http.Response('Network unavailable for Groq run', 503);
-        }
-      }
-
-      if (attempt < maxAttempts) {
-        print('Retrying in ${backoff.inMilliseconds}ms...');
-        await Future.delayed(backoff);
-        backoff *= 2;
-      }
-    }
-
-    return lastResponse ?? http.Response('Network unavailable for Groq run', 503);
   }
 
   List<String> _missingFields(_OfflineAnalysis analysis) {
@@ -1369,43 +899,43 @@ Analyze deeply and respond intelligently with appropriate action.
   List<String> _actions(_OfflineAnalysis analysis) {
     if (analysis.isEmergency) {
       return const [
-        'Call emergency helpline 112 if danger is immediate',
-        'Stay at safe distance',
-        'Share exact location for quick response',
+        '🚨 Call emergency helpline 112 if danger is immediate',
+        '⚠️ Stay at safe distance',
+        '📍 Share exact location for quick response',
       ];
     }
     if (analysis.category == null && analysis.alternatives.isNotEmpty) {
       return [
-        'Choose the closest issue type: ${analysis.alternatives.take(3).join(', ')}',
-        'Share exact location and landmark',
-        'Add one photo if possible for faster verification',
+        '📝 Choose: ${analysis.alternatives.take(3).join(', ')}',
+        '📍 Share exact location and landmark',
+        '📷 Add photo if possible',
       ];
     }
     return [
       if (analysis.category != null)
-        'Issue tagged as ${analysis.subcategory ?? analysis.category}'
+        '✅ Tagged as ${analysis.subcategory ?? analysis.category}'
       else
-        'Confirm issue category',
-      'Share exact location and landmark',
-      'Add photo/video evidence if available',
+        '📝 Confirm issue category',
+      '📍 Share exact location and landmark',
+      '📷 Add photo/video evidence if available',
     ];
   }
 
   String _nextQuestion(_OfflineAnalysis analysis, List<String> missing) {
     if (analysis.isEmergency && missing.contains('exact_location')) {
       return _localized(
-        en: 'Please share exact location right now.',
-        hi: 'कृपया तुरंत सही लोकेशन बताएं।',
-        gu: 'કૃપા કરીને તરત ચોક્કસ લોકેશન આપો.',
-        hinglish: 'Please abhi exact location bataiye.',
+        en: '📍 Please share exact location right now.',
+        hi: '📍 कृपया तुरंत सही लोकेशन बताएं।',
+        gu: '📍 કૃપા કરીને તરત ચોક્કસ લોકેશન આપો.',
+        hinglish: '📍 Please abhi exact location bataiye.',
       );
     }
     if (missing.isEmpty) {
       return _localized(
-        en: 'Should I summarize this and prepare it for submission?',
-        hi: 'क्या मैं इसका सारांश बनाकर सबमिट के लिए तैयार करूं?',
-        gu: 'શું હું આનો સાર બનાવી સબમિટ માટે તૈયાર કરું?',
-        hinglish: 'Kya main summary bana kar submit ke liye ready karun?',
+        en: '✅ Ready to submit! Should I prepare the final summary?',
+        hi: '✅ Submit ke liye ready! Kya main final summary banaun?',
+        gu: '✅ Submit mate ready! Shu hu final summary banavu?',
+        hinglish: '✅ Ready hai! Kya main summary bana kar submit karun?',
       );
     }
 
@@ -1414,34 +944,31 @@ Analyze deeply and respond intelligently with appropriate action.
         if (analysis.alternatives.isNotEmpty) {
           final options = analysis.alternatives.take(3).join(', ');
           return _localized(
-            en: 'Please choose the closest option: $options. If none match, tell me your issue in different words.',
-            hi: 'Kripya sabse close option chuniye: $options. Agar match na ho to issue alag shabdon me batayein.',
-            gu: 'Krupaya najik no option pasand karo: $options. Match na thay to issue bija shabdo ma kaho.',
-            hinglish:
-                'Please sabse close option choose karo: $options. Match na ho to issue alag words me batao.',
+            en: '📝 Choose closest: $options',
+            hi: '📝 Sabse close option: $options',
+            gu: '📝 Najik no option: $options',
+            hinglish: '📝 Closest option: $options',
           );
         }
         return _localized(
-          en: 'Is this related to police, traffic, construction, water, electricity, garbage, road, drainage, illegal activity, transportation, cyber crime, or other?',
-          hi: 'क्या यह सड़क, ड्रेनेज, पानी, बिजली, कचरा या ट्रैफिक से जुड़ा है?',
-          gu: 'શું આ રસ્તા, ડ્રેનેજ, પાણી, વીજળી, કચરો કે ટ્રાફિક સાથે સંબંધિત છે?',
-          hinglish:
-              'Yeh police, traffic, construction, water, electricity, garbage, road, drainage, illegal activity, transportation, cyber crime ya other se related hai?',
+          en: '📝 What type of issue? (Road, Water, Electricity, Garbage, Traffic, Police, etc.)',
+          hi: '📝 Kis type ki problem hai? (Sadak, Pani, Bijli, Kachra, Traffic, Police, etc.)',
+          gu: '📝 Kai type ni samasya chhe? (Rasto, Pani, Vijli, Kachro, Traffic, Police, etc.)',
+          hinglish: '📝 Kis type ki problem hai? (Road, Water, Bijli, Kachra, Traffic, Police, etc.)',
         );
       case 'exact_location':
         return _localized(
-          en: 'Please share exact area, street, and nearby landmark.',
-          hi: 'कृपया सही एरिया, सड़क और पास का लैंडमार्क बताएं।',
-          gu: 'કૃપા કરીને ચોક્કસ વિસ્તાર, રસ્તો અને નજીકનો લૅન્ડમાર્ક કહો.',
-          hinglish: 'Please exact area, street aur nearby landmark bataiye.',
+          en: '📍 Please share exact area, street, and nearby landmark.',
+          hi: '📍 कृपया सही एरिया, सड़क और पास का लैंडमार्क बताएं।',
+          gu: '📍 કૃપા કરીને ચોક્કસ વિસ્તાર, રસ્તો અને નજીકનો લૅન્ડમાર્ક કહો.',
+          hinglish: '📍 Please exact area, street aur nearby landmark bataiye.',
         );
       default:
         return _localized(
-          en: 'Please share one more detail so I can file this correctly.',
-          hi: 'कृपया एक और जानकारी दें ताकि शिकायत सही दर्ज हो सके।',
-          gu: 'કૃપા કરીને એક વધુ માહિતી આપો જેથી ફરિયાદ યોગ્ય રીતે નોંધાય.',
-          hinglish:
-              'Please ek aur detail share karein taki complaint sahi file ho.',
+          en: '❓ One more detail needed to file correctly.',
+          hi: '❓ Ek aur detail chahiye sahi filing ke liye.',
+          gu: '❓ Ek hor detail joiye sachi filing mate.',
+          hinglish: '❓ Ek aur detail chahiye proper filing ke liye.',
         );
     }
   }
@@ -1487,6 +1014,13 @@ Analyze deeply and respond intelligently with appropriate action.
     final keys = _langKeys(language);
     final candidates = <_CategoryCandidate>[];
 
+    // First pass: Detect primary issue keywords (crime, theft, etc.)
+    final crimeKeywords = ['chori', 'theft', 'चोरी', 'લૂંટ', 'steal', 'stolen', 'purse', 'wallet', 'mobile', 'robbery', 'loot', 'चोरी हुआ', 'चोरी हो गया'];
+    final hasCrimeKeyword = crimeKeywords.any((kw) => normalized.contains(_normalize(kw)));
+    
+    // Location-only keywords that should not trigger Road category
+    final locationOnlyKeywords = ['road', 'sadak', 'रोड', 'સડક', 'street', 'gali', 'lane', 'pise', 'paas', 'samne', 'near', 'behind', 'front'];
+    
     complaintCategories.forEach((category, subs) {
       if (subs is! Map) return;
       final categoryName = category.toString();
@@ -1501,6 +1035,18 @@ Analyze deeply and respond intelligently with appropriate action.
 
         final normalizedCategory = _normalize(categoryName);
         final normalizedSubcategory = _normalize(subcategoryName);
+        
+        // If crime detected, heavily penalize non-Police categories
+        if (hasCrimeKeyword && categoryName != 'Police') {
+          score -= 20;
+        }
+        
+        // If crime detected, heavily boost Police category
+        if (hasCrimeKeyword && categoryName == 'Police') {
+          score += 15;
+          signals.add('crime detected');
+        }
+        
         if (normalized.contains(normalizedCategory)) {
           score += 4;
           signals.add(categoryName);
@@ -1514,6 +1060,13 @@ Analyze deeply and respond intelligently with appropriate action.
         for (final alias in aliases) {
           final normalizedAlias = _normalize(alias);
           if (normalizedAlias.isEmpty) continue;
+          
+          // Skip location-only keywords for Road category if crime is detected
+          if (hasCrimeKeyword && categoryName == 'Road/Pothole' && 
+              locationOnlyKeywords.any((loc) => normalizedAlias.contains(_normalize(loc)))) {
+            continue;
+          }
+          
           if (normalized.contains(normalizedAlias)) {
             score += normalizedAlias.contains(' ') ? 4 : 2;
             signals.add(alias);
@@ -1531,6 +1084,8 @@ Analyze deeply and respond intelligently with appropriate action.
           normalized,
           keywords,
           matchedSignals: signals,
+          isCrimeContext: hasCrimeKeyword,
+          currentCategory: categoryName,
         );
 
         if (score <= 0) return;
@@ -1593,11 +1148,22 @@ Analyze deeply and respond intelligently with appropriate action.
     String input,
     List<String> keywords, {
     List<String>? matchedSignals,
+    bool isCrimeContext = false,
+    String? currentCategory,
   }) {
     int score = 0;
+    final locationOnlyKeywords = ['road', 'sadak', 'रोड', 'સડક', 'street', 'gali', 'lane', 'pise', 'paas', 'samne', 'near', 'behind', 'front'];
+    
     for (final keyword in keywords) {
       final key = _normalize(keyword);
       if (key.isEmpty) continue;
+      
+      // Skip location keywords for Road category if crime context detected
+      if (isCrimeContext && currentCategory == 'Road/Pothole' && 
+          locationOnlyKeywords.any((loc) => key.contains(_normalize(loc)))) {
+        continue;
+      }
+      
       if (input.contains(key)) {
         score += key.contains(' ') ? 4 : 2;
         matchedSignals?.add(keyword);
@@ -1775,6 +1341,24 @@ Analyze deeply and respond intelligently with appropriate action.
   double _confidence(double base, int missingCount) {
     final penalty = min(0.45, missingCount * 0.12);
     return max(0.2, min(0.98, base - penalty));
+  }
+
+  String _getCategoryEmoji(String category) {
+    const emojiMap = {
+      'Road/Pothole': '🛣️',
+      'Drainage/Sewage': '🚰',
+      'Garbage/Sanitation': '🗑️',
+      'Electricity': '⚡',
+      'Water Supply': '💧',
+      'Traffic': '🚦',
+      'Cyber Crime': '💻',
+      'Construction': '🏗️',
+      'Police': '👮',
+      'Street Light': '💡',
+      'Public Toilet': '🚻',
+      'Stray Animals': '🐕',
+    };
+    return emojiMap[category] ?? '📝';
   }
 
   String _localized(
