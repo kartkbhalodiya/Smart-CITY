@@ -103,7 +103,7 @@ class _AICallScreenState extends State<AICallScreen>
   void _confirmNewChat() {
     _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
     _chatMessages = [];
-    _aiService.reset();
+    _aiService.reset(); // This will clear session and generate new one
     setState(() {});
     _startAssistant();
   }
@@ -134,13 +134,15 @@ class _AICallScreenState extends State<AICallScreen>
   void _startAssistant() {
     Future.delayed(const Duration(milliseconds: 350), () async {
       try {
+        // Start with a simple greeting to initialize the session
         final reply = await _aiService.processUserInputAdvanced(
-          'hello, I need help with a complaint',
+          'hello',
         );
         if (!mounted) return;
         _addMessage(reply.response, false, metadata: reply.toMap());
         _scheduleNudge();
-      } catch (_) {
+      } catch (e) {
+        print('Failed to start assistant: $e');
         if (!mounted) return;
         _addMessage(
           'Hey there! 😊 I am JanHelp, your Smart City complaint assistant.\n\nTell me what\'s bothering you — a pothole, power cut, garbage issue, or anything else — and I\'ll help you file it quickly. You can also share your location 📍 or attach a photo 📷.',
@@ -423,7 +425,8 @@ class _AICallScreenState extends State<AICallScreen>
       _currentSessionId = session['id'] as String;
       _chatMessages = List<Map<String, dynamic>>.from(session['messages'] as List);
     });
-    _aiService.reset();
+    // Don't reset AI service when loading old session - it should start fresh
+    // _aiService.reset();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToLatest());
   }
 

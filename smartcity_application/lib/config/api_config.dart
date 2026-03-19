@@ -1,9 +1,12 @@
 class ApiConfig {
-  // Base URL - Change this to your server URL
+  // Base URL - Production API
   static const String baseUrl = 'https://janhelp.vercel.app/api';
-
+  
+  // For local testing, uncomment the line below and comment the production URL above:
+  // static const String baseUrl = 'http://127.0.0.1:8000/api';
+  
   // For Android Emulator use: http://10.0.2.2:8000/api
-  // For iOS Simulator use: http://127.0.0.1:8000/api
+  // For iOS Simulator use: http://127.0.0.1:8000/api  
   // For Real Device use: http://YOUR_IP:8000/api (e.g., http://192.168.1.100:8000/api)
 
   // Authentication Endpoints

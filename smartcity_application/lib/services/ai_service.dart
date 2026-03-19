@@ -152,7 +152,7 @@ class AIService {
   final LinkedHashMap<String, AssistantReply> _responseCache = LinkedHashMap();
   String _currentLanguage = 'en';
   String _userMood = 'neutral';
-  String _sessionId = 'default';
+  String _sessionId = ''; // Start empty to generate unique session
 
   static const Map<String, List<String>> _categoryAliases = {
     'Road/Pothole': [
@@ -370,6 +370,12 @@ class AIService {
       return _emptyReply();
     }
 
+    // Generate unique session ID if not exists
+    if (_sessionId.isEmpty || _sessionId == 'default') {
+      _sessionId = 'flutter_${DateTime.now().millisecondsSinceEpoch}_${input.hashCode.abs()}';
+      print('Generated new session ID: $_sessionId');
+    }
+
     _history.add({'role': 'user', 'content': input});
     _currentLanguage = _detectLanguage(input);
     _userMood = _detectMood(input);
@@ -387,7 +393,8 @@ class AIService {
     AssistantReply reply;
     try {
       reply = await _replyFromBackend(input, analysis);
-    } catch (_) {
+    } catch (e) {
+      print('Backend failed, using offline: $e');
       reply = _offlineReply(analysis);
     }
 
@@ -810,29 +817,43 @@ class AIService {
     String userInput,
     _OfflineAnalysis analysis,
   ) async {
-    final cacheKey = _buildCacheKey(userInput, analysis);
-    if (_responseCache.containsKey(cacheKey)) return _responseCache[cacheKey]!;
+    // Don't use cache for dynamic conversations
+    // final cacheKey = _buildCacheKey(userInput, analysis);
+    // if (_responseCache.containsKey(cacheKey)) return _responseCache[cacheKey]!;
 
     try {
+      print('Sending to backend: $userInput with session: $_sessionId');
+      
       final response = await http.post(
         Uri.parse(ApiConfig.aiChat),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'message': userInput,
           'session_id': _sessionId,
-          'preferred_language': _currentLanguage,
+          'preferred_language': _mapLanguageCode(_currentLanguage),
+          'user_name': 'User', // You can get this from storage
         }),
       ).timeout(const Duration(seconds: 15));
+
+      print('Backend response status: ${response.statusCode}');
+      print('Backend response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         if (data['success'] == true) {
           final reply = _buildReplyFromBackend(data, analysis);
-          return _cacheHelper(cacheKey, reply);
+          // Don't cache dynamic responses
+          // return _cacheHelper(cacheKey, reply);
+          return reply;
+        } else {
+          print('Backend error: ${data['message']}');
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      print('Backend request failed: $e');
+    }
 
+    print('Falling back to offline reply');
     return _offlineReply(analysis);
   }
 
@@ -1323,6 +1344,19 @@ class AIService {
     return {'low', 'medium', 'high', 'critical'}.contains(v) ? v : 'medium';
   }
 
+  String _mapLanguageCode(String flutterLang) {
+    switch (flutterLang) {
+      case 'hi':
+        return 'hindi';
+      case 'gu':
+        return 'gujarati';
+      case 'hinglish':
+        return 'hindi'; // Map hinglish to hindi for backend
+      default:
+        return 'english';
+    }
+  }
+
   String? _asString(dynamic value) {
     if (value is! String) return null;
     final v = value.trim();
@@ -1399,5 +1433,8 @@ class AIService {
     _complaintData.clear();
     _currentLanguage = 'en';
     _userMood = 'neutral';
+    _sessionId = ''; // Reset session ID to generate new one
+    _responseCache.clear(); // Clear cache
+    print('AI Service reset - new session will be created');
   }
 }

@@ -506,6 +506,10 @@ class SmartCityAI:
         "summary": re.compile(r"\b(summary|summarize|ready to submit|submit now)\b", re.I),
     }
 
+    # Regex patterns for extracting location and time information
+    LOC_RE = re.compile(r"\b(?:at|near|in|from|location|area|place|address)\s+([^.!?\n]+)", re.I)
+    TIME_RE = re.compile(r"\b(?:at|on|since|from|time|when|yesterday|today|morning|evening|night|\d{1,2}:\d{2}|\d{1,2}\s*(?:am|pm))\s*([^.!?\n]*)", re.I)
+
     def _translate_phrase(self, phrase: str, language: str) -> str:
         if not phrase or not language or language == "english":
             return phrase
