@@ -207,17 +207,35 @@ SESSION_SAVE_EVERY_REQUEST = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-# Caching for Vercel
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'smart-city-cache',
-        'TIMEOUT': 300,
-        'OPTIONS': {
-            'MAX_ENTRIES': 1000
+# Cache configuration
+REDIS_URL = os.getenv('REDIS_URL', '').strip()
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 3,
+                'SOCKET_TIMEOUT': 3,
+                'IGNORE_EXCEPTIONS': True,
+            },
+            'KEY_PREFIX': 'smart-city',
         }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'smart-city-cache',
+            'TIMEOUT': 300,
+            'OPTIONS': {
+                'MAX_ENTRIES': 10000
+            }
+        }
+    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

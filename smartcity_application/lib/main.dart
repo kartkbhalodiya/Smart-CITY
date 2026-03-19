@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/complaint_provider.dart';
 import 'providers/category_provider.dart';
 import 'providers/locale_provider.dart';
+import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 
 void main() async {
@@ -29,6 +30,7 @@ void main() async {
   
   // Initialize storage
   await StorageService.init();
+  await NotificationService.init();
   
   runApp(const MyApp());
 }
@@ -57,6 +59,7 @@ class MyApp extends StatelessWidget {
             title: 'JanHelp',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
+            navigatorKey: NotificationService.navigatorKey,
             locale: localeProvider.locale,
             supportedLocales: const [
               Locale('en'),

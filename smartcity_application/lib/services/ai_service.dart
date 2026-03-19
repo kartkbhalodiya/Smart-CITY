@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../config/ai_training_data.dart';
 import '../config/api_config.dart';
 import 'api_service.dart';
+import 'storage_service.dart';
 
 class AssistantReply {
   final String response;
@@ -214,6 +215,28 @@ class AIService {
     return (await processUserInputAdvanced(userInput)).response;
   }
 
+  Future<Map<String, String>?> fetchReengagementNudge() async {
+    try {
+      final userContext = _loadUserContext();
+      final payload = await ApiService.post(
+        ApiConfig.aiNudge,
+        {
+          'session_id': _sessionId,
+          'user_name': userContext['user_name'],
+          'preferred_language': StorageService.getLocale(),
+        },
+        includeAuth: false,
+      );
+      if (payload['success'] != true) return null;
+      final title = _asString(payload['title']);
+      final body = _asString(payload['body']);
+      if (title == null || body == null) return null;
+      return {'title': title, 'body': body};
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<AssistantReply> processUserInputAdvanced(String userInput) async {
     final input = userInput.trim();
     if (input.isEmpty) {
@@ -316,11 +339,15 @@ class AIService {
     String userInput,
     _OfflineAnalysis analysis,
   ) async {
+    final userContext = _loadUserContext();
     final payload = await ApiService.post(
       ApiConfig.aiChat,
       {
         'message': userInput,
         'session_id': _sessionId,
+        'user_name': userContext['user_name'],
+        'user_email': userContext['user_email'],
+        'preferred_language': StorageService.getLocale(),
       },
       includeAuth: false,
     );
@@ -380,6 +407,28 @@ class AIService {
       complaintDraft: draft,
       nextQuestion: nextQuestion,
     );
+  }
+
+  Map<String, String?> _loadUserContext() {
+    try {
+      final raw = StorageService.getUserData();
+      if (raw == null || raw.trim().isEmpty) {
+        return {'user_name': null, 'user_email': null};
+      }
+      final obj = jsonDecode(raw) as Map<String, dynamic>;
+      final firstName = _asString(obj['first_name'])?.trim();
+      final lastName = _asString(obj['last_name'])?.trim();
+      final fullName = [firstName, lastName]
+          .where((part) => part != null && part.isNotEmpty)
+          .join(' ')
+          .trim();
+      return {
+        'user_name': fullName.isEmpty ? _asString(obj['username']) : fullName,
+        'user_email': _asString(obj['email']),
+      };
+    } catch (_) {
+      return {'user_name': null, 'user_email': null};
+    }
   }
 
   String _mapBackendLanguage(String value) {
@@ -1038,11 +1087,11 @@ $userInput
           );
         }
         return _localized(
-          en: 'Is this related to road, drainage, water, electricity, garbage, or traffic?',
+          en: 'Is this related to police, traffic, construction, water, electricity, garbage, road, drainage, illegal activity, transportation, cyber crime, or other?',
           hi: 'क्या यह सड़क, ड्रेनेज, पानी, बिजली, कचरा या ट्रैफिक से जुड़ा है?',
           gu: 'શું આ રસ્તા, ડ્રેનેજ, પાણી, વીજળી, કચરો કે ટ્રાફિક સાથે સંબંધિત છે?',
           hinglish:
-              'Yeh road, drainage, water, electricity, garbage ya traffic se related hai?',
+              'Yeh police, traffic, construction, water, electricity, garbage, road, drainage, illegal activity, transportation, cyber crime ya other se related hai?',
         );
       case 'exact_location':
         return _localized(

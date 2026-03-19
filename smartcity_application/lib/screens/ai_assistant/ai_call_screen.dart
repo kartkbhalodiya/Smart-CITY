@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/ai_service.dart';
+import '../../services/notification_service.dart';
 
 class AICallScreen extends StatefulWidget {
   const AICallScreen({super.key});
@@ -19,21 +20,14 @@ class _AICallScreenState extends State<AICallScreen>
   final AIService _aiService = AIService();
   final ImagePicker _imagePicker = ImagePicker();
 
-  bool _isAssistantActive = true;
-  bool _showChat = false;
   bool _isProcessing = false;
   bool _isFetchingLocation = false;
-
-  String _sessionDuration = '00:00';
-  Timer? _sessionTimer;
-  int _seconds = 0;
 
   final List<Map<String, dynamic>> _chatMessages = [];
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
   AnimationController? _pulseController;
-
-  AssistantReply? _latestReply;
+  Timer? _nudgeTimer;
 
   @override
   void initState() {
@@ -46,7 +40,7 @@ class _AICallScreenState extends State<AICallScreen>
 
   @override
   void dispose() {
-    _sessionTimer?.cancel();
+    _nudgeTimer?.cancel();
     _pulseController?.dispose();
     _chatController.dispose();
     _chatScrollController.dispose();
@@ -54,20 +48,18 @@ class _AICallScreenState extends State<AICallScreen>
   }
 
   void _startAssistant() {
-    setState(() => _isAssistantActive = true);
-    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
-        _seconds++;
-        final min = _seconds ~/ 60;
-        final sec = _seconds % 60;
-        _sessionDuration =
-            '${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
-      });
-    });
-    Future.delayed(const Duration(milliseconds: 350), () {
-      const greeting =
-          "Hello! I am JanHelp, your advanced complaint assistant. Use Chat to report issue, Camera to attach evidence, and Location to share your current spot.";
-      _addMessage(greeting, false);
+    Future.delayed(const Duration(milliseconds: 350), () async {
+      try {
+        final reply = await _aiService.processUserInputAdvanced('hello');
+        if (!mounted) return;
+        _addMessage(reply.response, false, metadata: reply.toMap());
+        _scheduleNudge();
+      } catch (_) {
+        if (!mounted) return;
+        const greeting =
+            "Good day 😊 I am JanHelp, your complaint assistant. Share your issue, attach evidence 📷, or send location 📍 and I will guide you step by step.";
+        _addMessage(greeting, false);
+      }
     });
   }
 
@@ -77,11 +69,12 @@ class _AICallScreenState extends State<AICallScreen>
 
     _addMessage(input, true);
     setState(() => _isProcessing = true);
+    _scheduleNudge();
 
     try {
       final reply = await _aiService.processUserInputAdvanced(input);
-      _latestReply = reply;
       _addMessage(reply.response, false, metadata: reply.toMap());
+      _scheduleNudge();
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -115,8 +108,19 @@ class _AICallScreenState extends State<AICallScreen>
   }
 
   void _closeAssistant() {
-    _sessionTimer?.cancel();
     Navigator.pop(context);
+  }
+
+  void _scheduleNudge() {
+    _nudgeTimer?.cancel();
+    _nudgeTimer = Timer(const Duration(minutes: 2), () async {
+      final nudge = await _aiService.fetchReengagementNudge();
+      if (nudge == null) return;
+      await NotificationService.showAIAssistantNudge(
+        title: nudge['title'] ?? 'Complaint reminder',
+        body: nudge['body'] ?? 'Please come back and complete your complaint.',
+      );
+    });
   }
 
   @override
@@ -124,294 +128,7 @@ class _AICallScreenState extends State<AICallScreen>
     return Scaffold(
       backgroundColor: const Color(0xFF101827),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                _buildHeader(),
-                Expanded(child: _buildCallInterface()),
-                _buildControls(),
-              ],
-            ),
-            if (_showChat) _buildChatOverlay(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Text(
-            _sessionDuration,
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _isAssistantActive ? Colors.green : Colors.grey,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _isAssistantActive ? 'Assistant Ready' : 'Idle',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCallInterface() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Column(
-        children: [
-          AnimatedBuilder(
-            animation: _pulseController!,
-            builder: (context, child) {
-              return Container(
-                width: 150 + (_pulseController!.value * 18),
-                height: 150 + (_pulseController!.value * 18),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF60A5FA).withValues(alpha: 0.35),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: child,
-              );
-            },
-            child: const CircleAvatar(
-              radius: 75,
-              backgroundColor: Color(0xFF1E66F5),
-              child: Icon(Icons.smart_toy, size: 60, color: Colors.white),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'JanHelp - AI Assistant',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Advanced civic intelligence for every citizen',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 18),
-          _buildInsightPanel(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInsightPanel() {
-    if (_latestReply == null) {
-      return _statusCard(
-        title: 'Live Analysis',
-        child: const Text(
-          'Start chatting to get smart issue analysis, urgency detection, and guided next steps.',
-          style: TextStyle(color: Colors.white70, height: 1.4),
-        ),
-      );
-    }
-
-    final reply = _latestReply!;
-    return _statusCard(
-      title: 'Live Analysis',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _chip('Urgency: ${reply.urgency.toUpperCase()}',
-                  reply.urgency == 'critical' ? Colors.red : Colors.blue),
-              _chip('Mood: ${reply.mood}', Colors.teal),
-              if (reply.category != null) _chip(reply.category!, Colors.orange),
-              _chip('Confidence ${(reply.confidence * 100).round()}%',
-                  Colors.purple),
-            ],
-          ),
-          if (reply.missingFields.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'Still needed: ${reply.missingFields.join(', ')}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-          ],
-          if (reply.actionChecklist.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            ...reply.actionChecklist.take(2).map(
-                  (action) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      '- $action',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ),
-                ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _statusCard({required String title, required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F2937),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _chip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-    );
-  }
-
-  Widget _buildControls() {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildControlButton(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: 'Chat',
-                onTap: () => setState(() => _showChat = true),
-                isActive: _showChat,
-              ),
-              _buildControlButton(
-                icon: Icons.history_rounded,
-                label: 'History',
-                onTap: _openHistoryPanel,
-              ),
-              _buildControlButton(
-                icon: Icons.camera_alt_rounded,
-                label: 'Camera',
-                onTap: _handleCameraUpload,
-              ),
-              _buildControlButton(
-                icon: _isFetchingLocation
-                    ? Icons.location_searching_rounded
-                    : Icons.my_location_rounded,
-                label: 'Location',
-                onTap: _shareCurrentLocation,
-                isActive: _isFetchingLocation,
-              ),
-              _buildControlButton(
-                icon: Icons.call_rounded,
-                label: 'Call',
-                onTap: _showCallComingSoon,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          GestureDetector(
-            onTap: _closeAssistant,
-            child: Container(
-              width: 120,
-              height: 46,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.all(Radius.circular(26)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.close_rounded, color: Colors.white, size: 20),
-                  SizedBox(width: 6),
-                  Text(
-                    'Close',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool isActive = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF1E66F5) : Colors.white24,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  void _showCallComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('AI voice calling feature is coming soon.'),
+        child: _buildChatOverlay(),
       ),
     );
   }
@@ -591,100 +308,98 @@ class _AICallScreenState extends State<AICallScreen>
   }
 
   Widget _buildChatOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B1220), Color(0xFF111827), Color(0xFF070B12)],
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0B1220), Color(0xFF111827), Color(0xFF070B12)],
         ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white10)),
-              ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.white10)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: _closeAssistant,
+                ),
+                const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Color(0xFF1E66F5),
+                  child:
+                      Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'JanHelp Chat',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Advanced civic assistant',
+                      style: TextStyle(color: Colors.white60, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: _openHistoryPanel,
+                  icon:
+                      const Icon(Icons.history_rounded, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              controller: _chatScrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _chatMessages.length,
+              itemBuilder: (context, index) =>
+                  _buildChatBubble(_chatMessages[index]),
+            ),
+          ),
+          if (_isProcessing)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => setState(() => _showChat = false),
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.smart_toy_outlined,
+                      color: Colors.white70,
+                      size: 14,
+                    ),
                   ),
-                  const CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Color(0xFF1E66F5),
-                    child:
-                        Icon(Icons.auto_awesome, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'JanHelp Chat',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        'Advanced civic assistant',
-                        style: TextStyle(color: Colors.white60, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _openHistoryPanel,
-                    icon: const Icon(Icons.history_rounded,
-                        color: Colors.white70),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'JanHelp is analyzing your issue...',
+                    style: TextStyle(color: Colors.white60),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                controller: _chatScrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: _chatMessages.length,
-                itemBuilder: (context, index) =>
-                    _buildChatBubble(_chatMessages[index]),
-              ),
-            ),
-            if (_isProcessing)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.smart_toy_outlined,
-                        color: Colors.white70,
-                        size: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'JanHelp is analyzing your issue...',
-                      style: TextStyle(color: Colors.white60),
-                    ),
-                  ],
-                ),
-              ),
-            _buildChatInput(),
-          ],
-        ),
+          _buildChatInput(),
+        ],
       ),
     );
   }

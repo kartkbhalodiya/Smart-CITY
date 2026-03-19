@@ -17,6 +17,7 @@ import '../screens/complaints/user_track.dart';
 import '../screens/departments/departments_list_screen.dart';
 import '../screens/departments/departments_by_category_screen.dart';
 import '../screens/departments/department_detail_screen.dart';
+import '../screens/ai_assistant/ai_call_screen.dart';
 import '../l10n/app_strings.dart';
 
 class AppRoutes {
@@ -39,6 +40,7 @@ class AppRoutes {
   static const String complaintDetail = '/complaint-detail';
   static const String complaintSuccess = '/complaint-success';
   static const String profile = '/profile';
+  static const String aiChat = '/ai-chat';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -129,6 +131,9 @@ class AppRoutes {
 
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
+
+      case aiChat:
+        return MaterialPageRoute(builder: (_) => const AICallScreen());
 
       default:
         return MaterialPageRoute(

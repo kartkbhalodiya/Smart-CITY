@@ -49,6 +49,7 @@ class ApiConfig {
 
   // AI Assistant
   static const String aiChat = '$baseUrl/ai/chat/';
+  static const String aiNudge = '$baseUrl/ai/nudge/';
   static const String aiExtractComplaint = '$baseUrl/ai/extract-complaint/';
   static const String aiVoiceChat = '$baseUrl/ai/voice-chat/';
   static const String aiHistory = '$baseUrl/ai/history/';

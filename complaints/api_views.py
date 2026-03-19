@@ -862,6 +862,8 @@ def ai_chat(request):
         user_input = request.data.get('message', '').strip()
         session_id = request.data.get('session_id', 'default')
         user_email = request.data.get('user_email')
+        user_name = request.data.get('user_name')
+        preferred_language = request.data.get('preferred_language')
         
         if not user_input:
             return Response({
@@ -873,7 +875,12 @@ def ai_chat(request):
         ai_assistant = SmartCityAI.for_session(session_id)
         
         # Generate response
-        response_data = ai_assistant.generate_response(user_input, user_email)
+        response_data = ai_assistant.generate_response(
+            user_input,
+            user_email=user_email,
+            user_name=user_name,
+            preferred_language=preferred_language,
+        )
         
         return Response({
             'success': True,
@@ -890,6 +897,36 @@ def ai_chat(request):
         return Response({
             'success': False,
             'message': f'AI Chat Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_nudge(request):
+    """Generate localized AI re-engagement notification content."""
+    try:
+        session_id = request.data.get('session_id', 'default')
+        user_name = request.data.get('user_name')
+        preferred_language = request.data.get('preferred_language')
+
+        ai_assistant = SmartCityAI.for_session(session_id)
+        if user_name:
+            ai_assistant.user_context['user_name'] = str(user_name).strip()
+        if preferred_language:
+            ai_assistant.user_context['preferred_language'] = str(preferred_language).strip()
+        ai_assistant._persist_cached_state()
+
+        nudge = ai_assistant.generate_reengagement_nudge()
+        return Response({
+            'success': True,
+            'session_id': session_id,
+            'title': nudge['title'],
+            'body': nudge['body'],
+        })
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'AI Nudge Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

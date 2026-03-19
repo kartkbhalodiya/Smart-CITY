@@ -11,7 +11,7 @@ from .api_views import (
     get_categories, get_subcategories, get_departments,
     track_guest_complaint_api, department_forgot_password,
     get_states_cities, guest_stats,
-    ai_chat, ai_extract_complaint, ai_voice_chat, ai_history, ai_reset
+    ai_chat, ai_extract_complaint, ai_voice_chat, ai_history, ai_reset, ai_nudge
 )
 
 router = DefaultRouter()
@@ -52,6 +52,7 @@ urlpatterns = [
     
     # AI Assistant
     path('ai/chat/', ai_chat, name='api_ai_chat'),
+    path('ai/nudge/', ai_nudge, name='api_ai_nudge'),
     path('ai/extract-complaint/', ai_extract_complaint, name='api_ai_extract'),
     path('ai/voice-chat/', ai_voice_chat, name='api_ai_voice_chat'),
     path('ai/history/', ai_history, name='api_ai_history'),
