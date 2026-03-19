@@ -35,6 +35,7 @@ class ApiService {
 
       return _handleResponse(response);
     } catch (e) {
+      print('[ApiService GET] ERROR: $e');
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -58,6 +59,7 @@ class ApiService {
 
       return _handleResponse(response);
     } catch (e) {
+      print('[ApiService POST] URL: $url | ERROR: $e');
       return {'success': false, 'message': 'Network error: $e'};
     }
   }

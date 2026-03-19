@@ -10,6 +10,7 @@ class StorageService {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _userKey = 'user_data';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String _chatSessionsKey = 'ai_chat_sessions';
   static const String _localeKey = 'app_locale';
 
   static Future<void> init() async {
@@ -70,6 +71,14 @@ class StorageService {
 
   static String getLocale() {
     return _prefs.getString(_localeKey) ?? 'en';
+  }
+
+  static Future<void> saveChatSessions(String json) async {
+    await _prefs.setString(_chatSessionsKey, json);
+  }
+
+  static String? getChatSessions() {
+    return _prefs.getString(_chatSessionsKey);
   }
 
   // Clear All Data

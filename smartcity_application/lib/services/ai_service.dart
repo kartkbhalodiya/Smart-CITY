@@ -1,11 +1,11 @@
+import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
 import '../config/ai_training_data.dart';
-import '../config/api_config.dart';
-import 'api_service.dart';
 import 'storage_service.dart';
 
 class AssistantReply {
@@ -21,6 +21,9 @@ class AssistantReply {
   final double confidence;
   final Map<String, dynamic> complaintDraft;
   final String nextQuestion;
+  final String action;
+  final bool showConfirmation;
+  final String? confirmationQuestion;
 
   const AssistantReply({
     required this.response,
@@ -33,6 +36,9 @@ class AssistantReply {
     required this.confidence,
     required this.complaintDraft,
     required this.nextQuestion,
+    this.action = 'COLLECT_INFO',
+    this.showConfirmation = false,
+    this.confirmationQuestion,
     this.category,
     this.subcategory,
   });
@@ -50,6 +56,9 @@ class AssistantReply {
         'confidence': confidence,
         'complaintDraft': Map<String, dynamic>.from(complaintDraft),
         'nextQuestion': nextQuestion,
+        'action': action,
+        'showConfirmation': showConfirmation,
+        'confirmationQuestion': confirmationQuestion,
       };
 
   AssistantReply copyWith({
@@ -65,6 +74,9 @@ class AssistantReply {
     double? confidence,
     Map<String, dynamic>? complaintDraft,
     String? nextQuestion,
+    String? action,
+    bool? showConfirmation,
+    String? confirmationQuestion,
   }) {
     return AssistantReply(
       response: response ?? this.response,
@@ -79,6 +91,9 @@ class AssistantReply {
       confidence: confidence ?? this.confidence,
       complaintDraft: complaintDraft ?? this.complaintDraft,
       nextQuestion: nextQuestion ?? this.nextQuestion,
+      action: action ?? this.action,
+      showConfirmation: showConfirmation ?? this.showConfirmation,
+      confirmationQuestion: confirmationQuestion ?? this.confirmationQuestion,
     );
   }
 }
@@ -126,47 +141,56 @@ class _CategoryCandidate {
 }
 
 class AIService {
-  static const String _geminiApiKey = String.fromEnvironment(
-    'GEMINI_API_KEY',
-    defaultValue: 'AIzaSyAim_9cK7zrtRe0UfNnf3b_wiwugHlOIjc',
+  AIService._internal();
+  static final AIService instance = AIService._internal();
+  factory AIService() => instance;
+
+  static const String _groqApiKey = String.fromEnvironment(
+    'GROQ_API_KEY',
+    defaultValue: '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',
   );
-  static const String _geminiModel =
-      String.fromEnvironment('GEMINI_MODEL', defaultValue: 'gemini-2.5-flash');
+  static const String _groqModel = 'llama-3.3-70b-versatile';
+  static const int _groqMaxRetries = 3;
+  static const Duration _groqTimeout = Duration(seconds: 25);
+  static const Duration _groqInitialBackoff = Duration(milliseconds: 600);
+  static const int _groqCacheMaxEntries = 120;
 
   final List<Map<String, String>> _history = [];
   final Map<String, dynamic> _complaintData = {};
-  final List<String> _recentResponseFingerprints = [];
-  final Random _random = Random();
-  final String _sessionId =
-      'mobile_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999)}';
-
+  final LinkedHashMap<String, AssistantReply> _groqResponseCache = LinkedHashMap();
   String _currentLanguage = 'en';
   String _userMood = 'neutral';
-
-  final List<String> _responseOpeners = const [
-    'Thanks for sharing this.',
-    'I understand your concern.',
-    'I am with you on this.',
-    'You did the right thing by reporting this.',
-    'Let us handle this properly.',
-  ];
-
-  final List<String> _responseClosers = const [
-    'I will keep this structured and quick.',
-    'We can complete this in a few steps.',
-    'Share the next detail and I will continue.',
-    'I am ready for your next input.',
-    'I will guide you till submission.',
-  ];
 
   static const Map<String, List<String>> _categoryAliases = {
     'Road/Pothole': [
       'road issue',
       'road damage',
       'sadak',
+      'rasta',
       'gadda',
       'pothole',
-      'waterlogging'
+      'waterlogging',
+      'broken road',
+      'crack',
+      'hole in road',
+      'damaged road',
+      'crater',
+      'pit',
+      'road cavity',
+      'road flooded',
+      'standing water',
+      'road blocked',
+      'obstruction',
+      'cracked road',
+      'रोड',
+      'रस्ता',
+      'गड्ढा',
+      'सड़क',
+      'टूटी',
+      'પાણી',
+      'ખાડો',
+      'રસ્તો',
+      'તૂટેલો'
     ],
     'Drainage/Sewage': [
       'drain',
@@ -174,7 +198,25 @@ class AIService {
       'sewer',
       'gutter',
       'manhole',
-      'bad smell'
+      'bad smell',
+      'overflow',
+      'blockage',
+      'blocked drain',
+      'clogged drain',
+      'drain jam',
+      'sewer overflow',
+      'sewage leak',
+      'foul odor',
+      'stink',
+      'open manhole',
+      'manhole cover missing',
+      'नाली',
+      'गटर',
+      'बदबू',
+      'मैनहोल',
+      'નાળી',
+      'ગટર',
+      'દુર્ગંધ'
     ],
     'Garbage/Sanitation': [
       'garbage',
@@ -182,7 +224,23 @@ class AIService {
       'kooda',
       'dustbin',
       'sanitation',
-      'waste'
+      'waste',
+      'trash',
+      'dirty',
+      'gandagi',
+      'garbage not collected',
+      'trash not picked',
+      'overflowing bin',
+      'dustbin full',
+      'dead animal',
+      'littering',
+      'dumping waste',
+      'कचरा',
+      'कूड़ा',
+      'गंदगी',
+      'डस्टबिन',
+      'કચરો',
+      'ગંદકી'
     ],
     'Electricity': [
       'bijli',
@@ -190,24 +248,114 @@ class AIService {
       'power',
       'wire',
       'transformer',
-      'street light'
+      'street light',
+      'power cut',
+      'no electricity',
+      'blackout',
+      'power outage',
+      'street lamp',
+      'pole light',
+      'exposed wire',
+      'hanging wire',
+      'dangerous wire',
+      'transformer problem',
+      'बिजली',
+      'लाइट',
+      'पावर',
+      'तार',
+      'વીજળી',
+      'લાઇટ'
     ],
-    'Water Supply': ['water', 'pani', 'tap', 'pipeline', 'leakage', 'pressure'],
-    'Traffic': ['traffic', 'signal', 'parking', 'overspeeding', 'wrong side'],
+    'Water Supply': [
+      'water',
+      'pani',
+      'tap',
+      'pipeline',
+      'leakage',
+      'pressure',
+      'no water',
+      'water not coming',
+      'tap dry',
+      'water leak',
+      'pipe leak',
+      'dirty water',
+      'contaminated water',
+      'muddy water',
+      'low pressure',
+      'weak water flow',
+      'पानी',
+      'नल',
+      'લીક',
+      'પાણી'
+    ],
+    'Traffic': [
+      'traffic',
+      'signal',
+      'parking',
+      'overspeeding',
+      'wrong side',
+      'accident',
+      'illegal parking',
+      'wrong parking',
+      'blocking road',
+      'broken signal',
+      'traffic light broken',
+      'signal off',
+      'one way violation',
+      'fast driving',
+      'rash driving',
+      'ટ્રાફિક',
+      'સિગ્નલ',
+      'પાર્કિંગ',
+      'यातायात',
+      'सिग्नल'
+    ],
     'Cyber Crime': [
       'cyber',
       'online fraud',
       'upi',
       'scam',
       'phishing',
-      'hacked'
+      'hacked',
+      'digital fraud',
+      'fraud',
+      'cheating',
+      'money lost',
+      'upi fraud',
+      'payment scam',
+      'phonepe fraud',
+      'paytm fraud',
+      'fake link',
+      'suspicious link',
+      'spam message',
+      'identity theft',
+      'account hacked',
+      'data stolen',
+      'धोखा',
+      'ठगी',
+      'फ्रॉड',
+      'છેતરપિંડી'
     ],
     'Construction': [
       'construction',
       'illegal building',
       'debris',
       'malba',
-      'noise pollution'
+      'noise pollution',
+      'unauthorized',
+      'illegal construction',
+      'unauthorized construction',
+      'construction waste',
+      'rubble',
+      'construction noise',
+      'loud noise',
+      'drilling sound',
+      'निर्माण',
+      'मलबा',
+      'शोर',
+      'બાંધકામ',
+      'મલબો',
+      'ઘોંઘાટ'
     ],
   };
 
@@ -216,25 +364,11 @@ class AIService {
   }
 
   Future<Map<String, String>?> fetchReengagementNudge() async {
-    try {
-      final userContext = _loadUserContext();
-      final payload = await ApiService.post(
-        ApiConfig.aiNudge,
-        {
-          'session_id': _sessionId,
-          'user_name': userContext['user_name'],
-          'preferred_language': StorageService.getLocale(),
-        },
-        includeAuth: false,
-      );
-      if (payload['success'] != true) return null;
-      final title = _asString(payload['title']);
-      final body = _asString(payload['body']);
-      if (title == null || body == null) return null;
-      return {'title': title, 'body': body};
-    } catch (_) {
-      return null;
-    }
+    // Nudge is generated locally — no backend call needed
+    return {
+      'title': 'Your complaint is almost ready 📝',
+      'body': 'Come back and finish filing your complaint with JanHelp.',
+    };
   }
 
   Future<AssistantReply> processUserInputAdvanced(String userInput) async {
@@ -249,10 +383,9 @@ class AIService {
 
     final intentReply = _handleKnowledgeIntent(input);
     if (intentReply != null) {
-      final output = _applyResponseVariation(intentReply);
-      _history.add({'role': 'assistant', 'content': output.response});
+      _history.add({'role': 'assistant', 'content': intentReply.response});
       _trimHistory();
-      return output;
+      return intentReply;
     }
 
     final analysis = _analyzeOffline(input);
@@ -260,15 +393,12 @@ class AIService {
 
     AssistantReply reply;
     try {
-      reply = await _replyFromBackend(input, analysis) ??
-          (_geminiApiKey.isEmpty
-              ? _offlineReply(analysis)
-              : await _replyFromGemini(input, analysis));
+      reply = _groqApiKey.isEmpty
+          ? _offlineReply(analysis)
+          : await _replyFromGroq(input, analysis);
     } catch (_) {
       reply = _offlineReply(analysis);
     }
-
-    reply = _applyResponseVariation(reply);
 
     _currentLanguage = reply.language;
     _userMood = reply.mood;
@@ -335,159 +465,95 @@ class AIService {
     );
   }
 
-  Future<AssistantReply?> _replyFromBackend(
+  Future<AssistantReply> _replyFromGroq(
     String userInput,
     _OfflineAnalysis analysis,
   ) async {
-    final userContext = _loadUserContext();
-    final payload = await ApiService.post(
-      ApiConfig.aiChat,
-      {
-        'message': userInput,
-        'session_id': _sessionId,
-        'user_name': userContext['user_name'],
-        'user_email': userContext['user_email'],
-        'preferred_language': StorageService.getLocale(),
-      },
-      includeAuth: false,
-    );
-    if (payload['success'] != true) return null;
-
-    final responseText = _asString(payload['response']);
-    if (responseText == null) return null;
-
-    final language = _normalizeLanguage(
-      _mapBackendLanguage(_asString(payload['language']) ?? analysis.language),
-    );
-    final mood = _normalizeMood(_asString(payload['emotion']) ?? analysis.mood);
-    final urgency =
-        _normalizeUrgency(_asString(payload['urgency']) ?? analysis.urgency);
-    final category =
-        _asString(payload['detected_category']) ?? analysis.category;
-    final subcategory =
-        _asString(payload['subcategory']) ?? analysis.subcategory;
-    final isEmergency = payload['analysis'] is Map &&
-            (payload['analysis'] as Map)['is_emergency'] == true ||
-        analysis.isEmergency;
-
-    final missingFields = _asStringList(payload['missing_fields']);
-    final safeMissing =
-        missingFields.isEmpty ? _missingFields(analysis) : missingFields;
-    final actionChecklist = _asStringList(payload['action_checklist']);
-    final safeActions =
-        actionChecklist.isEmpty ? _actions(analysis) : actionChecklist;
-
-    final draft = Map<String, dynamic>.from(_complaintData);
-    if (category != null) draft['category'] = category;
-    if (subcategory != null) draft['subcategory'] = subcategory;
-    if (analysis.locationHint != null) {
-      draft['location_hint'] = analysis.locationHint;
+    if (!await _hasInternetConnection()) {
+      return _offlineReply(
+        analysis,
+        modelTextFallback:
+            'Internet not available. This is an offline fallback response.',
+      );
     }
-    if (analysis.timeHint != null) draft['time_hint'] = analysis.timeHint;
-    draft['urgency'] = urgency;
-    draft['is_emergency'] = isEmergency;
 
-    final nextQuestion = _asString(payload['next_question']) ??
-        _nextQuestion(
-          analysis,
-          safeMissing,
-        );
+    final cacheKey = _buildCacheKey(userInput, analysis);
+    if (_groqResponseCache.containsKey(cacheKey)) {
+      return _groqResponseCache[cacheKey]!;
+    }
 
-    return AssistantReply(
-      response: _humanize(responseText, mood, urgency),
-      language: language,
-      mood: mood,
-      urgency: urgency,
-      category: category,
-      subcategory: subcategory,
-      missingFields: safeMissing,
-      actionChecklist: safeActions,
-      isEmergency: isEmergency,
-      confidence: _confidence(analysis.confidence, safeMissing.length),
-      complaintDraft: draft,
-      nextQuestion: nextQuestion,
-    );
-  }
+    final uri = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+    final body = jsonEncode({
+      'model': _groqModel,
+      'messages': [
+        {'role': 'user', 'content': _buildGeminiPrompt(userInput, analysis)}
+      ],
+      'temperature': 0.6,
+      'max_tokens': 800,
+      'top_p': 0.9,
+      'frequency_penalty': 0.0,
+      'presence_penalty': 0.1,
+    });
 
-  Map<String, String?> _loadUserContext() {
+    http.Response response;
     try {
-      final raw = StorageService.getUserData();
-      if (raw == null || raw.trim().isEmpty) {
-        return {'user_name': null, 'user_email': null};
-      }
-      final obj = jsonDecode(raw) as Map<String, dynamic>;
-      final firstName = _asString(obj['first_name'])?.trim();
-      final lastName = _asString(obj['last_name'])?.trim();
-      final fullName = [firstName, lastName]
-          .where((part) => part != null && part.isNotEmpty)
-          .join(' ')
-          .trim();
-      return {
-        'user_name': fullName.isEmpty ? _asString(obj['username']) : fullName,
-        'user_email': _asString(obj['email']),
-      };
+      response = await _postWithRetry(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_groqApiKey',
+        },
+        body: body,
+      );
     } catch (_) {
-      return {'user_name': null, 'user_email': null};
+      return _offlineReply(
+        analysis,
+        modelTextFallback:
+            'Unable to connect to the Groq API. Working offline for now.',
+      );
     }
-  }
-
-  String _mapBackendLanguage(String value) {
-    switch (value.trim().toLowerCase()) {
-      case 'hindi':
-        return 'hi';
-      case 'gujarati':
-        return 'gu';
-      case 'hinglish':
-        return 'hinglish';
-      case 'english':
-      default:
-        return 'en';
-    }
-  }
-
-  Future<AssistantReply> _replyFromGemini(
-    String userInput,
-    _OfflineAnalysis analysis,
-  ) async {
-    final response = await http
-        .post(
-          Uri.parse(
-            'https://generativelanguage.googleapis.com/v1/models/$_geminiModel:generateContent?key=$_geminiApiKey',
-          ),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'contents': [
-              {
-                'parts': [
-                  {
-                    'text': _buildGeminiPrompt(userInput, analysis),
-                  }
-                ]
-              }
-            ],
-            'generationConfig': {
-              'temperature': 0.6,
-              'topK': 32,
-              'topP': 0.9,
-              'maxOutputTokens': 800
-            }
-          }),
-        )
-        .timeout(const Duration(seconds: 25));
 
     if (response.statusCode != 200) {
-      return _offlineReply(analysis);
+      return _offlineReply(
+        analysis,
+        modelTextFallback:
+            'Unable to reach AI server. Using local assistant mode.',
+      );
     }
 
-    final payload = jsonDecode(response.body) as Map<String, dynamic>;
-    final text = _extractModelText(payload);
+    final payload = <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) payload.addAll(decoded);
+    } catch (_) {
+      return _offlineReply(
+        analysis,
+        modelTextFallback:
+            'Unable to parse AI response. Using local assistant mode.',
+      );
+    }
+
+    final text = _extractGroqText(payload);
     final jsonText = _extractJson(text);
+
     if (jsonText == null) {
-      return _offlineReply(analysis, modelTextFallback: text);
+      final cleanText = text.trim();
+      return _cacheHelper(
+        cacheKey,
+        _offlineReply(
+          analysis,
+          modelTextFallback: cleanText.isNotEmpty ? cleanText : null,
+        ),
+      );
     }
 
-    final obj = jsonDecode(jsonText) as Map<String, dynamic>;
-    return _fromModelObject(obj, analysis);
+    try {
+      final obj = jsonDecode(jsonText) as Map<String, dynamic>;
+      final reply = _fromModelObject(obj, analysis);
+      return _cacheHelper(cacheKey, reply);
+    } catch (_) {
+      return _cacheHelper(cacheKey, _offlineReply(analysis));
+    }
   }
 
   AssistantReply _fromModelObject(
@@ -511,6 +577,9 @@ class AIService {
         _asString(obj['response_text']) ?? _offlineReply(analysis).response;
     final nextQuestion =
         _asString(obj['next_question']) ?? _nextQuestion(analysis, safeMissing);
+    final action = _asString(obj['action']) ?? 'COLLECT_INFO';
+    final showConfirmation = obj['showConfirmation'] == true;
+    final confirmationQuestion = _asString(obj['confirmationQuestion']);
 
     final draft = Map<String, dynamic>.from(_complaintData);
     if (category != null) {
@@ -541,18 +610,21 @@ class AIService {
       confidence: _confidence(analysis.confidence, safeMissing.length),
       complaintDraft: draft,
       nextQuestion: nextQuestion,
+      action: action,
+      showConfirmation: showConfirmation,
+      confirmationQuestion: confirmationQuestion,
     );
   }
 
   AssistantReply _offlineReply(_OfflineAnalysis analysis,
       {String? modelTextFallback}) {
-    final missing = _missingFields(analysis);
-    final nextQuestion = _nextQuestion(analysis, missing);
-    final actions = _actions(analysis);
+    final fallbackMessage = modelTextFallback != null && modelTextFallback.isNotEmpty
+        ? modelTextFallback
+        : null;
 
-    final content = modelTextFallback?.trim().isNotEmpty == true
-        ? modelTextFallback!.trim()
-        : _baseMessage(analysis);
+    final content = fallbackMessage?.trim().isNotEmpty == true
+        ? fallbackMessage
+        : '${_baseMessage(analysis)}\n\n${_nextQuestion(analysis, _missingFields(analysis))}';
 
     final draft = Map<String, dynamic>.from(_complaintData);
     if (analysis.category != null) {
@@ -577,8 +649,52 @@ class AIService {
     }
 
     return AssistantReply(
-      response: _humanize(
-          '$content\n\n$nextQuestion', analysis.mood, analysis.urgency),
+      response: _humanize(content, analysis.mood, analysis.urgency),
+      language: analysis.language,
+      mood: _normalizeMood(analysis.mood),
+      urgency: _normalizeUrgency(analysis.urgency),
+      category: analysis.category,
+      subcategory: analysis.subcategory,
+      missingFields: _missingFields(analysis),
+      actionChecklist: _actions(analysis),
+      isEmergency: analysis.isEmergency,
+      confidence: _confidence(analysis.confidence, _missingFields(analysis).length),
+      complaintDraft: draft,
+      nextQuestion: _nextQuestion(analysis, _missingFields(analysis)),
+    );
+  }
+    final missing = _missingFields(analysis);
+    final nextQuestion = _nextQuestion(analysis, missing);
+    final actions = _actions(analysis);
+
+    final content = modelTextFallback?.trim().isNotEmpty == true
+        ? modelTextFallback!.trim()
+        : '${_baseMessage(analysis)}\n\n$nextQuestion';
+
+    final draft = Map<String, dynamic>.from(_complaintData);
+    if (analysis.category != null) {
+      draft['category'] = analysis.category;
+    }
+    if (analysis.subcategory != null) {
+      draft['subcategory'] = analysis.subcategory;
+    }
+    if (analysis.locationHint != null) {
+      draft['location_hint'] = analysis.locationHint;
+    }
+    if (analysis.timeHint != null) {
+      draft['time_hint'] = analysis.timeHint;
+    }
+    draft['urgency'] = analysis.urgency;
+    draft['is_emergency'] = analysis.isEmergency;
+    if (analysis.alternatives.isNotEmpty) {
+      draft['category_alternatives'] = analysis.alternatives;
+    }
+    if (analysis.matchedSignals.isNotEmpty) {
+      draft['matched_signals'] = analysis.matchedSignals;
+    }
+
+    return AssistantReply(
+      response: _humanize(content, analysis.mood, analysis.urgency),
       language: analysis.language,
       mood: _normalizeMood(analysis.mood),
       urgency: _normalizeUrgency(analysis.urgency),
@@ -903,77 +1019,227 @@ class AIService {
     );
   }
 
-  AssistantReply _applyResponseVariation(AssistantReply reply) {
-    final fingerprint =
-        reply.response.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
-    final alreadySeen = _recentResponseFingerprints.contains(fingerprint);
-
-    var output = reply;
-    if (alreadySeen || _random.nextDouble() < 0.35) {
-      final opener = _responseOpeners[_random.nextInt(_responseOpeners.length)];
-      final closer = _responseClosers[_random.nextInt(_responseClosers.length)];
-      output = reply.copyWith(response: '$opener ${reply.response}\n\n$closer');
-    }
-
-    _recentResponseFingerprints.add(fingerprint);
-    if (_recentResponseFingerprints.length > 8) {
-      _recentResponseFingerprints.removeAt(0);
-    }
-
-    return output;
-  }
-
   String _buildGeminiPrompt(String userInput, _OfflineAnalysis analysis) {
-    final historyText =
-        _history.map((h) => "${h['role']}: ${h['content']}").join('\n');
+    final historyText = _history
+        .map((h) => '${h['role'] == 'user' ? 'Citizen' : 'JanHelp'}: ${h['content']}')
+        .join('\n');
     final categoryCatalog = _buildCategoryCatalogForPrompt();
     final draft = Map<String, dynamic>.from(_complaintData);
-    if (analysis.category != null) {
-      draft['category'] = analysis.category;
-    }
-    if (analysis.subcategory != null) {
-      draft['subcategory'] = analysis.subcategory;
-    }
-    if (analysis.locationHint != null) {
-      draft['location_hint'] = analysis.locationHint;
-    }
-    if (analysis.timeHint != null) {
-      draft['time_hint'] = analysis.timeHint;
-    }
+    if (analysis.category != null) draft['category'] = analysis.category;
+    if (analysis.subcategory != null) draft['subcategory'] = analysis.subcategory;
+    if (analysis.locationHint != null) draft['location_hint'] = analysis.locationHint;
+    if (analysis.timeHint != null) draft['time_hint'] = analysis.timeHint;
     draft['urgency'] = analysis.urgency;
     draft['is_emergency'] = analysis.isEmergency;
+    final userName = _loadUserName();
 
     return '''
-You are JanHelp, a compassionate Smart City civic assistant.
-Reply with JSON only using fields:
-language, mood, urgency, category, subcategory, missing_fields, action_checklist, next_question, response_text, safety_alert
+You are JanHelp — an ADVANCED AI assistant for Smart City complaint registration in India.
 
-Rules:
-- Mirror user language (en/hi/gu/hinglish)
-- Keep response friendly and human
-- Keep response context-rich and informative, not generic
-- Avoid repeating the same wording from prior turns
-- Ask only one next question
-- For danger, advise emergency safety first
-- Use the exact category and subcategory names from the catalog below when possible
-- If user asks for categories/subcategories/full catalog, answer directly from catalog with complete coverage
-- If detection is ambiguous, mention top alternatives and ask user to confirm one option
+🧠 ADVANCED INTELLIGENCE RULES:
+
+1. **INSTANT FULL ANALYSIS** - If user provides complete info in ONE message, extract EVERYTHING:
+   Example: "mere ghar ke paas MG Road par bahut kachra pada hai, koi nahi uthata"
+   → Extract: category=Garbage/Sanitation, location="MG Road", description="garbage piling up, not being collected"
+   → Respond: "Got it! Garbage issue at MG Road. Should I register this complaint now?"
+   → Set: showConfirmation=true, action=COLLECT_INFO (ready for location picker next)
+
+2. **SEMANTIC UNDERSTANDING** (not just keywords):
+   - "बहुत गंदगी है" = "lot of dirt" = "very dirty" = "kachra bahut hai" → Garbage
+   - "रास्ता टूटा है" = "road broken" = "sadak kharab" = "pothole" → Road/Pothole
+   - "बिजली नहीं आ रही" = "no electricity" = "power cut" = "light nahi" → Electricity
+   - "पानी नहीं आता" = "no water" = "tap dry" = "pani nahi" → Water Supply
+   - "शोर बहुत है" = "too much noise" = "construction shor" → Construction/Noise
+   - "चोरी हो गई" = "theft happened" = "someone stole" → Police/Crime
+   - "accident हो गया" = "गाड़ी टकरा गई" = "car crash" → Traffic
+   - "कुत्ता काटा" = "dog bite" = "stray dog" → Stray Animals
+   - "toilet गंदा है" = "washroom dirty" → Public Toilet
+   - "light नहीं जल रही" = "street light not working" → Street Light
+
+3. **CONTEXT INFERENCE FROM VAGUE INPUT**:
+   - "my area is very dirty" → Garbage/Sanitation
+   - "can't sleep at night" + mentions "construction" → Noise Pollution
+   - "kids getting sick" + mentions "water" → Water Quality
+   - "road is bad" → Road/Pothole
+   - "no light" → Electricity or Street Light
+   - "smell is terrible" → Drainage/Sewage
+   - "dog attacked" → Stray Animals
+   - "toilet is dirty" → Public Toilet
+
+4. **EXTRACT LOCATION FROM NATURAL SPEECH**:
+   - "mere ghar ke paas" → location_hint: "near my house"
+   - "MG Road par" → location_hint: "MG Road"
+   - "Satellite area mein" → location_hint: "Satellite area"
+   - "school ke samne" → location_hint: "in front of school"
+   - "market ke piche" → location_hint: "behind market"
+
+5. **HANDLE TYPOS & SLANG**:
+   - "gabage" = garbage, "bijly" = bijli, "rasta" = road
+   - "panni" = pani, "thif" = thief, "acident" = accident
+   - "bhai", "yaar", "boss" = casual tone, respond casually
+
+6. **SMART STEP DETECTION**:
+   - If category detected but no location → ask for location OR set action=REQUEST_LOCATION
+   - If category + location detected → ask for more details OR set action=REQUEST_PROOF
+   - If everything collected → show summary with showConfirmation=true
+   - If user confirms summary → set action=SUBMIT_COMPLAINT
+
+7. **MULTILINGUAL RESPONSE MATCHING**:
+   - User speaks Hindi → respond in Hindi
+   - User speaks Hinglish → respond in Hinglish
+   - User speaks Gujarati → respond in Gujarati
+   - User mixes languages → mix languages in response
+
+📚 TRAINING EXAMPLES:
+
+**Example 1: Complete info in one message**
+User: "bhai mere ghar ke samne Satellite area mein bahut kachra pada hai, 2 hafte se koi nahi uthata"
+AI Analysis:
+- category: "Garbage/Sanitation"
+- subcategory: "Waste Collection"
+- location_hint: "Satellite area, in front of my house"
+- description: "Garbage piling up for 2 weeks, not being collected"
+- language: "hinglish"
+AI Response: "Samajh gaya bhai! Satellite area mein 2 hafte se kachra jama hai aur koi collect nahi kar raha. Ye Garbage/Sanitation complaint hai. Kya main exact location ke liye map dikhaun? 📍"
+Action: REQUEST_LOCATION
+showConfirmation: false
+
+**Example 2: Vague input**
+User: "problem hai mere area me"
+AI Response: "Main help karna chahta hoon! Problem kis type ki hai?
+- Kachra/safai 🗑️
+- Sadak/gadda 🛣️
+- Pani 💧
+- Bijli ⚡
+- Traffic 🚦
+- Construction shor 🏗️
+- Police/safety 👮
+- Street light 💡
+- Stray animals 🐕
+- Public toilet 🚻
+Bataiye kaunsi problem hai?"
+Action: COLLECT_INFO
+
+**Example 3: Only category mentioned**
+User: "garbage problem"
+AI Response: "Got it! Garbage issue. Can you tell me the exact location? Like which area, street, or landmark? 📍"
+Action: COLLECT_INFO
+
+**Example 4: Category + location**
+User: "MG Road par pothole hai"
+AI Response: "Samajh gaya! MG Road par pothole ki problem hai. Ye Road/Pothole complaint hai. Kya main location confirm karne ke liye map dikhaun? 📍"
+Action: REQUEST_LOCATION
+showConfirmation: false
+
+**Example 5: Everything provided**
+User: "મારા ઘર આગળ Vastrapur lake પાસે કચરો પડ્યો છે, 1 મહિનાથી કોઈ સાફ નથી કરતું"
+AI Analysis:
+- category: "Garbage/Sanitation"
+- location_hint: "Vastrapur lake, in front of my house"
+- description: "Garbage for 1 month, not cleaned"
+- language: "gu"
+AI Response: "સમજાયું! Vastrapur lake પાસે 1 મહિનાથી કચરો જમા છે. આ Garbage/Sanitation ફરિયાદ છે. શું હું exact location માટે map બતાવું? 📍"
+Action: REQUEST_LOCATION
+
+**Example 6: Emergency**
+User: "bijli ka wire toot gaya hai, bahut dangerous hai"
+AI Response: "⚠️ DANGER! Broken wire is emergency. Please stay away and call 112 immediately for safety! ⚡🚨\n\nShould I also register an Electricity complaint for repair? This will help get it fixed."
+Action: COLLECT_INFO
+showConfirmation: true
+confirmationQuestion: "Should I register Electricity complaint for wire repair?"
+
+**Example 7: Stray Animals**
+User: "mere ghar ke paas ek kutta hai jo sabko darta hai"
+AI Response: "Samajh gaya! Aapke area mein stray dog ki problem hai. Ye Stray Animals complaint hai. Exact location bataiye? 📍"
+Action: COLLECT_INFO
+
+**Example 8: Street Light**
+User: "raat ko rasta andhera rehta hai light nahi jalti"
+AI Response: "Samajh gaya! Street light nahi jal rahi hai aur raat ko andhera rehta hai. Ye Street Light complaint hai. Kaunse area ki baat kar rahe ho? 📍"
+Action: COLLECT_INFO
+
+**Example 9: Public Toilet**
+User: "public toilet bahut ganda hai, koi saaf nahi karta"
+AI Response: "Got it! Public toilet dirty hai aur maintenance nahi ho rahi. Ye Public Toilet complaint hai. Toilet kahan hai? 📍"
+Action: COLLECT_INFO
+
+🎯 ALL 12 COMPLAINT CATEGORIES:
+1. **Police**: crime, theft, चोरी, લૂંટ, safety, violence, harassment, मारपीट, દબાણ
+2. **Traffic**: accident, signal, parking, અકસ્માત, ટ્રાફિક, सड़क, road rage, challan
+3. **Construction**: illegal building, noise, કચરો, कूड़ा, debris, અવાજ, शोर, safety hazards
+4. **Electricity**: bijli, વીજળી, बिजली, wire, transformer, power cut
+5. **Water Supply**: pani, પાણી, पानी, tap, pipeline, leakage, pressure
+6. **Garbage/Sanitation**: kachra, કચરો, कूड़ा, dustbin, sanitation, waste, gandagi
+7. **Road/Pothole**: sadak, રસ્તો, सड़क, gadda, pothole, waterlogging, broken road
+8. **Drainage/Sewage**: nali, નાળી, नाली, sewer, gutter, manhole, bad smell, overflow
+9. **Cyber Crime**: online fraud, UPI scam, phishing, hacking, digital fraud
+10. **Street Light**: street light, lamp, pole light, રસ્તાની લાઇટ, सड़क की बत्ती, dark
+11. **Public Toilet**: toilet, washroom, શૌચાલય, शौचालय, dirty toilet, public toilet
+12. **Stray Animals**: stray dog, dog bite, આવારા કૂતરા, आवारा कुत्ता, cattle, cow
+
+📊 CURRENT STATE:
+Complaint Data: ${jsonEncode(draft)}
+Conversation: $historyText
+
+🎯 YOUR TASK:
+1. Analyze user input deeply - extract category, location, description
+2. If user gives complete info → extract everything, confirm, move to location picker
+3. If user gives partial info → ask for missing pieces naturally
+4. If user is vague → give options with emojis
+5. Always respond in user's language
+6. Be smart, empathetic, and efficient
+
+📤 RESPONSE FORMAT (JSON only):
+{
+  "language": "en|hi|gu|hinglish",
+  "mood": "neutral|calm|concerned|frustrated|angry|urgent",
+  "urgency": "low|medium|high|critical",
+  "category": "exact category name or null",
+  "subcategory": "exact subcategory name or null",
+  "missing_fields": ["list missing info"],
+  "action_checklist": ["next 1-2 actions"],
+  "next_question": "natural follow-up",
+  "response_text": "warm natural response in user's language",
+  "safety_alert": true/false,
+  "action": "COLLECT_INFO|REQUEST_LOCATION|REQUEST_PROOF|SUBMIT_COMPLAINT",
+  "showConfirmation": true/false,
+  "confirmationQuestion": "question for Yes/No/Maybe or null"
+}
 
 Category catalog:
 $categoryCatalog
 
-Detected analysis:
-language=${analysis.language}, mood=${analysis.mood}, urgency=${analysis.urgency}, emergency=${analysis.isEmergency}, category=${analysis.category}, subcategory=${analysis.subcategory}, location_hint=${analysis.locationHint}, alternatives=${analysis.alternatives.join(', ')}, matched_signals=${analysis.matchedSignals.join(', ')}
+Analysis context:
+- Language: ${analysis.language}
+- Mood: $_userMood
+- Urgency: ${analysis.urgency}
+- Emergency: ${analysis.isEmergency}
+- Detected category: ${analysis.category ?? 'not detected'}
+- Detected subcategory: ${analysis.subcategory ?? 'not detected'}
+- Location hint: ${analysis.locationHint ?? 'not provided'}
+- Alternatives: ${analysis.alternatives.join(', ')}
+- Signals: ${analysis.matchedSignals.join(', ')}
 
-Complaint draft:
-${jsonEncode(draft)}
+User: $userName
 
-Conversation:
-$historyText
+Citizen said: "$userInput"
 
-Latest user message:
-$userInput
+Analyze deeply and respond intelligently with appropriate action.
 ''';
+  }
+
+  String _loadUserName() {
+    try {
+      final raw = StorageService.getUserData();
+      if (raw == null || raw.trim().isEmpty) return 'Citizen';
+      final obj = jsonDecode(raw) as Map<String, dynamic>;
+      final firstName = _asString(obj['first_name'])?.trim();
+      if (firstName != null && firstName.isNotEmpty) return firstName;
+      final username = _asString(obj['username'])?.trim();
+      return username ?? 'Citizen';
+    } catch (_) {
+      return 'Citizen';
+    }
   }
 
   String _buildCategoryCatalogForPrompt() {
@@ -986,18 +1252,14 @@ $userInput
     return catalog.join('\n');
   }
 
-  String _extractModelText(Map<String, dynamic> payload) {
-    final candidates = payload['candidates'];
-    if (candidates is! List || candidates.isEmpty) return '';
-    final candidate = candidates.first;
-    if (candidate is! Map) return '';
-    final content = candidate['content'];
-    if (content is! Map) return '';
-    final parts = content['parts'];
-    if (parts is! List || parts.isEmpty) return '';
-    final part = parts.first;
-    if (part is! Map) return '';
-    return (part['text'] as String?)?.trim() ?? '';
+  String _extractGroqText(Map<String, dynamic> payload) {
+    final choices = payload['choices'];
+    if (choices is! List || choices.isEmpty) return '';
+    final choice = choices.first;
+    if (choice is! Map) return '';
+    final message = choice['message'];
+    if (message is! Map) return '';
+    return (message['content'] as String?)?.trim() ?? '';
   }
 
   String? _extractJson(String text) {
@@ -1014,6 +1276,61 @@ $userInput
     final end = text.lastIndexOf('}');
     if (start >= 0 && end > start) return text.substring(start, end + 1);
     return null;
+  }
+
+  String _buildCacheKey(String userInput, _OfflineAnalysis analysis) {
+    final normalizedInput = _normalize(userInput);
+    return '$normalizedInput|${analysis.category ?? 'NA'}|${analysis.subcategory ?? 'NA'}|${analysis.locationHint ?? 'NA'}|${analysis.isEmergency ? '1' : '0'}|${analysis.urgency}';
+  }
+
+  AssistantReply _cacheHelper(String key, AssistantReply reply) {
+    if (_groqResponseCache.length >= _groqCacheMaxEntries) {
+      _groqResponseCache.remove(_groqResponseCache.keys.first);
+    }
+    _groqResponseCache[key] = reply;
+    return reply;
+  }
+
+  Future<bool> _hasInternetConnection() async {
+    try {
+      final result = await InternetAddress.lookup('example.com')
+          .timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<http.Response> _postWithRetry(
+    Uri uri, {
+    required Map<String, String> headers,
+    required String body,
+    int maxAttempts = _groqMaxRetries,
+  }) async {
+    var attempt = 0;
+    var backoff = _groqInitialBackoff;
+    http.Response? lastResponse;
+
+    while (attempt < maxAttempts) {
+      attempt++;
+      try {
+        final response = await http
+            .post(uri, headers: headers, body: body)
+            .timeout(_groqTimeout);
+
+        if (response.statusCode == 200) return response;
+        lastResponse = response;
+      } catch (error) {
+        if (attempt >= maxAttempts) {
+          return http.Response('Network unavailable for Groq run', 503);
+        }
+      }
+
+      await Future.delayed(backoff);
+      backoff *= 2;
+    }
+
+    return lastResponse ?? http.Response('Network unavailable for Groq run', 503);
   }
 
   List<String> _missingFields(_OfflineAnalysis analysis) {
@@ -1111,19 +1428,9 @@ $userInput
     }
   }
 
+  // _humanize is kept for offline fallback only — Groq handles its own tone
   String _humanize(String text, String mood, String urgency) {
-    final body = text.trim();
-    if (body.isEmpty) return body;
-    if (urgency == 'critical') {
-      return '${_localized(en: 'I am with you right now.', hi: 'मैं अभी आपके साथ हूं।', gu: 'હું અત્યારે તમારી સાથે છું.', hinglish: 'Main abhi aapke saath hoon.')} $body';
-    }
-    if (mood == 'angry' || mood == 'frustrated') {
-      return '${_localized(en: 'I hear your frustration.', hi: 'मैं आपकी परेशानी समझ रही हूं।', gu: 'હું તમારી તકલીફ સમજી રહી છું.', hinglish: 'Main aapki frustration samajh raha hoon.')} $body';
-    }
-    if (mood == 'sad') {
-      return '${_localized(en: 'I am sorry this happened.', hi: 'मुझे अफसोस है कि यह हुआ।', gu: 'મને દુઃખ છે કે આવું થયું.', hinglish: 'Mujhe afsos hai ki yeh hua.')} $body';
-    }
-    return body;
+    return text.trim();
   }
 
   void _mergeDraft(_OfflineAnalysis analysis, String userInput) {
@@ -1145,6 +1452,12 @@ $userInput
     if (analysis.matchedSignals.isNotEmpty) {
       _complaintData['matched_signals'] = analysis.matchedSignals;
     }
+    
+    // Advanced: Extract description from user input if it's detailed
+    if (userInput.split(' ').length > 5 && _complaintData['description'] == null) {
+      _complaintData['description'] = userInput;
+    }
+    
     _complaintData['urgency'] = analysis.urgency;
     _complaintData['is_emergency'] = analysis.isEmergency;
     _complaintData['last_user_message'] = userInput;
@@ -1340,13 +1653,27 @@ $userInput
   }
 
   String? _extractLocation(String input) {
-    final lower = input.toLowerCase();
-    final m = RegExp(
-            r'\b(?:at|near|in|on|around|beside|opposite)\s+([a-z0-9 ,.-]{3,80})')
-        .firstMatch(lower);
-    final out = m?.group(1)?.trim();
-    if (out == null || out.isEmpty) return null;
-    return out.replaceAll(RegExp(r'[.,;!?]+$'), '');
+    // Enhanced location extraction patterns
+    final patterns = [
+      // "at/near/in location" pattern
+      RegExp(r'\b(?:at|near|in|on|around|beside|opposite|samne|piche|paas|aage)\s+([a-z0-9 ,.-]{3,80})', caseSensitive: false),
+      // "location par/mein" pattern (Hinglish/Hindi)
+      RegExp(r'([a-z0-9 ]+)\s+(?:par|mein|me|ma|પર|માં|में)', caseSensitive: false),
+      // "mere ghar ke paas location" pattern
+      RegExp(r'(?:ghar|घर|ઘર)\s+(?:ke|ka)?\s*(?:paas|samne|piche|aage|પાસે|સામે|પાછળ|आगे|पास|सामने)\s+([a-z0-9 ]+)', caseSensitive: false),
+    ];
+    
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(input);
+      if (match != null) {
+        final location = match.group(1)?.trim();
+        if (location != null && location.length > 2) {
+          return location.replaceAll(RegExp(r'[.,;!?]+$'), '').trim();
+        }
+      }
+    }
+    
+    return null;
   }
 
   String? _extractTime(String input) {
