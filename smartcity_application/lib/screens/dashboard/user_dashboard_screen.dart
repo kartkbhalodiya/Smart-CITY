@@ -6,7 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
 import '../../l10n/app_strings.dart';
-import '../ai_assistant/ai_call_screen.dart';
+
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -959,8 +959,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             _tab = 1;
           });
         else if (index == 2)
-          Navigator.push(
-              context, MaterialPageRoute(builder: (_) => AICallScreen()));
+          Navigator.pushNamed(context, AppRoutes.aiChat);
         else if (index == 3)
           Navigator.pushNamed(context, AppRoutes.userTrack);
         else

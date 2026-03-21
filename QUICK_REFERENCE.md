@@ -1,111 +1,197 @@
-# ⚡ Quick Reference Card
+# Quick Reference Card
 
-## 🎯 What Was Done
+## 🚀 Quick Start
 
-### 1. Performance Optimization
-- Database: 50-70% faster
-- Queries: 60% faster  
-- Overall: 30-60% improvement
-
-### 2. Guest Mode
-- Statistics: 🔒 Locked
-- Departments: ✅ Unlocked (emergency access)
-- Track/Profile: 🔒 Locked
-- Submit: ✅ Always accessible
-
-### 3. Email URLs
-- All emails use: `https://janhelp.vercel.app`
-- Professional templates
-- Correct links
-
-## 📋 Deploy Now
-
+### Run App
 ```bash
-# 1. Create migration
-python manage.py makemigrations
-
-# 2. Test locally
-python manage.py migrate
-python manage.py runserver
-
-# 3. Test guest mode
-# Visit: http://127.0.0.1:8000/dashboard/?guest=true
-
-# 4. Deploy
-git add .
-git commit -m "⚡ Performance + 🔐 Guest mode + 🌐 Email URLs"
-git push
-
-# 5. After deployment, run migration on production
-python manage.py migrate
+flutter pub get
+flutter run
 ```
 
-## 🧪 Test Checklist
+### Test Features
+1. Open AI Assistant
+2. Type: "maru bag chorai gyu chhe"
+3. Should detect: Police → Theft
+4. Click "New Chat" → Old chat saved
+5. Click "History" → See all chats
 
-### Performance
-- [ ] Dashboard loads faster
-- [ ] Check Vercel logs
+---
 
-### Guest Mode  
-- [ ] Visit: https://janhelp.vercel.app/dashboard/?guest=true
-- [ ] Statistics are blurred 🔒
-- [ ] Departments work ✅
-- [ ] Track is locked 🔒
-- [ ] Login modal appears
+## 🔑 API Keys
 
-### Emails
-- [ ] Register new user
-- [ ] Check email links
-- [ ] Verify URLs point to janhelp.vercel.app
+### Groq AI
+```
+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
+```
+Location: `lib/services/conversational_ai_service.dart`
 
-## 📊 Expected Results
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Dashboard | 2-4s | 0.8-1.6s | **60%** |
-| Search | 1-3s | 0.5-1.2s | **60%** |
-| Overall | - | - | **30-60%** |
-
-## 🔑 Key Features
-
-### Guest Users Can:
-- ✅ View dashboard (limited)
-- ✅ Submit complaints
-- ✅ View departments (emergency)
-
-### Guest Users Cannot:
-- 🔒 View statistics
-- 🔒 Track complaints
-- 🔒 View profile
-
-## 🌐 Live URLs
-
-- **Site:** https://janhelp.vercel.app
-- **Guest:** https://janhelp.vercel.app/dashboard/?guest=true
-- **Login:** https://janhelp.vercel.app/login/
-
-## 📚 Documentation
-
-1. `COMPLETE_SUMMARY.md` - Full overview
-2. `OPTIMIZATION_SUMMARY.md` - Performance details
-3. `GUEST_MODE_UPDATED.md` - Guest mode details
-4. `EMAIL_URL_CONFIG.md` - Email configuration
-5. `DEPLOY_CHECKLIST.md` - Deployment steps
-
-## ✅ Status
-
-- Performance: ✅ Optimized
-- Guest Mode: ✅ Implemented
-- Email URLs: ✅ Configured
-- Documentation: ✅ Complete
-- Ready: ✅ Production Ready
-
-## 🚀 Deploy Command
-
-```bash
-git add . && git commit -m "Complete implementation" && git push
+### Cloudinary
+```
+Cloud Name: dk1q50evg
+Upload Preset: smartcity_complaints (create this!)
 ```
 
 ---
 
-**All Done! Ready to Deploy! 🎉**
+## 📱 UI Buttons
+
+### AppBar (Top Right)
+- **History Icon** → View all past chats
+- **New Chat Icon** → Start fresh conversation
+
+### Chat Actions
+- **✅ Submit** → Submit complaint
+- **📷 Take Photo** → Camera
+- **🖼️ Gallery** → Choose image
+- **📍 Use Current Location** → GPS
+
+---
+
+## 💬 Multilingual Examples
+
+### Gujarati
+```
+"maru bag chorai gyu chhe" → Police/Theft
+"road ma khado chhe" → Road/Pothole
+"pani nathi avtu" → Water/No Supply
+"light nathi" → Electricity/Power Cut
+```
+
+### Hindi
+```
+"sadak me gadda hai" → Road/Pothole
+"paani nahi aa raha" → Water/No Supply
+"bijli nahi hai" → Electricity/Power Cut
+"chori ho gayi" → Police/Theft
+```
+
+### English
+```
+"big pothole on street" → Road/Pothole
+"no water supply" → Water/No Supply
+"power cut" → Electricity/Power Cut
+"bag stolen" → Police/Theft
+```
+
+---
+
+## 🎨 Bold Text Format
+
+### In Code
+```dart
+message: '**Bold Text** normal text **More Bold**'
+```
+
+### Renders As
+**Bold Text** normal text **More Bold**
+
+---
+
+## 📂 Key Files
+
+### Services
+- `lib/services/conversational_ai_service.dart` - Main AI
+- `lib/services/chat_history_service.dart` - History
+- `lib/services/groq_ai_service.dart` - Groq AI
+
+### Screens
+- `lib/screens/ai_assistant/ai_chat_screen.dart` - Main chat
+- `lib/screens/ai_assistant/chat_history_screen.dart` - History
+
+### Config
+- `lib/config/api_config.dart` - API endpoints
+
+---
+
+## 🔧 Common Fixes
+
+### Chat Not Saving
+```dart
+// Check console
+print('Session ID: $_currentSessionId');
+print('Messages: ${_messages.length}');
+```
+
+### Groq AI Not Working
+```dart
+// Check API key
+static const String _groqApiKey = 'gsk_MI1L7vQJ...';
+```
+
+### Upload Failing
+1. Create Cloudinary preset
+2. Name: `smartcity_complaints`
+3. Mode: Unsigned
+
+### Bold Text Not Showing
+Already fixed! Uses custom parser.
+
+---
+
+## 📊 Debug Commands
+
+### Check Logs
+```bash
+flutter logs
+```
+
+### Clear Cache
+```bash
+flutter clean
+flutter pub get
+```
+
+### Rebuild
+```bash
+flutter run --release
+```
+
+---
+
+## ✅ Testing Checklist
+
+Quick test (5 minutes):
+- [ ] Open AI Assistant
+- [ ] Send message
+- [ ] Close & reopen app
+- [ ] Chat restored?
+- [ ] Click "New Chat"
+- [ ] Click "History"
+- [ ] Try Gujarati input
+- [ ] Take photo
+- [ ] Submit complaint
+
+---
+
+## 🎯 Success Indicators
+
+✅ Chat history saves  
+✅ New Chat works  
+✅ History shows all chats  
+✅ Multilingual detection works  
+✅ Bold text renders  
+✅ Image uploads  
+✅ Real department shown  
+
+---
+
+## 📞 Quick Help
+
+### Error: Package not found
+```bash
+flutter pub get
+```
+
+### Error: Build failed
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
+
+### Error: Upload 401
+Create Cloudinary preset!
+
+---
+
+**Keep this card handy! 📌**

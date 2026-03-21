@@ -1052,6 +1052,13 @@ class SmartCityAI:
             "matched_signals": [],
             "last_user_message": "",
             "updated_at": timezone.now().isoformat(),
+            "latitude": None,
+            "longitude": None,
+            "city": None,
+            "state": None,
+            "duplicate_check_done": False,
+            "department_assigned": None,
+            "image_verified": False,
         }
         self.conversation_history = []
         self.user_context = {"user_name": "Citizen", "preferred_language": "english", "language": "english"}
@@ -1174,6 +1181,127 @@ class SmartCityAI:
             "next_step": self._next_step(missing),
         }
 
+    def check_duplicate_complaint(self, latitude: float, longitude: float) -> Optional[Dict[str, Any]]:
+        """
+        Check for duplicate complaints using the same logic as backend.
+        Returns duplicate complaint info if found, None otherwise.
+        """
+        try:
+            from .models import Complaint
+            
+            category = self.complaint_data.get("category")
+            subcategory = self.complaint_data.get("subcategory")
+            description = self._extract_description()
+            
+            if not category or not subcategory:
+                return None
+            
+            # Map category display name to key
+            category_key_map = {
+                "Police Complaint": "police",
+                "Traffic Complaint": "traffic",
+                "Construction Complaint": "construction",
+                "Water Supply": "water",
+                "Electricity": "electricity",
+                "Garbage/Sanitation": "garbage",
+                "Road/Pothole": "road",
+                "Drainage/Sewage": "drainage",
+                "Illegal Activities": "illegal",
+                "Transportation": "transportation",
+                "Cyber Crime": "cyber",
+                "Other Complaint": "other",
+            }
+            
+            category_key = category_key_map.get(category, category.lower().replace(" ", ""))
+            
+            # Use backend duplicate detection logic
+            duplicate = Complaint.check_duplicate(
+                latitude=latitude,
+                longitude=longitude,
+                complaint_type=category_key,
+                subcategory=subcategory,
+                description=description
+            )
+            
+            if duplicate:
+                # Mask the complaint ID for privacy
+                orig_id = duplicate.complaint_number
+                masked_id = f"{orig_id[:3]}XXXXXX" if len(orig_id) > 3 else f"{orig_id}XXXX"
+                
+                return {
+                    "found": True,
+                    "masked_id": masked_id,
+                    "original_id": orig_id,
+                    "message": f"This issue has already been reported by another citizen in this area. Ticket: {masked_id}"
+                }
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error checking duplicate: {e}")
+            return None
+    
+    def get_nearest_department(self, latitude: float, longitude: float) -> Optional[Dict[str, Any]]:
+        """
+        Get nearest department for the complaint using backend assignment logic.
+        Returns department info if found, None otherwise.
+        """
+        try:
+            from .models import Complaint, Department
+            
+            category = self.complaint_data.get("category")
+            if not category:
+                return None
+            
+            # Map category display name to key
+            category_key_map = {
+                "Police Complaint": "police",
+                "Traffic Complaint": "traffic",
+                "Construction Complaint": "construction",
+                "Water Supply": "water",
+                "Electricity": "electricity",
+                "Garbage/Sanitation": "garbage",
+                "Road/Pothole": "road",
+                "Drainage/Sewage": "drainage",
+                "Illegal Activities": "illegal",
+                "Transportation": "transportation",
+                "Cyber Crime": "cyber",
+                "Other Complaint": "other",
+            }
+            
+            category_key = category_key_map.get(category, category.lower().replace(" ", ""))
+            
+            # Create temporary complaint object to use backend logic
+            temp_complaint = Complaint(
+                complaint_type=category_key,
+                latitude=latitude,
+                longitude=longitude,
+                city=self.complaint_data.get("city", ""),
+                state=self.complaint_data.get("state", "")
+            )
+            
+            # Use backend department assignment logic
+            nearest_dept = temp_complaint.get_nearest_department()
+            
+            if nearest_dept:
+                return {
+                    "id": nearest_dept.id,
+                    "name": nearest_dept.name,
+                    "type": nearest_dept.get_department_type_display(),
+                    "email": nearest_dept.email,
+                    "phone": nearest_dept.phone,
+                    "address": nearest_dept.formatted_address,
+                    "sla_hours": nearest_dept.sla_hours,
+                    "latitude": float(nearest_dept.latitude) if nearest_dept.latitude else 0.0,
+                    "longitude": float(nearest_dept.longitude) if nearest_dept.longitude else 0.0,
+                }
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error getting nearest department: {e}")
+            return None
+
     def extract_complaint_info(self) -> Dict[str, Any]:
         missing = self._missing_fields(None)
         return {
@@ -1185,6 +1313,10 @@ class SmartCityAI:
             "is_emergency": self.complaint_data.get("is_emergency"),
             "language": self._current_language(),
             "missing_fields": missing,
+            "latitude": self.complaint_data.get("latitude"),
+            "longitude": self.complaint_data.get("longitude"),
+            "city": self.complaint_data.get("city"),
+            "state": self.complaint_data.get("state"),
         }
 
     def get_history(self) -> List[Dict[str, str]]:

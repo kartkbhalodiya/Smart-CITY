@@ -153,6 +153,12 @@ class AIService {
   String _currentLanguage = 'en';
   String _userMood = 'neutral';
   String _sessionId = ''; // Start empty to generate unique session
+  String _conversationState = 'greeting'; // Track conversation state
+  bool _categoryConfirmed = false; // Track if category was confirmed
+  bool _locationProvided = false; // Track if location was provided
+  bool _photoUploaded = false; // Track if photo was uploaded
+  bool _dateProvided = false; // Track if date was provided
+  Map<String, dynamic> _finalSummary = {}; // Store final summary
 
   static const Map<String, List<String>> _categoryAliases = {
     'Road/Pothole': [
@@ -329,6 +335,58 @@ class AIService {
       'फ्रॉड',
       'છેતરપિંડી'
     ],
+    'Police': [
+      'theft',
+      'chori',
+      'चोरी',
+      'લૂંટ',
+      'robbery',
+      'loot',
+      'stolen',
+      'purse snatching',
+      'mobile theft',
+      'chain snatching',
+      'pickpocket',
+      'burglary',
+      'break in',
+      'assault',
+      'fight',
+      'violence',
+      'harassment',
+      'molestation',
+      'domestic violence',
+      'missing person',
+      'missing',
+      'gum',
+      'gum ho gaya',
+      'गुम',
+      'गुम हो गया',
+      'ગુમ',
+      'ગુમ થઈ ગયો',
+      'lost person',
+      'person missing',
+      'bhai gum',
+      'sister missing',
+      'bachcha gum',
+      'kidnapping',
+      'murder',
+      'accident',
+      'hit and run',
+      'drunk driving',
+      'eve teasing',
+      'stalking',
+      'threat',
+      'blackmail',
+      'extortion',
+      'गुंडागर्दी',
+      'मारपीट',
+      'लड़ाई',
+      'धमकी',
+      'ગુંડાગીરી',
+      'મારપીટ',
+      'લડાઈ',
+      'ધમકી'
+    ],
     'Construction': [
       'construction',
       'illegal building',
@@ -376,26 +434,109 @@ class AIService {
       print('Generated new session ID: $_sessionId');
     }
 
+    print('Current state: $_conversationState');
+    print('Input: $input');
+    print('Is greeting only: ${_isGreetingOnly(input)}');
+
+    // Check for greeting BEFORE adding to history or calling LLM
+    if (_isGreetingOnly(input)) {
+      print('Detected as greeting-only, showing welcome message');
+      _history.add({'role': 'user', 'content': input});
+      _currentLanguage = _detectLanguage(input);
+      _userMood = _detectMood(input);
+      final reply = _handleGreeting();
+      _conversationState = 'awaiting_problem';
+      _history.add({'role': 'assistant', 'content': reply.response});
+      _trimHistory();
+      return reply;
+    }
+
     _history.add({'role': 'user', 'content': input});
     _currentLanguage = _detectLanguage(input);
     _userMood = _detectMood(input);
 
-    final intentReply = _handleKnowledgeIntent(input);
-    if (intentReply != null) {
-      _history.add({'role': 'assistant', 'content': intentReply.response});
-      _trimHistory();
-      return intentReply;
-    }
-
-    final analysis = _analyzeOffline(input);
-    _mergeDraft(analysis, input);
-
+    // Advanced conversation flow
     AssistantReply reply;
-    try {
-      reply = await _replyFromBackend(input, analysis);
-    } catch (e) {
-      print('Backend failed, using offline: $e');
-      reply = _offlineReply(analysis);
+    
+    switch (_conversationState) {
+      case 'greeting':
+      case 'awaiting_problem':
+        // User directly stated problem (greeting check already done above)
+        reply = await _handleProblemDescription(input);
+        break;
+        
+      case 'category_confirmation':
+        // Step 3: Confirm category
+        if (_isYesResponse(input)) {
+          _categoryConfirmed = true;
+          _conversationState = 'location_request';
+          reply = _handleCategoryConfirmed();
+        } else if (_isNoResponse(input)) {
+          _categoryConfirmed = false;
+          _conversationState = 'awaiting_problem';
+          reply = _handleCategoryRejected();
+        } else {
+          reply = await _handleProblemDescription(input);
+        }
+        break;
+        
+      case 'location_request':
+        // Step 4: Request location
+        reply = _handleLocationRequest(input);
+        break;
+        
+      case 'location_confirmation':
+        // Step 5: Confirm location or skip
+        if (_isYesResponse(input) || input.toLowerCase().contains('map') || input.toLowerCase().contains('location')) {
+          _locationProvided = true;
+          _conversationState = 'photo_request';
+          reply = _handleLocationConfirmed();
+        } else if (_isNoResponse(input) || input.toLowerCase().contains('skip') || input.toLowerCase().contains('no location')) {
+          _locationProvided = false;
+          _conversationState = 'photo_request';
+          reply = _handleLocationSkipped();
+        } else {
+          reply = _handleLocationRequest(input);
+        }
+        break;
+        
+      case 'photo_request':
+        // Step 6: Request photo
+        if (_isYesResponse(input) || input.toLowerCase().contains('photo') || input.toLowerCase().contains('upload')) {
+          _photoUploaded = true;
+          _conversationState = 'date_request';
+          reply = _handlePhotoUploaded();
+        } else if (_isNoResponse(input) || input.toLowerCase().contains('skip') || input.toLowerCase().contains('no photo')) {
+          _photoUploaded = false;
+          _conversationState = 'date_request';
+          reply = _handlePhotoSkipped();
+        } else {
+          reply = _requestPhoto();
+        }
+        break;
+        
+      case 'date_request':
+        // Step 7: Request date of occurrence
+        reply = _handleDateInput(input);
+        break;
+        
+      case 'summary_review':
+        // Step 8: Show summary with Edit/Confirm buttons
+        reply = _showFinalSummary();
+        break;
+        
+      case 'edit_mode':
+        // Step 9: Handle edits
+        reply = _handleEdit(input);
+        break;
+        
+      case 'submitting':
+        // Step 10: Submit to nearest department
+        reply = await _handleSubmission();
+        break;
+        
+      default:
+        reply = await _handleProblemDescription(input);
     }
 
     _currentLanguage = reply.language;
@@ -463,12 +604,533 @@ class AIService {
     );
   }
 
+  Future<AssistantReply> _processNormalInput(String input) async {
+    // Try OpenRouter LLM first
+    try {
+      final llmResult = await _callOpenRouterLLM(input);
+      if (llmResult != null) {
+        print('OpenRouter LLM prediction successful');
+        return _buildReplyFromLLM(llmResult, input);
+      }
+      print('OpenRouter LLM returned null, falling back to local analysis');
+    } catch (e) {
+      print('OpenRouter LLM failed: $e, falling back to local analysis');
+    }
+    
+    // Fallback to local offline analysis
+    final analysis = _analyzeOffline(input);
+    _mergeDraft(analysis, input);
+    return _offlineReply(analysis);
+  }
+
+  bool _isYesResponse(String input) {
+    final lower = input.toLowerCase().trim();
+    return ['yes', 'y', 'yeah', 'yep', 'correct', 'right', 'sahi', 'हां', 'हा', 'જી', 'જી હા', 'sach', 'theek'].contains(lower);
+  }
+
+  bool _isNoResponse(String input) {
+    final lower = input.toLowerCase().trim();
+    return ['no', 'n', 'nope', 'wrong', 'incorrect', 'nahi', 'नहीं', 'ના', 'galat', 'galt'].contains(lower);
+  }
+
+  bool _isGreetingOnly(String input) {
+    final lower = input.toLowerCase().trim();
+    final greetings = [
+      'hi', 'hii', 'hiiii', 'hello', 'hey', 'helo', 'hii there',
+      'namaste', 'namaskar', 'good morning', 'good afternoon', 'good evening',
+      'नमस्ते', 'नमस्कार', 'આદાબ', 'સાત સાત',
+      'sat sri akal', 'assalam alaikum', 'vanakkam', 'namaskaram'
+    ];
+    
+    // Check if input is ONLY a greeting (exact match or very short)
+    // If input has more than 3 words, it likely contains a problem description
+    final wordCount = lower.split(' ').where((w) => w.isNotEmpty).length;
+    if (wordCount > 3) return false;
+    
+    // Remove punctuation for comparison
+    final cleanInput = lower.replaceAll(RegExp(r'[!.,?]'), '').trim();
+    
+    // Check for exact greeting match
+    if (greetings.any((greeting) => cleanInput == greeting)) return true;
+    
+    // Check for common greeting patterns (hi, hii, hiii, etc.)
+    if (RegExp(r'^h+i+$').hasMatch(cleanInput)) return true; // hi, hii, hiii, hh, hhh
+    if (RegExp(r'^h+e+l+o+$').hasMatch(cleanInput)) return true; // hello, helo, heloo
+    if (RegExp(r'^h+e+y+$').hasMatch(cleanInput)) return true; // hey, heyy
+    
+    return false;
+  }
+
+  AssistantReply _handleCategoryConfirmed() {
+    final category = _complaintData['category'] as String?;
+    final emoji = category != null ? _getCategoryEmoji(category) : '📝';
+    
+    return AssistantReply(
+      response: _localized(
+        en: '✅ Great! Now I need the exact location where this $category issue is happening.\n\n📍 Please share the area, street name, and nearby landmark.',
+        hi: '✅ Badhiya! Ab mujhe exact location chahiye jahan ye $category problem hai.\n\n📍 Kripya area, street name aur nearby landmark bataiye.',
+        gu: '✅ Saras! Have mane exact location joiye jya aa $category samasya chhe.\n\n📍 Krupaya area, street name ane najikno landmark kaho.',
+        hinglish: '✅ Great! Ab exact location chahiye jahan ye $category problem hai.\n\n📍 Please area, street name aur nearby landmark batao.',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: category,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const ['exact_location'],
+      actionChecklist: const ['📍 Share exact location', '🗺️ Use map if needed'],
+      isEmergency: _complaintData['is_emergency'] as bool? ?? false,
+      confidence: 0.9,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'Where exactly is this issue located?',
+      action: 'REQUEST_LOCATION',
+    );
+  }
+
+  AssistantReply _handleCategoryRejected() {
+    return AssistantReply(
+      response: _localized(
+        en: '🤔 No problem! Let me understand better.\n\nPlease describe your issue in more detail so I can identify the correct category.',
+        hi: '🤔 Koi baat nahi! Main better samjhata hun.\n\nKripya apni problem detail mein batayiye taki main sahi category identify kar sakun.',
+        gu: '🤔 Koi vaat nathi! Hu better samjhu chhu.\n\nKrupaya tamari samasya detail ma kaho ke hu sachi category identify kari shaku.',
+        hinglish: '🤔 No problem! Main better samjhata hun.\n\nPlease apni issue detail mein batao taki main correct category identify kar sakun.',
+      ),
+      language: _currentLanguage,
+      mood: 'understanding',
+      urgency: 'medium',
+      category: null,
+      subcategory: null,
+      missingFields: const ['issue_category', 'issue_description'],
+      actionChecklist: const ['📝 Describe issue in detail', '🎯 Help me understand better'],
+      isEmergency: false,
+      confidence: 0.7,
+      complaintDraft: Map<String, dynamic>.from(_complaintData)..remove('category')..remove('subcategory'),
+      nextQuestion: 'Can you explain the problem in more detail?',
+      action: 'COLLECT_INFO',
+    );
+  }
+
+  // Step 1: Welcome greeting
+  AssistantReply _handleGreeting() {
+    return AssistantReply(
+      response: _localized(
+        en: '👋 Hello! Welcome to JanHelp - Your Smart City Assistant.\n\nI\'m here to help you file complaints quickly and efficiently.\n\n📝 Please tell me what problem you want to report today.',
+        hi: '👋 Namaste! JanHelp mein aapka swagat hai - Aapka Smart City Assistant.\n\nMain aapki complaint jaldi aur aasani se file karne mein madad karunga.\n\n📝 Kripya batayiye aaj aap kya problem report karna chahte hain.',
+        gu: '👋 Namaste! JanHelp ma tamaru swagat chhe - Tamaro Smart City Assistant.\n\nHu tamari complaint jaldi ane saheli rite file karvama madad karish.\n\n📝 Krupaya kaho aaje tame shu samasya report karva mangho cho.',
+        hinglish: '👋 Hello! JanHelp mein aapka swagat hai - Aapka Smart City Assistant.\n\nMain aapki complaint jaldi file karne mein help karunga.\n\n📝 Please batao aaj kya problem report karni hai.',
+      ),
+      language: _currentLanguage,
+      mood: 'welcoming',
+      urgency: 'medium',
+      category: null,
+      subcategory: null,
+      missingFields: const ['issue_description'],
+      actionChecklist: const ['👋 Welcome!', '📝 Describe your problem'],
+      isEmergency: false,
+      confidence: 1.0,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'What problem would you like to report?',
+      action: 'COLLECT_INFO',
+    );
+  }
+
+  // Step 2: Handle problem description
+  Future<AssistantReply> _handleProblemDescription(String input) async {
+    return await _processNormalInput(input);
+  }
+
+  // Step 4: Handle location request
+  AssistantReply _handleLocationRequest(String input) {
+    // Extract location from input
+    final location = _extractLocation(input);
+    if (location != null) {
+      _complaintData['location_hint'] = location;
+      _locationProvided = true;
+      _conversationState = 'photo_request';
+      return _handleLocationConfirmed();
+    }
+    
+    // Ask for location
+    _conversationState = 'location_confirmation';
+    return AssistantReply(
+      response: _localized(
+        en: '📍 **Location Required**\n\nPlease share the exact location where this issue is happening.\n\n🗺️ You can:\n• Click "Use Map" to pin the location\n• Type the address manually\n• Skip if location not available yet',
+        hi: '📍 **Location Chahiye**\n\nKripya exact location batayiye jahan ye problem hai.\n\n🗺️ Aap:\n• "Map Use Karein" par click karke location pin kar sakte hain\n• Address manually type kar sakte hain\n• Skip kar sakte hain agar location abhi available nahi hai',
+        gu: '📍 **Location Joiye**\n\nKrupaya exact location kaho jya aa samasya chhe.\n\n🗺️ Tame:\n• "Map Use Karo" par click karine location pin kari shako\n• Address manually type kari shako\n• Skip kari shako jyare location available nathi',
+        hinglish: '📍 **Location Chahiye**\n\nPlease exact location batao jahan problem hai.\n\n🗺️ Aap:\n• "Use Map" click karke location pin kar sakte ho\n• Address manually type kar sakte ho\n• Skip kar sakte ho agar location nahi hai',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const ['exact_location'],
+      actionChecklist: const ['📍 Share location', '🗺️ Use map', '⏭️ Skip'],
+      isEmergency: _complaintData['is_emergency'] as bool? ?? false,
+      confidence: 0.8,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'Where is this issue located?',
+      action: 'REQUEST_LOCATION',
+    );
+  }
+
+  AssistantReply _handleLocationConfirmed() {
+    return AssistantReply(
+      response: _localized(
+        en: '✅ Location noted!\n\n📷 **Photo Evidence (Optional)**\n\nDo you have a photo of the issue? Photos help departments resolve complaints faster.\n\n• Upload photo\n• Skip for now',
+        hi: '✅ Location note kar liya!\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai? Photos se departments complaint jaldi resolve kar sakte hain.\n\n• Photo upload karein\n• Abhi skip karein',
+        gu: '✅ Location note karyu!\n\n📷 **Photo Evidence (Optional)**\n\nShu tamari paas issue ni photo chhe? Photos thi departments complaint jaldi resolve kari shake chhe.\n\n• Photo upload karo\n• Abhi skip karo',
+        hinglish: '✅ Location note ho gaya!\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai? Photos se complaint jaldi resolve hoti hai.\n\n• Photo upload karo\n• Skip karo',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['📷 Upload photo', '⏭️ Skip'],
+      isEmergency: _complaintData['is_emergency'] as bool? ?? false,
+      confidence: 0.9,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'Do you want to upload a photo?',
+      action: 'REQUEST_PHOTO',
+    );
+  }
+
+  AssistantReply _handleLocationSkipped() {
+    _complaintData['location_hint'] = 'Will be added later';
+    return AssistantReply(
+      response: _localized(
+        en: '⏭️ No problem! We\'ll use your current location when you submit.\n\n📷 **Photo Evidence (Optional)**\n\nDo you have a photo of the issue?',
+        hi: '⏭️ Koi baat nahi! Submit karte waqt hum aapka current location use karenge.\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai?',
+        gu: '⏭️ Koi vaat nathi! Submit karta samaye ame tamari current location use karishu.\n\n📷 **Photo Evidence (Optional)**\n\nShu tamari paas issue ni photo chhe?',
+        hinglish: '⏭️ No problem! Submit karte time current location use karenge.\n\n📷 **Photo Evidence (Optional)**\n\nKya photo hai?',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['📷 Upload photo', '⏭️ Skip'],
+      isEmergency: _complaintData['is_emergency'] as bool? ?? false,
+      confidence: 0.9,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'Upload photo?',
+      action: 'REQUEST_PHOTO',
+    );
+  }
+
+  // Step 6: Handle photo
+  AssistantReply _requestPhoto() {
+    return AssistantReply(
+      response: _localized(
+        en: '📷 Please upload a photo or skip to continue.',
+        hi: '📷 Kripya photo upload karein ya skip karein.',
+        gu: '📷 Krupaya photo upload karo ke skip karo.',
+        hinglish: '📷 Photo upload karo ya skip karo.',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['📷 Upload', '⏭️ Skip'],
+      isEmergency: false,
+      confidence: 0.9,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'Upload photo?',
+      action: 'REQUEST_PHOTO',
+    );
+  }
+
+  AssistantReply _handlePhotoUploaded() {
+    _complaintData['photo_uploaded'] = true;
+    _conversationState = 'date_request';
+    return _requestDate();
+  }
+
+  AssistantReply _handlePhotoSkipped() {
+    _complaintData['photo_uploaded'] = false;
+    _conversationState = 'date_request';
+    return _requestDate();
+  }
+
+  // Step 7: Request date
+  AssistantReply _requestDate() {
+    return AssistantReply(
+      response: _localized(
+        en: '📅 **When did this issue occur?**\n\nPlease tell me:\n• Today\n• Yesterday\n• Specific date\n• Ongoing issue',
+        hi: '📅 **Ye problem kab hui?**\n\nKripya batayiye:\n• Aaj\n• Kal\n• Specific date\n• Ongoing issue',
+        gu: '📅 **Aa samasya kyare thay?**\n\nKrupaya kaho:\n• Aaje\n• Gaye kal\n• Specific date\n• Ongoing issue',
+        hinglish: '📅 **Problem kab hui?**\n\nBatao:\n• Aaj\n• Kal\n• Specific date\n• Ongoing',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['📅 Provide date'],
+      isEmergency: false,
+      confidence: 0.9,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'When did this occur?',
+      action: 'REQUEST_DATE',
+    );
+  }
+
+  AssistantReply _handleDateInput(String input) {
+    final timeHint = _extractTime(input);
+    _complaintData['time_hint'] = timeHint ?? 'Today';
+    _complaintData['date_of_occurrence'] = DateTime.now().toIso8601String();
+    _dateProvided = true;
+    _conversationState = 'summary_review';
+    return _showFinalSummary();
+  }
+
+  // Step 8: Show final summary
+  AssistantReply _showFinalSummary() {
+    _finalSummary = Map<String, dynamic>.from(_complaintData);
+    
+    final summary = '''
+📋 **COMPLAINT SUMMARY**
+
+1️⃣ **Category:** ${_complaintData['category'] ?? 'Not specified'}
+2️⃣ **Subcategory:** ${_complaintData['subcategory'] ?? 'Not specified'}
+3️⃣ **Description:** ${_complaintData['description'] ?? _complaintData['last_user_message'] ?? 'Not provided'}
+4️⃣ **Location:** ${_complaintData['location_hint'] ?? 'Current location will be used'}
+5️⃣ **Date:** ${_complaintData['time_hint'] ?? 'Today'}
+6️⃣ **Photo:** ${_complaintData['photo_uploaded'] == true ? 'Uploaded ✅' : 'Not uploaded'}
+7️⃣ **Urgency:** ${_complaintData['urgency'] ?? 'Medium'}
+8️⃣ **Emergency:** ${_complaintData['is_emergency'] == true ? 'Yes 🚨' : 'No'}
+
+---
+
+✏️ **Want to edit?** Reply with the number (1-8) to change that field.
+✅ **Ready to submit?** Reply "Confirm" or "Submit".
+''';
+
+    return AssistantReply(
+      response: _localized(
+        en: summary,
+        hi: summary,
+        gu: summary,
+        hinglish: summary,
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['✏️ Edit (1-8)', '✅ Confirm'],
+      isEmergency: _complaintData['is_emergency'] as bool? ?? false,
+      confidence: 1.0,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: 'Edit or Confirm?',
+      action: 'REVIEW_SUMMARY',
+      showConfirmation: true,
+      confirmationQuestion: 'Do you want to submit this complaint?',
+    );
+  }
+
+  // Step 9: Handle edits
+  AssistantReply _handleEdit(String input) {
+    final lower = input.toLowerCase();
+    
+    if (lower.contains('confirm') || lower.contains('submit') || _isYesResponse(input)) {
+      _conversationState = 'submitting';
+      return AssistantReply(
+        response: _localized(
+          en: '⏳ Submitting your complaint to the nearest department...\n\nPlease wait.',
+          hi: '⏳ Aapki complaint nearest department ko bhej rahe hain...\n\nKripya pratiksha karein.',
+          gu: '⏳ Tamari complaint najikna department ne moki raha chhe...\n\nKrupaya pratiksha karo.',
+          hinglish: '⏳ Complaint nearest department ko bhej rahe hain...\n\nWait karo.',
+        ),
+        language: _currentLanguage,
+        mood: 'processing',
+        urgency: _complaintData['urgency'] as String? ?? 'medium',
+        category: _complaintData['category'] as String?,
+        subcategory: _complaintData['subcategory'] as String?,
+        missingFields: const [],
+        actionChecklist: const ['⏳ Processing...'],
+        isEmergency: _complaintData['is_emergency'] as bool? ?? false,
+        confidence: 1.0,
+        complaintDraft: Map<String, dynamic>.from(_complaintData),
+        nextQuestion: '',
+        action: 'SUBMITTING',
+      );
+    }
+    
+    // Handle number-based editing
+    final editNumber = int.tryParse(input.trim());
+    if (editNumber != null && editNumber >= 1 && editNumber <= 8) {
+      _conversationState = 'edit_mode';
+      return _requestEditForField(editNumber);
+    }
+    
+    return _showFinalSummary();
+  }
+
+  AssistantReply _requestEditForField(int fieldNumber) {
+    String fieldName = '';
+    String prompt = '';
+    
+    switch (fieldNumber) {
+      case 1:
+        fieldName = 'category';
+        prompt = 'What should be the correct category?';
+        break;
+      case 2:
+        fieldName = 'subcategory';
+        prompt = 'What should be the correct subcategory?';
+        break;
+      case 3:
+        fieldName = 'description';
+        prompt = 'Please provide the updated description.';
+        break;
+      case 4:
+        fieldName = 'location';
+        prompt = 'Please provide the updated location.';
+        break;
+      case 5:
+        fieldName = 'date';
+        prompt = 'When did this issue occur?';
+        break;
+      case 6:
+        fieldName = 'photo';
+        prompt = 'Upload photo or skip.';
+        break;
+      case 7:
+        fieldName = 'urgency';
+        prompt = 'What is the urgency level? (Low/Medium/High/Critical)';
+        break;
+      case 8:
+        fieldName = 'emergency';
+        prompt = 'Is this an emergency? (Yes/No)';
+        break;
+    }
+    
+    return AssistantReply(
+      response: _localized(
+        en: '✏️ Editing field $fieldNumber: **$fieldName**\n\n$prompt',
+        hi: '✏️ Field $fieldNumber edit kar rahe hain: **$fieldName**\n\n$prompt',
+        gu: '✏️ Field $fieldNumber edit kari raha chhe: **$fieldName**\n\n$prompt',
+        hinglish: '✏️ Field $fieldNumber edit kar rahe hain: **$fieldName**\n\n$prompt',
+      ),
+      language: _currentLanguage,
+      mood: 'helpful',
+      urgency: _complaintData['urgency'] as String? ?? 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['✏️ Provide new value'],
+      isEmergency: false,
+      confidence: 1.0,
+      complaintDraft: Map<String, dynamic>.from(_complaintData),
+      nextQuestion: prompt,
+      action: 'EDITING',
+    );
+  }
+
+  // Step 10: Submit to nearest department
+  Future<AssistantReply> _handleSubmission() async {
+    // This will be handled by your backend
+    // For now, return success message
+    final complaintId = 'CMP${DateTime.now().millisecondsSinceEpoch}';
+    
+    return AssistantReply(
+      response: _localized(
+        en: '''✅ **COMPLAINT SUBMITTED SUCCESSFULLY!**
+
+📋 **Complaint ID:** $complaintId
+🏢 **Department:** ${_complaintData['category'] ?? 'Municipal'} Department
+📍 **Location:** ${_complaintData['location_hint'] ?? 'Your current location'}
+⏰ **Submitted:** ${DateTime.now().toString().split('.')[0]}
+
+---
+
+**Next Steps:**
+1️⃣ Department will review within 24 hours
+2️⃣ You'll receive updates via notifications
+3️⃣ Track status in "My Complaints" section
+
+🙏 Thank you for using JanHelp!''',
+        hi: '''✅ **COMPLAINT SUCCESSFULLY SUBMIT HO GAYI!**
+
+📋 **Complaint ID:** $complaintId
+🏢 **Department:** ${_complaintData['category'] ?? 'Municipal'} Department
+📍 **Location:** ${_complaintData['location_hint'] ?? 'Aapka current location'}
+⏰ **Submit kiya:** ${DateTime.now().toString().split('.')[0]}
+
+---
+
+**Aage ke steps:**
+1️⃣ Department 24 hours mein review karegi
+2️⃣ Aapko notifications se updates milenge
+3️⃣ "My Complaints" section mein status track karein
+
+🙏 JanHelp use karne ke liye dhanyavaad!''',
+        gu: '''✅ **COMPLAINT SUCCESSFULLY SUBMIT THAY GAYI!**
+
+📋 **Complaint ID:** $complaintId
+🏢 **Department:** ${_complaintData['category'] ?? 'Municipal'} Department
+📍 **Location:** ${_complaintData['location_hint'] ?? 'Tamari current location'}
+⏰ **Submit karyu:** ${DateTime.now().toString().split('.')[0]}
+
+---
+
+**Aagad na steps:**
+1️⃣ Department 24 hours ma review karshe
+2️⃣ Tamne notifications thi updates malshe
+3️⃣ "My Complaints" section ma status track karo
+
+🙏 JanHelp use karvani mate aabhar!''',
+        hinglish: '''✅ **COMPLAINT SUCCESSFULLY SUBMIT HO GAYI!**
+
+📋 **Complaint ID:** $complaintId
+🏢 **Department:** ${_complaintData['category'] ?? 'Municipal'} Department
+📍 **Location:** ${_complaintData['location_hint'] ?? 'Current location'}
+⏰ **Submitted:** ${DateTime.now().toString().split('.')[0]}
+
+---
+
+**Next Steps:**
+1️⃣ Department 24 hours mein review karegi
+2️⃣ Notifications se updates milenge
+3️⃣ "My Complaints" mein status track karo
+
+🙏 JanHelp use karne ke liye thank you!''',
+      ),
+      language: _currentLanguage,
+      mood: 'success',
+      urgency: 'medium',
+      category: _complaintData['category'] as String?,
+      subcategory: _complaintData['subcategory'] as String?,
+      missingFields: const [],
+      actionChecklist: const ['✅ Submitted!', '📱 Track in app'],
+      isEmergency: false,
+      confidence: 1.0,
+      complaintDraft: Map<String, dynamic>.from(_complaintData)..['complaint_id'] = complaintId,
+      nextQuestion: '',
+      action: 'COMPLETED',
+    );
+  }
+
 
   AssistantReply _offlineReply(_OfflineAnalysis analysis,
       {String? modelTextFallback}) {
     final missing = _missingFields(analysis);
     final nextQuestion = _nextQuestion(analysis, missing);
     final actions = _actions(analysis);
+    final autoDetected = analysis.confidence > 0.8 && analysis.category != null;
+
+    // Update conversation state based on detection
+    if (autoDetected && _conversationState == 'greeting') {
+      _conversationState = 'category_confirmation';
+    }
 
     final content = modelTextFallback?.trim().isNotEmpty == true
         ? modelTextFallback!.trim()
@@ -495,6 +1157,24 @@ class AIService {
     if (analysis.matchedSignals.isNotEmpty) {
       draft['matched_signals'] = analysis.matchedSignals;
     }
+    draft['auto_detected'] = autoDetected;
+    draft['conversation_state'] = _conversationState;
+
+    // Determine action and confirmation
+    String action = 'COLLECT_INFO';
+    bool showConfirmation = false;
+    String? confirmationQuestion;
+    
+    if (autoDetected && _conversationState == 'category_confirmation') {
+      action = 'CONFIRM';
+      showConfirmation = true;
+      confirmationQuestion = _localized(
+        en: 'Is this the correct category for your complaint?',
+        hi: 'Kya ye aapki complaint ke liye sahi category hai?',
+        gu: 'Aa tamari complaint mate sachi category chhe?',
+        hinglish: 'Ye aapki complaint ke liye correct category hai?',
+      );
+    }
 
     return AssistantReply(
       response: _humanize(content, analysis.mood, analysis.urgency),
@@ -509,6 +1189,9 @@ class AIService {
       confidence: _confidence(analysis.confidence, missing.length),
       complaintDraft: draft,
       nextQuestion: nextQuestion,
+      action: action,
+      showConfirmation: showConfirmation,
+      confirmationQuestion: confirmationQuestion,
     );
   }
 
@@ -521,6 +1204,18 @@ class AIService {
         hinglish: '🚨 Safety first! Immediate danger ho to abhi 112 call kariye.',
       );
     }
+    
+    // Auto-detected category with high confidence - show confirmation
+    if (analysis.category != null && analysis.confidence > 0.8) {
+      final emoji = _getCategoryEmoji(analysis.category!);
+      return _localized(
+        en: '$emoji I detected this as: **${analysis.subcategory ?? analysis.category}**\n\nIs this correct? I can help you file this complaint quickly.',
+        hi: '$emoji Maine ise detect kiya: **${analysis.subcategory ?? analysis.category}**\n\nKya ye sahi hai? Main jaldi complaint file kar sakta hun.',
+        gu: '$emoji Mane aa detect karyu: **${analysis.subcategory ?? analysis.category}**\n\nAa sachu chhe? Hu jaldi complaint file kari shaku chhu.',
+        hinglish: '$emoji Maine detect kiya: **${analysis.subcategory ?? analysis.category}**\n\nYe correct hai? Main quickly complaint file kar sakta hun.',
+      );
+    }
+    
     if (analysis.category == null && analysis.alternatives.isNotEmpty) {
       final options = analysis.alternatives.take(3).join(', ');
       return _localized(
@@ -530,6 +1225,7 @@ class AIService {
         hinglish: '🔍 Close matches mile: $options. Sahi option confirm karo.',
       );
     }
+    
     if (analysis.category != null) {
       final emoji = _getCategoryEmoji(analysis.category!);
       return _localized(
@@ -539,6 +1235,7 @@ class AIService {
         hinglish: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Main proper filing mein help karunga.',
       );
     }
+    
     return _localized(
       en: '👋 I am here to help. Tell me the exact issue in one line.',
       hi: '👋 Main madad ke liye yahan hoon. Kripya issue ek line mein batayein.',
@@ -813,81 +1510,9 @@ class AIService {
     );
   }
 
-  Future<AssistantReply> _replyFromBackend(
-    String userInput,
-    _OfflineAnalysis analysis,
-  ) async {
-    // Don't use cache for dynamic conversations
-    // final cacheKey = _buildCacheKey(userInput, analysis);
-    // if (_responseCache.containsKey(cacheKey)) return _responseCache[cacheKey]!;
 
-    try {
-      print('Sending to backend: $userInput with session: $_sessionId');
-      
-      final response = await http.post(
-        Uri.parse(ApiConfig.aiChat),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'message': userInput,
-          'session_id': _sessionId,
-          'preferred_language': _mapLanguageCode(_currentLanguage),
-          'user_name': 'User', // You can get this from storage
-        }),
-      ).timeout(const Duration(seconds: 15));
 
-      print('Backend response status: ${response.statusCode}');
-      print('Backend response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        if (data['success'] == true) {
-          final reply = _buildReplyFromBackend(data, analysis);
-          // Don't cache dynamic responses
-          // return _cacheHelper(cacheKey, reply);
-          return reply;
-        } else {
-          print('Backend error: ${data['message']}');
-        }
-      }
-    } catch (e) {
-      print('Backend request failed: $e');
-    }
-
-    print('Falling back to offline reply');
-    return _offlineReply(analysis);
-  }
-
-  AssistantReply _buildReplyFromBackend(
-    Map<String, dynamic> data,
-    _OfflineAnalysis analysis,
-  ) {
-    final category = (data['detected_category'] as String?) ?? analysis.category;
-    final urgency = _normalizeUrgency((data['urgency'] as String?) ?? analysis.urgency);
-    final language = _normalizeLanguage((data['language'] as String?) ?? analysis.language);
-    final response = (data['response'] as String?)?.trim() ?? _offlineReply(analysis).response;
-    final nextStep = (data['next_step'] as String?) ?? 'COLLECT_INFO';
-
-    final draft = Map<String, dynamic>.from(_complaintData);
-    if (category != null) draft['category'] = category;
-    draft['urgency'] = urgency;
-
-    final missing = _missingFields(analysis);
-    return AssistantReply(
-      response: response,
-      language: language,
-      mood: _normalizeMood((data['emotion'] as String?) ?? analysis.mood),
-      urgency: urgency,
-      category: category,
-      subcategory: analysis.subcategory,
-      missingFields: missing,
-      actionChecklist: _actions(analysis),
-      isEmergency: analysis.isEmergency,
-      confidence: _confidence(analysis.confidence, missing.length),
-      complaintDraft: draft,
-      nextQuestion: _nextQuestion(analysis, missing),
-      action: nextStep,
-    );
-  }
 
   String _buildCacheKey(String userInput, _OfflineAnalysis analysis) {
     final normalizedInput = _normalize(userInput);
@@ -1035,9 +1660,45 @@ class AIService {
     final keys = _langKeys(language);
     final candidates = <_CategoryCandidate>[];
 
-    // First pass: Detect primary issue keywords (crime, theft, etc.)
-    final crimeKeywords = ['chori', 'theft', 'चोरी', 'લૂંટ', 'steal', 'stolen', 'purse', 'wallet', 'mobile', 'robbery', 'loot', 'चोरी हुआ', 'चोरी हो गया'];
-    final hasCrimeKeyword = crimeKeywords.any((kw) => normalized.contains(_normalize(kw)));
+    // Enhanced primary issue detection
+    final crimeKeywords = ['chori', 'theft', 'चोरी', 'લૂંટ', 'steal', 'stolen', 'purse', 'wallet', 'mobile', 'robbery', 'loot', 'चोरी हुआ', 'चोरी हो गया', 'fraud', 'scam', 'dhoka', 'ठगी'];
+    final missingPersonKeywords = ['gum', 'missing', 'गुम', 'ગુમ', 'gum ho gaya', 'गुम हो गया', 'ગુમ થઈ ગયો', 'lost person', 'person missing', 'bhai gum', 'sister missing', 'bachcha gum', 'missing person'];
+    final accidentKeywords = ['accident', 'दुर्घटना', 'અકસ્માત', 'crash', 'hit', 'injured', 'hurt', 'टक्कर', 'ટક્કર'];
+    final emergencyKeywords = ['emergency', 'urgent', 'danger', 'fire', 'आपातकाल', 'તાત્કાલિક', 'jaldi', 'turant'];
+    
+    // Detect primary concern (what user needs help with most)
+    String? primaryConcern = null;
+    int maxPriorityScore = 0;
+    
+    // Missing person has highest priority
+    if (missingPersonKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+      primaryConcern = 'Police';
+      maxPriorityScore = 120; // Higher than crime
+    }
+    // Crime has high priority
+    else if (crimeKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+      primaryConcern = 'Police';
+      maxPriorityScore = 100;
+    }
+    // Emergency situations
+    else if (emergencyKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+      // Determine emergency type
+      if (normalized.contains('fire') || normalized.contains('आग') || normalized.contains('આગ')) {
+        primaryConcern = 'Fire Emergency';
+        maxPriorityScore = 95;
+      } else if (normalized.contains('medical') || normalized.contains('hospital') || normalized.contains('doctor')) {
+        primaryConcern = 'Medical Emergency';
+        maxPriorityScore = 95;
+      } else {
+        primaryConcern = 'Police'; // General emergency
+        maxPriorityScore = 90;
+      }
+    }
+    // Traffic accidents
+    else if (accidentKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+      primaryConcern = 'Traffic';
+      maxPriorityScore = 85;
+    }
     
     // Location-only keywords that should not trigger Road category
     final locationOnlyKeywords = ['road', 'sadak', 'रोड', 'સડક', 'street', 'gali', 'lane', 'pise', 'paas', 'samne', 'near', 'behind', 'front'];
@@ -1057,15 +1718,14 @@ class AIService {
         final normalizedCategory = _normalize(categoryName);
         final normalizedSubcategory = _normalize(subcategoryName);
         
-        // If crime detected, heavily penalize non-Police categories
-        if (hasCrimeKeyword && categoryName != 'Police') {
-          score -= 20;
+        // Apply primary concern boost
+        if (primaryConcern != null && categoryName == primaryConcern) {
+          score += maxPriorityScore;
+          signals.add('primary concern detected');
         }
-        
-        // If crime detected, heavily boost Police category
-        if (hasCrimeKeyword && categoryName == 'Police') {
-          score += 15;
-          signals.add('crime detected');
+        // Penalize non-primary categories when primary concern is detected
+        else if (primaryConcern != null && categoryName != primaryConcern) {
+          score -= 50;
         }
         
         if (normalized.contains(normalizedCategory)) {
@@ -1082,8 +1742,8 @@ class AIService {
           final normalizedAlias = _normalize(alias);
           if (normalizedAlias.isEmpty) continue;
           
-          // Skip location-only keywords for Road category if crime is detected
-          if (hasCrimeKeyword && categoryName == 'Road/Pothole' && 
+          // Skip location-only keywords for Road category if primary concern is detected
+          if (primaryConcern != null && categoryName == 'Road/Pothole' && 
               locationOnlyKeywords.any((loc) => normalizedAlias.contains(_normalize(loc)))) {
             continue;
           }
@@ -1105,7 +1765,7 @@ class AIService {
           normalized,
           keywords,
           matchedSignals: signals,
-          isCrimeContext: hasCrimeKeyword,
+          primaryConcern: primaryConcern,
           currentCategory: categoryName,
         );
 
@@ -1128,6 +1788,20 @@ class AIService {
     });
 
     if (candidates.isEmpty) {
+      // Make a best guess based on common patterns
+      final bestGuess = _makeBestGuess(normalized);
+      if (bestGuess != null) {
+        return {
+          'category': bestGuess['category'],
+          'subcategory': bestGuess['subcategory'],
+          'confidence': 0.4, // Low but not zero
+          'alternatives': const <String>[],
+          'matched_signals': bestGuess['signals'] ?? const <String>[],
+          'primary_concern': primaryConcern,
+          'auto_detected': false,
+        };
+      }
+      
       final rankedCategories = _rankCategoryMatches(input);
       return {
         'category': null,
@@ -1136,14 +1810,19 @@ class AIService {
         'alternatives':
             rankedCategories.map((e) => e['category'] as String).toList(),
         'matched_signals': const <String>[],
+        'primary_concern': primaryConcern,
       };
     }
 
     candidates.sort((a, b) => b.score.compareTo(a.score));
     final best = candidates.first;
     final second = candidates.length > 1 ? candidates[1].score : 0;
-    final confidence =
-        max(0.24, min(0.96, best.score / max(1, best.score + second)));
+    
+    // Higher confidence when primary concern is detected
+    final confidence = primaryConcern != null && best.category == primaryConcern
+        ? max(0.85, min(0.98, best.score / max(1, best.score + second)))
+        : max(0.24, min(0.96, best.score / max(1, best.score + second)));
+    
     final alternatives = candidates
         .skip(1)
         .where((candidate) => candidate.score >= max(2, best.score - 3))
@@ -1158,6 +1837,8 @@ class AIService {
       'confidence': confidence,
       'alternatives': alternatives,
       'matched_signals': best.signals.take(4).toList(),
+      'primary_concern': primaryConcern,
+      'auto_detected': primaryConcern != null,
     };
   }
 
@@ -1169,7 +1850,7 @@ class AIService {
     String input,
     List<String> keywords, {
     List<String>? matchedSignals,
-    bool isCrimeContext = false,
+    String? primaryConcern,
     String? currentCategory,
   }) {
     int score = 0;
@@ -1179,8 +1860,8 @@ class AIService {
       final key = _normalize(keyword);
       if (key.isEmpty) continue;
       
-      // Skip location keywords for Road category if crime context detected
-      if (isCrimeContext && currentCategory == 'Road/Pothole' && 
+      // Skip location keywords for Road category if primary concern detected
+      if (primaryConcern != null && currentCategory == 'Road/Pothole' && 
           locationOnlyKeywords.any((loc) => key.contains(_normalize(loc)))) {
         continue;
       }
@@ -1204,6 +1885,39 @@ class AIService {
     final k = keyword.split(' ').where((e) => e.length > 2).toSet();
     if (i.isEmpty || k.isEmpty) return 0;
     return k.where(i.contains).length / k.length;
+  }
+
+  Map<String, dynamic>? _makeBestGuess(String normalized) {
+    // Simple pattern matching for common issues
+    if (normalized.contains('khada') || normalized.contains('khado') || normalized.contains('pothole')) {
+      return {
+        'category': 'Road/Pothole',
+        'subcategory': 'Pothole',
+        'signals': ['khada', 'pothole']
+      };
+    }
+    if (normalized.contains('pani') || normalized.contains('water') || normalized.contains('tap')) {
+      return {
+        'category': 'Water Supply',
+        'subcategory': 'No Water Supply',
+        'signals': ['pani', 'water']
+      };
+    }
+    if (normalized.contains('kachro') || normalized.contains('garbage') || normalized.contains('trash')) {
+      return {
+        'category': 'Garbage/Sanitation',
+        'subcategory': 'Garbage Not Collected',
+        'signals': ['kachro', 'garbage']
+      };
+    }
+    if (normalized.contains('light') || normalized.contains('bijli')) {
+      return {
+        'category': 'Electricity',
+        'subcategory': 'Street Light',
+        'signals': ['light', 'bijli']
+      };
+    }
+    return null;
   }
 
   String _detectLanguage(String input) {
@@ -1357,6 +2071,240 @@ class AIService {
     }
   }
 
+  // Call OpenRouter API with Qwen model
+  Future<Map<String, dynamic>?> _callOpenRouterLLM(String text) async {
+    try {
+      print('Calling OpenRouter API with text: $text');
+      
+      final response = await http.post(
+        Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer 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',
+          'HTTP-Referer': 'https://github.com/smartcity/janhelp', // Optional
+          'X-Title': 'JanHelp Smart City', // Optional
+        },
+        body: jsonEncode({
+          'model': 'openai/gpt-3.5-turbo',
+          'messages': [
+            {
+              'role': 'system',
+              'content': '''You are a complaint classification assistant for a Smart City app. Analyze the user's complaint and return ONLY a JSON object with these fields:
+{
+  "category": "one of: Road/Pothole, Drainage/Sewage, Garbage/Sanitation, Electricity, Water Supply, Traffic, Cyber Crime, Police, Construction",
+  "subcategory": "specific issue type",
+  "urgency": "low, medium, high, or critical",
+  "emotion": "neutral, frustrated, angry, urgent, calm",
+  "language": "english, hindi, gujarati, or hinglish",
+  "is_emergency": true or false,
+  "is_critical": true or false,
+  "confidence": 0.0 to 1.0
+}
+
+Common categories:
+- Road/Pothole: potholes, broken roads, waterlogging
+- Drainage/Sewage: blocked drains, sewage overflow, bad smell
+- Garbage/Sanitation: garbage not collected, dirty areas
+- Electricity: power cuts, street lights, exposed wires
+- Water Supply: no water, leakage, contaminated water
+- Traffic: signal issues, illegal parking, accidents
+- Cyber Crime: online fraud, UPI scams, hacking
+- Police: theft, missing person, assault, crime
+- Construction: illegal construction, debris, noise
+
+Return ONLY valid JSON, no other text.'''
+            },
+            {
+              'role': 'user',
+              'content': text
+            }
+          ],
+          'temperature': 0.3,
+          'max_tokens': 500,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      print('OpenRouter response status: ${response.statusCode}');
+      print('OpenRouter response body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        print('HTTP error: ${response.statusCode}');
+        return null;
+      }
+
+      final data = jsonDecode(response.body);
+      final content = data['choices']?[0]?['message']?['content'] as String?;
+      
+      if (content == null) {
+        print('No content in response');
+        return null;
+      }
+
+      print('OpenRouter content: $content');
+
+      // Parse JSON response from the model
+      try {
+        // Extract JSON from markdown code blocks if present
+        String jsonStr = content.trim();
+        if (jsonStr.contains('```json')) {
+          jsonStr = jsonStr.split('```json')[1].split('```')[0].trim();
+        } else if (jsonStr.contains('```')) {
+          jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
+        }
+        
+        final result = jsonDecode(jsonStr) as Map<String, dynamic>;
+        print('Parsed result: $result');
+        return result;
+      } catch (e) {
+        print('Error parsing JSON response: $e');
+        return null;
+      }
+    } catch (e, stackTrace) {
+      print('OpenRouter API error: $e');
+      print('Stack trace: $stackTrace');
+      return null;
+    }
+  }
+
+  // Build reply from your LLM prediction
+  AssistantReply _buildReplyFromLLM(Map<String, dynamic> llmResult, String userInput) {
+    final category = llmResult['category'] as String?;
+    final subcategory = llmResult['subcategory'] as String?;
+    final urgency = _normalizeUrgency((llmResult['urgency'] as String?) ?? 'medium');
+    final emotion = _normalizeMood((llmResult['emotion'] as String?) ?? 'neutral');
+    final language = _normalizeLanguage((llmResult['language'] as String?) ?? _currentLanguage);
+    final isEmergency = llmResult['is_emergency'] == true;
+    final isCritical = llmResult['is_critical'] == true;
+    final confidence = (llmResult['confidence'] as num?)?.toDouble() ?? 0.8;
+
+    // Update complaint data
+    final draft = Map<String, dynamic>.from(_complaintData);
+    if (category != null) draft['category'] = category;
+    if (subcategory != null) draft['subcategory'] = subcategory;
+    draft['urgency'] = urgency;
+    draft['is_emergency'] = isEmergency;
+    draft['is_critical'] = isCritical;
+
+    // Generate response based on detection
+    String response;
+    String action = 'COLLECT_INFO';
+    bool showConfirmation = false;
+    String? confirmationQuestion;
+
+    if (isEmergency || isCritical) {
+      response = _localized(
+        en: '🚨 EMERGENCY DETECTED!\n\nThis appears to be a critical situation: **$category**\n\nIf there is immediate danger, please call 112 now.\n\n📍 Share your exact location so we can send help quickly.',
+        hi: '🚨 EMERGENCY DETECTED!\n\nYe ek critical situation lagti hai: **$category**\n\nAgar turant khatra hai to abhi 112 call karein.\n\n📍 Apni exact location share karein taki hum jaldi madad bhej sakein.',
+        gu: '🚨 EMERGENCY DETECTED!\n\nAa ek critical situation laghe chhe: **$category**\n\nJo turant jokham hoy to abhi 112 call karo.\n\n📍 Tamari exact location share karo ke ame jaldi madad moki shakiye.',
+        hinglish: '🚨 EMERGENCY DETECTED!\n\nYe critical situation hai: **$category**\n\nImmediate danger ho to 112 call karo.\n\n📍 Exact location share karo jaldi help ke liye.',
+      );
+      action = 'REQUEST_LOCATION';
+    } else if (category != null && confidence > 0.7 && _conversationState == 'greeting') {
+      _conversationState = 'category_confirmation';
+      final emoji = _getCategoryEmoji(category);
+      response = _localized(
+        en: '$emoji I detected this as: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nIs this correct? I can help you file this complaint quickly.',
+        hi: '$emoji Maine ise detect kiya: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nKya ye sahi hai? Main jaldi complaint file kar sakta hun.',
+        gu: '$emoji Mane aa detect karyu: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nAa sachu chhe? Hu jaldi complaint file kari shaku chhu.',
+        hinglish: '$emoji Maine detect kiya: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nYe correct hai? Main quickly complaint file kar sakta hun.',
+      );
+      action = 'CONFIRM';
+      showConfirmation = true;
+      confirmationQuestion = 'Is this the correct category?';
+    } else if (category != null) {
+      final emoji = _getCategoryEmoji(category);
+      response = _localized(
+        en: '$emoji Detected: **${subcategory ?? category}**\n\nNow I need the exact location where this issue is happening.\n\n📍 Please share area, street name, and nearby landmark.',
+        hi: '$emoji Detected: **${subcategory ?? category}**\n\nAb mujhe exact location chahiye jahan ye problem hai.\n\n📍 Kripya area, street name aur nearby landmark bataiye.',
+        gu: '$emoji Detected: **${subcategory ?? category}**\n\nHave mane exact location joiye jya aa samasya chhe.\n\n📍 Krupaya area, street name ane najikno landmark kaho.',
+        hinglish: '$emoji Detected: **${subcategory ?? category}**\n\nAb exact location chahiye jahan problem hai.\n\n📍 Please area, street name aur nearby landmark batao.',
+      );
+      action = 'REQUEST_LOCATION';
+    } else {
+      response = _localized(
+        en: '🤔 I need more details to identify the issue correctly.\n\nPlease describe your problem in more detail.',
+        hi: '🤔 Mujhe issue identify karne ke liye aur details chahiye.\n\nKripya apni problem detail mein batayiye.',
+        gu: '🤔 Mane issue identify karvama hor details joiye.\n\nKrupaya tamari samasya detail ma kaho.',
+        hinglish: '🤔 Issue identify karne ke liye more details chahiye.\n\nPlease problem detail mein batao.',
+      );
+    }
+
+    return AssistantReply(
+      response: response,
+      language: language,
+      mood: emotion,
+      urgency: urgency,
+      category: category,
+      subcategory: subcategory,
+      missingFields: category == null ? ['issue_category'] : ['exact_location'],
+      actionChecklist: _generateActionChecklist(
+        category == null ? 'problem_identification' : 'location_request',
+        category,
+        category == null ? ['issue_category'] : ['exact_location'],
+      ),
+      isEmergency: isEmergency,
+      confidence: confidence,
+      complaintDraft: draft,
+      nextQuestion: category == null ? 'What type of issue is it?' : 'Where is this issue located?',
+      action: action,
+      showConfirmation: showConfirmation,
+      confirmationQuestion: confirmationQuestion,
+    );
+  }
+
+
+
+
+  
+  List<String> _generateActionChecklist(String currentStep, String? category, List<String> missing) {
+    switch (currentStep) {
+      case 'greeting':
+        return ['📝 Describe your problem', '🎯 I will help you step by step'];
+      case 'problem_identification':
+        return ['🔍 Analyzing your issue...', '📋 Identifying category'];
+      case 'category_confirmation':
+        return ['✅ Confirm category', '📝 Provide more details'];
+      case 'subcategory_selection':
+        return ['🎯 Select specific issue type', '📍 Prepare location info'];
+      case 'detail_collection':
+        return ['📝 Share more details', '⏰ Mention duration/severity'];
+      case 'location_request':
+        return ['📍 Share exact location', '🗺️ Use map if needed'];
+      case 'photo_request':
+        return ['📷 Upload photo evidence', '⏭️ Skip if not available'];
+      case 'final_review':
+        return ['👀 Review all details', '✅ Submit complaint'];
+      default:
+        if (category != null) {
+          return ['✅ Issue identified as $category', '📍 Share location next'];
+        }
+        return ['📝 Describe your issue', '🎯 I will guide you'];
+    }
+  }
+  
+  String _generateNextQuestion(String currentStep, List<String> missing) {
+    switch (currentStep) {
+      case 'greeting':
+        return 'What problem would you like to report?';
+      case 'problem_identification':
+        return 'Is this the correct category for your issue?';
+      case 'category_confirmation':
+        return 'Please confirm if this is correct.';
+      case 'subcategory_selection':
+        return 'Which specific type of issue is it?';
+      case 'detail_collection':
+        return 'Please provide more details about the problem.';
+      case 'location_request':
+        return 'Where exactly is this problem located?';
+      case 'photo_request':
+        return 'Can you upload a photo of the issue?';
+      case 'final_review':
+        return 'Should I submit this complaint?';
+      default:
+        return 'How can I help you today?';
+    }
+  }
+
   String? _asString(dynamic value) {
     if (value is! String) return null;
     final v = value.trim();
@@ -1433,8 +2381,14 @@ class AIService {
     _complaintData.clear();
     _currentLanguage = 'en';
     _userMood = 'neutral';
-    _sessionId = ''; // Reset session ID to generate new one
-    _responseCache.clear(); // Clear cache
+    _sessionId = '';
+    _conversationState = 'greeting';
+    _categoryConfirmed = false;
+    _locationProvided = false;
+    _photoUploaded = false;
+    _dateProvided = false;
+    _finalSummary = {};
+    _responseCache.clear();
     print('AI Service reset - new session will be created');
   }
 }

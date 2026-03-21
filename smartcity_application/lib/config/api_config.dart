@@ -58,7 +58,11 @@ class ApiConfig {
   static const String aiHistory = '$baseUrl/ai/history/';
   static const String aiReset = '$baseUrl/ai/reset/';
 
+  // Cloudinary
+  static const String cloudinarySignature = '$baseUrl/cloudinary/signature/';
+
   // Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration uploadTimeout = Duration(seconds: 60);
 }

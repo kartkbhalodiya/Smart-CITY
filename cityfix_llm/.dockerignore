@@ -1,6 +1,0 @@
-__pycache__/
-*.pyc
-*.pyo
-.git/
-*.bat
-setup_and_train.bat

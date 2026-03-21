@@ -1,0 +1,10 @@
+This is a sample text for training the language model.
+Machine learning is a subset of artificial intelligence.
+Deep learning uses neural networks with multiple layers.
+Natural language processing helps computers understand human language.
+Transformers are the foundation of modern language models.
+Training data quality is crucial for model performance.
+Fine-tuning allows adapting pre-trained models to specific tasks.
+GPT models are autoregressive language models.
+BERT uses bidirectional context for understanding text.
+Large language models require significant computational resources.

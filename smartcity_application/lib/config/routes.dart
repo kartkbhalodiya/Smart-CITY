@@ -17,7 +17,7 @@ import '../screens/complaints/user_track.dart';
 import '../screens/departments/departments_list_screen.dart';
 import '../screens/departments/departments_by_category_screen.dart';
 import '../screens/departments/department_detail_screen.dart';
-import '../screens/ai_assistant/ai_call_screen.dart';
+import '../screens/ai_assistant/ai_chat_screen.dart';
 import '../l10n/app_strings.dart';
 
 class AppRoutes {
@@ -133,7 +133,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
 
       case aiChat:
-        return MaterialPageRoute(builder: (_) => const AICallScreen());
+        return MaterialPageRoute(builder: (_) => const AIChatScreen());
 
       default:
         return MaterialPageRoute(

@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 class CityFixLLMClient:
     def __init__(self):
-        self.base_url = getattr(settings, 'CITYFIX_LLM_URL', 'https://kartik1911-cityfix-llm.hf.space')
+        # Use your Hugging Face Space URL
+        self.base_url = getattr(settings, 'CITYFIX_LLM_URL', 'https://kartik1911-cityfix-llm-demo.hf.space')
         self.timeout = 30
         
     def chat(self, message: str, session_id: Optional[str] = None, 

@@ -866,6 +866,10 @@ def ai_chat(request):
         user_email = request.data.get('user_email')
         user_name = request.data.get('user_name')
         preferred_language = request.data.get('preferred_language', 'english')
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        city = request.data.get('city')
+        state = request.data.get('state')
         
         if not user_input:
             return Response({
@@ -903,12 +907,44 @@ def ai_chat(request):
         else:
             # Fallback to rule-based AI
             ai_assistant = SmartCityAI.for_session(session_id)
+            
+            # Update location data if provided
+            if latitude and longitude:
+                ai_assistant.complaint_data['latitude'] = float(latitude)
+                ai_assistant.complaint_data['longitude'] = float(longitude)
+            if city:
+                ai_assistant.complaint_data['city'] = city
+            if state:
+                ai_assistant.complaint_data['state'] = state
+            
             response_data = ai_assistant.generate_response(
                 user_input,
                 user_email=user_email,
                 user_name=user_name,
                 preferred_language=preferred_language,
             )
+            
+            # Check for duplicate if location is available
+            duplicate_info = None
+            if latitude and longitude and ai_assistant.complaint_data.get('category') and ai_assistant.complaint_data.get('subcategory'):
+                if not ai_assistant.complaint_data.get('duplicate_check_done'):
+                    duplicate_info = ai_assistant.check_duplicate_complaint(float(latitude), float(longitude))
+                    ai_assistant.complaint_data['duplicate_check_done'] = True
+                    
+                    if duplicate_info and duplicate_info.get('found'):
+                        response_data['response'] = f"⚠️ {duplicate_info['message']}\n\nThis complaint is already being handled by our team. You can track it using the ticket number provided.\n\nWould you like to submit a new complaint for a different issue?"
+                        response_data['duplicate_found'] = True
+                        response_data['duplicate_ticket'] = duplicate_info['masked_id']
+            
+            # Get nearest department if location is available
+            department_info = None
+            if latitude and longitude and ai_assistant.complaint_data.get('category'):
+                if not ai_assistant.complaint_data.get('department_assigned'):
+                    department_info = ai_assistant.get_nearest_department(float(latitude), float(longitude))
+                    if department_info:
+                        ai_assistant.complaint_data['department_assigned'] = department_info
+                        response_data['assigned_department'] = department_info
+                        response_data['response'] += f"\n\n📍 Your complaint will be assigned to: {department_info['name']}\n📞 Contact: {department_info['phone']}\n⏱️ Expected resolution: {department_info['sla_hours']} hours"
             
             return Response({
                 'success': True,
@@ -919,7 +955,10 @@ def ai_chat(request):
                 'language': response_data.get('language'),
                 'next_step': response_data.get('next_step'),
                 'session_id': session_id,
-                'llm_powered': False
+                'llm_powered': False,
+                'duplicate_found': response_data.get('duplicate_found', False),
+                'duplicate_ticket': response_data.get('duplicate_ticket'),
+                'assigned_department': response_data.get('assigned_department'),
             })
         
     except Exception as e:
@@ -1082,4 +1121,204 @@ def ai_reset(request):
         return Response({
             'success': False,
             'message': f'AI Reset Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_check_duplicate(request):
+    """Check for duplicate complaints before submission."""
+    try:
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        category = request.data.get('category')
+        subcategory = request.data.get('subcategory')
+        description = request.data.get('description', '')
+        
+        if not all([latitude, longitude, category, subcategory]):
+            return Response({
+                'success': False,
+                'message': 'Latitude, longitude, category, and subcategory are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Map category display name to key
+        category_key_map = {
+            "Police Complaint": "police",
+            "Traffic Complaint": "traffic",
+            "Construction Complaint": "construction",
+            "Water Supply": "water",
+            "Electricity": "electricity",
+            "Garbage/Sanitation": "garbage",
+            "Road/Pothole": "road",
+            "Drainage/Sewage": "drainage",
+            "Illegal Activities": "illegal",
+            "Transportation": "transportation",
+            "Cyber Crime": "cyber",
+            "Other Complaint": "other",
+        }
+        
+        category_key = category_key_map.get(category, category.lower().replace(" ", ""))
+        
+        # Check for duplicate
+        duplicate = Complaint.check_duplicate(
+            latitude=float(latitude),
+            longitude=float(longitude),
+            complaint_type=category_key,
+            subcategory=subcategory,
+            description=description
+        )
+        
+        if duplicate:
+            # Mask the complaint ID for privacy
+            orig_id = duplicate.complaint_number
+            masked_id = f"{orig_id[:3]}XXXXXX" if len(orig_id) > 3 else f"{orig_id}XXXX"
+            
+            return Response({
+                'success': True,
+                'duplicate_found': True,
+                'masked_ticket': masked_id,
+                'original_ticket': orig_id,
+                'message': f'This issue has already been reported by another citizen in this area. Ticket: {masked_id}',
+                'complaint_status': duplicate.get_work_status_display(),
+                'created_at': duplicate.created_at.strftime('%Y-%m-%d %H:%M'),
+            })
+        
+        return Response({
+            'success': True,
+            'duplicate_found': False,
+            'message': 'No duplicate found. You can proceed with submission.'
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'message': f'Duplicate Check Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ai_get_department(request):
+    """Get nearest department for complaint."""
+    try:
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        category = request.data.get('category')
+        city = request.data.get('city', '')
+        state = request.data.get('state', '')
+        
+        if not all([latitude, longitude, category]):
+            return Response({
+                'success': False,
+                'message': 'Latitude, longitude, and category are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Map category display name to key
+        category_key_map = {
+            "Police Complaint": "police",
+            "Traffic Complaint": "traffic",
+            "Construction Complaint": "construction",
+            "Water Supply": "water",
+            "Electricity": "electricity",
+            "Garbage/Sanitation": "garbage",
+            "Road/Pothole": "road",
+            "Drainage/Sewage": "drainage",
+            "Illegal Activities": "illegal",
+            "Transportation": "transportation",
+            "Cyber Crime": "cyber",
+            "Other Complaint": "other",
+        }
+        
+        category_key = category_key_map.get(category, category.lower().replace(" ", ""))
+        
+        # Create temporary complaint object to use backend logic
+        temp_complaint = Complaint(
+            complaint_type=category_key,
+            latitude=float(latitude),
+            longitude=float(longitude),
+            city=city,
+            state=state
+        )
+        
+        # Get nearest department
+        nearest_dept = temp_complaint.get_nearest_department()
+        
+        if nearest_dept:
+            return Response({
+                'success': True,
+                'department': {
+                    'id': nearest_dept.id,
+                    'name': nearest_dept.name,
+                    'type': nearest_dept.get_department_type_display(),
+                    'email': nearest_dept.email,
+                    'phone': nearest_dept.phone,
+                    'address': nearest_dept.formatted_address,
+                    'sla_hours': nearest_dept.sla_hours,
+                    'latitude': float(nearest_dept.latitude) if nearest_dept.latitude else 0.0,
+                    'longitude': float(nearest_dept.longitude) if nearest_dept.longitude else 0.0,
+                },
+                'message': f'Your complaint will be assigned to {nearest_dept.name}'
+            })
+        
+        return Response({
+            'success': False,
+            'message': 'No department found for this category and location'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'message': f'Department Lookup Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def get_cloudinary_signature(request):
+    """Generate Cloudinary upload signature for secure client-side uploads."""
+    try:
+        import hashlib
+        import time
+        from django.conf import settings
+        
+        timestamp = int(time.time())
+        folder = 'complaints'
+        
+        # Get Cloudinary config
+        cloudinary_config = settings.CLOUDINARY_STORAGE
+        api_secret = cloudinary_config.get('API_SECRET', '')
+        cloud_name = cloudinary_config.get('CLOUD_NAME', '')
+        api_key = cloudinary_config.get('API_KEY', '')
+        
+        if not api_secret or not cloud_name or not api_key:
+            return Response({
+                'success': False,
+                'message': 'Cloudinary not configured properly'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Build params for signature (alphabetically sorted)
+        params_to_sign = f"folder={folder}&timestamp={timestamp}"
+        
+        # Generate signature using SHA-1 (Cloudinary requirement)
+        signature = hashlib.sha1(f"{params_to_sign}{api_secret}".encode()).hexdigest()
+        
+        return Response({
+            'success': True,
+            'signature': signature,
+            'timestamp': timestamp,
+            'cloud_name': cloud_name,
+            'api_key': api_key,
+            'folder': folder,
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'message': f'Signature Generation Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
