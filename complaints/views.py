@@ -5015,8 +5015,20 @@ def forgot_password(request):
                     
                     # IMPORTANT: Send to user's email, not department email
                     try:
+                        # DIRECT TEST: Send simple email first
+                        print(f"[Forgot Password] DIRECT TEST: Sending simple test email...")
+                        from .email_utils import send_email_with_resend
+                        test_html = f"<h1>Password Reset</h1><p>Email: {user.email}</p><p>Password: {new_password}</p>"
+                        test_result = send_email_with_resend(
+                            user.email,
+                            "TEST - Password Reset",
+                            test_html
+                        )
+                        print(f"[Forgot Password] DIRECT TEST Result: {test_result}")
+                        
+                        # Now send the actual template email
                         email_result = send_password_reset_credentials_email(
-                            email=user.email,  # Use user's email, not department email
+                            email=user.email,
                             user_name=user_name,
                             new_password=new_password,
                             department=dept_user.department,
@@ -5024,7 +5036,7 @@ def forgot_password(request):
                         )
                         print(f"[Forgot Password] Email function returned: {email_result}")
                     except Exception as email_error:
-                        print(f"[Forgot Password] ❌ Email function exception: {str(email_error)}")
+                        print(f"[Forgot Password] Email function exception: {str(email_error)}")
                         import traceback
                         traceback.print_exc()
                     
