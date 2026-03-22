@@ -4949,8 +4949,39 @@ def forgot_password(request):
                 
                 # Generate a new password
                 new_password = generate_strong_password(12)
+                
+                # Set the new password (this will hash it properly)
                 user.set_password(new_password)
-                user.save()
+                
+                # Force save with update_fields to ensure password is updated
+                user.save(update_fields=['password'])
+                
+                # Force database commit
+                from django.db import transaction
+                transaction.commit()
+                
+                # Verify the password was actually changed by reloading from database
+                user.refresh_from_db()
+                
+                # Test that the new password works
+                from django.contrib.auth import authenticate as auth_test
+                test_auth = auth_test(username=user.username, password=new_password)
+                if not test_auth:
+                    print(f"[Forgot Password] ERROR: Password verification failed for {email}")
+                    return
+                
+                print(f"[Forgot Password] Password successfully changed and verified for {email}")
+                
+                # Invalidate all existing sessions for this user
+                from django.contrib.sessions.models import Session
+                from django.utils import timezone as tz
+                for session in Session.objects.filter(expire_date__gte=tz.now()):
+                    try:
+                        session_data = session.get_decoded()
+                        if session_data.get('_auth_user_id') == str(user.id):
+                            session.delete()
+                    except:
+                        pass
                 
                 print(f"[Forgot Password] Password reset for {email}, sending email...")
                 
