@@ -26,7 +26,11 @@ def send_email_with_resend(recipient_email, subject, html_content):
             "Content-Type": "application/json"
         }
         
+        # Use the verified email from Resend or fallback
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
+        
+        # IMPORTANT: For Resend testing, you can only send to your verified email
+        # To send to any email, you need to verify a domain at resend.com/domains
         
         payload = {
             "from": from_email,
@@ -41,7 +45,15 @@ def send_email_with_resend(recipient_email, subject, html_content):
             print(f"[Email] SUCCESS: Resend API: Email sent successfully to {recipient_email}")
             return True
         else:
-            print(f"[Email] ERROR: Resend API Error: {response.status_code} - {response.text}")
+            error_data = response.json() if response.text else {}
+            error_msg = error_data.get('message', response.text)
+            print(f"[Email] ERROR: Resend API Error: {response.status_code} - {error_msg}")
+            
+            # If it's a domain verification error, inform but continue with SMTP
+            if response.status_code == 403 and 'domain' in error_msg.lower():
+                print(f"[Email] INFO: Resend requires domain verification for production use")
+                print(f"[Email] INFO: Visit https://resend.com/domains to verify your domain")
+            
             return False
             
     except Exception as e:
@@ -51,7 +63,7 @@ def send_email_with_resend(recipient_email, subject, html_content):
 def send_email_template(template_name, context, recipient_email, subject):
     """
     Send HTML email using template
-    Tries Resend first, falls back to SMTP if Resend fails
+    Uses Resend API exclusively for all emails
     
     Args:
         template_name: Name of the email template (without .html)
@@ -66,28 +78,17 @@ def send_email_template(template_name, context, recipient_email, subject):
         # Render HTML content
         html_content = render_to_string(f'emails/{template_name}.html', context)
         
-        # Try Resend first (Fast & Free)
-        resend_api_key = getattr(settings, 'RESEND_API_KEY', '')
-        if resend_api_key:
-            print(f"[Email] Attempting to send via Resend API to {recipient_email}")
-            if send_email_with_resend(recipient_email, subject, html_content):
-                return True
-            print(f"[Email] Resend failed, falling back to SMTP...")
+        # Use Resend API exclusively
+        print(f"[Email] Sending via Resend API to {recipient_email}")
+        result = send_email_with_resend(recipient_email, subject, html_content)
         
-        # Fallback to SMTP
-        print(f"[Email] Sending via SMTP to {recipient_email}")
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=f"Please view this email in an HTML-compatible email client.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[recipient_email]
-        )
-        
-        email.attach_alternative(html_content, "text/html")
-        email.send()
-        
-        print(f"[Email] SUCCESS: SMTP: Successfully sent '{subject}' to {recipient_email}")
-        return True
+        if result:
+            print(f"[Email] SUCCESS: Email sent to {recipient_email}")
+            return True
+        else:
+            print(f"[Email] ERROR: Failed to send email to {recipient_email}")
+            return False
+            
     except Exception as e:
         print(f"[Email] ERROR: Error sending email to {recipient_email}: {str(e)}")
         import traceback
