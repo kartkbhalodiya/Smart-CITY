@@ -246,9 +246,20 @@ def send_password_reset_credentials_email(email, user_name, new_password, depart
         'email': email,
         'user_name': user_name,
         'new_password': new_password,
-        'department': department,
-        'city_admin_info': city_admin_info,
     }
+    
+    # Serialize department object to avoid template rendering issues
+    if department:
+        context['department'] = {
+            'name': department.name,
+            'email': department.email,
+            'phone': department.phone if hasattr(department, 'phone') else '',
+            'type': department.get_department_type_display() if hasattr(department, 'get_department_type_display') else '',
+        }
+    
+    if city_admin_info:
+        context['city_admin_info'] = city_admin_info
+    
     return send_email_template(
         'password_reset_credentials',
         context,
