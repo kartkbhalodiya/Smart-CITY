@@ -4938,8 +4938,7 @@ def forgot_password(request):
                 print(f"[Forgot Password] Starting password reset for: {email}")
                 print(f"{'='*60}")
                 
-                # Check if email belongs to a department user or city admin
-                user = User.objects.filter(email__iexact=email).first()
+                # Check if email belongs to a department user or city admin`r`n                # First try to find user by email`r`n                user = User.objects.filter(email__iexact=email).first()`r`n                `r`n                # If not found, check if it's a department email`r`n                if not user:`r`n                    dept = Department.objects.filter(email__iexact=email).first()`r`n                    if dept:`r`n                        dept_user = DepartmentUser.objects.filter(department=dept).select_related('user').first()`r`n                        if dept_user:`r`n                            user = dept_user.user`r`n                            print(f"[Forgot Password] Found user via department email: {dept.name}")
                 if not user:
                     print(f"[Forgot Password] ✗ No user found with email: {email}")
                     return
@@ -5011,52 +5010,9 @@ def forgot_password(request):
                     print(f"  - Department: {dept_user.department.name}")
                     print(f"  - Department Email: {dept_user.department.email}")
                     print(f"  - User Email: {user.email}")
-                    print(f"[Forgot Password] Sending department reset email...")
+                    print(f"[Forgot Password] Sending department reset email...")`r`n                    `r`n                    # Determine which email to send to`r`n                    recipient_email = user.email`r`n                    `r`n                    # If user email is not set or is a placeholder, use department email`r`n                    if not recipient_email or '@' not in recipient_email:`r`n                        recipient_email = dept_user.department.email`r`n                        print(f"[Forgot Password] Using department email as recipient: {recipient_email}")`r`n                    else:`r`n                        print(f"[Forgot Password] Using user email as recipient: {recipient_email}")`r`n                    `r`n                    # Send the password reset email`r`n                    try:`r`n                        email_result = send_password_reset_credentials_email(`r`n                            email=recipient_email,`r`n                            user_name=user_name,`r`n                            new_password=new_password,`r`n                            department=dept_user.department,`r`n                            city_admin_info=None`r`n                        )`r`n                        print(f"[Forgot Password] Email function returned: {email_result}")`r`n                    except Exception as email_error:`r`n                        print(f"[Forgot Password] Email function exception: {str(email_error)}")`r`n                        import traceback`r`n                        traceback.print_exc()
                     
-                    # IMPORTANT: Send to user's email, not department email
-                    try:
-                        # DIRECT TEST: Send simple email first
-                        print(f"[Forgot Password] DIRECT TEST: Sending simple test email...")
-                        from .email_utils import send_email_with_resend
-                        test_html = f"<h1>Password Reset</h1><p>Email: {user.email}</p><p>Password: {new_password}</p>"
-                        test_result = send_email_with_resend(
-                            user.email,
-                            "TEST - Password Reset",
-                            test_html
-                        )
-                        print(f"[Forgot Password] DIRECT TEST Result: {test_result}")
-                        
-                        # Now send the actual template email
-                        email_result = send_password_reset_credentials_email(
-                            email=user.email,
-                            user_name=user_name,
-                            new_password=new_password,
-                            department=dept_user.department,
-                            city_admin_info=None
-                        )
-                        print(f"[Forgot Password] Email function returned: {email_result}")
-                    except Exception as email_error:
-                        print(f"[Forgot Password] Email function exception: {str(email_error)}")
-                        import traceback
-                        traceback.print_exc()
-                    
-                elif city_admin:
-                    print(f"  - City: {city_admin.city_name}, State: {city_admin.state}")
-                    print(f"  - User Email: {user.email}")
-                    print(f"[Forgot Password] Sending city admin reset email...")
-                    
-                    city_admin_info = {
-                        'full_name': user_name,
-                        'city': city_admin.city_name,
-                        'state': city_admin.state,
-                        'pincode': city_admin.pincode,
-                        'contact_address': city_admin.contact_address
-                    }
-                    
-                    # IMPORTANT: Send to user's email
-                    try:
-                        email_result = send_password_reset_credentials_email(
-                            email=user.email,  # Use user's email
+                elif city_admin:`r`n                    print(f"  - City: {city_admin.city_name}, State: {city_admin.state}")`r`n                    print(f"  - User Email: {user.email}")`r`n                    print(f"[Forgot Password] Sending city admin reset email...")`r`n                    `r`n                    city_admin_info = {`r`n                        'full_name': user_name,`r`n                        'city': city_admin.city_name,`r`n                        'state': city_admin.state,`r`n                        'pincode': city_admin.pincode,`r`n                        'contact_address': city_admin.contact_address`r`n                    }`r`n                    `r`n                    # Determine recipient email`r`n                    recipient_email = user.email if user.email and '@' in user.email else email`r`n                    print(f"[Forgot Password] Sending to: {recipient_email}")`r`n                    `r`n                    # Send to user's email`r`n                    try:`r`n                        email_result = send_password_reset_credentials_email(`r`n                            email=recipient_email,  # Use user's email
                             user_name=user_name,
                             new_password=new_password,
                             department=None,
@@ -5223,3 +5179,6 @@ def department_heatmap(request):
         
     except DepartmentUser.DoesNotExist:
         return redirect('user_dashboard')
+
+
+
