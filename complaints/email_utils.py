@@ -2,10 +2,52 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
+import requests
+import json
+
+def send_email_with_resend(recipient_email, subject, html_content):
+    """
+    Send email using Resend API (Fast & Free)
+    """
+    try:
+        resend_api_key = getattr(settings, 'RESEND_API_KEY', '')
+        
+        if not resend_api_key:
+            print("[Email] Resend API key not configured, falling back to SMTP")
+            return False
+        
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {resend_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@janhelps.in')
+        
+        payload = {
+            "from": from_email,
+            "to": [recipient_email],
+            "subject": subject,
+            "html": html_content
+        }
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print(f"[Email] ✓ Resend API: Email sent successfully to {recipient_email}")
+            return True
+        else:
+            print(f"[Email] ✗ Resend API Error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"[Email] ✗ Resend API Exception: {str(e)}")
+        return False
 
 def send_email_template(template_name, context, recipient_email, subject):
     """
     Send HTML email using template
+    Tries Resend first, falls back to SMTP if Resend fails
     
     Args:
         template_name: Name of the email template (without .html)
@@ -20,7 +62,16 @@ def send_email_template(template_name, context, recipient_email, subject):
         # Render HTML content
         html_content = render_to_string(f'emails/{template_name}.html', context)
         
-        # Create email
+        # Try Resend first (Fast & Free)
+        resend_api_key = getattr(settings, 'RESEND_API_KEY', '')
+        if resend_api_key:
+            print(f"[Email] Attempting to send via Resend API to {recipient_email}")
+            if send_email_with_resend(recipient_email, subject, html_content):
+                return True
+            print(f"[Email] Resend failed, falling back to SMTP...")
+        
+        # Fallback to SMTP
+        print(f"[Email] Sending via SMTP to {recipient_email}")
         email = EmailMultiAlternatives(
             subject=subject,
             body=f"Please view this email in an HTML-compatible email client.",
@@ -31,10 +82,10 @@ def send_email_template(template_name, context, recipient_email, subject):
         email.attach_alternative(html_content, "text/html")
         email.send()
         
-        print(f"[Email] Successfully sent '{subject}' to {recipient_email}")
+        print(f"[Email] ✓ SMTP: Successfully sent '{subject}' to {recipient_email}")
         return True
     except Exception as e:
-        print(f"[Email] Error sending email to {recipient_email}: {str(e)}")
+        print(f"[Email] ✗ Error sending email to {recipient_email}: {str(e)}")
         import traceback
         traceback.print_exc()
         return False

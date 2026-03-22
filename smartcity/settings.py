@@ -173,14 +173,19 @@ CLOUDINARY_STORAGE = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Email Configuration
+# Email Configuration - Using Resend (Free & Fast)
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+
+# Resend Configuration (Recommended - Free & Fast)
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+
+# Fallback to SMTP if Resend not configured
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@janhelps.in')
 
 # SMS Configuration
 SMS_BACKEND = os.getenv('SMS_BACKEND', 'console')  # options: console, twilio, etc.

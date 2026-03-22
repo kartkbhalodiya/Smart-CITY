@@ -14,3 +14,4 @@ google-generativeai
 google-genai
 django-redis
 redis
+requests>=2.31.0

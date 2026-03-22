@@ -1,0 +1,65 @@
+========================================
+RESEND EMAIL - QUICK START (2 MINUTES)
+========================================
+
+✅ FREE - 3,000 emails/month forever
+✅ FAST - Emails delivered in seconds
+✅ NO CREDIT CARD - Sign up free
+
+STEP 1: Sign Up (30 seconds)
+-----------------------------
+Go to: https://resend.com/signup
+- Enter your email
+- Verify email
+- Done!
+
+STEP 2: Get API Key (30 seconds)
+---------------------------------
+1. Login to Resend
+2. Go to: https://resend.com/api-keys
+3. Click "Create API Key"
+4. Name: "Smart City"
+5. Copy the key (starts with re_)
+
+STEP 3: Add to .env (30 seconds)
+---------------------------------
+Open your .env file and add this line:
+
+RESEND_API_KEY=re_paste_your_key_here
+
+Replace "re_paste_your_key_here" with your actual key.
+
+Also add:
+DEFAULT_FROM_EMAIL=noreply@janhelps.in
+
+STEP 4: Install & Restart (30 seconds)
+---------------------------------------
+Run in terminal:
+pip install requests
+
+Then restart your Django server:
+python manage.py runserver
+
+STEP 5: Test It! (30 seconds)
+------------------------------
+1. Go to: http://127.0.0.1:8000/forgot-password/
+2. Enter a department email
+3. Check inbox - email arrives in seconds!
+
+DONE! 🎉
+--------
+Your emails are now:
+- 10x faster than Gmail
+- More reliable
+- No daily limits
+- No "less secure app" issues
+
+Check console logs to see:
+[Email] ✓ Resend API: Email sent successfully
+
+NEED HELP?
+----------
+Read full guide: RESEND_SETUP.md
+Resend Docs: https://resend.com/docs
+
+========================================

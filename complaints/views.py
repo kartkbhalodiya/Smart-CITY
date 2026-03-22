@@ -4934,75 +4934,93 @@ def forgot_password(request):
         
         def send_reset_email():
             try:
+                print(f"\n{'='*60}")
+                print(f"[Forgot Password] Starting password reset for: {email}")
+                print(f"{'='*60}")
+                
                 # Check if email belongs to a department user or city admin
                 user = User.objects.filter(email__iexact=email).first()
                 if not user:
-                    print(f"[Forgot Password] No user found with email: {email}")
+                    print(f"[Forgot Password] ✗ No user found with email: {email}")
                     return
+                
+                print(f"[Forgot Password] ✓ User found: {user.username} (ID: {user.id})")
                 
                 dept_user = DepartmentUser.objects.filter(user=user).select_related('department').first()
                 city_admin = CityAdmin.objects.filter(user=user).first()
                 
                 if not dept_user and not city_admin:
-                    print(f"[Forgot Password] User {email} is not a department user or city admin")
+                    print(f"[Forgot Password] ✗ User {email} is not a department user or city admin")
                     return
+                
+                user_type = 'Department User' if dept_user else 'City Admin'
+                print(f"[Forgot Password] ✓ User type: {user_type}")
                 
                 # Generate a new password
                 new_password = generate_strong_password(12)
+                print(f"[Forgot Password] ✓ Generated new password (length: {len(new_password)})")
                 
                 # Set the new password (this will hash it properly)
                 user.set_password(new_password)
-                
-                # Force save with update_fields to ensure password is updated
                 user.save(update_fields=['password'])
+                print(f"[Forgot Password] ✓ Password saved to database")
                 
                 # Force database commit
                 from django.db import transaction
                 transaction.commit()
+                print(f"[Forgot Password] ✓ Database transaction committed")
                 
-                # Verify the password was actually changed by reloading from database
+                # Verify the password was actually changed
                 user.refresh_from_db()
-                
-                # Test that the new password works
                 from django.contrib.auth import authenticate as auth_test
                 test_auth = auth_test(username=user.username, password=new_password)
                 if not test_auth:
-                    print(f"[Forgot Password] ERROR: Password verification failed for {email}")
+                    print(f"[Forgot Password] ✗ ERROR: Password verification failed!")
                     return
                 
-                print(f"[Forgot Password] Password successfully changed and verified for {email}")
+                print(f"[Forgot Password] ✓ Password verified successfully")
                 
-                # Invalidate all existing sessions for this user
+                # Invalidate all existing sessions
                 from django.contrib.sessions.models import Session
                 from django.utils import timezone as tz
+                session_count = 0
                 for session in Session.objects.filter(expire_date__gte=tz.now()):
                     try:
                         session_data = session.get_decoded()
                         if session_data.get('_auth_user_id') == str(user.id):
                             session.delete()
+                            session_count += 1
                     except:
                         pass
                 
-                print(f"[Forgot Password] Password reset for {email}, sending email...")
+                print(f"[Forgot Password] ✓ Invalidated {session_count} existing sessions")
                 
-                # Import the new email function
+                # Import email function
                 from .email_utils import send_password_reset_credentials_email
-                
                 user_name = user.get_full_name() or user.username
                 
+                print(f"[Forgot Password] Preparing email...")
+                print(f"  - Recipient: {email}")
+                print(f"  - User Name: {user_name}")
+                
+                email_result = False
+                
                 if dept_user:
-                    # Send email with department details and new password
-                    print(f"[Forgot Password] Sending department reset email to {email}")
-                    send_password_reset_credentials_email(
+                    print(f"  - Department: {dept_user.department.name}")
+                    print(f"[Forgot Password] Sending department reset email...")
+                    
+                    email_result = send_password_reset_credentials_email(
                         email=email,
                         user_name=user_name,
                         new_password=new_password,
                         department=dept_user.department,
                         city_admin_info=None
                     )
+                    
                 elif city_admin:
-                    # Send email with city admin details and new password
-                    print(f"[Forgot Password] Sending city admin reset email to {email}")
+                    print(f"  - City: {city_admin.city_name}, State: {city_admin.state}")
+                    print(f"[Forgot Password] Sending city admin reset email...")
+                    
                     city_admin_info = {
                         'full_name': user_name,
                         'city': city_admin.city_name,
@@ -5010,7 +5028,8 @@ def forgot_password(request):
                         'pincode': city_admin.pincode,
                         'contact_address': city_admin.contact_address
                     }
-                    send_password_reset_credentials_email(
+                    
+                    email_result = send_password_reset_credentials_email(
                         email=email,
                         user_name=user_name,
                         new_password=new_password,
@@ -5018,18 +5037,29 @@ def forgot_password(request):
                         city_admin_info=city_admin_info
                     )
                 
-                print(f"[Forgot Password] Email sent successfully to {email}")
+                if email_result:
+                    print(f"[Forgot Password] ✓ Email sent successfully!")
+                else:
+                    print(f"[Forgot Password] ✗ Email sending failed!")
+                    print(f"[Forgot Password] Check email configuration in settings.py")
+                    print(f"  - EMAIL_HOST: {settings.EMAIL_HOST if hasattr(settings, 'EMAIL_HOST') else 'Not set'}")
+                    print(f"  - EMAIL_HOST_USER: {settings.EMAIL_HOST_USER if hasattr(settings, 'EMAIL_HOST_USER') else 'Not set'}")
+                
+                print(f"{'='*60}")
+                print(f"[Forgot Password] Process completed for {email}")
+                print(f"{'='*60}\n")
                 
             except Exception as e:
-                print(f"[Forgot Password] Error sending email: {str(e)}")
+                print(f"\n[Forgot Password] ✗ CRITICAL ERROR:")
+                print(f"  Error: {str(e)}")
                 import traceback
                 traceback.print_exc()
+                print(f"{'='*60}\n")
         
         Thread(target=send_reset_email, daemon=True).start()
         return redirect('login')
     
     return render(request, 'forgot_password.html')
-
 def complaint_success(request):
     complaint_id = request.session.get('last_complaint_id')
     if not complaint_id:
