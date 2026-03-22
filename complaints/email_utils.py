@@ -26,7 +26,7 @@ def send_email_with_resend(recipient_email, subject, html_content):
             "Content-Type": "application/json"
         }
         
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@janhelps.in')
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
         
         payload = {
             "from": from_email,
@@ -208,17 +208,41 @@ def send_department_assignment_email(user_email, user_name, department_name, use
 
 def send_department_credentials_email(email, department, login_password):
     """Send department login credentials"""
+    print(f"\n[send_department_credentials_email] Called")
+    print(f"  - email: {email}")
+    print(f"  - department: {department.name if department else 'None'}")
+    
+    # Serialize department object
+    dept_data = None
+    if department:
+        try:
+            dept_data = {
+                'name': department.name,
+                'email': department.email,
+                'phone': department.phone if hasattr(department, 'phone') else '',
+                'address': department.address if hasattr(department, 'address') else '',
+                'type': department.get_department_type_display() if hasattr(department, 'get_department_type_display') else '',
+                'city': department.city if hasattr(department, 'city') else '',
+                'state': department.state if hasattr(department, 'state') else '',
+            }
+            print(f"  - Department serialized")
+        except Exception as e:
+            print(f"  - ERROR: {str(e)}")
+    
     context = {
         'email': email,
-        'department': department,
+        'department': dept_data,
         'login_password': login_password,
     }
-    return send_email_template(
+    
+    result = send_email_template(
         'department_credentials',
         context,
         email,
         'Your Smart City Department Account Details - JanHelp'
     )
+    print(f"  - Result: {result}")
+    return result
 
 
 def send_city_admin_credentials_email(email, full_name, state, city, login_password, pincode='', contact_address=''):
@@ -242,6 +266,13 @@ def send_city_admin_credentials_email(email, full_name, state, city, login_passw
 
 def send_password_reset_credentials_email(email, user_name, new_password, department=None, city_admin_info=None):
     """Send password reset email with new credentials and account details"""
+    print(f"\n[send_password_reset_credentials_email] Called with:")
+    print(f"  - email: {email}")
+    print(f"  - user_name: {user_name}")
+    print(f"  - new_password length: {len(new_password)}")
+    print(f"  - department: {department.name if department else 'None'}")
+    print(f"  - city_admin_info: {bool(city_admin_info)}")
+    
     context = {
         'email': email,
         'user_name': user_name,
@@ -250,22 +281,31 @@ def send_password_reset_credentials_email(email, user_name, new_password, depart
     
     # Serialize department object to avoid template rendering issues
     if department:
-        context['department'] = {
-            'name': department.name,
-            'email': department.email,
-            'phone': department.phone if hasattr(department, 'phone') else '',
-            'type': department.get_department_type_display() if hasattr(department, 'get_department_type_display') else '',
-        }
+        print(f"  - Serializing department object...")
+        try:
+            context['department'] = {
+                'name': department.name,
+                'email': department.email,
+                'phone': department.phone if hasattr(department, 'phone') else '',
+                'type': department.get_department_type_display() if hasattr(department, 'get_department_type_display') else '',
+            }
+            print(f"  - Department serialized: {context['department']['name']}")
+        except Exception as e:
+            print(f"  - ERROR serializing department: {str(e)}")
     
     if city_admin_info:
         context['city_admin_info'] = city_admin_info
+        print(f"  - City admin info added")
     
-    return send_email_template(
+    print(f"  - Calling send_email_template...")
+    result = send_email_template(
         'password_reset_credentials',
         context,
         email,
         'Password Reset Successful - JanHelp'
     )
+    print(f"  - send_email_template returned: {result}")
+    return result
 
 
 # Status icon mapping

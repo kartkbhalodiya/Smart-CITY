@@ -5001,7 +5001,9 @@ def forgot_password(request):
                 
                 print(f"[Forgot Password] Preparing email...")
                 print(f"  - Recipient: {email}")
+                print(f"  - User Email (actual): {user.email}")
                 print(f"  - User Name: {user_name}")
+                print(f"  - New Password Length: {len(new_password)}")
                 
                 email_result = False
                 
@@ -5012,13 +5014,19 @@ def forgot_password(request):
                     print(f"[Forgot Password] Sending department reset email...")
                     
                     # IMPORTANT: Send to user's email, not department email
-                    email_result = send_password_reset_credentials_email(
-                        email=user.email,  # Use user's email, not department email
-                        user_name=user_name,
-                        new_password=new_password,
-                        department=dept_user.department,
-                        city_admin_info=None
-                    )
+                    try:
+                        email_result = send_password_reset_credentials_email(
+                            email=user.email,  # Use user's email, not department email
+                            user_name=user_name,
+                            new_password=new_password,
+                            department=dept_user.department,
+                            city_admin_info=None
+                        )
+                        print(f"[Forgot Password] Email function returned: {email_result}")
+                    except Exception as email_error:
+                        print(f"[Forgot Password] ❌ Email function exception: {str(email_error)}")
+                        import traceback
+                        traceback.print_exc()
                     
                 elif city_admin:
                     print(f"  - City: {city_admin.city_name}, State: {city_admin.state}")
@@ -5034,13 +5042,19 @@ def forgot_password(request):
                     }
                     
                     # IMPORTANT: Send to user's email
-                    email_result = send_password_reset_credentials_email(
-                        email=user.email,  # Use user's email
-                        user_name=user_name,
-                        new_password=new_password,
-                        department=None,
-                        city_admin_info=city_admin_info
-                    )
+                    try:
+                        email_result = send_password_reset_credentials_email(
+                            email=user.email,  # Use user's email
+                            user_name=user_name,
+                            new_password=new_password,
+                            department=None,
+                            city_admin_info=city_admin_info
+                        )
+                        print(f"[Forgot Password] Email function returned: {email_result}")
+                    except Exception as email_error:
+                        print(f"[Forgot Password] ❌ Email function exception: {str(email_error)}")
+                        import traceback
+                        traceback.print_exc()
                 
                 if email_result:
                     print(f"[Forgot Password] ✓ Email sent successfully!")
