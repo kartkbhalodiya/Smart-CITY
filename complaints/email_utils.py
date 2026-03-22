@@ -12,6 +12,10 @@ def send_email_with_resend(recipient_email, subject, html_content):
     try:
         resend_api_key = getattr(settings, 'RESEND_API_KEY', '')
         
+        print(f"[Email] DEBUG: Resend API Key present: {bool(resend_api_key)}")
+        if resend_api_key:
+            print(f"[Email] DEBUG: API Key starts with: {resend_api_key[:10]}...")
+        
         if not resend_api_key:
             print("[Email] Resend API key not configured, falling back to SMTP")
             return False
