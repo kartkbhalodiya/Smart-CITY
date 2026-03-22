@@ -38,14 +38,14 @@ def send_email_with_resend(recipient_email, subject, html_content):
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         
         if response.status_code == 200:
-            print(f"[Email] ✓ Resend API: Email sent successfully to {recipient_email}")
+            print(f"[Email] SUCCESS: Resend API: Email sent successfully to {recipient_email}")
             return True
         else:
-            print(f"[Email] ✗ Resend API Error: {response.status_code} - {response.text}")
+            print(f"[Email] ERROR: Resend API Error: {response.status_code} - {response.text}")
             return False
             
     except Exception as e:
-        print(f"[Email] ✗ Resend API Exception: {str(e)}")
+        print(f"[Email] ERROR: Resend API Exception: {str(e)}")
         return False
 
 def send_email_template(template_name, context, recipient_email, subject):
@@ -86,10 +86,10 @@ def send_email_template(template_name, context, recipient_email, subject):
         email.attach_alternative(html_content, "text/html")
         email.send()
         
-        print(f"[Email] ✓ SMTP: Successfully sent '{subject}' to {recipient_email}")
+        print(f"[Email] SUCCESS: SMTP: Successfully sent '{subject}' to {recipient_email}")
         return True
     except Exception as e:
-        print(f"[Email] ✗ Error sending email to {recipient_email}: {str(e)}")
+        print(f"[Email] ERROR: Error sending email to {recipient_email}: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
