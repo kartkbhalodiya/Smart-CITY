@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
 import '../../config/theme.dart';
 import '../../providers/complaint_provider.dart';
@@ -25,6 +27,7 @@ class ComplaintDetailScreen extends StatefulWidget {
 class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   bool _showDeptPopup = false;
   final MapController _mapController = MapController();
+  final ScrollController _scrollController = ScrollController();
   int _selectedRating = 0;
   bool _isSubmittingRating = false;
   bool _isSubmittingReopen = false;
@@ -36,6 +39,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   void dispose() {
     _commentCtrl.dispose();
     _reopenReasonCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -43,8 +47,17 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ComplaintProvider>(context, listen: false)
-          .loadComplaintDetail(widget.complaintId);
+      final provider = Provider.of<ComplaintProvider>(context, listen: false);
+      // Load the complaint details
+      provider.loadComplaintDetail(widget.complaintId).then((_) {
+        if (provider.error != null) {
+          print('Error loading complaint: ${provider.error}');
+        }
+        // Ensure scroll starts at top after content loads
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      });
     });
   }
 
@@ -54,45 +67,163 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       appBar: AppBar(title: Text(AppStrings.t(context, 'Complaint Details'))),
       body: Consumer<ComplaintProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
           final complaint = provider.selectedComplaint;
+          final isInitialLoad = complaint == null && !provider.isLoading && provider.error == null;
+          
+          // Show loading if actively loading OR if initial state with no data
+          if (provider.isLoading || isInitialLoad) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppStrings.t(context, 'Loading complaint details...'),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          if (provider.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppStrings.t(context, 'Error loading complaint'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF374151),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.error!,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF6B7280),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      provider.loadComplaintDetail(widget.complaintId);
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: Text(AppStrings.t(context, 'Retry')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          
           if (complaint == null) {
-            return Center(child: Text(AppStrings.t(context, 'Complaint not found')));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_off, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppStrings.t(context, 'Complaint not found'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF374151),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppStrings.t(context, 'The complaint you are looking for does not exist'),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF6B7280),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                    label: Text(AppStrings.t(context, 'Go Back')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(complaint),
-                const Divider(height: 40),
-                _buildInfoSection(AppStrings.t(context, 'Description'), complaint.description),
-                if (complaint.dateOfOccurrence != null)
-                  _buildInfoSection(AppStrings.t(context, 'Date of Occurrence'), 
-                    "${complaint.dateOfOccurrence!.day.toString().padLeft(2, '0')} ${_getMonthName(complaint.dateOfOccurrence!.month)} ${complaint.dateOfOccurrence!.year}"),
-                _buildInfoSection(AppStrings.t(context, 'Location'), complaint.address),
+                const SizedBox(height: 16),
+                
+                // User Personal Details Section
+                _buildUserDetailsCard(complaint),
+                
+                // Complaint Details Section
+                _buildComplaintDetailsCard(complaint),
+                
+                // Uploaded Images Section - Show if media exists OR if mediaCount > 0
+                if ((complaint.media != null && complaint.media!.isNotEmpty) || complaint.mediaCount > 0)
+                  _buildUploadedImagesSection(complaint),
+                
+                // Additional Field Responses
+                if (complaint.fieldResponses != null && complaint.fieldResponses!.isNotEmpty)
+                  _buildAdditionalFieldsCard(complaint.fieldResponses!),
+                
+                // Assigned Department Section - BEFORE MAP
+                if (complaint.assignedDepartment != null)
+                  _buildDepartmentCard(complaint.assignedDepartment!),
+                
+                // Map Section - AFTER DEPARTMENT
                 if (complaint.latitude != 0.0 && complaint.longitude != 0.0)
                   _buildMapSection(complaint),
-                _buildInfoSection(
-                  AppStrings.t(context, 'Department'),
-                  complaint.assignedDepartment?.name ?? AppStrings.t(context, 'Not assigned'),
-                ),
-                if (complaint.media != null && complaint.media!.isNotEmpty)
-                  _buildMediaSection(AppStrings.t(context, 'Evidence Photos'), complaint.media!),
-                // Dept work proof
+                
+                // Status Timeline
+                _buildStatusTimeline(complaint),
+                
+                // Department work proof
                 if (complaint.workProof != null && complaint.workProof!.isNotEmpty)
                   _buildMediaSection(AppStrings.t(context, 'Department Proof'), complaint.workProof!),
-                // Rating: show existing or form
+                
+                // Rating section
                 if (complaint.citizenRating != null)
                   _buildExistingRating(complaint)
                 else if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved')
                   _buildRatingForm(complaint),
-                // Reopen button — show if solved/resolved (before or after rating)
+                
+                // Reopen button
                 if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved' ||
                     complaint.canReopen == true)
                   _buildReopenButton(complaint),
+                
+                const SizedBox(height: 20),
               ],
             ),
           );
@@ -107,39 +238,707 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   }
 
   Widget _buildHeader(Complaint complaint) {
-    return Column(
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade700, Colors.blue.shade500],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '#${complaint.complaintNumber}',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              _StatusChip(
+                status: complaint.workStatus,
+                statusText: complaint.workStatusDisplay,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            complaint.title,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 14, color: Colors.white.withOpacity(0.9)),
+              const SizedBox(width: 6),
+              Text(
+                '${AppStrings.t(context, 'Submitted on')} ${complaint.createdAt.toString().split(' ')[0]}',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserDetailsCard(Complaint complaint) {
+    String? contactName;
+    String? contactMobile;
+    String? contactEmail;
+    
+    // Extract from field responses
+    if (complaint.fieldResponses != null) {
+      for (var response in complaint.fieldResponses!) {
+        final label = response.fieldLabel.trim();
+        final value = response.value.trim();
+        
+        if (value.isEmpty) continue;
+        
+        // Match exact field names from your API
+        if (label == 'Full Name' || label == 'Name' || label == 'Your Name') {
+          contactName = value;
+        } else if (label == 'Contact Number' || label == 'Mobile Number' || label == 'Phone Number' || label == 'Mobile') {
+          contactMobile = value;
+        } else if (label == 'Email Address' || label == 'Email' || label == 'Your Email') {
+          contactEmail = value;
+        }
+      }
+    }
+    
+    // Fallback to userName if name not found
+    contactName ??= complaint.userName;
+    
+    // Don't show the card if no information is available
+    if ((contactName == null || contactName.isEmpty) && 
+        (contactMobile == null || contactMobile.isEmpty) && 
+        (contactEmail == null || contactEmail.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 16, bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.person, color: Colors.blue.shade700, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                AppStrings.t(context, 'User Information'),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0f172a),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          if (contactName != null && contactName.isNotEmpty) ...[
+            _buildInfoRow(Icons.person_outline, AppStrings.t(context, 'Name'), contactName),
+            const SizedBox(height: 12),
+          ],
+          if (contactMobile != null && contactMobile.isNotEmpty) ...[
+            _buildInfoRow(Icons.phone_outlined, AppStrings.t(context, 'Mobile'), contactMobile),
+            const SizedBox(height: 12),
+          ],
+          if (contactEmail != null && contactEmail.isNotEmpty)
+            _buildInfoRow(Icons.email_outlined, AppStrings.t(context, 'Email'), contactEmail),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComplaintDetailsCard(Complaint complaint) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.description, color: Colors.orange.shade700, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                AppStrings.t(context, 'Complaint Details'),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0f172a),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          _buildInfoRow(Icons.category_outlined, AppStrings.t(context, 'Category'), complaint.complaintTypeDisplay),
+          if (complaint.subcategory != null && complaint.subcategory!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.subdirectory_arrow_right, AppStrings.t(context, 'Subcategory'), complaint.subcategory!),
+          ],
+          const SizedBox(height: 12),
+          _buildInfoRow(Icons.flag_outlined, AppStrings.t(context, 'Priority'), complaint.priorityDisplay),
+          const SizedBox(height: 12),
+          _buildInfoRow(Icons.location_on_outlined, AppStrings.t(context, 'Location'), complaint.address),
+          if (complaint.dateOfOccurrence != null) ...[
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              Icons.event_outlined,
+              AppStrings.t(context, 'Date of Occurrence'),
+              "${complaint.dateOfOccurrence!.day.toString().padLeft(2, '0')} ${_getMonthName(complaint.dateOfOccurrence!.month)} ${complaint.dateOfOccurrence!.year}",
+            ),
+          ],
+          const SizedBox(height: 16),
+          Text(
+            AppStrings.t(context, 'Description'),
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            complaint.description,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFF374151),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadedImagesSection(Complaint complaint) {
+    final hasMedia = complaint.media != null && complaint.media!.isNotEmpty;
+    final hasThumbnail = complaint.thumbnail != null && complaint.thumbnail!.isNotEmpty;
+    final mediaCount = complaint.mediaCount;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.photo_library, color: Colors.purple.shade700, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  AppStrings.t(context, 'Uploaded Images'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0f172a),
+                  ),
+                ),
+              ),
+              if (mediaCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$mediaCount',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple.shade700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Show media if available
+          if (hasMedia)
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1,
+              ),
+              itemCount: complaint.media!.length,
+              itemBuilder: (context, index) {
+                final item = complaint.media![index];
+                final imageUrl = item.fileUrl.isNotEmpty ? item.fileUrl : item.file;
+                
+                return GestureDetector(
+                  onTap: () => _viewMedia(item),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300, width: 1),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.shade200,
+                            child: Icon(Icons.broken_image, color: Colors.grey.shade400, size: 32),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey.shade100,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 2,
+                                color: Colors.purple.shade700,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            )
+          // Show thumbnail if no media array but thumbnail exists
+          else if (hasThumbnail)
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  barrierColor: Colors.black87,
+                  builder: (context) => Dialog(
+                    backgroundColor: Colors.transparent,
+                    insetPadding: const EdgeInsets.all(10),
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 0.8,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          InteractiveViewer(
+                            minScale: 0.5,
+                            maxScale: 4.0,
+                            child: Center(
+                              child: Image.network(
+                                complaint.thumbnail!,
+                                fit: BoxFit.contain,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                          : null,
+                                      color: Colors.white,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.error_outline, color: Colors.white, size: 48),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Failed to load image',
+                                          style: GoogleFonts.inter(color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.black54,
+                                padding: const EdgeInsets.all(8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                height: 250,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        complaint.thumbnail!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey.shade100,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: Colors.purple.shade700,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Loading image...',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading thumbnail: ${complaint.thumbnail}');
+                          print('Error: $error');
+                          return Container(
+                            color: Colors.grey.shade200,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.broken_image, color: Colors.grey.shade400, size: 48),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Failed to load image',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      // Tap to zoom indicator
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.zoom_in, color: Colors.white, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Tap to zoom',
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          // Show informative message if images uploaded but not available
+          else if (mediaCount > 0)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade300, width: 2),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.cloud_upload, size: 56, color: Colors.amber.shade700),
+                  const SizedBox(height: 12),
+                  Text(
+                    '$mediaCount ${mediaCount == 1 ? 'Image' : 'Images'} Uploaded',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.amber.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Images are stored in Cloudinary',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.folder, size: 16, color: Colors.amber.shade900),
+                        const SizedBox(width: 6),
+                        Text(
+                          'smartcity_complaints',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.amber.shade900,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdditionalFieldsCard(List<ComplaintFieldResponse> fieldResponses) {
+    // Filter out name, email, mobile fields that are shown in user details
+    final additionalFields = fieldResponses.where((field) {
+      final label = field.fieldLabel.trim();
+      // Exclude these specific fields
+      return label != 'Full Name' && 
+             label != 'Name' && 
+             label != 'Your Name' &&
+             label != 'Contact Number' && 
+             label != 'Mobile Number' && 
+             label != 'Phone Number' && 
+             label != 'Mobile' &&
+             label != 'Email Address' && 
+             label != 'Email' && 
+             label != 'Your Email' &&
+             field.value.trim().isNotEmpty;
+    }).toList();
+
+    if (additionalFields.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.info_outline, color: Colors.green.shade700, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                AppStrings.t(context, 'Additional Information'),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0f172a),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          ...additionalFields.asMap().entries.map((entry) {
+            final index = entry.key;
+            final field = entry.value;
+            return Column(
+              children: [
+                if (index > 0) const SizedBox(height: 12),
+                _buildInfoRow(Icons.arrow_right, field.fieldLabel, field.value),
+              ],
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '#${complaint.complaintNumber}',
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-            _StatusChip(
-                status: complaint.workStatus,
-                statusText: complaint.workStatusDisplay),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(complaint.title,
-            style:
-                const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Text(
-          '${AppStrings.t(context, 'Submitted on')} ${complaint.createdAt.toString().split(' ')[0]}',
-          style:
-              const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        Icon(icon, size: 18, color: const Color(0xFF6B7280)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
   Widget _buildMapSection(Complaint complaint) {
-    final complaintPos =
-        LatLng(complaint.latitude, complaint.longitude);
+    final complaintPos = LatLng(complaint.latitude, complaint.longitude);
     final dept = complaint.assignedDepartment;
     final hasDept = dept != null && dept.latitude != 0.0 && dept.longitude != 0.0;
     final deptPos = hasDept ? LatLng(dept.latitude, dept.longitude) : null;
@@ -169,7 +968,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         children: [
           // Header row
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Row(
               children: [
                 Container(
@@ -178,47 +977,38 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                     color: const Color(0xFF2B6CF6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.map,
-                      color: Color(0xFF2B6CF6), size: 20),
+                  child: const Icon(Icons.map, color: Color(0xFF2B6CF6), size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(AppStrings.t(context, 'Interactive Map'),
-                          style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1F2937))),
+                      Text(
+                        AppStrings.t(context, 'Location Map'),
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1F2937),
+                        ),
+                      ),
                       Text(
                         hasDept
-                            ? AppStrings.t(context, 'Complaint → Department location')
+                            ? AppStrings.t(context, 'Route: Complaint Site → Department')
                             : AppStrings.t(context, 'Complaint location'),
                         style: GoogleFonts.inter(
-                            fontSize: 12, color: const Color(0xFF6B7280)),
+                          fontSize: 12,
+                          color: const Color(0xFF6B7280),
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _openMap(
-                      complaint.latitude, complaint.longitude),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF2B6CF6),
-                        borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.open_in_new,
-                        color: Colors.white, size: 16),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
 
-          // Real map
+          // Map
           Container(
             height: 300,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -228,214 +1018,96 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Stack(
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCameraFit: fit,
+                  onMapReady: () {
+                    Future.microtask(() {
+                      if (mounted) _mapController.fitCamera(fit);
+                    });
+                  },
+                ),
                 children: [
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCameraFit: fit,
-                      onMapReady: () {
-                        Future.microtask(() {
-                          if (mounted) _mapController.fitCamera(fit);
-                        });
-                      },
-                      onTap: (_, __) {
-                        if (_showDeptPopup) {
-                          setState(() => _showDeptPopup = false);
-                        }
-                      },
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.janhelp.app',
+                  ),
+                  // Blue line connecting complaint to department
+                  if (deptPos != null)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: [complaintPos, deptPos],
+                          color: const Color(0xFF1E66F5),
+                          strokeWidth: 3.0,
+                        ),
+                      ],
                     ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.janhelp.app',
-                      ),
-
-                      // Dotted line: complaint → department
-                      if (deptPos != null)
-                        PolylineLayer(polylines: [
-                          Polyline(
-                            points: [complaintPos, deptPos],
-                            color: const Color(0xFF1E66F5),
-                            strokeWidth: 2.5,
-                            isDotted: true,
+                  // Markers
+                  MarkerLayer(
+                    markers: [
+                      // Complaint marker (red)
+                      Marker(
+                        point: complaintPos,
+                        width: 50,
+                        height: 50,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                              ),
+                            ],
                           ),
-                        ]),
-
-                      // Markers
-                      MarkerLayer(markers: [
-                        // Complaint marker (red)
+                          child: const Icon(Icons.location_on, color: Colors.white, size: 24),
+                        ),
+                      ),
+                      // Department marker (blue)
+                      if (deptPos != null)
                         Marker(
-                          point: complaintPos,
-                          width: 44,
-                          height: 52,
-                          child: GestureDetector(
-                            onTap: () => setState(
-                                () => _showDeptPopup = false),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEF4444),
-                                    borderRadius:
-                                        BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Colors.black
-                                              .withOpacity(0.2),
-                                          blurRadius: 4)
-                                    ],
-                                  ),
-                                  child: const Icon(Icons.report,
-                                      color: Colors.white, size: 14),
+                          point: deptPos,
+                          width: 50,
+                          height: 50,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E66F5),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
                                 ),
-                                const Icon(Icons.location_on,
-                                    color: Color(0xFFEF4444), size: 28),
                               ],
                             ),
+                            child: const Icon(Icons.business, color: Colors.white, size: 24),
                           ),
                         ),
-
-                        // Department marker (blue) — tap to show popup
-                        if (deptPos != null)
-                          Marker(
-                            point: deptPos,
-                            width: 44,
-                            height: 52,
-                            child: GestureDetector(
-                              onTap: () => setState(
-                                  () => _showDeptPopup = true),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1E66F5),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Colors.black
-                                                .withOpacity(0.2),
-                                            blurRadius: 4)
-                                      ],
-                                    ),
-                                    child: const Icon(Icons.business,
-                                        color: Colors.white, size: 14),
-                                  ),
-                                  const Icon(Icons.location_on,
-                                      color: Color(0xFF1E66F5),
-                                      size: 28),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ]),
                     ],
-                  ),
-
-                  // Department popup on tap
-                  if (_showDeptPopup && deptPos != null && dept != null)
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      right: 12,
-                      child: _DeptPopup(
-                        dept: dept,
-                        onClose: () =>
-                            setState(() => _showDeptPopup = false),
-                        onViewDetails: () {
-                          setState(() => _showDeptPopup = false);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DepartmentDetailScreen(
-                                department: {
-                                  'id': dept.id,
-                                  'name': dept.name,
-                                  'department_type': dept.departmentType,
-                                  'department_type_display':
-                                      dept.departmentTypeDisplay,
-                                  'latitude': dept.latitude,
-                                  'longitude': dept.longitude,
-                                  'address': dept.address,
-                                  'phone': dept.phone,
-                                  'email': dept.email,
-                                  'city': dept.city,
-                                  'state': dept.state,
-                                  'sla_hours': dept.slaHours,
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                  // Legend
-                  Positioned(
-                    bottom: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 6)
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _legendDot(
-                              const Color(0xFFEF4444), AppStrings.t(context, 'Complaint')),
-                          if (hasDept) ...[
-                            const SizedBox(height: 4),
-                            _legendDot(
-                                const Color(0xFF1E66F5), AppStrings.t(context, 'Department')),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Coordinates overlay
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 6)
-                        ],
-                      ),
-                      child: Text(
-                        '${complaint.latitude.toStringAsFixed(4)}, ${complaint.longitude.toStringAsFixed(4)}',
-                        style: GoogleFonts.inter(
-                            fontSize: 10,
-                            color: const Color(0xFF6B7280)),
-                      ),
-                    ),
                   ),
                 ],
               ),
+            ),
+          ),
+          // Legend at bottom
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendItem(const Color(0xFFEF4444), AppStrings.t(context, 'Complaint Site')),
+                if (hasDept) ...[
+                  const SizedBox(width: 20),
+                  const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1E66F5)),
+                  const SizedBox(width: 20),
+                  _buildLegendItem(const Color(0xFF1E66F5), AppStrings.t(context, 'Department')),
+                ],
+              ],
             ),
           ),
         ],
@@ -443,71 +1115,483 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
-  Widget _legendDot(Color color, String label) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-          width: 8,
-          height: 8,
-          decoration:
-              BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 5),
-      Text(label,
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
           style: GoogleFonts.inter(
-              fontSize: 10, color: const Color(0xFF6B7280))),
-    ]);
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildInfoSection(String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+  Widget _buildDepartmentCard(Department dept) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade700, Colors.blue.shade500],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade200,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: AppColors.primaryBlue)),
-          const SizedBox(height: 8),
-          Text(content,
-              style: const TextStyle(fontSize: 15, height: 1.5)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.business, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.t(context, 'Assigned Department'),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                    Text(
+                      dept.name,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                if (dept.phone.isNotEmpty) ...[
+                  _buildDeptInfoRow(Icons.phone, dept.phone, Colors.white),
+                  const SizedBox(height: 8),
+                ],
+                if (dept.email.isNotEmpty) ...[
+                  _buildDeptInfoRow(Icons.email, dept.email, Colors.white),
+                  const SizedBox(height: 8),
+                ],
+                if (dept.address.isNotEmpty)
+                  _buildDeptInfoRow(Icons.location_on, dept.address, Colors.white),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMediaSection(String title, List<ComplaintMedia> media) {
-    return Column(
+  Widget _buildDeptInfoRow(IconData icon, String text, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: color,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusTimeline(Complaint complaint) {
+    final status = complaint.workStatus;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.timeline, color: Colors.blue.shade700, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                AppStrings.t(context, 'Status Timeline'),
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0f172a),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildTimelineStep(
+            'Submitted',
+            complaint.createdAt.toString().split(' ')[0],
+            Icons.assignment_turned_in,
+            Colors.blue,
+            isCompleted: true,
+          ),
+          _buildTimelineStep(
+            'Confirmed',
+            '',
+            Icons.verified,
+            Colors.green,
+            isCompleted: status == 'confirmed' || status == 'process' || status == 'solved' || status == 'resolved' || status == 'reopened',
+          ),
+          _buildTimelineStep(
+            'In Progress',
+            '',
+            Icons.engineering,
+            Colors.orange,
+            isCompleted: status == 'process' || status == 'solved' || status == 'resolved' || status == 'reopened',
+          ),
+          if (status == 'reopened') ...[
+            _buildTimelineStep(
+              'Reopened',
+              complaint.reopenedAt?.toString().split(' ')[0] ?? '',
+              Icons.refresh,
+              Colors.red,
+              isCompleted: true,
+            ),
+          ],
+          _buildTimelineStep(
+            'Resolved',
+            '',
+            Icons.check_circle,
+            Colors.green,
+            isCompleted: status == 'solved' || status == 'resolved',
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineStep(
+    String title,
+    String time,
+    IconData icon,
+    Color color,
+    {
+    required bool isCompleted,
+    bool isLast = false,
+  }) {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: AppColors.primaryBlue)),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
+        Column(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isCompleted ? color : Colors.grey.shade300,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 30,
+                color: isCompleted ? color : Colors.grey.shade300,
+              ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.t(context, title),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isCompleted ? const Color(0xFF0f172a) : Colors.grey.shade500,
+                  ),
+                ),
+                if (time.isNotEmpty)
+                  Text(
+                    time,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMediaSection(String title, List<ComplaintMedia> media) {
+    if (media.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.verified, color: Colors.green.shade700, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0f172a),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${media.length}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1,
+            ),
             itemCount: media.length,
             itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onTap: () => _openUrl(media[index].fileUrl),
+              final item = media[index];
+              final imageUrl = item.fileUrl.isNotEmpty ? item.fileUrl : item.file;
+              
+              return GestureDetector(
+                onTap: () => _viewMedia(item),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.shade300, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(media[index].fileUrl,
-                        width: 120, height: 120, fit: BoxFit.cover),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade200,
+                              child: Icon(Icons.broken_image, color: Colors.grey.shade400, size: 32),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey.shade100,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 2,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        // Verified badge overlay
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade700,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.verified, color: Colors.white, size: 12),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  void _viewMedia(ComplaintMedia media) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(10),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(
+                  child: Image.network(
+                    media.fileUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.white, size: 48),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load image',
+                              style: GoogleFonts.inter(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    padding: const EdgeInsets.all(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 24),
-      ],
+      ),
     );
   }
 
@@ -615,8 +1699,13 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   }
 
   void _showReopenDialog(Complaint complaint) {
+    // Clear form before showing dialog
     _reopenReasonCtrl.clear();
-    _reopenProofPath = null;
+    setState(() {
+      _reopenProofPath = null;
+      _isSubmittingReopen = false;
+    });
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -668,7 +1757,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                     if (img != null) setDlg(() => _reopenProofPath = img.path);
                   },
                   child: Container(
-                    height: 100,
+                    height: 120,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
@@ -698,49 +1787,216 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.add_photo_alternate, size: 32, color: Color(0xFF9CA3AF)),
+                              const Icon(Icons.add_photo_alternate, size: 36, color: Color(0xFF9CA3AF)),
                               const SizedBox(height: 6),
-                              Text(AppStrings.t(context, 'Tap to add photo'), style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                              Text(AppStrings.t(context, 'Tap to add photo'), style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
                             ],
                           ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Row(children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: Text(AppStrings.t(context, 'Cancel')),
+                
+                // Preview Section
+                if (_reopenReasonCtrl.text.trim().isNotEmpty || _reopenProofPath != null) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.preview, color: Color(0xFF92400E), size: 18),
+                            const SizedBox(width: 8),
+                            Text(AppStrings.t(context, 'Preview'), style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF92400E))),
+                          ],
+                        ),
+                        if (_reopenReasonCtrl.text.trim().isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text(AppStrings.t(context, 'Reason:'), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF78350F))),
+                          const SizedBox(height: 4),
+                          Text(_reopenReasonCtrl.text.trim(), style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF92400E))),
+                        ],
+                        if (_reopenProofPath != null) ...[
+                          const SizedBox(height: 12),
+                          Text(AppStrings.t(context, 'Proof Image:'), style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF78350F))),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(_reopenProofPath!),
+                              height: 100,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _reopenReasonCtrl.text.trim().isEmpty || _isSubmittingReopen
-                          ? null
-                          : () => _submitReopen(complaint, ctx),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: _isSubmittingReopen
-                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text(AppStrings.t(context, 'Submit'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                ],
+                
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _reopenReasonCtrl.text.trim().isNotEmpty && !_isSubmittingReopen
+                        ? () => _submitReopen(ctx, complaint)
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
+                    child: _isSubmittingReopen
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : Text(AppStrings.t(context, 'Submit Reopen Request'), style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                ]),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _submitReopen(BuildContext dialogCtx, Complaint complaint) async {
+    if (_isSubmittingReopen) return;
+    
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (loadingCtx) => WillPopScope(
+        onWillPop: () async => false,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  _reopenProofPath != null 
+                    ? AppStrings.t(context, 'Uploading proof...')
+                    : AppStrings.t(context, 'Submitting request...'),
+                  style: GoogleFonts.inter(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    
+    setState(() => _isSubmittingReopen = true);
+    try {
+      final uri = Uri.parse(ApiConfig.reopenComplaint(complaint.id));
+      final request = http.MultipartRequest('POST', uri);
+      
+      // Add authorization header
+      final token = await ApiService.getToken();
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      // Add reason field
+      request.fields['reason'] = _reopenReasonCtrl.text.trim();
+      
+      // Add proof image file if provided
+      if (_reopenProofPath != null) {
+        final file = File(_reopenProofPath!);
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'proof',
+            file.path,
+            filename: 'reopen_proof.jpg',
+          ),
+        );
+      }
+      
+      print('Submitting reopen request with reason: ${request.fields['reason']}');
+      print('Has proof file: ${_reopenProofPath != null}');
+      
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final res = json.decode(response.body);
+      
+      print('Reopen response: $res');
+      
+      setState(() => _isSubmittingReopen = false);
+      
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+      
+      if (!mounted) return;
+      
+      if (res['success'] == true) {
+        // Close reopen dialog
+        Navigator.pop(dialogCtx);
+        
+        // Clear form
+        _reopenReasonCtrl.clear();
+        setState(() => _reopenProofPath = null);
+        
+        // Reload complaint details
+        await Provider.of<ComplaintProvider>(context, listen: false).loadComplaintDetail(complaint.id);
+        
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppStrings.t(context, 'Complaint reopened successfully!')),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        // Show error message
+        String errorMsg = res['message'] ?? AppStrings.t(context, 'Failed to submit reopen request');
+        if (res['errors'] != null) {
+          errorMsg += '\n${res['errors']}';
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _isSubmittingReopen = false);
+      
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+      
+      if (mounted) {
+        print('Error submitting reopen: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppStrings.t(context, 'Error')}: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _submitRating(Complaint complaint) async {
@@ -759,20 +2015,34 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     }
   }
 
-  Future<void> _submitReopen(Complaint complaint, BuildContext ctx) async {
-    setState(() => _isSubmittingReopen = true);
-    final res = await ApiService.post(
-      ApiConfig.reopenComplaint(complaint.id),
-      {'reason': _reopenReasonCtrl.text.trim()},
-    );
-    setState(() => _isSubmittingReopen = false);
-    if (!mounted) return;
-    if (res['success'] == true) {
-      Navigator.pop(ctx);
-      Provider.of<ComplaintProvider>(context, listen: false).loadComplaintDetail(complaint.id);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.t(context, 'Reopen request submitted successfully!')), backgroundColor: Colors.green));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? AppStrings.t(context, 'Failed')), backgroundColor: Colors.red));
+  Future<String?> _uploadProofToCloudinary(File imageFile) async {
+    try {
+      const cloudName = 'dk1q50evg';
+      const uploadPreset = 'smartcity_complaints';
+      
+      final url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final request = http.MultipartRequest('POST', url);
+      
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = 'complaints/reopen_proof';
+      
+      final multipartFile = await http.MultipartFile.fromPath('file', imageFile.path);
+      request.files.add(multipartFile);
+      
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 60),
+      );
+      
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        return jsonData['secure_url'] as String;
+      }
+      return null;
+    } catch (e) {
+      print('Error uploading proof to Cloudinary: $e');
+      return null;
     }
   }
 

@@ -1,359 +1,545 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ department.name }} Dashboard - Smart City</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% extends 'department_base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-            padding: 20px;
-        }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
 
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            color: #fff;
-        }
+    .stat-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 20px 50px rgba(30, 102, 245, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        background: #fff;
+        box-shadow: 0 15px 30px rgba(30, 102, 245, 0.15);
+        border-color: #667eea;
+    }
 
-        .header h1 {
-            font-size: 20px;
-            font-weight: 800;
-        }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
 
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+        font-family: 'Poppins', sans-serif;
+    }
 
-        .logout-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-        }
+    .stat-label {
+        font-size: 0.875rem;
+        color: #64748b;
+        font-weight: 600;
+    }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+    .content-section {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 20px 50px rgba(30, 102, 245, 0.08);
+    }
 
-        .stat-card {
-            background: #fff;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1.5px solid #e2e8f0;
+    }
 
-        .stat-card .number {
-            font-size: 36px;
-            font-weight: 800;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-family: 'Poppins', sans-serif;
+    }
 
-        .stat-card .label {
-            color: #6c757d;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+    .section-title i {
+        color: #667eea;
+    }
 
-        .complaints-section {
-            background: #fff;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
+    .view-all-link {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        background: rgba(102, 126, 234, 0.1);
+        border: 1.5px solid rgba(102, 126, 234, 0.2);
+        transition: all 0.3s;
+    }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #2d3436;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .view-all-link:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+    }
 
-        .complaint-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--color);
-        }
+    .complaints-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1rem;
+    }
 
-        .complaint-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+    .complaint-box {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.25rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 8px 20px rgba(30, 102, 245, 0.08);
+    }
 
-        .complaint-id {
-            font-weight: 700;
-            color: #2d3436;
-            font-size: 16px;
-        }
+    .complaint-box:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 30px rgba(30, 102, 245, 0.15);
+        border-color: #667eea;
+        background: #fff;
+    }
 
-        .status-badge {
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
+    .complaint-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
 
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-assigned { background: #cce5ff; color: #0066cc; }
-        .status-in_progress { background: #e1f5fe; color: #0277bd; }
-        .status-resolved { background: #d4edda; color: #155724; }
+    .complaint-id {
+        font-weight: 800;
+        color: #667eea;
+        font-size: 0.85rem;
+    }
 
-        .complaint-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #2d3436;
-            margin-bottom: 10px;
-        }
+    .complaint-date {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 600;
+    }
 
-        .complaint-meta {
-            font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 15px;
-        }
+    .complaint-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-family: 'Poppins', sans-serif;
+    }
 
-        .complaint-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+    .complaint-type {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+    }
 
-        .action-btn {
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    .complaint-footer {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px dashed #e2e8f0;
+    }
 
-        .btn-progress {
-            background: #3b82f6;
-            color: #fff;
-        }
+    .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
 
-        .btn-resolve {
-            background: #10b981;
-            color: #fff;
-        }
+    .badge-pending { background: #fee2e2; color: #991b1b; }
+    .badge-confirmed { background: #fef3c7; color: #92400e; }
+    .badge-process { background: #dbeafe; color: #1e40af; }
+    .badge-reopened { background: #fef3c7; color: #b45309; }
+    .badge-solved { background: #dcfce7; color: #166534; }
+    .badge-rejected { background: #f1f5f9; color: #475569; }
 
-        .btn-view {
-            background: #6c757d;
-            color: #fff;
-        }
+    .complaint-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
 
-        .status-form {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 10px;
-            border: 1px solid #dee2e6;
-        }
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
 
-        .status-form.show {
-            display: block;
-        }
+    .btn-view { background: rgba(102, 126, 234, 0.1); color: #667eea; border: 1.5px solid rgba(102, 126, 234, 0.2); }
+    .btn-view:hover { background: #667eea; color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+    .status-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        padding: 1rem;
+    }
 
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #2d3436;
-        }
+    .status-modal.show {
+        display: flex;
+    }
 
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-        }
+    .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        padding: 2rem;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 25px 50px rgba(102, 126, 234, 0.15);
+        border: 1.5px solid #e2e8f0;
+    }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
 
-        .form-actions {
-            display: flex;
-            gap: 10px;
-        }
+    .modal-title {
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: #0f172a;
+        font-family: 'Poppins', sans-serif;
+    }
 
-        .btn-save {
-            background: #10b981;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-        }
+    .close-modal {
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: #64748b;
+    }
 
-        .btn-cancel {
-            background: #6c757d;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.875rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.9rem;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition: all 0.3s;
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .complaints-grid {
+            grid-template-columns: 1fr;
         }
+    }
     </style>
-</head>
-<body>
-    <div class="header">
-        <div class="header-top">
-            <div>
-                <h1>{{ department.name }}</h1>
-                <p>{{ department.get_department_type_display }}</p>
-            </div>
-            <a href="{% url 'logout' %}" class="logout-btn">
-                <i class="fa-solid fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <h1 class="page-title">Dashboard Overview</h1>
+        <p class="page-subtitle">Monitor and manage assigned complaints for {{ department.city }}, {{ department.state }}</p>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="number">{{ total_complaints }}</div>
-            <div class="label">Total Cases</div>
-        </div>
-        <div class="stat-card">
-            <div class="number">{{ pending_complaints }}</div>
-            <div class="label">Pending</div>
-        </div>
-        <div class="stat-card">
-            <div class="number">{{ in_progress_complaints }}</div>
-            <div class="label">In Progress</div>
-        </div>
-        <div class="stat-card">
-            <div class="number">{{ resolved_complaints }}</div>
-            <div class="label">Resolved</div>
-        </div>
-    </div>
-
-    <div class="complaints-section">
-        <div class="section-title">
-            <i class="fa-solid fa-list-check"></i>
-            Assigned Complaints
-        </div>
-
-        {% for complaint in complaints %}
-        <div class="complaint-card" style="--color: #2c3e50;">
-            <div class="complaint-header">
-                <div class="complaint-id">{{ complaint.complaint_number }}</div>
-                <span class="status-badge status-{{ complaint.work_status }}">
-                    {{ complaint.get_work_status_display }}
-                </span>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f87171, #ef4444);">
+                <i class="fas fa-exclamation-triangle"></i>
             </div>
-            
-            <div class="complaint-title">{{ complaint.title }}</div>
-            
-            <div class="complaint-meta">
-                {{ complaint.get_complaint_type_display }} • 
-                {% if complaint.user %}{{ complaint.user.get_full_name }}{% else %}{{ complaint.guest_name }}{% endif %} • 
-                {{ complaint.created_at|date:"M d, Y H:i" }}
+            <div style="flex: 1;">
+                <div class="stat-number">{{ pending_complaints }}</div>
+                <div class="stat-label">Pending</div>
             </div>
-            
-            <div style="margin-bottom: 15px; color: #495057;">
-                {{ complaint.description|truncatewords:20 }}
-            </div>
-            
-            <div class="complaint-actions">
-                {% if complaint.work_status == 'pending' or complaint.work_status == 'assigned' %}
-                <button class="action-btn btn-progress" onclick="showStatusForm({{ complaint.id }}, 'in_progress')">
-                    <i class="fa-solid fa-play"></i> Start Work
-                </button>
-                {% endif %}
-                
-                {% if complaint.work_status == 'in_progress' %}
-                <button class="action-btn btn-resolve" onclick="showStatusForm({{ complaint.id }}, 'resolved')">
-                    <i class="fa-solid fa-check"></i> Mark Resolved
-                </button>
-                {% endif %}
-                
-                <a href="{% url 'view_location' complaint.id %}" class="action-btn btn-view">
-                    <i class="fa-solid fa-eye"></i> View Details
-                </a>
-            </div>
-            
-            <div class="status-form" id="statusForm{{ complaint.id }}">
-                <form method="post" action="{% url 'update_complaint_status' complaint.id %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="status" id="statusInput{{ complaint.id }}">
-                    
-                    <div class="form-group">
-                        <label>Resolution Notes</label>
-                        <textarea name="notes" placeholder="Add notes about the work done or resolution..."></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn-save">
-                            <i class="fa-solid fa-save"></i> Update Status
-                        </button>
-                        <button type="button" class="btn-cancel" onclick="hideStatusForm({{ complaint.id }})">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <a href="{% url 'department_problems' %}" class="view-all-link" title="View All Pending">
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
-        {% empty %}
-        <div style="text-align: center; padding: 40px; color: #6c757d;">
-            <i class="fa-solid fa-inbox" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-            <p>No complaints assigned to your department yet.</p>
-        </div>
-        {% endfor %}
-    </div>
-
-    <script>
-        function showStatusForm(complaintId, status) {
-            document.getElementById('statusInput' + complaintId).value = status;
-            document.getElementById('statusForm' + complaintId).classList.add('show');
-        }
         
-        function hideStatusForm(complaintId) {
-            document.getElementById('statusForm' + complaintId).classList.remove('show');
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #34d399, #10b981);">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <div style="flex: 1;">
+                <div class="stat-number">{{ resolved_complaints }}</div>
+                <div class="stat-label">Solved</div>
+            </div>
+            <a href="{% url 'department_solved' %}" class="view-all-link" title="View All Solved">
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #60a5fa, #3b82f6);">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div style="flex: 1;">
+                <div class="stat-number">{{ in_progress_complaints }}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #a78bfa, #8b5cf6);">
+                <i class="fas fa-list-check"></i>
+            </div>
+            <div style="flex: 1;">
+                <div class="stat-number">{{ total_complaints }}</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <a href="{% url 'department_total' %}" class="view-all-link" title="View All History">
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Recent Complaints
+            </h3>
+            <a href="{% url 'department_problems' %}" class="view-all-link">
+                View All <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="complaints-grid">
+
+            {% for complaint in complaints|slice:":10" %}
+            <div class="complaint-box">
+                <div class="complaint-header">
+                    <span class="complaint-id">#{{ complaint.complaint_number }}</span>
+                    <span class="complaint-date">{{ complaint.created_at|date:"M d, Y" }}</span>
+                </div>
+                <h4 class="complaint-title" title="{{ complaint.title }}">{{ complaint.title }}</h4>
+                <div class="complaint-type">{{ complaint.get_complaint_type_display }}</div>
+                
+                <div class="complaint-footer">
+                    <span class="badge badge-{{ complaint.work_status }}" 
+                          style="cursor: pointer;"
+                          onclick="openStatusModal('{{ complaint.id }}', '{{ complaint.work_status }}', '{{ complaint.complaint_number }}')">
+                        {{ complaint.work_status|title }}
+                    </span>
+                    
+                    <div class="complaint-actions">
+                        <a href="{% url 'view_location' complaint.id %}" class="btn-action btn-view" title="View Details">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #64748b;">
+                <i class="fa-solid fa-clipboard-list" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.2;"></i>
+                No complaints assigned to your department yet
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="{% url 'department_problems' %}" class="btn-submit" style="display: inline-block; width: auto; padding: 0.75rem 2rem; text-decoration: none;">
+                <i class="fa-solid fa-list-check"></i> View All Complaints
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div id="statusModal" class="status-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Status: <span id="modalComplaintId"></span></h3>
+                <span class="close-modal" id="closeModalBtn">&times;</span>
+            </div>
+            <form id="statusForm" method="POST" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="from_page" value="department">
+                <div class="form-group">
+                    <label class="form-label">Update Status</label>
+                    <select name="status" id="statusSelect" class="form-control" onchange="toggleProofUpload(this.value)">
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="process">In Progress</option>
+                        <option value="reopened">Reopened</option>
+                        <option value="solved">Solved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                
+                <div id="proofUploadGroup" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Resolution Proof (Required)</label>
+                        <input type="file" id="proofCameraInput" name="resolution_proofs" accept="image/*,video/*" capture="environment" style="display:none;" multiple>
+                        <input type="file" id="proofGalleryInput" name="resolution_proofs" accept="image/*,video/*" style="display:none;" multiple>
+                        
+                        <div class="proof-actions" style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                            <button type="button" class="proof-btn" id="openCameraBtn" style="flex: 1; border: 1.5px solid #e2e8f0; background: rgba(255, 255, 255, 0.9); color: #0f172a; border-radius: 12px; padding: 0.5rem; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.3s;">
+                                <i class="fas fa-camera"></i> Camera
+                            </button>
+                            <button type="button" class="proof-btn" id="openGalleryBtn" style="flex: 1; border: 1.5px solid #e2e8f0; background: rgba(255, 255, 255, 0.9); color: #0f172a; border-radius: 12px; padding: 0.5rem; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; transition: all 0.3s;">
+                                <i class="fas fa-images"></i> Gallery
+                            </button>
+                        </div>
+                        <div class="proof-meta" id="proofFileInfo" style="font-size: 0.75rem; color: #64748b; margin-top: 0.4rem;">No proof selected.</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Resolution Notes</label>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Add some notes about the work..."></textarea>
+                </div>
+                <button type="submit" class="btn-submit">Update & Notify</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const modal = document.getElementById('statusModal');
+    const statusForm = document.getElementById('statusForm');
+    const statusSelect = document.getElementById('statusSelect');
+    const modalComplaintId = document.getElementById('modalComplaintId');
+    const closeBtn = document.getElementById('closeModalBtn');
+    
+    const proofCameraInput = document.getElementById('proofCameraInput');
+    const proofGalleryInput = document.getElementById('proofGalleryInput');
+    const proofFileInfo = document.getElementById('proofFileInfo');
+    const openCameraBtn = document.getElementById('openCameraBtn');
+    const openGalleryBtn = document.getElementById('openGalleryBtn');
+
+    function openStatusModal(id, currentStatus, number) {
+        modalComplaintId.textContent = '#' + number;
+        statusForm.action = `/update-status/${id}/`;
+        
+        let statusVal = currentStatus;
+        if (currentStatus === 'in-progress') statusVal = 'process';
+        
+        statusSelect.value = statusVal;
+        toggleProofUpload(statusVal);
+        modal.classList.add('show');
+    }
+
+    function toggleProofUpload(status) {
+        const proofGroup = document.getElementById('proofUploadGroup');
+        proofGroup.style.display = (status === 'solved') ? 'block' : 'none';
+    }
+
+    function closeStatusModal() {
+        modal.classList.remove('show');
+        statusForm.reset();
+        updateProofMeta();
+    }
+
+    function selectedProofCount() {
+        return (proofCameraInput.files?.length || 0) + (proofGalleryInput.files?.length || 0);
+    }
+
+    function updateProofMeta() {
+        const total = selectedProofCount();
+        if (proofFileInfo) proofFileInfo.textContent = total > 0 ? `${total} file(s) selected` : 'No proof selected.';
+    }
+
+    closeBtn.onclick = closeStatusModal;
+    openCameraBtn.onclick = () => proofCameraInput.click();
+    openGalleryBtn.onclick = () => proofGalleryInput.click();
+    proofCameraInput.onchange = updateProofMeta;
+    proofGalleryInput.onchange = updateProofMeta;
+
+    window.onclick = function(event) {
+        if (event.target == modal) closeStatusModal();
+    }
+
+    statusForm.onsubmit = function(e) {
+        if (statusSelect.value === 'solved' && selectedProofCount() === 0) {
+            e.preventDefault();
+            alert('Please upload at least one completion proof file.');
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}

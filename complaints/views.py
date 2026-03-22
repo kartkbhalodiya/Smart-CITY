@@ -5016,3 +5016,118 @@ def complaint_success(request):
         'phone': phone or "Not Provided"
     })
 
+
+
+@login_required
+def department_problems(request):
+    """Department view for active/pending complaints"""
+    try:
+        dept_user = DepartmentUser.objects.get(user=request.user)
+        department = dept_user.department
+        
+        complaints = Complaint.objects.filter(
+            assigned_department=department
+        ).exclude(work_status='solved').order_by('-created_at')
+        
+        context = {
+            'department': department,
+            'complaints': complaints,
+        }
+        
+        return render(request, 'department_problems.html', context)
+        
+    except DepartmentUser.DoesNotExist:
+        return redirect('user_dashboard')
+
+@login_required
+def department_solved(request):
+    """Department view for solved complaints"""
+    try:
+        dept_user = DepartmentUser.objects.get(user=request.user)
+        department = dept_user.department
+        
+        complaints = Complaint.objects.filter(
+            assigned_department=department,
+            work_status='solved'
+        ).order_by('-resolved_at')
+        
+        context = {
+            'department': department,
+            'complaints': complaints,
+        }
+        
+        return render(request, 'department_solved.html', context)
+        
+    except DepartmentUser.DoesNotExist:
+        return redirect('user_dashboard')
+
+@login_required
+def department_total(request):
+    """Department view for all complaints"""
+    try:
+        dept_user = DepartmentUser.objects.get(user=request.user)
+        department = dept_user.department
+        
+        complaints = Complaint.objects.filter(
+            assigned_department=department
+        ).order_by('-created_at')
+        
+        context = {
+            'department': department,
+            'complaints': complaints,
+        }
+        
+        return render(request, 'department_total.html', context)
+        
+    except DepartmentUser.DoesNotExist:
+        return redirect('user_dashboard')
+
+@login_required
+def department_heatmap(request):
+    """Department heatmap view showing only assigned complaints"""
+    try:
+        dept_user = DepartmentUser.objects.get(user=request.user)
+        department = dept_user.department
+        
+        complaints = Complaint.objects.filter(
+            assigned_department=department
+        ).exclude(latitude__isnull=True).exclude(longitude__isnull=True)
+        
+        # Prepare complaint data for map
+        complaints_data = []
+        for complaint in complaints:
+            try:
+                lat = float(complaint.latitude)
+                lng = float(complaint.longitude)
+                if -90 <= lat <= 90 and -180 <= lng <= 180:
+                    complaints_data.append({
+                        'lat': lat,
+                        'lng': lng,
+                        'number': complaint.complaint_number,
+                        'title': complaint.title,
+                        'status': complaint.work_status,
+                        'status_display': complaint.get_work_status_display(),
+                        'created_at': complaint.created_at.strftime('%Y-%m-%d %H:%M'),
+                    })
+            except (TypeError, ValueError):
+                continue
+        
+        # Count by status
+        pending_count = complaints.filter(work_status='pending').count()
+        process_count = complaints.filter(work_status='process').count()
+        solved_count = complaints.filter(work_status='solved').count()
+        total_count = complaints.count()
+        
+        context = {
+            'department': department,
+            'complaints_json': json.dumps(complaints_data),
+            'pending_count': pending_count,
+            'process_count': process_count,
+            'solved_count': solved_count,
+            'total_count': total_count,
+        }
+        
+        return render(request, 'department_heatmap.html', context)
+        
+    except DepartmentUser.DoesNotExist:
+        return redirect('user_dashboard')

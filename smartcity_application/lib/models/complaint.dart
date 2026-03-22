@@ -29,6 +29,7 @@ class Complaint {
   final Department? assignedDepartment;
   final bool? canReopen;
   final DateTime? reopenDeadline;
+  final DateTime? reopenedAt;
   final List<ComplaintMedia>? workProof;
   final String? citizenFeedback;
   final List<ComplaintFieldResponse>? fieldResponses;
@@ -64,6 +65,7 @@ class Complaint {
     this.assignedDepartment,
     this.canReopen,
     this.reopenDeadline,
+    this.reopenedAt,
     this.workProof,
     this.citizenFeedback,
     this.fieldResponses,
@@ -106,6 +108,9 @@ class Complaint {
       canReopen: json['can_reopen'],
       reopenDeadline: json['reopen_deadline'] != null
           ? DateTime.parse(json['reopen_deadline'])
+          : null,
+      reopenedAt: json['reopened_at'] != null
+          ? DateTime.parse(json['reopened_at'])
           : null,
       workProof: json['work_proof'] != null
           ? (json['work_proof'] as List).map((m) => ComplaintMedia.fromJson(m)).toList()

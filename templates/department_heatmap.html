@@ -1,0 +1,167 @@
+{% extends 'department_base.html' %}
+
+{% block title %}Heat Map{% endblock %}
+
+{% block extra_css %}
+<style>
+#map {
+    height: 600px;
+    width: 100%;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.map-legend {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Complaint Heat Map</h1>
+    <p class="page-subtitle">Visual representation of complaints assigned to {{ department.name }}</p>
+</div>
+
+<div style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(30, 102, 245, 0.08); margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 10px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: #92400e;">{{ pending_count }}</div>
+            <div style="font-size: 0.75rem; color: #92400e; font-weight: 600;">Pending</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: #dbeafe; border-radius: 10px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: #1e40af;">{{ process_count }}</div>
+            <div style="font-size: 0.75rem; color: #1e40af; font-weight: 600;">In Progress</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: #dcfce7; border-radius: 10px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: #166534;">{{ solved_count }}</div>
+            <div style="font-size: 0.75rem; color: #166534; font-weight: 600;">Solved</div>
+        </div>
+        <div style="text-align: center; padding: 1rem; background: #f3f4f6; border-radius: 10px;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: #374151;">{{ total_count }}</div>
+            <div style="font-size: 0.75rem; color: #374151; font-weight: 600;">Total</div>
+        </div>
+    </div>
+</div>
+
+<div style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(30, 102, 245, 0.08);">
+    <div id="map"></div>
+    
+    <div class="map-legend">
+        <h4 style="font-weight: 700; margin-bottom: 10px; color: #0f172a;">Status Legend</h4>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ef4444;"></div>
+            <span style="font-size: 0.875rem; color: #64748b;">Pending / Reopened</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f59e0b;"></div>
+            <span style="font-size: 0.875rem; color: #64748b;">Confirmed</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #3b82f6;"></div>
+            <span style="font-size: 0.875rem; color: #64748b;">In Progress</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #10b981;"></div>
+            <span style="font-size: 0.875rem; color: #64748b;">Solved</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize map
+    const map = L.map('map').setView([{{ department.latitude|default:"20.5937" }}, {{ department.longitude|default:"78.9629" }}], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Add department marker
+    const deptIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: '<div style="background: #667eea; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-building"></i></div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+    
+    L.marker([{{ department.latitude|default:"20.5937" }}, {{ department.longitude|default:"78.9629" }}], {icon: deptIcon})
+        .addTo(map)
+        .bindPopup('<b>{{ department.name }}</b><br>{{ department.address }}');
+
+    // Complaint markers
+    const complaints = {{ complaints_json|safe }};
+    const heatData = [];
+    
+    complaints.forEach(complaint => {
+        let color = '#6b7280';
+        if (complaint.status === 'pending' || complaint.status === 'reopened') color = '#ef4444';
+        else if (complaint.status === 'confirmed') color = '#f59e0b';
+        else if (complaint.status === 'process') color = '#3b82f6';
+        else if (complaint.status === 'solved') color = '#10b981';
+        
+        const icon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+        
+        L.marker([complaint.lat, complaint.lng], {icon: icon})
+            .addTo(map)
+            .bindPopup(`
+                <div style="min-width: 200px;">
+                    <h4 style="margin: 0 0 8px 0; color: #0f172a; font-weight: 700;">#${complaint.number}</h4>
+                    <p style="margin: 0 0 8px 0; font-size: 0.875rem; color: #64748b;">${complaint.title}</p>
+                    <div style="padding: 4px 8px; background: ${color}; color: white; border-radius: 4px; display: inline-block; font-size: 0.75rem; font-weight: 600; margin-bottom: 8px;">
+                        ${complaint.status_display}
+                    </div>
+                    <p style="margin: 0; font-size: 0.75rem; color: #94a3b8;">${complaint.created_at}</p>
+                </div>
+            `);
+        
+        // Add to heat data
+        let intensity = 0.5;
+        if (complaint.status === 'pending' || complaint.status === 'reopened') intensity = 1.0;
+        else if (complaint.status === 'confirmed') intensity = 0.8;
+        else if (complaint.status === 'process') intensity = 0.7;
+        else if (complaint.status === 'solved') intensity = 0.3;
+        
+        heatData.push([complaint.lat, complaint.lng, intensity]);
+    });
+    
+    // Add heat layer
+    if (heatData.length > 0) {
+        L.heatLayer(heatData, {
+            radius: 25,
+            blur: 15,
+            maxZoom: 17,
+            max: 1.0,
+            gradient: {
+                0.0: '#10b981',
+                0.5: '#f59e0b',
+                0.7: '#ef4444',
+                1.0: '#dc2626'
+            }
+        }).addTo(map);
+    }
+</script>
+{% endblock %}

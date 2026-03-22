@@ -12,6 +12,7 @@ import '../../services/conversational_ai_service.dart';
 import '../../services/chat_history_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../config/routes.dart';
 import '../../config/api_config.dart';
 import 'chat_history_screen.dart';
@@ -43,6 +44,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Set AI language to match app language
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final localeProvider = context.read<LocaleProvider>();
+      _aiService.setAppLanguage(localeProvider.locale.languageCode);
+      print('🌐 AI language initialized to: ${localeProvider.locale.languageCode}');
+    });
+    
     // Clear any existing session first, then load
     _initializeChat();
   }
@@ -919,22 +928,33 @@ Your complaint has been registered and assigned to the nearest department.
   }
 
   Widget _buildSuggestion(String text) {
-    return GestureDetector(
-      onTap: () => _sendMessage(text),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: Text(
-          text,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: const Color(0xFF64748b),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.yellow.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.yellow.shade700),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              color: Colors.red,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
+          Text(
+            'its just example',
+            style: GoogleFonts.inter(
+              fontSize: 8,
+              color: Colors.red.shade700,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ),
     );
   }

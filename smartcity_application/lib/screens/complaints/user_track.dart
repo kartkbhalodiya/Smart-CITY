@@ -10,6 +10,7 @@ import '../../services/api_service.dart';
 import '../../config/api_config.dart';
 import '../user_track_complaint_detail.dart';
 import '../../l10n/app_strings.dart';
+import 'complaint_detail_screen.dart';
 
 class UserTrackScreen extends StatefulWidget {
   const UserTrackScreen({super.key});
@@ -42,11 +43,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   }
 
   Future<void> _loadUserComplaints() async {
-    try {
-      final provider = context.read<ComplaintProvider>();
+    final provider = context.read<ComplaintProvider>();
+    // Set loading state immediately
+    if (provider.complaints.isEmpty && !provider.isLoading) {
       await provider.loadComplaints();
-    } catch (e) {
-      print('Error loading complaints: $e');
     }
   }
 
@@ -260,9 +260,29 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   Widget _buildComplaintsList() {
     return Consumer<ComplaintProvider>(
       builder: (context, provider, _) {
-        if (provider.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF1E66F5)),
+        final allComplaints = provider.complaints;
+        final isInitialLoad = allComplaints.isEmpty && !provider.isLoading && provider.error == null;
+        
+        // Show loading indicator while fetching data OR on initial load
+        if (provider.isLoading || isInitialLoad) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: const Color(0xFF1E66F5),
+                  strokeWidth: 3,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  AppStrings.t(context, 'Loading your complaints...'),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF64748b),
+                  ),
+                ),
+              ],
+            ),
           );
         }
 
@@ -313,15 +333,9 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           );
         }
 
-        final allComplaints = provider.complaints;
         final filteredComplaints = _getFilteredComplaints(allComplaints);
 
-        // Debug info
-        print('Total complaints: ${allComplaints.length}');
-        print('Filtered complaints: ${filteredComplaints.length}');
-        print('Selected filter: $_selectedFilter');
-        print('Search query: $_searchQuery');
-
+        // Only show empty state if not loading and no complaints
         if (filteredComplaints.isEmpty) {
           return _buildEmptyState();
         }
@@ -363,56 +377,68 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            // Show loading dialog
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext dialogContext) {
+                return WillPopScope(
+                  onWillPop: () async => false,
+                  child: Dialog(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                            strokeWidth: 3,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            AppStrings.t(context, 'Loading complaint details...'),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF374151),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+
+            // Small delay to ensure dialog is shown
+            await Future.delayed(const Duration(milliseconds: 100));
+
+            // Navigate to detail screen
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => UserTrackComplaintDetail(
-                  complaint: {
-                    'complaint_number': complaint.complaintNumber,
-                    'title': complaint.title,
-                    'description': complaint.description,
-                    'complaint_type': complaint.complaintType,
-                    'complaint_type_display': complaint.complaintTypeDisplay,
-                    'subcategory': complaint.subcategory,
-                    'work_status': complaint.workStatus,
-                    'created_at': complaint.createdAt.toString(),
-                    'address': complaint.address,
-                    'latitude': complaint.latitude,
-                    'longitude': complaint.longitude,
-                    'city': complaint.city,
-                    'state': complaint.state,
-                    'assigned_department': complaint.assignedDepartment != null ? {
-                      'name': complaint.assignedDepartment!.name,
-                      'email': complaint.assignedDepartment!.email,
-                      'phone': complaint.assignedDepartment!.phone,
-                      'latitude': complaint.assignedDepartment!.latitude,
-                      'longitude': complaint.assignedDepartment!.longitude,
-                      'department_type': complaint.assignedDepartment!.departmentType,
-                      'department_type_display': complaint.assignedDepartment!.departmentTypeDisplay,
-                      'address': complaint.assignedDepartment!.address,
-                      'city': complaint.assignedDepartment!.city,
-                      'state': complaint.assignedDepartment!.state,
-                      'sla_hours': complaint.assignedDepartment!.slaHours,
-                    } : null,
-                    'citizen_rating': complaint.citizenRating,
-                    'citizen_feedback': null,
-                    'can_reopen': complaint.canReopen ?? false,
-                    'field_responses': complaint.fieldResponses
-                        ?.map((f) => {
-                              'id': f.id,
-                              'field': f.field,
-                              'field_label': f.fieldLabel,
-                              'field_label_hi': f.fieldLabelHi,
-                              'field_label_gu': f.fieldLabelGu,
-                              'field_type': f.fieldType,
-                              'value': f.value,
-                            })
-                        .toList(),
-                  },
+                builder: (context) => ComplaintDetailScreen(
+                  complaintId: complaint.id,
                 ),
               ),
             );
+
+            // Close loading dialog when returning from detail screen
+            if (mounted) {
+              Navigator.of(context).pop();
+              
+              // Refresh complaints list when returning
+              await _loadUserComplaints();
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(16),

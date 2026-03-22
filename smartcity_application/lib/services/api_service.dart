@@ -6,6 +6,10 @@ import 'storage_service.dart';
 import 'auth_service.dart';
 
 class ApiService {
+  static Future<String?> getToken() async {
+    return await StorageService.getToken();
+  }
+
   static Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
     final headers = {
       'Content-Type': 'application/json',

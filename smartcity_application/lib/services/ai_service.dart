@@ -151,6 +151,7 @@ class AIService {
   final Map<String, dynamic> _complaintData = {};
   final LinkedHashMap<String, AssistantReply> _responseCache = LinkedHashMap();
   String _currentLanguage = 'en';
+  String _appLanguage = 'en'; // Store app's selected language
   String _userMood = 'neutral';
   String _sessionId = ''; // Start empty to generate unique session
   String _conversationState = 'greeting'; // Track conversation state
@@ -452,7 +453,21 @@ class AIService {
     }
 
     _history.add({'role': 'user', 'content': input});
-    _currentLanguage = _detectLanguage(input);
+    
+    // Detect language from user input
+    final detectedLanguage = _detectLanguage(input);
+    
+    // Use detected language ONLY if user typed in specific script/Hinglish
+    // Otherwise, use app's selected language for response
+    if (detectedLanguage == 'hinglish' || detectedLanguage == 'hi' || detectedLanguage == 'gu') {
+      _currentLanguage = detectedLanguage;
+      print('🗣️ User typed in: $detectedLanguage');
+    } else {
+      // User typed in English, use app's selected language for response
+      _currentLanguage = _appLanguage;
+      print('🌐 Using app language: $_appLanguage');
+    }
+    
     _userMood = _detectMood(input);
 
     // Advanced conversation flow
@@ -1921,9 +1936,16 @@ class AIService {
   }
 
   String _detectLanguage(String input) {
-    if (RegExp(r'[\u0A80-\u0AFF]').hasMatch(input)) return 'gu';
-    if (RegExp(r'[\u0900-\u097F]').hasMatch(input)) return 'hi';
+    // First check if user is typing in Hinglish (Roman script with Hindi words)
     if (_looksHinglish(input)) return 'hinglish';
+    
+    // Check for Gujarati script
+    if (RegExp(r'[\u0A80-\u0AFF]').hasMatch(input)) return 'gu';
+    
+    // Check for Hindi/Devanagari script
+    if (RegExp(r'[\u0900-\u097F]').hasMatch(input)) return 'hi';
+    
+    // Default to English
     return 'en';
   }
 
@@ -2380,6 +2402,7 @@ Return ONLY valid JSON, no other text.'''
     _history.clear();
     _complaintData.clear();
     _currentLanguage = 'en';
+    _appLanguage = 'en'; // Reset app language too
     _userMood = 'neutral';
     _sessionId = '';
     _conversationState = 'greeting';
@@ -2390,5 +2413,14 @@ Return ONLY valid JSON, no other text.'''
     _finalSummary = {};
     _responseCache.clear();
     print('AI Service reset - new session will be created');
+  }
+
+  /// Set the app's selected language for AI responses
+  void setAppLanguage(String languageCode) {
+    if (['en', 'hi', 'gu'].contains(languageCode)) {
+      _appLanguage = languageCode;
+      _currentLanguage = languageCode;
+      print('✅ App language set to: $languageCode');
+    }
   }
 }

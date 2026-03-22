@@ -92,8 +92,6 @@ class ComplaintProvider with ChangeNotifier {
         search: search,
       );
 
-      _isLoading = false;
-      
       // Handle both success format and direct data format
       if (response['success'] == true) {
         // Success format
@@ -117,26 +115,43 @@ class ComplaintProvider with ChangeNotifier {
         debugPrint('Unknown API response: $response');
       }
     } catch (e) {
-      _isLoading = false;
       _error = 'Error loading complaints: $e';
       debugPrint('Exception in loadComplaints: $e');
     }
     
+    _isLoading = false;
     notifyListeners();
   }
 
   Future<void> loadComplaintDetail(int id) async {
     _isLoading = true;
+    _error = null;
+    _selectedComplaint = null; // Clear previous complaint immediately
     notifyListeners();
 
-    final response = await ComplaintService.getComplaintDetail(id);
+    try {
+      final response = await ComplaintService.getComplaintDetail(id);
 
-    _isLoading = false;
-    if (response['success'] == true) {
-      _selectedComplaint = Complaint.fromJson(response);
-    } else {
-      _error = response['message'];
+      _isLoading = false;
+      
+      // Handle different response formats
+      if (response['success'] == true && response['complaint'] != null) {
+        // Format: {success: true, complaint: {...}}
+        _selectedComplaint = Complaint.fromJson(response['complaint']);
+      } else if (response.containsKey('id') && response.containsKey('complaint_number')) {
+        // Direct complaint data format
+        _selectedComplaint = Complaint.fromJson(response);
+      } else if (response['success'] == false) {
+        _error = response['message'] ?? 'Complaint not found';
+      } else {
+        _error = 'Complaint not found';
+      }
+    } catch (e) {
+      _isLoading = false;
+      _error = 'Error loading complaint: $e';
+      debugPrint('Exception in loadComplaintDetail: $e');
     }
+    
     notifyListeners();
   }
 
@@ -211,6 +226,11 @@ class ComplaintProvider with ChangeNotifier {
 
   void clearError() {
     _error = null;
+    notifyListeners();
+  }
+
+  void clearSelectedComplaint() {
+    _selectedComplaint = null;
     notifyListeners();
   }
 }

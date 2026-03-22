@@ -1,0 +1,36 @@
+{% extends 'department_base.html' %}
+
+{% block title %}Problems{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Active Problems</h1>
+    <p class="page-subtitle">Manage all pending and active complaints assigned to your department</p>
+</div>
+
+<div style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 50px rgba(30, 102, 245, 0.08);">
+    {% for complaint in complaints %}
+    <div style="background: #f8f9fa; border-radius: 15px; padding: 1.25rem; margin-bottom: 1rem; border-left: 4px solid #667eea;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <span style="font-weight: 800; color: #667eea; font-size: 0.95rem;">#{{ complaint.complaint_number }}</span>
+            <span style="padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #fee2e2; color: #991b1b;">
+                {{ complaint.get_work_status_display }}
+            </span>
+        </div>
+        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">{{ complaint.title }}</h4>
+        <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;">{{ complaint.description|truncatewords:30 }}</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px dashed #e2e8f0;">
+            <span style="font-size: 0.75rem; color: #94a3b8;">{{ complaint.created_at|date:"M d, Y H:i" }}</span>
+            <a href="{% url 'view_location' complaint.id %}" style="padding: 0.5rem 1rem; background: #667eea; color: white; border-radius: 8px; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                <i class="fa-solid fa-eye"></i> View Details
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 3rem; color: #64748b;">
+        <i class="fa-solid fa-clipboard-list" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.2;"></i>
+        No active problems found
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
