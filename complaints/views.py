@@ -5007,10 +5007,13 @@ def forgot_password(request):
                 
                 if dept_user:
                     print(f"  - Department: {dept_user.department.name}")
+                    print(f"  - Department Email: {dept_user.department.email}")
+                    print(f"  - User Email: {user.email}")
                     print(f"[Forgot Password] Sending department reset email...")
                     
+                    # IMPORTANT: Send to user's email, not department email
                     email_result = send_password_reset_credentials_email(
-                        email=email,
+                        email=user.email,  # Use user's email, not department email
                         user_name=user_name,
                         new_password=new_password,
                         department=dept_user.department,
@@ -5019,6 +5022,7 @@ def forgot_password(request):
                     
                 elif city_admin:
                     print(f"  - City: {city_admin.city_name}, State: {city_admin.state}")
+                    print(f"  - User Email: {user.email}")
                     print(f"[Forgot Password] Sending city admin reset email...")
                     
                     city_admin_info = {
@@ -5029,8 +5033,9 @@ def forgot_password(request):
                         'contact_address': city_admin.contact_address
                     }
                     
+                    # IMPORTANT: Send to user's email
                     email_result = send_password_reset_credentials_email(
-                        email=email,
+                        email=user.email,  # Use user's email
                         user_name=user_name,
                         new_password=new_password,
                         department=None,
