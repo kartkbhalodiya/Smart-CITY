@@ -502,7 +502,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         ),
       );
 
-      Map<String, dynamic>? verifyRes;
+      late final Map<String, dynamic> verifyRes;
       if (_images.isNotEmpty) {
         final provider = Provider.of<ComplaintProvider>(context, listen: false);
         verifyRes = await provider.verifyProof(
@@ -511,7 +511,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           uploadedOnly: true,
           subcategory: _selectedSub != null ? (_selectedSub!['name'] as String?) : null,
           description: _descCtrl.text.trim(),
-        );
+        ) ?? {'success': false, 'message': AppStrings.t(context, 'Proof verification failed')};
       } else {
         verifyRes = const {'success': true};
       }

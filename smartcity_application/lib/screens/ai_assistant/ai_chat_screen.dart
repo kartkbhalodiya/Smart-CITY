@@ -349,6 +349,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
     final complaintData = _aiService.getComplaintData();
     final categoryKey = (complaintData['category_key'] ?? '').toString();
     final categoryName = (complaintData['category'] ?? categoryKey).toString();
+    final subcategory = (complaintData['subcategory'] ?? '').toString().trim();
+    final description =
+        (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString().trim();
 
     setState(() {
       _messages.add(ChatMessage(
@@ -361,8 +364,32 @@ class _AIChatScreenState extends State<AIChatScreen> {
     _scrollToBottom();
 
     if (categoryKey.isEmpty) {
-      setState(() => _selectedImage = imageFile);
-      _sendMessage('Photo added');
+      setState(() {
+        _isLoading = false;
+        _selectedImage = null;
+        _messages.add(ChatMessage(
+          text:
+              'Please first select the complaint category before uploading proof. Gemini needs the issue type to compare your image correctly.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+      return;
+    }
+
+    if (subcategory.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _selectedImage = null;
+        _messages.add(ChatMessage(
+          text:
+              'Please choose the complaint type first. Gemini can verify the photo only after it knows the exact issue.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
       return;
     }
 
@@ -381,8 +408,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
       categoryKey,
       [imageFile],
       uploadedOnly: true,
-      subcategory: (complaintData['subcategory'] ?? '').toString(),
-      description: (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString(),
+      subcategory: subcategory,
+      description: description,
     );
 
     if (!mounted) return;

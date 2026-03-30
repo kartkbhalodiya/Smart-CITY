@@ -116,12 +116,6 @@ def verify_complaint_proof(
         f"(Key: {category_key}, Subcategory: {subcategory})"
     )
 
-    skip_keys = ["police", "cyber", "other"]
-    skip_labels = ["Police Complaint", "Cyber Crime", "Other Complaint"]
-    if category_key in skip_keys or category_label in skip_labels:
-        print(f"DEBUG: Skipping AI verification for {category_key or category_label}")
-        return True, "Verification skipped for this category."
-
     try:
         if hasattr(image_path_or_file, "read"):
             image_data = image_path_or_file.read()
