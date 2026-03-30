@@ -11,15 +11,5 @@
       "src": "/(.*)",
       "dest": "/api/index.py"
     }
-  ],
-  "env": {
-    "DJANGO_SETTINGS_MODULE": "smartcity.settings",
-    "DEBUG": "True",
-    "SECRET_KEY": "p!v^7+h!j= e0#u%7_@1-n*6&z(5)s#4f$j_r!m2%v@9#k8&l5)s1$f4",
-    "BASE_URL": "https://janhelp.vercel.app",
-    "CLOUDINARY_CLOUD_NAME": "dk1q50evg",
-    "CLOUDINARY_API_KEY": "284539188155248",
-    "CLOUDINARY_API_SECRET": "C1RW6ViwtH4RZspIlRi6LSa-wBw",
-    "DATABASE_URL": "postgresql://postgres.aaywhmjmsdkjzabtzfpg:Kartik%409089361130@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres"
-  }
+  ]
 }
