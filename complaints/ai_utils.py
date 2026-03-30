@@ -91,14 +91,43 @@ def _generate_with_model_fallback(api_key, preferred_model, prompt, image_data, 
     raise RuntimeError("No Gemini model candidates were available.")
 
 
-def _detect_mime_type(image_path_or_file):
-    content_type = getattr(image_path_or_file, "content_type", None)
-    if content_type:
+def _detect_mime_type(image_path_or_file, image_data=None):
+    content_type = (getattr(image_path_or_file, "content_type", None) or "").strip().lower()
+    if content_type and content_type not in {
+        "application/octet-stream",
+        "application/ octet-stream",
+        "binary/octet-stream",
+        "application/octetstream",
+    }:
         return content_type
 
     file_name = getattr(image_path_or_file, "name", None) or str(image_path_or_file)
     guessed_type, _ = mimetypes.guess_type(file_name)
-    return guessed_type or "image/jpeg"
+    if guessed_type and guessed_type.startswith("image/"):
+        return guessed_type
+
+    if image_data:
+        try:
+            with Image.open(BytesIO(image_data)) as image:
+                format_name = (image.format or "").upper()
+                format_to_mime = {
+                    "JPEG": "image/jpeg",
+                    "JPG": "image/jpeg",
+                    "PNG": "image/png",
+                    "WEBP": "image/webp",
+                    "GIF": "image/gif",
+                    "BMP": "image/bmp",
+                    "TIFF": "image/tiff",
+                    "HEIC": "image/heic",
+                    "HEIF": "image/heif",
+                }
+                detected_mime = format_to_mime.get(format_name)
+                if detected_mime:
+                    return detected_mime
+        except Exception as exc:
+            print(f"MIME detection warning: {str(exc)}")
+
+    return "image/jpeg"
 
 
 def _extract_json_payload(raw_text):
@@ -215,7 +244,7 @@ def verify_complaint_proof(
             return False, "Gemini API key is not configured on the server."
 
         model_name = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
-        mime_type = _detect_mime_type(image_path_or_file)
+        mime_type = _detect_mime_type(image_path_or_file, image_data=image_data)
         selected_issue = subcategory or category_label
         complaint_description = (complaint_description or "").strip() or "Not provided"
 
