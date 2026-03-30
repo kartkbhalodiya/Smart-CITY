@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
@@ -1231,6 +1232,22 @@ def ai_check_duplicate(request):
             'success': False,
             'message': f'Duplicate Check Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def ai_gemini_status(request):
+    """Lightweight diagnostics endpoint for deployed Gemini configuration."""
+    api_key = getattr(settings, 'GEMINI_API_KEY', '').strip()
+    model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash')
+
+    return Response({
+        'success': True,
+        'configured': bool(api_key),
+        'model': model_name,
+        'skip_categories': ['police', 'cyber', 'other'],
+        'message': 'Gemini verification is configured.' if api_key else 'Gemini API key is missing on the server.',
+    })
 
 
 @api_view(['POST'])

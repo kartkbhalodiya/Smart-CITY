@@ -12,7 +12,7 @@ from .api_views import (
     track_guest_complaint_api, department_forgot_password,
     get_states_cities, guest_stats,
     ai_chat, ai_extract_complaint, ai_voice_chat, ai_history, ai_reset, ai_nudge,
-    get_cloudinary_signature
+    ai_check_duplicate, ai_gemini_status, ai_get_department, get_cloudinary_signature
 )
 from .enhanced_ai_views import enhanced_ai_chat, ai_reset_session, ai_session_status
 from .test_cityfix import test_cityfix_llm
@@ -63,6 +63,9 @@ urlpatterns = [
     path('ai/voice-chat/', ai_voice_chat, name='api_ai_voice_chat'),
     path('ai/history/', ai_history, name='api_ai_history'),
     path('ai/reset/', ai_reset, name='api_ai_reset'),
+    path('ai/check-duplicate/', ai_check_duplicate, name='api_ai_check_duplicate'),
+    path('ai/gemini-status/', ai_gemini_status, name='api_ai_gemini_status'),
+    path('ai/get-department/', ai_get_department, name='api_ai_get_department'),
     
     # Cloudinary
     path('cloudinary/signature/', get_cloudinary_signature, name='api_cloudinary_signature'),

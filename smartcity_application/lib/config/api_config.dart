@@ -57,6 +57,8 @@ class ApiConfig {
   static const String aiVoiceChat = '$baseUrl/ai/voice-chat/';
   static const String aiHistory = '$baseUrl/ai/history/';
   static const String aiReset = '$baseUrl/ai/reset/';
+  static const String aiCheckDuplicate = '$baseUrl/ai/check-duplicate/';
+  static const String aiGetDepartment = '$baseUrl/ai/get-department/';
 
   // Cloudinary
   static const String cloudinarySignature = '$baseUrl/cloudinary/signature/';

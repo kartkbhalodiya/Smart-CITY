@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 import 'groq_context_analyzer.dart';
 
 /// Advanced Human-like Conversational AI Service for Smart City Complaints
@@ -2991,7 +2992,7 @@ Respond: VALID or INVALID|reason''';
   Future<Map<String, dynamic>?> _checkDuplicateComplaint(double latitude, double longitude) async {
     try {
       final response = await http.post(
-        Uri.parse('http://your-backend-url/api/ai-check-duplicate/'),
+        Uri.parse(ApiConfig.aiCheckDuplicate),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'latitude': latitude,
@@ -3015,7 +3016,7 @@ Respond: VALID or INVALID|reason''';
   Future<Map<String, dynamic>?> _getNearestDepartment(double latitude, double longitude) async {
     try {
       final response = await http.post(
-        Uri.parse('http://your-backend-url/api/ai-get-department/'),
+        Uri.parse(ApiConfig.aiGetDepartment),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'latitude': latitude,
