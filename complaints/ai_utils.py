@@ -209,6 +209,61 @@ def _run_basic_image_quality_checks(image_data):
     return None
 
 
+def _category_specific_evidence_guidance(category_key, category_label, subcategory):
+    key = (category_key or "").strip().lower()
+    selected_issue = (subcategory or category_label or "").strip() or "the selected complaint"
+
+    if key == "police":
+        return f"""
+Category-specific evidence guidance for police complaints:
+- For theft, robbery, burglary, or chain snatching, ACCEPT supporting proof such as a bill, invoice, product box, IMEI label, ownership receipt, broken lock/door/window photo, theft-location photo, CCTV still, or related threat/chat screenshot.
+- For missing person, ACCEPT a recent person photo, poster, ID proof, last-seen location photo, or CCTV still.
+- For harassment, assault, domestic violence, or suspicious activity, ACCEPT injury photos, damage photos, chat/call screenshots, medical note photos, suspect vehicle/person images, or incident-location proof.
+- Do NOT require the exact crime moment to be visible. Supporting evidence that clearly matches {selected_issue} is valid.
+""".strip()
+
+    if key == "cyber":
+        return f"""
+Category-specific evidence guidance for cyber complaints:
+- ACCEPT screenshots of chats, emails, fake websites/apps, product/order pages, OTP requests, transaction receipts, UPI/bank statements, profile pages, complaint references, or scam messages.
+- ACCEPT documentary proof even if it is a screenshot or text-heavy image.
+- The image does not need to show a physical scene; it should support the cyber issue described as {selected_issue}.
+""".strip()
+
+    if key == "other":
+        return f"""
+Category-specific evidence guidance for other complaints:
+- ACCEPT any supporting evidence that is reasonably connected to the complaint, including screenshots, bills, receipts, product photos, notices, damaged-item photos, or location photos.
+- If the image clearly supports {selected_issue} or the citizen description, it can be accepted even when the issue itself is not directly visible.
+""".strip()
+
+    if key == "electricity":
+        return f"""
+Category-specific evidence guidance for electricity complaints:
+- ACCEPT direct proof such as exposed wires, dark streetlights, poles, transformers, sparks, or damaged electrical infrastructure.
+- For meter or billing-related electrical issues, ACCEPT meter photos, bills, connection labels, or relevant screenshots if they support {selected_issue}.
+""".strip()
+
+    if key == "water":
+        return f"""
+Category-specific evidence guidance for water complaints:
+- ACCEPT direct proof such as leakage, dirty water, pipe bursts, tanker/non-supply scene, or affected area photos.
+- For meter/connection-related issues, ACCEPT meter photos, bills, connection photos, or relevant screenshots if they support {selected_issue}.
+""".strip()
+
+    if key in {"illegal", "transportation"}:
+        return f"""
+Category-specific evidence guidance:
+- ACCEPT direct scene photos, vehicle photos, location photos, screenshots, listings, notices, or other supporting proof if they clearly support {selected_issue}.
+""".strip()
+
+    return f"""
+Category-specific evidence guidance for civic infrastructure complaints:
+- Prefer direct visual proof of the issue itself.
+- ACCEPT only when the image clearly shows the real-world issue related to {selected_issue}, such as pothole, garbage, drainage, leakage, broken light, or construction damage.
+""".strip()
+
+
 def verify_complaint_proof(
     image_path_or_file,
     category_label,
@@ -247,11 +302,16 @@ def verify_complaint_proof(
         mime_type = _detect_mime_type(image_path_or_file, image_data=image_data)
         selected_issue = subcategory or category_label
         complaint_description = (complaint_description or "").strip() or "Not provided"
+        evidence_guidance = _category_specific_evidence_guidance(
+            category_key=category_key,
+            category_label=category_label,
+            subcategory=subcategory,
+        )
 
         prompt = f"""
-You are a strict municipal complaint proof verifier.
+You are a municipal complaint proof verifier.
 
-Your task is to decide whether the uploaded image clearly matches the selected complaint.
+Your task is to decide whether the uploaded image is valid proof for the selected complaint.
 
 Selected complaint:
 - Category: {category_label}
@@ -259,13 +319,16 @@ Selected complaint:
 - Subcategory / issue: {selected_issue}
 - Citizen description: {complaint_description}
 
-Validation rules:
-1. Accept only if the image clearly shows visible real-world evidence of the selected complaint.
-2. Reject if the image is unrelated to the selected category or subcategory.
-3. Reject if it is a selfie, portrait, document, screenshot, text-only image, logo, meme, indoor scene, random object, pet, food, or vehicle with no visible civic issue.
-4. Reject if the proof is too dark, too blurry, blank, or unclear.
-5. If the selected complaint is about potholes, garbage, drainage, water leakage, broken streetlight, construction, or road damage, the image must visibly show that exact type of issue.
-6. If you are unsure, reject it.
+General validation rules:
+1. Accept if the image is direct proof OR category-appropriate supporting proof for the selected complaint.
+2. Reject if the image is clearly unrelated to the category, subcategory, or citizen description.
+3. Reject if the proof is too dark, too blurry, blank, or unreadable.
+4. For screenshots, bills, receipts, or documents, read the visible text/UI clues and accept them when they reasonably support the selected complaint.
+5. For infrastructure complaints like potholes, garbage, drainage, road damage, construction, broken streetlights, or water leakage, the image should usually show the real-world issue itself.
+6. For police, cyber, or other complaints, supporting evidence does NOT need to show the exact incident itself; related bills, screenshots, damaged-scene photos, location photos, CCTV stills, or product/ownership proof may be valid.
+7. Be practical, not over-strict. If the proof is reasonably connected to the selected complaint, accept it. Reject only when it is clearly unrelated or too weak to support the complaint.
+
+{evidence_guidance}
 
 Return ONLY valid JSON in this exact format:
 {{"match":"YES" or "NO","reason":"short reason","detected_issue":"what the image most likely shows"}}

@@ -1608,7 +1608,10 @@ ${_localize(
 
   /// Step 4: Problem description with validation - Multi-language support
   Future<ConversationResponse> _handleProblemDescription(String userInput) async {
-    if (userInput.length < 10) {
+    final normalizedInput = userInput.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final detailError = _getDescriptionQualityError(normalizedInput);
+    if (detailError != null) {
+      _aiContext['validation_error'] = detailError;
       return ConversationResponse(
         message: '''${_localize(
           'I hear you! Could you tell me a bit more about it? 😊',
@@ -1627,10 +1630,49 @@ ${_localize(
         suggestions: _getDetailedSuggestions(_complaintData['category_key'] ?? ''),
         step: 'problem',
         showInput: true,
+        inputPlaceholder: _localize(
+          'Write one full line with issue, place, and detail...',
+          'समस्या, जगह, और विवरण के साथ एक पूरी लाइन लिखें...',
+          'સમस्या, જગ્યા અને વિગત સાથે એક પૂરી લાઇન લખો...',
+          'Issue, place aur detail ke saath ek full line likho...',
+        ),
       );
     }
     
-    _complaintData['description'] = userInput;
+    final category = (_complaintData['category'] ?? '').toString();
+    final subcategory = (_complaintData['subcategory'] ?? '').toString();
+    if (category.isNotEmpty && subcategory.isNotEmpty) {
+      final isValidDescription = await validateComplaintDescription(
+        normalizedInput,
+        category,
+        subcategory,
+      );
+      if (!isValidDescription) {
+        final validationReason = (_aiContext['validation_error'] ?? '').toString().trim();
+        return ConversationResponse(
+          message: validationReason.isNotEmpty
+              ? validationReason
+              : _localize(
+                  'Please write at least one clear line explaining the issue properly.',
+                  'कृपया समस्या को ठीक से समझाते हुए कम से कम एक साफ़ लाइन लिखें।',
+                  'કૃપા કરીને સમસ્યાને સારી રીતે સમજાવતી ઓછામાં ઓછી એક સ્પષ્ટ લાઇન લખો.',
+                  'Please problem ko properly explain karte hue kam se kam ek clear line likho.',
+                ),
+          buttons: [],
+          suggestions: _getDetailedSuggestions(_complaintData['category_key'] ?? ''),
+          step: 'problem',
+          showInput: true,
+          inputPlaceholder: _localize(
+            'Explain the issue in one full line...',
+            'समस्या को एक पूरी लाइन में समझाएं...',
+            'સમસ્યાને એક પૂરી લાઇનમાં સમજાવો...',
+            'Issue ko ek full line mein explain karo...',
+          ),
+        );
+      }
+    }
+
+    _complaintData['description'] = normalizedInput;
     _currentStep = 'date';
     
     return ConversationResponse(
@@ -1931,6 +1973,31 @@ ${_localize(
     }
     
     switch (categoryKey) {
+      case 'police':
+        photoMessage += '''\nâ€¢ ${_localize('Item bill or ownership proof', 'वस्तु का बिल या स्वामित्व प्रमाण', 'વસ્તુનું બિલ અથવા માલિકીનો પુરાવો', 'Item bill ya ownership proof')}
+â€¢ ${_localize('Theft location or damaged lock photo', 'चोरी की जगह या टूटे ताले की फोटो', 'ચોરીની જગ્યા અથવા તૂટેલા તાળાની ફોટો', 'Theft location ya toote tale ki photo')}
+â€¢ ${_localize('Chat screenshot, CCTV still, or suspect photo', 'चैट स्क्रीनशॉट, CCTV स्टिल, या संदिग्ध की फोटो', 'ચેટ સ્ક્રીનશોટ, CCTV સ્ટિલ, અથવા શંકાસ્પદની ફોટો', 'Chat screenshot, CCTV still, ya suspect photo')}''';
+        break;
+      case 'cyber':
+        photoMessage += '''\nâ€¢ ${_localize('Fraud chat, email, or website screenshot', 'फ्रॉड चैट, ईमेल, या वेबसाइट का स्क्रीनशॉट', 'ફ્રોડ ચેટ, ઇમેઇલ, અથવા વેબસાઇટનો સ્ક્રીનશોટ', 'Fraud chat, email, ya website screenshot')}
+â€¢ ${_localize('Payment, UPI, or order screenshot', 'पेमेंट, UPI, या ऑर्डर का स्क्रीनशॉट', 'પેમેન્ટ, UPI, અથવા ઓર્ડરનો સ્ક્રીનશોટ', 'Payment, UPI, ya order screenshot')}
+â€¢ ${_localize('Complaint reference or account proof', 'शिकायत रेफरेंस या अकाउंट प्रूफ', 'ફરિયાદ રેફરન્સ અથવા અકાઉન્ટ પ્રૂફ', 'Complaint reference ya account proof')}''';
+        break;
+      case 'other':
+        photoMessage += '''\nâ€¢ ${_localize('Relevant screenshot or notice', 'संबंधित स्क्रीनशॉट या नोटिस', 'સંબંધિત સ્ક્રીનશોટ અથવા નોટિસ', 'Relevant screenshot ya notice')}
+â€¢ ${_localize('Bill, receipt, or product photo', 'बिल, रसीद, या प्रोडक्ट फोटो', 'બિલ, રસીદ, અથવા પ્રોડક્ટ ફોટો', 'Bill, receipt, ya product photo')}
+â€¢ ${_localize('Location photo or damaged item', 'लोकेशन फोटो या खराब वस्तु', 'લોકેશન ફોટો અથવા નુકસાન થયેલી વસ્તુ', 'Location photo ya damaged item')}''';
+        break;
+      case 'water':
+        photoMessage += '''\nâ€¢ ${_localize('Leakage or dirty water photo', 'लीकेज या गंदे पानी की फोटो', 'લીકેજ અથવા ગંદા પાણીની ફોટો', 'Leakage ya gande paani ki photo')}
+â€¢ ${_localize('Pipe, tanker, or affected area photo', 'पाइप, टैंकर, या प्रभावित क्षेत्र की फोटो', 'પાઇપ, ટેન્કર, અથવા અસરગ્રસ્ત વિસ્તારની ફોટો', 'Pipe, tanker, ya affected area photo')}
+â€¢ ${_localize('Meter or bill photo if relevant', 'जरूरत हो तो मीटर या बिल की फोटो', 'જરૂર હોય તો મીટર અથવા બિલની ફોટો', 'Meter ya bill ki photo agar relevant ho')}''';
+        break;
+      case 'electricity':
+        photoMessage += '''\nâ€¢ ${_localize('Pole, wire, transformer, or dark streetlight photo', 'पोल, वायर, ट्रांसफॉर्मर, या बंद स्ट्रीट लाइट की फोटो', 'પોલ, વાયર, ટ્રાન્સફોર્મર, અથવા બંધ સ્ટ્રીટ લાઇટની ફોટો', 'Pole, wire, transformer, ya dark street light photo')}
+â€¢ ${_localize('Meter or bill photo if relevant', 'जरूरत हो तो मीटर या बिल की फोटो', 'જરૂર હોય તો મીટર અથવા બિલની ફોટો', 'Meter ya bill ki photo agar relevant ho')}
+â€¢ ${_localize('Any visible safety hazard', 'कोई भी दिखाई देने वाला सुरक्षा खतरा', 'કોઈપણ દેખાતો સુરક્ષા ખતરો', 'Koi bhi visible safety hazard')}''';
+        break;
       case 'road':
         photoMessage += '''\n• ${_localize('See exact damage', 'सटीक नुकसान देखें', 'સટીક નુકસાન જુઓ', 'Exact damage dekho')}
 • ${_localize('Assess severity', 'गंभीरता का आकलन करें', 'ગંભીરતાનું મૂલ્યાંકન કરો', 'Severity assess karo')}
@@ -2549,6 +2616,87 @@ Respond: VALID or INVALID|reason''';
     }
     
     return true;
+  }
+
+  String? _getDescriptionQualityError(String input) {
+    final normalized = input.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (normalized.isEmpty) {
+      return _localize(
+        'Please enter the complaint details.',
+        'कृपया शिकायत का विवरण दर्ज करें।',
+        'કૃપા કરીને ફરિયાદની વિગતો લખો.',
+        'Please complaint details likho.',
+      );
+    }
+
+    if (normalized.length < 12) {
+      return _localize(
+        'Please add at least one full line of details.',
+        'कृपया कम से कम एक पूरी लाइन का विवरण जोड़ें।',
+        'કૃપા કરીને ઓછામાં ઓછી એક પૂરી લાઇનની વિગત ઉમેરો.',
+        'Please kam se kam ek full line detail add karo.',
+      );
+    }
+
+    final words = normalized
+        .split(' ')
+        .where((word) => word.trim().isNotEmpty)
+        .toList();
+    if (words.length < 3) {
+      return _localize(
+        'Please describe the issue in a meaningful sentence, not just a few words.',
+        'कृपया समस्या को एक अर्थपूर्ण वाक्य में बताएं, केवल कुछ शब्दों में नहीं।',
+        'કૃપા કરીને સમસ્યાને થોડા શબ્દોમાં નહીં પરંતુ અર્થપૂર્ણ વાક્યમાં લખો.',
+        'Please issue ko sirf kuch words mein nahi, meaningful sentence mein likho.',
+      );
+    }
+
+    if (_looksLikeGibberish(normalized)) {
+      return _localize(
+        'Random letters are not enough. Please explain the real issue clearly.',
+        'रैंडम अक्षर पर्याप्त नहीं हैं। कृपया असली समस्या को साफ़ लिखें।',
+        'રેન્ડમ અક્ષરો પૂરતા નથી. કૃપા કરીને સાચી સમસ્યાને સ્પષ્ટ લખો.',
+        'Random letters enough nahi hain. Please real issue ko clear likho.',
+      );
+    }
+
+    return null;
+  }
+
+  bool _looksLikeGibberish(String input) {
+    final normalized = input.trim();
+    final latinWords = normalized
+        .split(RegExp(r'\s+'))
+        .map((word) => word.replaceAll(RegExp(r'[^A-Za-z]'), ''))
+        .where((word) => word.isNotEmpty)
+        .toList();
+
+    if (latinWords.isEmpty) {
+      return false;
+    }
+
+    final hasMeaningfulWord = latinWords.any((word) => word.length >= 4);
+    if (!hasMeaningfulWord) {
+      return true;
+    }
+
+    final vowelFreeLongWords = latinWords.where(
+      (word) => word.length >= 6 && !RegExp(r'[aeiouAEIOU]').hasMatch(word),
+    );
+    if (vowelFreeLongWords.isNotEmpty) {
+      return true;
+    }
+
+    if (latinWords.length == 1 && latinWords.first.length >= 6) {
+      return true;
+    }
+
+    final uniqueWords = latinWords.map((word) => word.toLowerCase()).toSet();
+    if (uniqueWords.length == 1 && latinWords.length >= 2) {
+      return true;
+    }
+
+    return false;
   }
 
   /// Detect multiple issues in user input
