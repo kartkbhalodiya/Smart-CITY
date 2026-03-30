@@ -1,6 +1,8 @@
 import json
 import mimetypes
+from io import BytesIO
 from django.conf import settings
+from PIL import Image, ImageOps, ImageStat
 
 try:
     from google import genai as google_genai
@@ -58,6 +60,47 @@ def _parse_verification_result(raw_text):
     return False, normalized or "Proof does not match the selected complaint."
 
 
+def _run_basic_image_quality_checks(image_data):
+    """
+    Reject obviously invalid proof images before spending a Gemini request.
+    """
+    try:
+        with Image.open(BytesIO(image_data)) as image:
+            image = ImageOps.exif_transpose(image).convert("RGB")
+            width, height = image.size
+
+            if width < 64 or height < 64:
+                return "The uploaded image is too small to verify. Please upload a clearer photo."
+
+            gray = ImageOps.grayscale(image)
+            stat = ImageStat.Stat(gray)
+            mean_brightness = stat.mean[0]
+            stddev_brightness = stat.stddev[0]
+            histogram = gray.histogram()
+            total_pixels = sum(histogram) or 1
+
+            very_dark_ratio = sum(histogram[:16]) / total_pixels
+            dark_ratio = sum(histogram[:32]) / total_pixels
+            very_bright_ratio = sum(histogram[240:]) / total_pixels
+
+            if very_dark_ratio >= 0.98 or mean_brightness < 12:
+                return "The uploaded image is almost completely black or too dark to verify."
+
+            if dark_ratio >= 0.995:
+                return "The uploaded image is too dark to identify the issue. Please upload a brighter photo."
+
+            if very_bright_ratio >= 0.98 and stddev_brightness < 6:
+                return "The uploaded image appears blank or overexposed and cannot be verified."
+
+            if stddev_brightness < 5:
+                return "The uploaded image appears blank or nearly single-color and cannot be verified."
+
+    except Exception as exc:
+        print(f"Basic image quality check warning: {str(exc)}")
+
+    return None
+
+
 def verify_complaint_proof(
     image_path_or_file,
     category_label,
@@ -79,13 +122,7 @@ def verify_complaint_proof(
         print(f"DEBUG: Skipping AI verification for {category_key or category_label}")
         return True, "Verification skipped for this category."
 
-    api_key = getattr(settings, "GEMINI_API_KEY", "")
-    if not api_key:
-        return False, "Gemini API key is not configured on the server."
-
     try:
-        model_name = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
-
         if hasattr(image_path_or_file, "read"):
             image_data = image_path_or_file.read()
             if hasattr(image_path_or_file, "seek"):
@@ -96,6 +133,15 @@ def verify_complaint_proof(
             with default_storage.open(image_path_or_file, "rb") as image_file:
                 image_data = image_file.read()
 
+        quality_issue = _run_basic_image_quality_checks(image_data)
+        if quality_issue:
+            return False, quality_issue
+
+        api_key = getattr(settings, "GEMINI_API_KEY", "")
+        if not api_key:
+            return False, "Gemini API key is not configured on the server."
+
+        model_name = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
         mime_type = _detect_mime_type(image_path_or_file)
         selected_issue = subcategory or category_label
         complaint_description = (complaint_description or "").strip() or "Not provided"
@@ -132,6 +178,9 @@ Return ONLY valid JSON in this exact format:
             response = client.models.generate_content(
                 model=model_name,
                 contents=[prompt, image_part],
+                config=google_genai.types.GenerateContentConfig(
+                    temperature=0.0,
+                ),
             )
             result_text = (getattr(response, "text", "") or "").strip()
         else:
@@ -142,7 +191,8 @@ Return ONLY valid JSON in this exact format:
             legacy_genai.configure(api_key=api_key)
             model = legacy_genai.GenerativeModel(model_name)
             response = model.generate_content(
-                [prompt, {"mime_type": mime_type, "data": image_data}]
+                [prompt, {"mime_type": mime_type, "data": image_data}],
+                generation_config={"temperature": 0.0},
             )
             result_text = (response.text or "").strip()
 
