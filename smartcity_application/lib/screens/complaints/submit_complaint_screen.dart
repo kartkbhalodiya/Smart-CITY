@@ -503,7 +503,13 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       );
 
       final provider = Provider.of<ComplaintProvider>(context, listen: false);
-      final verifyRes = await provider.verifyProof(widget.categoryKey ?? 'other', _images);
+      final verifyRes = await provider.verifyProof(
+        widget.categoryKey ?? 'other',
+        _images,
+        uploadedOnly: true,
+        subcategory: _selectedSub != null ? (_selectedSub!['name'] as String?) : null,
+        description: _descCtrl.text.trim(),
+      );
       
       if (mounted) Navigator.pop(context); // Close loading dialog
       setState(() => _submitting = false);
@@ -584,6 +590,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       'pincode': _pincodeCtrl.text.trim(),
       'state': _selectedState ?? '',
       'city': _selectedCity ?? '',
+      'uploaded_only_verification': 'true',
       if (_selectedSub != null) 'subcategory': _selectedSub!['name'] as String,
       if (bypassDuplicate) 'bypass_duplicate': 'true',
     };

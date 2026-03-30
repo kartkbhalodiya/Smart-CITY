@@ -183,14 +183,23 @@ class ComplaintProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>?> verifyProof(
     String categoryKey,
-    List<File> files,
-  ) async {
+    List<File> files, {
+    bool uploadedOnly = false,
+    String? subcategory,
+    String? description,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await ComplaintService.verifyProof(categoryKey, files);
+      final response = await ComplaintService.verifyProof(
+        categoryKey,
+        files,
+        uploadedOnly: uploadedOnly,
+        subcategory: subcategory,
+        description: description,
+      );
       _isLoading = false;
       notifyListeners();
       return response;

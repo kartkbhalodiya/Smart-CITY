@@ -1182,15 +1182,27 @@ def submit_complaint(request):
         ctype = request.POST.get('complaint_type')
         print(f"DEBUG Web: Category Key received: {ctype}")
         category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
+        subcat = (request.POST.get('subcategory') or '').strip()
+        desc = (request.POST.get('description') or '').strip()
         
         # Categories that MUST have a proof image
         skip_keys = ['police', 'cyber', 'other']
         
         if media_paths:
             # Check first image for validity
-            is_valid, ai_msg = verify_complaint_proof(media_paths[0], category_label, category_key=ctype)
+            is_valid, ai_msg = verify_complaint_proof(
+                media_paths[0],
+                category_label,
+                category_key=ctype,
+                subcategory=subcat,
+                complaint_description=desc,
+            )
             if not is_valid:
-                messages.error(request, f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.")
+                selected_issue = subcat or category_label
+                messages.error(
+                    request,
+                    f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue complaint.",
+                )
                 # We stay on same page to let them re-upload
                 return render(request, 'submit_complaint.html', {
                     'initial_type': ctype,

@@ -197,8 +197,9 @@ TWILIO_FROM_NUMBER = os.getenv('TWILIO_FROM_NUMBER', '')
 MAPPLE_API_KEY = os.getenv('MAPPLE_API_KEY', '')
 MAPMYINDIA_API_KEY = os.getenv('MAPPLE_API_KEY', '')  # Alias
 
-# Gemini AI API Key
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyAim_9cK7zrtRe0UfNnf3b_wiwugHlOIjc')
+# Gemini AI
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'gemini-1.5-flash'
 
 # CityFix LLM API
 CITYFIX_LLM_URL = os.getenv('CITYFIX_LLM_URL', 'https://kartik1911-cityfix-llm.hf.space')

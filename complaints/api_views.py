@@ -445,6 +445,18 @@ def dashboard_stats(request):
 
 # Complaint Views
 class ComplaintViewSet(viewsets.ModelViewSet):
+    def _get_uploaded_media_files(self, request):
+        """Support both app and web multipart field names for complaint media."""
+        images = request.FILES.getlist('media')
+        if images:
+            return images
+        return request.FILES.getlist('media_files')
+
+    def _is_uploaded_only_verification_mode(self, request):
+        """App-only mode: run Gemini validation when proof is uploaded, but do not require proof."""
+        raw_value = str(request.data.get('uploaded_only_verification', '')).strip().lower()
+        return raw_value in {'1', 'true', 'yes'}
+
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
@@ -486,13 +498,21 @@ class ComplaintViewSet(viewsets.ModelViewSet):
     def verify_proof(self, request):
         """Verify if the uploaded image matches the category without creating a complaint."""
         ctype = request.data.get('complaint_type')
-        category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
-        images = request.FILES.getlist('media')
+        category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype or 'selected category')
+        subcat = (request.data.get('subcategory') or '').strip()
+        desc = (request.data.get('description') or '').strip()
+        images = self._get_uploaded_media_files(request)
+        uploaded_only_mode = self._is_uploaded_only_verification_mode(request)
         
         # Categories that skip AI but still might have images
         skip_keys = ['police', 'cyber', 'other']
 
         if not images:
+            if uploaded_only_mode:
+                return Response({
+                    'success': True,
+                    'message': 'No proof uploaded yet. Gemini verification will run when the user adds proof.'
+                })
             if ctype in skip_keys:
                 return Response({'success': True, 'message': 'No images to verify (optional for this category)'})
             else:
@@ -503,12 +523,19 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
         from .ai_utils import verify_complaint_proof
-        is_valid, ai_msg = verify_complaint_proof(images[0], category_label, category_key=ctype)
+        is_valid, ai_msg = verify_complaint_proof(
+            images[0],
+            category_label,
+            category_key=ctype,
+            subcategory=subcat,
+            complaint_description=desc,
+        )
         
         if not is_valid:
+            selected_issue = subcat or category_label
             return Response({
                 'success': False,
-                'message': f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.",
+                'message': f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue.",
                 'ai_verification_failed': True
             }, status=status.HTTP_400_BAD_REQUEST)
             
@@ -529,26 +556,34 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 print(f"DEBUG API: Category Key received: {ctype}")
                 subcat = request.data.get('subcategory', '')
                 desc = request.data.get('description', '')
+                uploaded_only_mode = self._is_uploaded_only_verification_mode(request)
                 
                 # --- AI Image Verification (New) ---
                 from .ai_utils import verify_complaint_proof
                 # Get human-readable category name for the prompt
-                category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype)
-                images = request.FILES.getlist('media')
+                category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype or 'selected category')
+                images = self._get_uploaded_media_files(request)
                 
                 # Categories that skip AI but still might have images
                 skip_keys = ['police', 'cyber', 'other']
 
                 if images:
                     # Check first uploaded image
-                    is_valid, ai_msg = verify_complaint_proof(images[0], category_label, category_key=ctype)
+                    is_valid, ai_msg = verify_complaint_proof(
+                        images[0],
+                        category_label,
+                        category_key=ctype,
+                        subcategory=subcat,
+                        complaint_description=desc,
+                    )
                     if not is_valid:
+                        selected_issue = subcat or category_label
                         return Response({
                             'success': False,
-                            'message': f"Invalid Proof: please upload a right proof for {category_label} to continue complaint.",
+                            'message': f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue.",
                             'ai_verification_failed': True
                         }, status=status.HTTP_400_BAD_REQUEST)
-                elif ctype not in skip_keys:
+                elif ctype not in skip_keys and not uploaded_only_mode:
                     # No image provided for infrastructure categories
                     return Response({
                         'success': False,

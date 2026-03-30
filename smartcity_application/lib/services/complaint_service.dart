@@ -66,11 +66,29 @@ class ComplaintService {
 
   static Future<Map<String, dynamic>> verifyProof(
     String categoryKey,
-    List<File> files,
-  ) async {
+    List<File> files, {
+    bool uploadedOnly = false,
+    String? subcategory,
+    String? description,
+  }) async {
+    final fields = <String, String>{
+      'complaint_type': categoryKey,
+      'uploaded_only_verification': uploadedOnly ? 'true' : 'false',
+    };
+
+    final trimmedSubcategory = subcategory?.trim();
+    if (trimmedSubcategory != null && trimmedSubcategory.isNotEmpty) {
+      fields['subcategory'] = trimmedSubcategory;
+    }
+
+    final trimmedDescription = description?.trim();
+    if (trimmedDescription != null && trimmedDescription.isNotEmpty) {
+      fields['description'] = trimmedDescription;
+    }
+
     return await ApiService.postMultipart(
       ApiConfig.verifyProof,
-      {'complaint_type': categoryKey},
+      fields,
       files,
     );
   }

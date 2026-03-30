@@ -14,7 +14,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../config/routes.dart';
-import '../../config/api_config.dart';
 import 'chat_history_screen.dart';
 import 'voice_call_screen.dart';
 
@@ -298,6 +297,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
       );
 
       if (photo != null) {
+        await _handleSelectedProof(File(photo.path), 'Photo captured');
+        return;
         setState(() {
           _selectedImage = File(photo.path);
           _messages.add(ChatMessage(
@@ -325,6 +326,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
       );
 
       if (image != null) {
+        await _handleSelectedProof(File(image.path), 'Photo selected from gallery');
+        return;
         setState(() {
           _selectedImage = File(image.path);
           _messages.add(ChatMessage(
@@ -342,6 +345,79 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
   }
 
+  Future<void> _handleSelectedProof(File imageFile, String label) async {
+    final complaintData = _aiService.getComplaintData();
+    final categoryKey = (complaintData['category_key'] ?? '').toString();
+    final categoryName = (complaintData['category'] ?? categoryKey).toString();
+
+    setState(() {
+      _messages.add(ChatMessage(
+        text: label,
+        isUser: true,
+        timestamp: DateTime.now(),
+        imageFile: imageFile,
+      ));
+    });
+    _scrollToBottom();
+
+    if (categoryKey.isEmpty) {
+      setState(() => _selectedImage = imageFile);
+      _sendMessage('Photo added');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _messages.add(ChatMessage(
+        text: 'Verifying your uploaded proof with Gemini for **$categoryName**...',
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+    });
+    _scrollToBottom();
+
+    final complaintProvider = context.read<ComplaintProvider>();
+    final verifyResult = await complaintProvider.verifyProof(
+      categoryKey,
+      [imageFile],
+      uploadedOnly: true,
+      subcategory: (complaintData['subcategory'] ?? '').toString(),
+      description: (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString(),
+    );
+
+    if (!mounted) return;
+
+    if (verifyResult != null && verifyResult['success'] == true) {
+      setState(() {
+        _selectedImage = imageFile;
+        _isLoading = false;
+        _messages.add(ChatMessage(
+          text: 'Proof verified for **$categoryName**. Continuing with your complaint.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+      _sendMessage('Photo added');
+      return;
+    }
+
+    final errorMsg = verifyResult?['message'] ??
+        'Invalid proof detected. Please upload the right proof or add more complaint details.';
+
+    setState(() {
+      _selectedImage = null;
+      _isLoading = false;
+      _messages.add(ChatMessage(
+        text: errorMsg,
+        isUser: false,
+        timestamp: DateTime.now(),
+        buttons: const ['📷 Take Photo', '🖼️ Choose from Gallery', '⏭️ Skip'],
+      ));
+    });
+    _scrollToBottom();
+  }
+
   Future<void> _handleSubmitComplaint() async {
     try {
       setState(() => _isLoading = true);
@@ -351,6 +427,145 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
       if (user == null) {
         _showError('Please login to submit complaint');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      {
+        final chatCategoryKey = (complaintData['category_key'] ?? '').toString();
+        final chatSubcategory = (complaintData['subcategory'] ?? '').toString();
+        final chatDescription =
+            (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString();
+
+        if (chatCategoryKey.isEmpty) {
+          _showError('Category is required');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        if (chatSubcategory.isEmpty) {
+          _showError('Subcategory is required');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        if (chatDescription.isEmpty) {
+          _showError('Description is required');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        final complaintProvider = context.read<ComplaintProvider>();
+        final selectedFiles = _selectedImage != null ? <File>[_selectedImage!] : <File>[];
+
+        if (selectedFiles.isNotEmpty) {
+          final verifyResult = await complaintProvider.verifyProof(
+            chatCategoryKey,
+            selectedFiles,
+            uploadedOnly: true,
+            subcategory: chatSubcategory,
+            description: chatDescription,
+          );
+
+          if (verifyResult == null || verifyResult['success'] != true) {
+            final errorMsg = verifyResult?['message'] ??
+                'Invalid proof detected. Please upload the right proof or add more complaint details.';
+            setState(() {
+              _isLoading = false;
+              _messages.add(ChatMessage(
+                text: errorMsg,
+                isUser: false,
+                timestamp: DateTime.now(),
+                buttons: const ['📷 Take Photo', '🖼️ Choose from Gallery', '⏭️ Skip'],
+              ));
+            });
+            _scrollToBottom();
+            return;
+          }
+        }
+
+        final submitData = <String, String>{
+          'title': '$chatSubcategory - ${complaintData['category']}',
+          'description': chatDescription,
+          'complaint_type': chatCategoryKey,
+          'subcategory': chatSubcategory,
+          'location': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
+          'latitude': (_selectedLatLng?.latitude ?? complaintData['latitude'] ?? 0.0).toString(),
+          'longitude': (_selectedLatLng?.longitude ?? complaintData['longitude'] ?? 0.0).toString(),
+          'priority': (complaintData['priority'] ?? 'normal').toString().toLowerCase(),
+          'date_noticed': (complaintData['date_noticed'] ?? '').toString(),
+          'uploaded_only_verification': 'true',
+        };
+
+        if (complaintData.containsKey('contact_name') &&
+            complaintData['contact_name'].toString().isNotEmpty) {
+          submitData['contact_name'] = complaintData['contact_name'].toString();
+        }
+        if (complaintData.containsKey('contact_mobile') &&
+            complaintData['contact_mobile'].toString().isNotEmpty) {
+          submitData['contact_mobile'] = complaintData['contact_mobile'].toString();
+        }
+        if (complaintData.containsKey('contact_email') &&
+            complaintData['contact_email'].toString().isNotEmpty) {
+          submitData['contact_email'] = complaintData['contact_email'].toString();
+        }
+
+        print('Submitting AI chat complaint with data: $submitData');
+
+        final result = await complaintProvider.createComplaint(submitData, selectedFiles);
+
+        if (result != null && result['success'] == true) {
+          final complaintResponse = result['complaint'] as Map<String, dynamic>?;
+          final complaintId =
+              complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';
+          final departmentData =
+              complaintResponse?['assigned_department'] as Map<String, dynamic>?;
+          final assignedDepartment = departmentData?['name'] ?? 'Municipal Corporation';
+          final departmentPhone = departmentData?['phone'] ?? '';
+          final departmentEmail = departmentData?['email'] ?? '';
+          final slaHours = departmentData?['sla_hours'] ?? 48;
+          final priority =
+              complaintResponse?['priority_display'] ?? complaintData['priority'] ?? 'Normal';
+          final estimatedResolution = '$slaHours hours';
+
+          complaintData['complaint_id'] = complaintId;
+          complaintData['status'] = 'submitted';
+          complaintData['department'] = assignedDepartment;
+
+          setState(() {
+            _messages.add(ChatMessage(
+              text: '''Complaint Submitted Successfully!
+
+Complaint ID: $complaintId
+Assigned to: $assignedDepartment
+${departmentPhone.isNotEmpty ? 'Contact: $departmentPhone\n' : ''}${departmentEmail.isNotEmpty ? 'Email: $departmentEmail\n' : ''}Priority: $priority
+Est. Resolution: $estimatedResolution
+
+Your complaint has been registered and assigned to the nearest department.
+
+Track your complaint in "My Complaints" section.''',
+              isUser: false,
+              timestamp: DateTime.now(),
+              buttons: const ['📋 View My Complaints', '➕ File Another', '🏠 Home'],
+            ));
+            _isLoading = false;
+          });
+
+          _scrollToBottom();
+          _complaintId = complaintId;
+          await _saveCurrentSession();
+
+          Future.delayed(const Duration(seconds: 2), () async {
+            await _historyService.clearCurrentSession();
+            print('Cleared completed session from current');
+          });
+          return;
+        }
+
+        final errorMsg =
+            result?['message'] ?? complaintProvider.error ?? 'Failed to submit complaint';
+        print('AI chat submission failed: $errorMsg');
+        _showError(errorMsg);
         setState(() => _isLoading = false);
         return;
       }
