@@ -1,5 +1,6 @@
 import json
 import mimetypes
+import time
 from io import BytesIO
 from django.conf import settings
 from PIL import Image, ImageOps, ImageStat
@@ -35,6 +36,25 @@ def _is_missing_model_error(exc):
     )
 
 
+def _is_retryable_service_error(exc):
+    message = str(exc or "")
+    normalized = message.lower()
+    return any(
+        token in normalized
+        for token in [
+            "503",
+            "unavailable",
+            "high demand",
+            "try again later",
+            "temporarily unavailable",
+            "resource exhausted",
+            "429",
+            "rate limit",
+            "quota exceeded",
+        ]
+    )
+
+
 def _generate_with_model_fallback(api_key, preferred_model, prompt, image_data, mime_type):
     model_candidates = _build_model_candidates(preferred_model)
     last_error = None
@@ -47,22 +67,37 @@ def _generate_with_model_fallback(api_key, preferred_model, prompt, image_data, 
         )
 
         for model_name in model_candidates:
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=[prompt, image_part],
-                    config=google_genai.types.GenerateContentConfig(
-                        temperature=0.0,
-                    ),
-                )
-                result_text = (getattr(response, "text", "") or "").strip()
-                return result_text, model_name
-            except Exception as exc:
-                last_error = exc
-                if _is_missing_model_error(exc):
-                    print(f"Gemini model fallback: {model_name} unavailable, trying next model.")
-                    continue
-                raise
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=[prompt, image_part],
+                        config=google_genai.types.GenerateContentConfig(
+                            temperature=0.0,
+                        ),
+                    )
+                    result_text = (getattr(response, "text", "") or "").strip()
+                    return result_text, model_name
+                except Exception as exc:
+                    last_error = exc
+                    if _is_missing_model_error(exc):
+                        print(f"Gemini model fallback: {model_name} unavailable, trying next model.")
+                        break
+                    if _is_retryable_service_error(exc):
+                        if attempt < 2:
+                            wait_seconds = attempt + 1
+                            print(
+                                f"Gemini retry: {model_name} temporarily busy "
+                                f"(attempt {attempt + 1}/3). Retrying in {wait_seconds}s."
+                            )
+                            time.sleep(wait_seconds)
+                            continue
+                        print(
+                            f"Gemini model fallback: {model_name} still busy after retries, "
+                            "trying next model."
+                        )
+                        break
+                    raise
     else:
         global legacy_genai
         if legacy_genai is None:
@@ -71,20 +106,35 @@ def _generate_with_model_fallback(api_key, preferred_model, prompt, image_data, 
         legacy_genai.configure(api_key=api_key)
 
         for model_name in model_candidates:
-            try:
-                model = legacy_genai.GenerativeModel(model_name)
-                response = model.generate_content(
-                    [prompt, {"mime_type": mime_type, "data": image_data}],
-                    generation_config={"temperature": 0.0},
-                )
-                result_text = (response.text or "").strip()
-                return result_text, model_name
-            except Exception as exc:
-                last_error = exc
-                if _is_missing_model_error(exc):
-                    print(f"Gemini model fallback: {model_name} unavailable, trying next model.")
-                    continue
-                raise
+            for attempt in range(3):
+                try:
+                    model = legacy_genai.GenerativeModel(model_name)
+                    response = model.generate_content(
+                        [prompt, {"mime_type": mime_type, "data": image_data}],
+                        generation_config={"temperature": 0.0},
+                    )
+                    result_text = (response.text or "").strip()
+                    return result_text, model_name
+                except Exception as exc:
+                    last_error = exc
+                    if _is_missing_model_error(exc):
+                        print(f"Gemini model fallback: {model_name} unavailable, trying next model.")
+                        break
+                    if _is_retryable_service_error(exc):
+                        if attempt < 2:
+                            wait_seconds = attempt + 1
+                            print(
+                                f"Gemini retry: {model_name} temporarily busy "
+                                f"(attempt {attempt + 1}/3). Retrying in {wait_seconds}s."
+                            )
+                            time.sleep(wait_seconds)
+                            continue
+                        print(
+                            f"Gemini model fallback: {model_name} still busy after retries, "
+                            "trying next model."
+                        )
+                        break
+                    raise
 
     if last_error is not None:
         raise last_error
@@ -357,4 +407,6 @@ Return ONLY valid JSON in this exact format:
 
     except Exception as exc:
         print(f"AI Verification Error: {str(exc)}")
+        if _is_retryable_service_error(exc):
+            return False, "Gemini verification is temporarily busy. Please try the same proof again in a moment."
         return False, f"Gemini verification failed: {str(exc)}"

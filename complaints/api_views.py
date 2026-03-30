@@ -466,6 +466,36 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         raw_value = str(request.data.get('proof_expected', '')).strip().lower()
         return raw_value in {'1', 'true', 'yes'}
 
+    def _is_retryable_ai_failure(self, ai_msg):
+        normalized = str(ai_msg or '').strip().lower()
+        return any(
+            token in normalized
+            for token in [
+                'temporarily busy',
+                'try the same proof again',
+                'try again in a moment',
+                'try again later',
+                'service unavailable',
+                'high demand',
+                'resource exhausted',
+                'rate limit',
+            ]
+        )
+
+    def _build_ai_failure_response(self, selected_issue, ai_msg):
+        if self._is_retryable_ai_failure(ai_msg):
+            return {
+                'message': ai_msg,
+                'ai_verification_failed': True,
+                'retryable': True,
+            }, status.HTTP_503_SERVICE_UNAVAILABLE
+
+        return {
+            'message': f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue.",
+            'ai_verification_failed': True,
+            'retryable': False,
+        }, status.HTTP_400_BAD_REQUEST
+
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
@@ -536,11 +566,11 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         
         if not is_valid:
             selected_issue = subcat or category_label
+            payload, response_status = self._build_ai_failure_response(selected_issue, ai_msg)
             return Response({
                 'success': False,
-                'message': f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue.",
-                'ai_verification_failed': True
-            }, status=status.HTTP_400_BAD_REQUEST)
+                **payload,
+            }, status=response_status)
             
         return Response({'success': True, 'message': 'Proof verified'})
 
@@ -582,11 +612,11 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                     )
                     if not is_valid:
                         selected_issue = subcat or category_label
+                        payload, response_status = self._build_ai_failure_response(selected_issue, ai_msg)
                         return Response({
                             'success': False,
-                            'message': f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue.",
-                            'ai_verification_failed': True
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                            **payload,
+                        }, status=response_status)
                 elif proof_expected:
                     return Response({
                         'success': False,
@@ -1255,7 +1285,7 @@ def ai_gemini_status(request):
         'success': True,
         'configured': bool(api_key),
         'model': model_name,
-        'skip_categories': ['police', 'cyber', 'other'],
+        'skip_categories': [],
         'message': 'Gemini verification is configured.' if api_key else 'Gemini API key is missing on the server.',
     })
 
