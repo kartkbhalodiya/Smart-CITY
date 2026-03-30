@@ -458,6 +458,14 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         raw_value = str(request.data.get('uploaded_only_verification', '')).strip().lower()
         return raw_value in {'1', 'true', 'yes'}
 
+    def _is_proof_expected(self, request):
+        """
+        Detect whether the client says it attached proof.
+        This lets us fail closed when the upload never reaches the server.
+        """
+        raw_value = str(request.data.get('proof_expected', '')).strip().lower()
+        return raw_value in {'1', 'true', 'yes'}
+
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
@@ -503,25 +511,19 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         subcat = (request.data.get('subcategory') or '').strip()
         desc = (request.data.get('description') or '').strip()
         images = self._get_uploaded_media_files(request)
-        uploaded_only_mode = self._is_uploaded_only_verification_mode(request)
         
         # Categories that skip AI but still might have images
         skip_keys = ['police', 'cyber', 'other']
 
         if not images:
-            if uploaded_only_mode:
-                return Response({
-                    'success': True,
-                    'message': 'No proof uploaded yet. Gemini verification will run when the user adds proof.'
-                })
             if ctype in skip_keys:
                 return Response({'success': True, 'message': 'No images to verify (optional for this category)'})
-            else:
-                return Response({
-                    'success': False,
-                    'message': f"Proof Required: Please upload a photo of the {category_label} issue.",
-                    'ai_verification_failed': True
-                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'success': False,
+                'message': 'No proof file reached the server. Please upload the image again.',
+                'ai_verification_failed': True,
+                'proof_received': False,
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         from .ai_utils import verify_complaint_proof
         is_valid, ai_msg = verify_complaint_proof(
@@ -558,6 +560,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 subcat = request.data.get('subcategory', '')
                 desc = request.data.get('description', '')
                 uploaded_only_mode = self._is_uploaded_only_verification_mode(request)
+                proof_expected = self._is_proof_expected(request)
                 
                 # --- AI Image Verification (New) ---
                 from .ai_utils import verify_complaint_proof
@@ -584,6 +587,13 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                             'message': f"Invalid proof for {selected_issue}. {ai_msg} Please upload the right image to continue.",
                             'ai_verification_failed': True
                         }, status=status.HTTP_400_BAD_REQUEST)
+                elif proof_expected:
+                    return Response({
+                        'success': False,
+                        'message': 'Proof upload failed before verification. Please upload the image again.',
+                        'ai_verification_failed': True,
+                        'proof_received': False,
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 elif ctype not in skip_keys and not uploaded_only_mode:
                     # No image provided for infrastructure categories
                     return Response({

@@ -502,22 +502,27 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         ),
       );
 
-      final provider = Provider.of<ComplaintProvider>(context, listen: false);
-      final verifyRes = await provider.verifyProof(
-        widget.categoryKey ?? 'other',
-        _images,
-        uploadedOnly: true,
-        subcategory: _selectedSub != null ? (_selectedSub!['name'] as String?) : null,
-        description: _descCtrl.text.trim(),
-      );
-      
+      Map<String, dynamic>? verifyRes;
+      if (_images.isNotEmpty) {
+        final provider = Provider.of<ComplaintProvider>(context, listen: false);
+        verifyRes = await provider.verifyProof(
+          widget.categoryKey ?? 'other',
+          _images,
+          uploadedOnly: true,
+          subcategory: _selectedSub != null ? (_selectedSub!['name'] as String?) : null,
+          description: _descCtrl.text.trim(),
+        );
+      } else {
+        verifyRes = const {'success': true};
+      }
+
       if (mounted) Navigator.pop(context); // Close loading dialog
       setState(() => _submitting = false);
 
-      if (verifyRes != null && verifyRes['success'] == true) {
+      if (verifyRes['success'] == true) {
         setState(() => _isPreviewing = true);
       } else {
-        final errorMsg = verifyRes?['message'] ?? AppStrings.t(context, 'Invalid proof detected');
+        final errorMsg = verifyRes['message'] ?? AppStrings.t(context, 'Invalid proof detected');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),

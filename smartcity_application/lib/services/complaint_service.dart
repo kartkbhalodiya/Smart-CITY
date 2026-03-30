@@ -34,9 +34,14 @@ class ComplaintService {
     Map<String, String> data,
     List<File> files,
   ) async {
+    final fields = Map<String, String>.from(data);
+    if (files.isNotEmpty) {
+      fields['proof_expected'] = 'true';
+    }
+
     return await ApiService.postMultipart(
       ApiConfig.complaints,
-      data,
+      fields,
       files,
     );
   }
@@ -74,6 +79,7 @@ class ComplaintService {
     final fields = <String, String>{
       'complaint_type': categoryKey,
       'uploaded_only_verification': uploadedOnly ? 'true' : 'false',
+      'proof_expected': files.isNotEmpty ? 'true' : 'false',
     };
 
     final trimmedSubcategory = subcategory?.trim();
