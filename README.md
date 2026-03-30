@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="submission_assets/preview/slide-01.png" alt="JanHelp Banner" width="100%"/>
+<img src="submission_assets/preview/screen-01.png" alt="JanHelp Banner" width="100%"/>
 
 # 🏙️ JanHelp — Smart City Complaint Management System
 
@@ -20,19 +20,17 @@
 
 <table>
   <tr>
-    <td align="center"><img src="submission_assets/preview/slide-02.png" width="100%"/><br/><b>Citizen Dashboard</b></td>
-    <td align="center"><img src="submission_assets/preview/slide-03.png" width="100%"/><br/><b>AI Complaint Assistant</b></td>
-    <td align="center"><img src="submission_assets/preview/slide-04.png" width="100%"/><br/><b>Submit Complaint</b></td>
+    <td align="center"><img src="submission_assets/preview/screen-01.png" width="100%"/></td>
+    <td align="center"><img src="submission_assets/preview/screen-02.png" width="100%"/></td>
+    <td align="center"><img src="submission_assets/preview/screen-03.png" width="100%"/></td>
   </tr>
   <tr>
-    <td align="center"><img src="submission_assets/preview/slide-05.png" width="100%"/><br/><b>AI Proof Verification</b></td>
-    <td align="center"><img src="submission_assets/preview/slide-06.png" width="100%"/><br/><b>Department Dashboard</b></td>
-    <td align="center"><img src="submission_assets/preview/slide-07.png" width="100%"/><br/><b>Complaint Heatmap</b></td>
+    <td align="center"><img src="submission_assets/preview/screen-04.png" width="100%"/></td>
+    <td align="center"><img src="submission_assets/preview/screen-05.png" width="100%"/></td>
+    <td align="center"><img src="submission_assets/preview/screen-06.png" width="100%"/></td>
   </tr>
   <tr>
-    <td align="center"><img src="submission_assets/preview/slide-08.png" width="100%"/><br/><b>Super Admin Panel</b></td>
-    <td align="center"><img src="submission_assets/preview/slide-09.png" width="100%"/><br/><b>City Admin Analytics</b></td>
-    <td align="center"><img src="submission_assets/preview/slide-10.png" width="100%"/><br/><b>Mobile App</b></td>
+    <td align="center" colspan="3"><img src="submission_assets/preview/screen-07.png" width="34%"/></td>
   </tr>
 </table>
 

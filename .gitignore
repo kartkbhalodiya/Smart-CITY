@@ -1,20 +1,35 @@
-# Django
+# ── Django ────────────────────────────────────────────────────────────────────
 *.pyc
 __pycache__/
 db.sqlite3
 db.sqlite3-journal
 local_settings.py
-staticfiles/
 media/
 
-# Environment
+# ── Environment / Secrets (NEVER commit these) ────────────────────────────────
 .env
+.env.local
+.env.production
+.env.staging
+.env.*.local
+*.pem
+*.key
+serviceAccountKey.json
+firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+
+# ── Python virtual environments ───────────────────────────────────────────────
 .venv/
 env/
 venv/
 ENV/
+Lib/
+pyvenv.cfg
+.python-version
+CACHEDIR.TAG
 
-# IDEs and Tools
+# ── IDEs and Tools ────────────────────────────────────────────────────────────
 .vscode/
 .idea/
 .qodo/
@@ -22,6 +37,15 @@ ENV/
 .zenflow/
 *.log
 
-# OS
+# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Vercel ────────────────────────────────────────────────────────────────────
+.vercel/
+
+# ── Flutter ───────────────────────────────────────────────────────────────────
+smartcity_application/.dart_tool/
+smartcity_application/build/
+smartcity_application/.flutter-plugins
+smartcity_application/.flutter-plugins-dependencies
