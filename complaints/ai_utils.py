@@ -12,6 +12,85 @@ except Exception:  # pragma: no cover
 legacy_genai = None
 
 
+def _build_model_candidates(preferred_model):
+    candidates = []
+    for model_name in [
+        (preferred_model or "").strip(),
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+    ]:
+        if model_name and model_name not in candidates:
+            candidates.append(model_name)
+    return candidates
+
+
+def _is_missing_model_error(exc):
+    message = str(exc or "")
+    normalized = message.lower()
+    return (
+        "not_found" in normalized
+        or "is not found for api version" in normalized
+        or "model" in normalized and "not found" in normalized
+    )
+
+
+def _generate_with_model_fallback(api_key, preferred_model, prompt, image_data, mime_type):
+    model_candidates = _build_model_candidates(preferred_model)
+    last_error = None
+
+    if google_genai is not None:
+        client = google_genai.Client(api_key=api_key)
+        image_part = google_genai.types.Part.from_bytes(
+            data=image_data,
+            mime_type=mime_type,
+        )
+
+        for model_name in model_candidates:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=[prompt, image_part],
+                    config=google_genai.types.GenerateContentConfig(
+                        temperature=0.0,
+                    ),
+                )
+                result_text = (getattr(response, "text", "") or "").strip()
+                return result_text, model_name
+            except Exception as exc:
+                last_error = exc
+                if _is_missing_model_error(exc):
+                    print(f"Gemini model fallback: {model_name} unavailable, trying next model.")
+                    continue
+                raise
+    else:
+        global legacy_genai
+        if legacy_genai is None:
+            import google.generativeai as legacy_genai  # type: ignore
+
+        legacy_genai.configure(api_key=api_key)
+
+        for model_name in model_candidates:
+            try:
+                model = legacy_genai.GenerativeModel(model_name)
+                response = model.generate_content(
+                    [prompt, {"mime_type": mime_type, "data": image_data}],
+                    generation_config={"temperature": 0.0},
+                )
+                result_text = (response.text or "").strip()
+                return result_text, model_name
+            except Exception as exc:
+                last_error = exc
+                if _is_missing_model_error(exc):
+                    print(f"Gemini model fallback: {model_name} unavailable, trying next model.")
+                    continue
+                raise
+
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("No Gemini model candidates were available.")
+
+
 def _detect_mime_type(image_path_or_file):
     content_type = getattr(image_path_or_file, "content_type", None)
     if content_type:
@@ -135,7 +214,7 @@ def verify_complaint_proof(
         if not api_key:
             return False, "Gemini API key is not configured on the server."
 
-        model_name = getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
+        model_name = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
         mime_type = _detect_mime_type(image_path_or_file)
         selected_issue = subcategory or category_label
         complaint_description = (complaint_description or "").strip() or "Not provided"
@@ -163,38 +242,20 @@ Return ONLY valid JSON in this exact format:
 {{"match":"YES" or "NO","reason":"short reason","detected_issue":"what the image most likely shows"}}
 """.strip()
 
-        if google_genai is not None:
-            client = google_genai.Client(api_key=api_key)
-            image_part = google_genai.types.Part.from_bytes(
-                data=image_data,
-                mime_type=mime_type,
-            )
-            response = client.models.generate_content(
-                model=model_name,
-                contents=[prompt, image_part],
-                config=google_genai.types.GenerateContentConfig(
-                    temperature=0.0,
-                ),
-            )
-            result_text = (getattr(response, "text", "") or "").strip()
-        else:
-            global legacy_genai
-            if legacy_genai is None:
-                import google.generativeai as legacy_genai  # type: ignore
-
-            legacy_genai.configure(api_key=api_key)
-            model = legacy_genai.GenerativeModel(model_name)
-            response = model.generate_content(
-                [prompt, {"mime_type": mime_type, "data": image_data}],
-                generation_config={"temperature": 0.0},
-            )
-            result_text = (response.text or "").strip()
+        result_text, used_model = _generate_with_model_fallback(
+            api_key=api_key,
+            preferred_model=model_name,
+            prompt=prompt,
+            image_data=image_data,
+            mime_type=mime_type,
+        )
 
         is_valid, reason = _parse_verification_result(result_text)
 
         print("--- AI LOG START ---")
         print(f"Category: {category_label}")
         print(f"Subcategory: {subcategory}")
+        print(f"Gemini Model Used: {used_model}")
         print(f"AI Raw Result: {result_text}")
         print(f"AI Parsed Verdict: {is_valid}")
         print(f"AI Parsed Reason: {reason}")
