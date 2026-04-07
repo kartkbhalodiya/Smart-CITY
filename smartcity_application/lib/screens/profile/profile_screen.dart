@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +7,7 @@ import '../../config/api_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../services/api_service.dart';
+import '../../services/storage_service.dart';
 import '../../l10n/app_strings.dart';
 import '../../widgets/app_bottom_nav.dart';
 
@@ -749,6 +751,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         'district': '',
         'city': (_selectedCity ?? '').trim(),
         'address': _addressController.text.trim(),
+        'aadhaar_number': _aadhaarController.text.trim(),
       };
 
       final response = await ApiService.put(ApiConfig.userProfile, body);
@@ -757,6 +760,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       setState(() => _isLoading = false);
 
       if (response['success'] == true) {
+        // Sync local auth user with the new nested user object from Django's profile return
+        final profileData = response['profile'];
+        if (profileData != null && profileData['user'] != null) {
+          StorageService.saveUserData(jsonEncode(profileData['user']));
+        }
         await Provider.of<AuthProvider>(context, listen: false).loadUser();
         messenger.showSnackBar(
           SnackBar(

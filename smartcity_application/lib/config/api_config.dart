@@ -3,7 +3,7 @@ class ApiConfig {
   static const String baseUrl = 'https://janhelp.vercel.app/api';
   
   // For local testing, uncomment the line below and comment the production URL above:
-  // static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // static const String baseUrl = 'http://10.0.2.2:8000/api';
   
   // For Android Emulator use: http://10.0.2.2:8000/api
   // For iOS Simulator use: http://127.0.0.1:8000/api  

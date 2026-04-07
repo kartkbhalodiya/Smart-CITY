@@ -231,6 +231,24 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         
         complaint = Complaint.objects.create(user=user, **create_data)
         
+        # Handle dynamic fields from request.data
+        if request:
+            image_url = request.data.get('image_url')
+            if image_url:
+                import requests
+                from django.core.files.base import ContentFile
+                try:
+                    response = requests.get(image_url)
+                    if response.status_code == 200:
+                        file_name = f"ai_upload_{complaint.complaint_number}.jpg"
+                        ComplaintMedia.objects.create(
+                            complaint=complaint,
+                            file=ContentFile(response.content, name=file_name),
+                            file_type='image'
+                        )
+                except Exception as e:
+                    print(f"Failed to download image_url: {e}")
+
         # Handle media files
         for file in media_files:
             file_type = 'image' if file.content_type.startswith('image') else 'video'

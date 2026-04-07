@@ -412,6 +412,7 @@ def user_profile(request):
         profile.district = request.data.get('district', profile.district)
         profile.city = request.data.get('city', profile.city)
         profile.address = request.data.get('address', profile.address)
+        profile.aadhaar_number = request.data.get('aadhaar_number', profile.aadhaar_number)
         profile.save()
         
         serializer = CitizenProfileSerializer(profile, context={'request': request})
