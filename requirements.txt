@@ -14,3 +14,4 @@ reportlab==4.4.3
 twilio==9.9.1
 redis==6.2.0
 gunicorn==23.0.0
+requests==2.32.3
