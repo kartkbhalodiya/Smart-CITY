@@ -266,7 +266,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color(0xFF1E66F5).withOpacity(0.1)
+            ? const Color(0xFF1E66F5).withValues(alpha: 0.1)
             : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
@@ -324,7 +324,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color(0xFF1E66F5).withOpacity(0.1)
+            ? const Color(0xFF1E66F5).withValues(alpha: 0.1)
             : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
@@ -494,7 +494,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -539,7 +539,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color(0xFF1E66F5).withOpacity(0.1)
+            ? const Color(0xFF1E66F5).withValues(alpha: 0.1)
             : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(

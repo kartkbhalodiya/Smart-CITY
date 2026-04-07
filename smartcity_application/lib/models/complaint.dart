@@ -82,8 +82,8 @@ class Complaint {
       priorityDisplay: json['priority_display'] ?? 'Normal',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      latitude: (json['latitude'] ?? 0.0).toDouble(),
-      longitude: (json['longitude'] ?? 0.0).toDouble(),
+      latitude: _toDouble(json['latitude']),
+      longitude: _toDouble(json['longitude']),
       city: json['city'] ?? '',
       state: json['state'] ?? '',
       pincode: json['pincode'],
@@ -224,8 +224,8 @@ class Department {
       state: json['state'],
       city: json['city'],
       locationName: json['location_name'] ?? '',
-      latitude: (json['latitude'] ?? 0.0).toDouble(),
-      longitude: (json['longitude'] ?? 0.0).toDouble(),
+      latitude: _toDouble(json['latitude']),
+      longitude: _toDouble(json['longitude']),
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
       address: json['address'] ?? '',
@@ -234,6 +234,14 @@ class Department {
       logoUrl: json['logo_url'],
     );
   }
+}
+
+double _toDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is num) return value.toDouble();
+  if (value is bool) return 0.0;
+  if (value is String) return double.tryParse(value) ?? 0.0;
+  return 0.0;
 }
 
 class DashboardStats {

@@ -18,6 +18,7 @@ class GuestDashboardScreen extends StatefulWidget {
 class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   int _tab = 0;
   int _navIndex = 0;
+  String? _selectedGuestCategory;
 
   int _total = 0, _pending = 0, _solved = 0, _depts = 0;
   bool _statsLoading = true;
@@ -61,15 +62,15 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8F9FA),
       body: Column(children: [
         _topNav(),
         Expanded(child: RefreshIndicator(
-          color: const Color(0xFF1E66F5),
+          color: const Color(0xFFFF6B35),
           onRefresh: _loadStats,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(children: [
               _tabNav(),
               if (_tab == 0) _homeTab(),
@@ -85,29 +86,62 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Widget _topNav() {
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top, left: 16, right: 16, bottom: 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 10,
+        16,
+        10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(children: [
-        Image.asset('assets/images/logo.png', height: 36),
-        const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(AppStrings.t(context, 'Guest Mode'),
-              style: GoogleFonts.poppins(
-                  fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-          Text(AppStrings.t(context, 'Limited access'),
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
-        ]),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/images/logo.png',
+            height: 40,
+            fit: BoxFit.contain,
+          ),
+        ),
         const Spacer(),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.lock_outline_rounded,
+            color: Color(0xFF1A1A1A),
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 10),
         GestureDetector(
           onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-                color: const Color(0xFF1E66F5), borderRadius: BorderRadius.circular(10)),
-            child: Text(AppStrings.t(context, 'Login'),
-                style: GoogleFonts.poppins(
-                    fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF6B35), Color(0xFFFF8F5A)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.login_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
         ),
       ]),
@@ -121,8 +155,8 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)]),
       child: Row(
           children: List.generate(
               3,
@@ -133,14 +167,14 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         _navIndex = i;
                       }),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                            color: _tab == i ? const Color(0xFF1E66F5) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8)),
+                            color: _tab == i ? const Color(0xFFFF6B35) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12)),
                         child: Text(tabs[i],
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: _tab == i ? Colors.white : const Color(0xFF64748b))),
                       ),
@@ -151,72 +185,192 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
 
   Widget _homeTab() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      // Welcome banner
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF154ec7)]),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(children: [
-          Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(AppStrings.t(context, 'Welcome, Guest! 👋'),
-                style: GoogleFonts.poppins(
-                    fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-            const SizedBox(height: 4),
-            Text(AppStrings.t(context, 'Submit complaints & view departments.\nLogin for full access.'),
-                style: GoogleFonts.inter(
-                    fontSize: 12, color: Colors.white.withOpacity(0.85))),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration:
-                    BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                child: Text(AppStrings.t(context, 'Login / Register'),
-                    style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E66F5))),
-              ),
-            ),
-          ])),
-          const SizedBox(width: 12),
-          const Text('🔐', style: TextStyle(fontSize: 52)),
-        ]),
-      ),
-      const SizedBox(height: 24),
-
-      // Live Stats — hidden with blur + lock
+      _guestHeroCard(),
+      const SizedBox(height: 20),
+      // Live Stats Section
       Row(children: [
-        Text(AppStrings.t(context, 'Live Stats'),
+        Text(AppStrings.t(context, '📊 Live Stats'),
             style: GoogleFonts.poppins(
-                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A))),
         const SizedBox(width: 8),
         if (_statsLoading)
           const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E66F5))),
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF6B35))),
       ]),
       const SizedBox(height: 12),
       _statsGrid(),
-      const SizedBox(height: 24),
+      const SizedBox(height: 0),
+
+      // Hidden to keep guest dashboard visually aligned with user dashboard
+      if (false) Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D2D2D),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3D3D3D),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(child: Text('🔐', style: TextStyle(fontSize: 24))),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(AppStrings.t(context, 'Guest Mode'),
+                  style: GoogleFonts.poppins(
+                      fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+              const SizedBox(height: 2),
+              Text(AppStrings.t(context, 'Login to unlock tracking, profile\nand real-time updates.'),
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: const Color(0xFFAAAAAA), height: 1.4)),
+            ]),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B35),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(AppStrings.t(context, 'Login'),
+                  style: GoogleFonts.poppins(
+                      fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white)),
+            ),
+          ),
+        ]),
+      ),
+      const SizedBox(height: 0),
 
       // Departments
-      Text(AppStrings.t(context, 'Departments'),
-          style: GoogleFonts.poppins(
-              fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-      const SizedBox(height: 12),
-      _departmentsGrid(),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(AppStrings.t(context, '🚨 Emergency Contacts'),
+            style: GoogleFonts.poppins(
+                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A))),
+        GestureDetector(
+          onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF6B35).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(AppStrings.t(context, 'View All'),
+                style: GoogleFonts.inter(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFFF6B35))),
+          ),
+        ),
+      ]),
+      const SizedBox(height: 14),
+      _departmentsGridCompact(),
       const SizedBox(height: 24),
 
-      // Locked features
-      _lockedBanner(),
+      // Recent Complaints Section
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(AppStrings.t(context, '📋 Recent Complaints'),
+            style: GoogleFonts.poppins(
+                fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A))),
+        GestureDetector(
+          onTap: () => setState(() => _tab = 2),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF6B35).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(AppStrings.t(context, 'View All'),
+                style: GoogleFonts.inter(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFFF6B35))),
+          ),
+        ),
+      ]),
+      const SizedBox(height: 14),
+      _recentComplaintsLocked(),
     ]);
+  }
+
+  Widget _guestHeroCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A1A), Color(0xFF2D2D2D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Center(
+              child: Icon(Icons.lock_outline_rounded, color: Colors.white, size: 30),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.t(context, 'Guest Mode'),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppStrings.t(context, 'Explore Dashboard'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B35).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    AppStrings.t(context, 'Login for full complaint history'),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFFF6B35),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _track() async {
@@ -262,7 +416,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
         ),
         child: Column(children: [
           _inputField(_trackComplaintCtrl, AppStrings.t(context, 'Complaint ID (e.g. COMP123)'), Icons.tag),
@@ -274,7 +428,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
             child: ElevatedButton(
               onPressed: _trackLoading ? null : _track,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E66F5),
+                backgroundColor: const Color(0xFFFF6B35),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -371,7 +525,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               Navigator.pushReplacementNamed(context, AppRoutes.login);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E66F5),
+              backgroundColor: const Color(0xFFFF6B35),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text(AppStrings.t(context, 'Login Now'), style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
@@ -417,7 +571,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
       ),
       child: Column(
         children: items.map((item) => Padding(
@@ -457,7 +611,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                 ),
                 child: Icon(s.completed ? Icons.check : s.icon, size: 12, color: s.completed ? Colors.white : const Color(0xFF94a3b8)),
               ),
-              if (!isLast) Container(width: 2, height: 40, color: s.completed ? s.color.withOpacity(0.3) : const Color(0xFFE2E8F0)),
+              if (!isLast) Container(width: 2, height: 40, color: s.completed ? s.color.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
             ]),
             const SizedBox(width: 16),
             Expanded(child: Padding(
@@ -525,7 +679,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   if (hasDept) PolylineLayer(polylines: [
                     Polyline(
                       points: [cPos, dPos!],
-                      color: const Color(0xFF1E66F5).withOpacity(0.6),
+                      color: const Color(0xFF1E66F5).withValues(alpha: 0.6),
                       strokeWidth: 4,
                       isDotted: true,
                     ),
@@ -581,7 +735,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       onTap: tap,
       child: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)]),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)]),
         child: Icon(icon, size: 20, color: const Color(0xFF1E66F5)),
       ),
     );
@@ -594,16 +748,16 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [const Color(0xFF1E66F5).withOpacity(0.08), const Color(0xFF1E66F5).withOpacity(0.03)],
+          colors: [const Color(0xFF1E66F5).withValues(alpha: 0.08), const Color(0xFF1E66F5).withValues(alpha: 0.03)],
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.15), width: 1.5),
+        border: Border.all(color: const Color(0xFF1E66F5).withValues(alpha: 0.15), width: 1.5),
       ),
       child: Column(children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.1), blurRadius: 10)]),
+          decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: const Color(0xFF1E66F5).withValues(alpha: 0.1), blurRadius: 10)]),
           child: const Icon(Icons.business_rounded, color: Color(0xFF1E66F5), size: 30),
         ),
         const SizedBox(height: 12),
@@ -691,9 +845,9 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   Widget _statCard(Map item) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: item['color'] as Color,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10)],
       ),
       child: Stack(
         children: [
@@ -720,7 +874,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                 child: Container(
-                  color: Colors.white.withOpacity(0.55),
+                  color: Colors.white.withValues(alpha: 0.55),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -728,18 +882,18 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E66F5).withOpacity(0.12),
+                          color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.lock_rounded,
-                            size: 20, color: Color(0xFF1E66F5)),
+                            size: 20, color: Color(0xFFFF6B35)),
                       ),
                       const SizedBox(height: 6),
                       Text(AppStrings.t(context, 'Login to view'),
                           style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1E66F5))),
+                              color: const Color(0xFFFF6B35))),
                     ],
                   ),
                 ),
@@ -751,117 +905,158 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
     );
   }
 
-  // ── Departments grid — show only 3, with View All ──────────────────────
-  Widget _departmentsGrid() {
-    final depts = [
-      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'), 'bg': const Color(0xFFEEF2FF)},
-      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'), 'bg': const Color(0xFFFFF7ED)},
-      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'), 'bg': const Color(0xFFF0F9FF)},
-      {'emoji': '🚰', 'name': AppStrings.t(context, 'Water Supply'), 'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '💡', 'name': AppStrings.t(context, 'Electricity'), 'bg': const Color(0xFFFFFBEB)},
-      {'emoji': '🗑️', 'name': AppStrings.t(context, 'Garbage'), 'bg': const Color(0xFFF0FDF4)},
-      {'emoji': '🛣️', 'name': AppStrings.t(context, 'Road'), 'bg': const Color(0xFFFAF5FF)},
-      {'emoji': '🌊', 'name': AppStrings.t(context, 'Drainage'), 'bg': const Color(0xFFEFF6FF)},
-      {'emoji': '🚌', 'name': AppStrings.t(context, 'Transport'), 'bg': const Color(0xFFFFF1F2)},
-    ];
-    final preview = depts.take(3).toList();
-    return Column(children: [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: preview.map((d) => Expanded(child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: d['bg'] as Color,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
-              ),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(d['emoji'] as String, style: const TextStyle(fontSize: 34)),
-                const SizedBox(height: 6),
-                Text(d['name'] as String,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                        fontSize: 11, fontWeight: FontWeight.w600,
-                        color: const Color(0xFF0f172a))),
-              ]),
-            ),
-          ),
-        ))).toList(),
-      ),
-      const SizedBox(height: 12),
-      GestureDetector(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E66F5).withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.25)),
-          ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text(AppStrings.t(context, 'View All Departments'),
-                style: GoogleFonts.poppins(
-                    fontSize: 13, fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E66F5))),
-            const SizedBox(width: 6),
-            const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF1E66F5)),
-          ]),
-        ),
-      ),
-    ]);
-  }
-
-  Widget _lockedBanner() {
+  Widget _recentComplaintsLocked() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
       ),
       child: Column(children: [
-        const Text('🔒', style: TextStyle(fontSize: 32)),
-        const SizedBox(height: 8),
-        Text(AppStrings.t(context, 'Login to unlock full features'),
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF6B35).withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.lock_rounded, size: 32, color: Color(0xFFFF6B35)),
+        ),
+        const SizedBox(height: 16),
+        Text(AppStrings.t(context, 'Login Required'),
             style: GoogleFonts.poppins(
-                fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-        const SizedBox(height: 4),
-        Text(AppStrings.t(context, 'Track complaints • View profile • Get updates'),
-            style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b)),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 14),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _lockedFeature('📋', AppStrings.t(context, 'Track')),
-          const SizedBox(width: 20),
-          _lockedFeature('👤', AppStrings.t(context, 'Profile')),
-          const SizedBox(width: 20),
-          _lockedFeature('🔔', AppStrings.t(context, 'Updates')),
-        ]),
+                fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+        const SizedBox(height: 8),
+        Text(AppStrings.t(context, 'Please login to see your recent complaints\nand track their status in real-time.'),
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+                fontSize: 13, color: const Color(0xFF64748b), height: 1.5)),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6B35),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(AppStrings.t(context, 'LOGIN NOW'),
+                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+          ),
+        ),
       ]),
     );
   }
 
-  Widget _lockedFeature(String emoji, String label) {
-    return Column(children: [
-      Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-            color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(12)),
-        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
-      ),
-      const SizedBox(height: 4),
-      Text(label,
-          style: GoogleFonts.inter(
-              fontSize: 11, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
-    ]);
+  Widget _departmentsGridCompact() {
+    final depts = [
+      {'emoji': '🚓', 'name': AppStrings.t(context, 'Police'), 'bg': const Color(0xFFEEF2FF)},
+      {'emoji': '🚦', 'name': AppStrings.t(context, 'Traffic'), 'bg': const Color(0xFFFFF7ED)},
+      {'emoji': '🏗️', 'name': AppStrings.t(context, 'Construction'), 'bg': const Color(0xFFF0F9FF)},
+      {'emoji': '🚰', 'name': AppStrings.t(context, 'Water'), 'bg': const Color(0xFFF0FDF4)},
+      {'emoji': '💡', 'name': AppStrings.t(context, 'Electric'), 'bg': const Color(0xFFFFF5E6)},
+      {'emoji': '🗑️', 'name': AppStrings.t(context, 'Garbage'), 'bg': const Color(0xFFEFFDF7)},
+      {'emoji': '🛣️', 'name': AppStrings.t(context, 'Roads'), 'bg': const Color(0xFFFFF4F8)},
+    ];
+    return Column(
+      children: [
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 0.95,
+          ),
+          itemCount: depts.length,
+          itemBuilder: (context, index) {
+            final d = depts[index];
+            return GestureDetector(
+              onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [d['bg'] as Color, Colors.white],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(d['emoji'] as String, style: const TextStyle(fontSize: 38)),
+                    const SizedBox(height: 8),
+                    Text(
+                      d['name'] as String,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1A1A1A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        GestureDetector(
+          onTap: () => Navigator.pushNamed(context, AppRoutes.departmentsList),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFFF6B35).withValues(alpha: 0.1),
+                  const Color(0xFFFF8F5A).withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.grid_view_rounded, size: 18, color: Color(0xFFFF6B35)),
+                const SizedBox(width: 8),
+                Text(
+                  AppStrings.t(context, 'View All Emergency Contacts'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFFF6B35),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFFFF6B35)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
+
+
 
   Widget _submitTab() {
     final categories = [
@@ -879,66 +1074,63 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       {'emoji': '📋', 'name': AppStrings.t(context, 'Other'),           'key': 'other',          'bg': const Color(0xFFF8FAFC)},
     ];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(AppStrings.t(context, 'Submit a Complaint'),
-          style: GoogleFonts.poppins(
-              fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
-      const SizedBox(height: 4),
-      Text(AppStrings.t(context, 'Choose a category to report an issue'),
-          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b))),
-      const SizedBox(height: 20),
+      _guestCategoryHeaderCard(categories),
+      const SizedBox(height: 24),
       GridView.count(
-        crossAxisCount: 2,
+        crossAxisCount: 3,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.95,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.9,
         children: categories.map((c) {
           final bg = c['bg'] as Color;
+          final isSelected = _selectedGuestCategory == c['key'];
           return GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.submitComplaint,
-                arguments: {'categoryKey': c['key'], 'categoryName': c['name']}),
-            child: Container(
+            onTap: () => setState(() {
+              if (isSelected) {
+                _selectedGuestCategory = null;
+              } else {
+                _selectedGuestCategory = c['key'] as String;
+              }
+            }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isSelected
+                    ? const Color(0xFFFF6B35).withValues(alpha: 0.08)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(18),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+                border: Border.all(
+                  color: isSelected
+                      ? const Color(0xFFFF6B35)
+                      : const Color(0xFFEEEEEE),
+                  width: isSelected ? 2 : 1.5,
+                ),
+                boxShadow: [BoxShadow(color: (isSelected ? const Color(0xFFFF6B35) : Colors.black).withValues(alpha: isSelected ? 0.18 : 0.05), blurRadius: isSelected ? 12 : 10, offset: const Offset(0, 3))],
               ),
-              child: Column(children: [
+                child: Column(children: [
                 Expanded(
-                  flex: 5,
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: bg,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text(c['emoji'] as String, style: const TextStyle(fontSize: 48)),
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 36, height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                      Text(c['emoji'] as String, style: const TextStyle(fontSize: 38)),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(c['name'] as String,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w600,
+                                color: isSelected ? const Color(0xFFFF6B35) : const Color(0xFF1A1A1A))),
                       ),
                     ]),
-                  ),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    child: Center(
-                      child: Text(c['name'] as String,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                              fontSize: 13, fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0f172a))),
-                    ),
                   ),
                 ),
               ]),
@@ -946,22 +1138,181 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
           );
         }).toList(),
       ),
+      const SizedBox(height: 24),
+      _guestCategoryContinueButton(categories),
     ]);
+  }
+
+  Widget _guestCategoryHeaderCard(List<Map<String, dynamic>> categories) {
+    final matchingCategories = _selectedGuestCategory != null
+        ? categories.where((c) => c['key'] == _selectedGuestCategory).toList()
+        : const <Map<String, dynamic>>[];
+    final selectedCat =
+        matchingCategories.isNotEmpty ? matchingCategories.first : null;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A1A), Color(0xFF2D2D2D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A1A1A).withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('ðŸ“‹', style: TextStyle(fontSize: 28)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.t(context, 'Choose Category'),
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      selectedCat != null
+                          ? '${selectedCat['emoji']} ${selectedCat['name']} ${AppStrings.t(context, 'selected')}'
+                          : AppStrings.t(context, 'Select complaint type'),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: selectedCat != null
+                            ? const Color(0xFFFF6B35)
+                            : Colors.white.withValues(alpha: 0.8),
+                        fontWeight: selectedCat != null
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: _selectedGuestCategory != null
+                  ? const Color(0xFFFF6B35).withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _selectedGuestCategory != null
+                    ? const Color(0xFFFF6B35).withValues(alpha: 0.5)
+                    : Colors.white.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _selectedGuestCategory != null
+                      ? Icons.check_circle
+                      : Icons.touch_app_outlined,
+                  size: 18,
+                  color: _selectedGuestCategory != null
+                      ? const Color(0xFFFF6B35)
+                      : Colors.white,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _selectedGuestCategory == null
+                        ? AppStrings.t(context, 'Tap a category below to select')
+                        : AppStrings.t(context, 'Ready to submit complaint!'),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _guestCategoryContinueButton(List<Map<String, dynamic>> categories) {
+    final hasSelection = _selectedGuestCategory != null;
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: hasSelection
+            ? () {
+                final selectedCat = categories.firstWhere(
+                  (c) => c['key'] == _selectedGuestCategory,
+                );
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.submitComplaint,
+                  arguments: {
+                    'categoryKey': _selectedGuestCategory,
+                    'categoryName': selectedCat['name'],
+                  },
+                );
+              }
+            : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF6B35),
+          disabledBackgroundColor: const Color(0xFFE5E5E5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          AppStrings.t(context, 'Continue Complaint'),
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: hasSelection ? Colors.white : const Color(0xFFAAAAAA),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _bottomNav() {
     final items = [
-      {'emoji': '🏠', 'label': AppStrings.t(context, 'Home')},
-      {'emoji': '📝', 'label': AppStrings.t(context, 'Submit')},
-      {'emoji': '🔍', 'label': AppStrings.t(context, 'Track')},
-      {'emoji': '🔑', 'label': AppStrings.t(context, 'Login')},
+      {'icon': Icons.home_rounded, 'label': AppStrings.t(context, 'Home')},
+      {'icon': Icons.add_circle_rounded, 'label': AppStrings.t(context, 'Submit')},
+      {'icon': Icons.search_rounded, 'label': AppStrings.t(context, 'Track')},
+      {'icon': Icons.person_outline_rounded, 'label': AppStrings.t(context, 'Profile')},
     ];
     return Container(
       decoration: const BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Color(0x0D000000), blurRadius: 10, offset: Offset(0, -2))]),
+          border: Border(top: BorderSide(color: Color(0xFFF0F0F0), width: 1))),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).padding.bottom, top: 8, left: 16, right: 16),
+          bottom: MediaQuery.of(context).padding.bottom, top: 12, left: 16, right: 16),
       child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: List.generate(4, (i) {
@@ -973,20 +1324,24 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                 else if (i == 2) setState(() { _navIndex = 2; _tab = 2; });
                 else Navigator.pushReplacementNamed(context, AppRoutes.login);
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                    color: active ? const Color(0x1A1E66F5) : Colors.transparent,
+                    color: active ? const Color(0xFFFF6B35).withValues(alpha: 0.12) : Colors.transparent,
                     borderRadius: BorderRadius.circular(12)),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(items[i]['emoji'] as String,
-                      style: TextStyle(fontSize: active ? 24 : 22)),
-                  const SizedBox(height: 3),
+                  Icon(
+                    items[i]['icon'] as IconData,
+                    color: active ? const Color(0xFFFF6B35) : const Color(0xFFBDBDBD),
+                    size: 24,
+                  ),
+                  const SizedBox(height: 4),
                   Text(items[i]['label'] as String,
                       style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: active ? const Color(0xFF1E66F5) : const Color(0xFF64748b))),
+                          color: active ? const Color(0xFFFF6B35) : const Color(0xFF64748b))),
                 ]),
               ),
             );

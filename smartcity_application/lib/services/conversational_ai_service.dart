@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import 'groq_context_analyzer.dart';
+import 'package:flutter/foundation.dart';
 
 /// Advanced Human-like Conversational AI Service for Smart City Complaints
 /// Features: Multi-language, Context-aware, Smart validation, Sentiment analysis
@@ -776,7 +777,7 @@ class ConversationalAIService {
       await prefs.setString(_activeChatKey, _currentChatId!);
       
     } catch (e) {
-      print('Error initializing chat session: $e');
+      debugPrint('Error initializing chat session: $e');
       // Continue with fresh session
       _currentChatId = _generateChatId();
     }
@@ -818,7 +819,7 @@ class ConversationalAIService {
       await _updateChatHistoryList();
       
     } catch (e) {
-      print('Error saving chat session: $e');
+      debugPrint('Error saving chat session: $e');
     }
   }
   
@@ -857,7 +858,7 @@ class ConversationalAIService {
       await prefs.setString(_chatHistoryKey, jsonEncode(history));
       
     } catch (e) {
-      print('Error updating chat history: $e');
+      debugPrint('Error updating chat history: $e');
     }
   }
   
@@ -928,7 +929,7 @@ class ConversationalAIService {
       return true;
       
     } catch (e) {
-      print('Error restoring chat session: $e');
+      debugPrint('Error restoring chat session: $e');
       return false;
     }
   }
@@ -943,7 +944,7 @@ class ConversationalAIService {
       return history.map((chat) => Map<String, dynamic>.from(chat)).toList();
       
     } catch (e) {
-      print('Error getting chat history: $e');
+      debugPrint('Error getting chat history: $e');
       return [];
     }
   }
@@ -1002,7 +1003,7 @@ class ConversationalAIService {
       }
       
     } catch (e) {
-      print('Error deleting chat: $e');
+      debugPrint('Error deleting chat: $e');
     }
   }
   
@@ -1027,7 +1028,7 @@ class ConversationalAIService {
       await prefs.remove(_activeChatKey);
       
     } catch (e) {
-      print('Error clearing all chats: $e');
+      debugPrint('Error clearing all chats: $e');
     }
   }
   
@@ -1380,7 +1381,7 @@ Main kai languages mein help kar sakta hun!''',
 
     final categoryButtons = _getCategories().map((c) => '${c['emoji']} ${c['name']}').toList();
     
-    print('📝 Showing ${categoryButtons.length} categories to user');
+    debugPrint('📝 Showing ${categoryButtons.length} categories to user');
 
     return ConversationResponse(
       message: '''$greeting
@@ -2460,9 +2461,9 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
         final result = analysis['analysis'];
         final categoryKey = result['category'];
         
-        print('Context Analysis: ${result['reasoning']}');
-        print('Detected Intent: ${result['intent']}');
-        print('Detected Category: $categoryKey');
+        debugPrint('Context Analysis: ${result['reasoning']}');
+        debugPrint('Detected Intent: ${result['intent']}');
+        debugPrint('Detected Category: $categoryKey');
         
         if (categoryKey != null && categoryKey != 'null') {
           if (categories.containsKey(categoryKey)) {
@@ -2476,7 +2477,7 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
         }
       }
     } catch (e) {
-      print('Context analysis error: $e');
+      debugPrint('Context analysis error: $e');
     }
     
     // Fallback to simple AI detection
@@ -2515,7 +2516,7 @@ No explanation, just the key.''';
         
         if (categories.containsKey(categoryKey)) {
           final category = categories[categoryKey]!;
-          print('Groq AI detected category: $categoryKey for input: $input');
+          debugPrint('Groq AI detected category: $categoryKey for input: $input');
           return {
             'key': category['key']!,
             'name': _getCategoryName(category['key']!),
@@ -2524,7 +2525,7 @@ No explanation, just the key.''';
         }
       }
     } catch (e) {
-      print('Groq AI error: $e');
+      debugPrint('Groq AI error: $e');
     }
     
     // Final fallback to fuzzy match
@@ -2572,14 +2573,14 @@ Be precise and helpful while maintaining a human touch.'''
           'temperature': temperature,
           'max_tokens': maxTokens,
         }),
-      ).timeout(Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'].toString().trim();
       }
     } catch (e) {
-      print('Groq API failed: $e');
+      debugPrint('Groq API failed: $e');
     }
     
     return null;
@@ -2612,7 +2613,7 @@ Respond: VALID or INVALID|reason''';
         }
       }
     } catch (e) {
-      print('Validation error: $e');
+      debugPrint('Validation error: $e');
     }
     
     return true;
@@ -2950,10 +2951,10 @@ Respond: VALID or INVALID|reason''';
     final now = DateTime.now();
     
     if (lower.contains('today')) return DateFormat('dd MMM yyyy').format(now);
-    if (lower.contains('yesterday')) return DateFormat('dd MMM yyyy').format(now.subtract(Duration(days: 1)));
-    if (lower.contains('2-3') || lower.contains('few')) return DateFormat('dd MMM yyyy').format(now.subtract(Duration(days: 3)));
-    if (lower.contains('week')) return DateFormat('dd MMM yyyy').format(now.subtract(Duration(days: 7)));
-    if (lower.contains('weeks')) return DateFormat('dd MMM yyyy').format(now.subtract(Duration(days: 14)));
+    if (lower.contains('yesterday')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 1)));
+    if (lower.contains('2-3') || lower.contains('few')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 3)));
+    if (lower.contains('week')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 7)));
+    if (lower.contains('weeks')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 14)));
     
     return input;
   }
@@ -3115,7 +3116,7 @@ Respond: VALID or INVALID|reason''';
   void setAppLanguage(String languageCode) {
     if (['en', 'hi', 'gu'].contains(languageCode)) {
       _userLanguage = languageCode;
-      print('✅ App language set to: $languageCode');
+      debugPrint('✅ App language set to: $languageCode');
     }
   }
   
@@ -3149,13 +3150,13 @@ Respond: VALID or INVALID|reason''';
           'subcategory': _complaintData['subcategory'],
           'description': _complaintData['description'] ?? _complaintData['raw_description'],
         }),
-      ).timeout(Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10));
       
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
     } catch (e) {
-      print('Duplicate check error: $e');
+      debugPrint('Duplicate check error: $e');
     }
     return null;
   }
@@ -3173,13 +3174,13 @@ Respond: VALID or INVALID|reason''';
           'city': _userCity,
           'state': _complaintData['state'] ?? '',
         }),
-      ).timeout(Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10));
       
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
     } catch (e) {
-      print('Department lookup error: $e');
+      debugPrint('Department lookup error: $e');
     }
     return null;
   }

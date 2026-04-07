@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
-import '../user_track_complaint_detail.dart';
+import 'complaint_detail_screen.dart';
 import '../../l10n/app_strings.dart';
 
 class TrackComplaintsScreen extends StatefulWidget {
@@ -152,7 +152,7 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 6))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 6))]),
       child: Column(children: [
         // Compact header - always visible
         GestureDetector(
@@ -193,65 +193,72 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
               Text(c.createdAt.toString().split(' ')[0], style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF718096))),
             ]),
             const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                print('Tapping complaint: ${c.complaintNumber}');
-                print('Complaint data: ${{
-                  'complaint_number': c.complaintNumber,
-                  'title': c.title,
-                  'work_status': c.workStatus,
-                }}');
-                
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UserTrackComplaintDetail(
-                      complaint: {
-                        'complaint_number': c.complaintNumber,
-                        'title': c.title,
-                        'description': c.description,
-                        'complaint_type': c.complaintType,
-                        'complaint_type_display': c.complaintTypeDisplay,
-                        'subcategory': c.subcategory,
-                        'work_status': c.workStatus,
-                        'created_at': c.createdAt.toString(),
-                        'address': c.address,
-                        'latitude': c.latitude,
-                        'longitude': c.longitude,
-                        'city': c.city,
-                        'state': c.state,
-                        'assigned_department': c.assignedDepartment != null ? {
-                          'name': c.assignedDepartment!.name,
-                          'email': c.assignedDepartment!.email,
-                          'phone': c.assignedDepartment!.phone,
-                          'latitude': c.assignedDepartment!.latitude,
-                          'longitude': c.assignedDepartment!.longitude,
-                          'department_type': c.assignedDepartment!.departmentType,
-                          'department_type_display': c.assignedDepartment!.departmentTypeDisplay,
-                          'address': c.assignedDepartment!.address,
-                          'city': c.assignedDepartment!.city,
-                          'state': c.assignedDepartment!.state,
-                          'sla_hours': c.assignedDepartment!.slaHours,
-                        } : null,
-                        'citizen_rating': c.citizenRating,
-                        'citizen_feedback': null,
-                        'can_reopen': c.canReopen ?? false,
-                        'field_responses': c.fieldResponses
-                            ?.map((f) => {
-                                  'id': f.id,
-                                  'field': f.field,
-                                  'field_label': f.fieldLabel,
-                                  'field_label_hi': f.fieldLabelHi,
-                                  'field_label_gu': f.fieldLabelGu,
-                                  'field_type': f.fieldType,
-                                  'value': f.value,
-                                })
-                            .toList(),
-                      },
+            if (c.workStatus == 'solved' || c.workStatus == 'resolved') ...[
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...List.generate(5, (i) => Icon(
+                          i < (c.citizenRating ?? 0) ? Icons.star : Icons.star_border,
+                          size: 12,
+                          color: const Color(0xFFF59E0B),
+                        )),
+                        const SizedBox(width: 6),
+                        Text(
+                          c.citizenRating != null
+                              ? '${c.citizenRating}/5'
+                              : AppStrings.t(context, 'Rate now'),
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
+                  const SizedBox(width: 8),
+                  if (c.workStatus == 'solved' || c.workStatus == 'resolved')
+                    GestureDetector(
+                      onTap: () => _openComplaintDetail(c),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.45)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.refresh, size: 12, color: Color(0xFFEF4444)),
+                            const SizedBox(width: 4),
+                            Text(
+                              AppStrings.t(context, 'Reopen'),
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFEF4444),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            GestureDetector(
+              onTap: () => _openComplaintDetail(c),
               child: Container(
                 width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(color: const Color(0xFF2B6CF6), borderRadius: BorderRadius.circular(12)),
@@ -265,6 +272,15 @@ class _TrackComplaintsScreenState extends State<TrackComplaintsScreen> {
           ]),
         ),
       ]),
+    );
+  }
+
+  void _openComplaintDetail(Complaint c) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ComplaintDetailScreen(complaintId: c.id),
+      ),
     );
   }
 

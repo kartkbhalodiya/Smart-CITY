@@ -15,6 +15,8 @@ class GuestTrackScreen extends StatefulWidget {
 }
 
 class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerProviderStateMixin {
+  static const _accent = Color(0xFFFF6B35);
+  static const _dark = Color(0xFF1A1A1A);
   final _complaintCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   bool _isLoading = false;
@@ -68,11 +70,19 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
         Image.network(
           'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
           fit: BoxFit.cover, width: double.infinity, height: double.infinity,
-          errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
+          errorBuilder: (_, __, ___) => Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1A1A1A), Color(0xFF2D2D2D)],
+              ),
+            ),
+          ),
         ),
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(color: Colors.black.withOpacity(0.25)),
+          child: Container(color: Colors.black.withValues(alpha: 0.25)),
         ),
         SafeArea(
           child: Center(
@@ -83,10 +93,10 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 520),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.5)),
-                    boxShadow: [BoxShadow(color: const Color(0x261E66F5), blurRadius: 50, offset: const Offset(0, 20))],
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+                    boxShadow: [BoxShadow(color: const Color(0x261A1A1A), blurRadius: 50, offset: const Offset(0, 20))],
                   ),
                   padding: const EdgeInsets.all(30),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -107,9 +117,9 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                     // Logo + heading
                     Image.asset('assets/images/logo.png', height: 60),
                     const SizedBox(height: 6),
-                    Text(AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E66F5), letterSpacing: 1.2)),
+                    Text(AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'), style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _accent, letterSpacing: 1.2)),
                     const SizedBox(height: 8),
-                    Text(AppStrings.t(context, 'Track Your Complaint'), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                    Text(AppStrings.t(context, 'Track Your Complaint'), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: _dark)),
                     const SizedBox(height: 24),
 
                     // Complaint ID field
@@ -123,9 +133,9 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       width: double.infinity,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF2ECC71)]),
+                          gradient: const LinearGradient(colors: [Color(0xFF1A1A1A), Color(0xFFFF6B35)]),
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: const Color(0xFF1E66F5).withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))],
+                          boxShadow: [BoxShadow(color: const Color(0x401A1A1A), blurRadius: 16, offset: const Offset(0, 8))],
                         ),
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _track,
@@ -158,13 +168,13 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.t(context, 'QR Scanner feature coming soon!')))),
-                        icon: const Icon(Icons.qr_code_scanner, size: 18, color: Color(0xFF1E66F5)),
-                        label: Text(AppStrings.t(context, 'Scan Complaint QR'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
+                        icon: const Icon(Icons.qr_code_scanner, size: 18, color: _accent),
+                        label: Text(AppStrings.t(context, 'Scan Complaint QR'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _accent)),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           side: const BorderSide(color: Color(0xFFe2e8f0), width: 1.5),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: Colors.white.withOpacity(0.9),
+                          backgroundColor: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                     ),
@@ -174,7 +184,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                       const SizedBox(height: 24),
                       const Divider(color: Color(0x0D000000)),
                       const SizedBox(height: 16),
-                      Text(AppStrings.t(context, 'Complaint Status'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+                      Text(AppStrings.t(context, 'Complaint Status'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: _dark)),
                       const SizedBox(height: 16),
                       _infoGrid(_complaint!),
                       const SizedBox(height: 20),
@@ -188,9 +198,9 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
                     GestureDetector(
                       onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const Icon(Icons.arrow_back, size: 14, color: Color(0xFF1E66F5)),
+                        const Icon(Icons.arrow_back, size: 14, color: _accent),
                         const SizedBox(width: 6),
-                        Text(AppStrings.t(context, 'Back to Home'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E66F5))),
+                        Text(AppStrings.t(context, 'Back to Home'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _accent)),
                       ]),
                     ),
                   ]),
@@ -211,7 +221,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppStrings.t(context, 'Complaint Location'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+        Text(AppStrings.t(context, 'Complaint Location'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: _dark)),
         const SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -241,10 +251,10 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
 
   Widget _inputField(TextEditingController c, String hint, IconData icon, {TextInputType type = TextInputType.text}) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
       child: TextField(
         controller: c, keyboardType: type,
-        style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+        style: GoogleFonts.inter(fontSize: 14, color: _dark),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b)),
@@ -271,11 +281,11 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
       children: items.map((item) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.6), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(10)),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text(item.$1, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: const Color(0xFF64748b))),
           const SizedBox(width: 12),
-          Flexible(child: Text(item.$2, textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a)))),
+          Flexible(child: Text(item.$2, textAlign: TextAlign.right, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _dark))),
         ]),
       )).toList(),
     );
@@ -341,19 +351,19 @@ class _GuestTrackScreenState extends State<GuestTrackScreen> with SingleTickerPr
             Container(
               width: 28, height: 28,
               decoration: BoxDecoration(
-                color: s.completed ? s.color : Colors.white.withOpacity(0.6),
+                color: s.completed ? s.color : Colors.white.withValues(alpha: 0.6),
                 border: Border.all(color: s.completed ? Colors.transparent : s.color, width: 2),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(s.completed ? Icons.check : s.icon, size: 14, color: s.completed ? Colors.white : const Color(0xFF94a3b8)),
             ),
-            if (!isLast) Container(width: 2, height: 36, color: s.completed ? s.color.withOpacity(0.4) : const Color(0xFFCBD5E1)),
+            if (!isLast) Container(width: 2, height: 36, color: s.completed ? s.color.withValues(alpha: 0.4) : const Color(0xFFCBD5E1)),
           ]),
           const SizedBox(width: 12),
           Expanded(child: Padding(
             padding: EdgeInsets.only(bottom: isLast ? 0 : 20, top: 2),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(s.label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF0f172a))),
+              Text(s.label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _dark)),
               const SizedBox(height: 2),
               Text(s.date, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b))),
             ]),

@@ -47,7 +47,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
         ),
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(color: Colors.black.withOpacity(0.25)),
+          child: Container(color: Colors.black.withValues(alpha: 0.25)),
         ),
         SafeArea(
           child: Center(
@@ -58,9 +58,9 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 450),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.5)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
                     boxShadow: [BoxShadow(color: const Color(0x261E66F5), blurRadius: 50, offset: const Offset(0, 20))],
                   ),
                   padding: const EdgeInsets.all(30),
@@ -81,7 +81,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(children: [
-                        Text(AppStrings.t(context, 'OTP sent to'), style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w500)),
+                        Text(AppStrings.t(context, 'OTP sent to'), style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.w500)),
                         const SizedBox(height: 4),
                         Text(widget.email, style: GoogleFonts.inter(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w700)),
                       ]),
@@ -138,7 +138,7 @@ class _OtpScreenState extends State<OtpScreen> with SingleTickerProviderStateMix
     return SizedBox(
       width: size, height: size + 4,
       child: Container(
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5)),
         child: TextField(
           controller: _c[i], focusNode: _f[i],
           textAlign: TextAlign.center, keyboardType: TextInputType.number,

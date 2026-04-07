@@ -5,12 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart' as ll;
-import '../../config/api_config.dart';
 import '../../config/routes.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
-import '../../services/api_service.dart';
 import '../../services/location_service.dart';
 import '../../l10n/app_strings.dart';
+import '../../widgets/app_bottom_nav.dart';
 import './map_selection_screen.dart';
 
 class SubmitComplaintScreen extends StatefulWidget {
@@ -23,10 +23,11 @@ class SubmitComplaintScreen extends StatefulWidget {
 }
 
 class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
-  static const _primary = Color(0xFF1E66F5);
-  static const _textDark = Color(0xFF0f172a);
+  static const _primary = Color(0xFFFF6B35);
+  static const _primaryDark = Color(0xFF1A1A1A);
+  static const _textDark = Color(0xFF1A1A1A);
   static const _textMuted = Color(0xFF64748b);
-  static const _borderColor = Color(0xFFe2e8f0);
+  static const _borderColor = Color(0xFFE8E8E8);
 
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
@@ -78,15 +79,6 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     'water': '🚰', 'electricity': '💡', 'garbage': '🗑️',
     'road': '🛣️', 'drainage': '🌊', 'illegal': '⚠️',
     'transportation': '🚌', 'cyber': '🛡️', 'other': '📋',
-  };
-
-  static const _bgMap = {
-    'police': Color(0xFFEEF2FF), 'traffic': Color(0xFFFFF7ED),
-    'construction': Color(0xFFF0F9FF), 'water': Color(0xFFF0FDF4),
-    'electricity': Color(0xFFFFFBEB), 'garbage': Color(0xFFECFDF5),
-    'road': Color(0xFFFAF5FF), 'drainage': Color(0xFFEFF6FF),
-    'illegal': Color(0xFFFFF1F2), 'transportation': Color(0xFFF0F9FF),
-    'cyber': Color(0xFFF5F3FF), 'other': Color(0xFFF8FAFC),
   };
 
   @override
@@ -754,10 +746,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     );
   }
 
-  Widget _previewSection() {
+  Widget _previewSection(String emoji, String name) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _buildHeaderCard(emoji, name),
+        const SizedBox(height: 16),
         Text(AppStrings.t(context, 'Preview Your Complaint'),
             style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
         const SizedBox(height: 4),
@@ -796,7 +790,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           child: ElevatedButton(
             onPressed: _submitting ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _primary,
+              backgroundColor: _primaryDark,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
@@ -812,13 +806,30 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           child: OutlinedButton(
             onPressed: () => setState(() => _isPreviewing = false),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: _primary),
+              side: const BorderSide(color: _primaryDark),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text(AppStrings.t(context, 'Edit Details'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _primary)),
+            child: Text(AppStrings.t(context, 'Edit Details'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _primaryDark)),
           ),
         ),
       ]),
+    );
+  }
+
+  Widget _formSection(String emoji, String name) {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderCard(emoji, name),
+            const SizedBox(height: 16),
+            ..._buildFormSections(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -829,10 +840,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+        border: Border.all(color: const Color(0xFFF1F1F1), width: 1),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _primary)),
+        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _primaryDark)),
         const Divider(height: 24),
         ...items.map((it) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -848,29 +860,167 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isGuest = !context.watch<AuthProvider>().isAuthenticated;
     final key = widget.categoryKey ?? 'other';
     final emoji = _emojiMap[key] ?? '📋';
-    final bg = _bgMap[key] ?? const Color(0xFFF8FAFC);
     final name = widget.categoryName ?? AppStrings.t(context, 'Complaint');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: Column(children: [
-        _topNav(emoji, bg, name),
-        Expanded(
-          child: _loadingMeta
-              ? const Center(child: CircularProgressIndicator(color: _primary))
-              : _isPreviewing 
-                ? _previewSection()
-                : Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: _buildFormSections()),
-                  ),
-                ),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: _loadingMeta
+                  ? const Center(child: CircularProgressIndicator(color: _primary))
+                  : _isPreviewing 
+                    ? _previewSection(emoji, name)
+                    : _formSection(emoji, name),
+            ),
+          ],
         ),
-      ]),
+      ),
+      bottomNavigationBar: isGuest
+          ? _guestBottomNav()
+          : const AppBottomNav(currentIndex: 1),
+    );
+  }
+
+  Widget _buildHeaderCard(String emoji, String name) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3D3D3D), Color(0xFF595959)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(11),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+              ),
+              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 21),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Text(emoji, style: const TextStyle(fontSize: 24)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _guestBottomNav() {
+    final items = [
+      {'icon': Icons.home_rounded, 'label': AppStrings.t(context, 'Home')},
+      {'icon': Icons.add_circle_rounded, 'label': AppStrings.t(context, 'Submit')},
+      {'icon': Icons.search_rounded, 'label': AppStrings.t(context, 'Track')},
+      {'icon': Icons.person_outline_rounded, 'label': AppStrings.t(context, 'Login')},
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFF0F0F0), width: 1)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).padding.bottom,
+        top: 12,
+        left: 16,
+        right: 16,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(items.length, (i) {
+          final active = i == 1;
+          return GestureDetector(
+            onTap: () {
+              if (i == 0) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.guestDashboard,
+                  (_) => false,
+                );
+              } else if (i == 2) {
+                Navigator.pushNamed(context, AppRoutes.guestTrack);
+              } else if (i == 3) {
+                Navigator.pushReplacementNamed(context, AppRoutes.login);
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: active
+                    ? const Color(0xFFFF6B35).withValues(alpha: 0.12)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    items[i]['icon'] as IconData,
+                    color: active
+                        ? const Color(0xFFFF6B35)
+                        : const Color(0xFFBDBDBD),
+                    size: 24,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    items[i]['label'] as String,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: active
+                          ? const Color(0xFFFF6B35)
+                          : const Color(0xFF64748b),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -1060,7 +1210,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       child: ElevatedButton(
         onPressed: _submitting ? null : _submit,
         style: ElevatedButton.styleFrom(
-          backgroundColor: _primary,
+          backgroundColor: _primaryDark,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1076,37 +1226,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     return sections;
   }
 
-  // ── Top nav ───────────────────────────────────────────────────────────────
-  Widget _topNav(String emoji, Color bg, String name) {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top, left: 8, right: 16, bottom: 12),
-      child: Row(children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: _textDark),
-          onPressed: () => Navigator.pop(context),
-        ),
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
-        ),
-        const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _textDark)),
-          Text(AppStrings.t(context, 'Submit a complaint'), style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
-        ]),
-      ]),
-    );
-  }
-
   // ── Section title with step number ───────────────────────────────────────
   Widget _sectionTitle(String step, String title) {
     return Row(children: [
       Container(
         width: 26, height: 26,
-        decoration: const BoxDecoration(color: _primary, shape: BoxShape.circle),
+        decoration: const BoxDecoration(color: _primaryDark, shape: BoxShape.circle),
         child: Center(child: Text(step,
             style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white))),
       ),
@@ -1132,7 +1257,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: selected ? _primary : Colors.white,
+              color: selected ? const Color(0xFFFFF1EB) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: selected ? _primary : _borderColor,
@@ -1141,8 +1266,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
               boxShadow: [
                 BoxShadow(
                   color: selected
-                      ? _primary.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.04),
+                      ? _primary.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.04),
                   blurRadius: selected ? 10 : 6,
                   offset: const Offset(0, 3),
                 ),
@@ -1152,7 +1277,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                 style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: selected ? Colors.white : _textDark)),
+                    color: selected ? _primary : _textDark)),
           ),
         );
       }).toList(),
@@ -1330,7 +1455,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+        border: Border.all(color: const Color(0xFFF1F1F1), width: 1),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: child,
     );
@@ -1364,7 +1490,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
         suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFFCFCFC),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
@@ -1377,11 +1503,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   Widget _prioritySelector() {
     return Row(children: [
-      _priorityBtn('high', AppStrings.t(context, 'High'), Colors.red, const Color(0xFFFEF2F2)),
+      _priorityBtn('high', AppStrings.t(context, 'High'), const Color(0xFFE34D4D), const Color(0xFFFFF3F3)),
       const SizedBox(width: 10),
-      _priorityBtn('medium', AppStrings.t(context, 'Medium'), Colors.orange, const Color(0xFFFFF7ED)),
+      _priorityBtn('medium', AppStrings.t(context, 'Medium'), _primary, const Color(0xFFFFF4EE)),
       const SizedBox(width: 10),
-      _priorityBtn('normal', AppStrings.t(context, 'Normal'), Colors.green, const Color(0xFFF0FDF4)),
+      _priorityBtn('normal', AppStrings.t(context, 'Normal'), const Color(0xFF2F9E6D), const Color(0xFFF2FBF6)),
     ]);
   }
 
@@ -1395,8 +1521,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           decoration: BoxDecoration(
             color: selected ? color : bg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? color : color.withOpacity(0.2), width: 1.5),
-            boxShadow: selected ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))] : [],
+            border: Border.all(color: selected ? color : color.withValues(alpha: 0.2), width: 1.5),
+            boxShadow: selected ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))] : [],
           ),
           child: Center(
             child: Text(label,
@@ -1428,11 +1554,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A), // Darker UI
+          color: const Color(0xFF2F2F2F),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -1464,7 +1590,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         hintText: hint,
         hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFFCFCFC),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),

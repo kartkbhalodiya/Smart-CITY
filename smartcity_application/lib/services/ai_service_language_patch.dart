@@ -11,7 +11,7 @@ void setAppLanguage(String languageCode) {
   if (['en', 'hi', 'gu'].contains(languageCode)) {
     _appLanguage = languageCode;
     _currentLanguage = languageCode;
-    print('✅ App language set to: $languageCode');
+    debugPrint('✅ App language set to: $languageCode');
   }
 }
 
@@ -21,8 +21,8 @@ void setAppLanguage(String languageCode) {
 final detectedLanguage = _detectLanguage(input);
 if (detectedLanguage == 'hinglish' || detectedLanguage == 'hi' || detectedLanguage == 'gu') {
   _currentLanguage = detectedLanguage;
-  print('🗣️ User typed in: $detectedLanguage');
+  debugPrint('🗣️ User typed in: $detectedLanguage');
 } else {
   _currentLanguage = _appLanguage;
-  print('🌐 Using app language: $_appLanguage');
+  debugPrint('🌐 Using app language: $_appLanguage');
 }

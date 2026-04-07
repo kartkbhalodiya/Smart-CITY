@@ -5,6 +5,8 @@ import '../../l10n/app_strings.dart';
 
 class DepartmentsListScreen extends StatelessWidget {
   const DepartmentsListScreen({super.key});
+  static const _accent = Color(0xFFFF6B35);
+  static const _dark = Color(0xFF1A1A1A);
 
   static const _categories = [
     {'key': 'police',         'name': 'Police',          'emoji': '🚓', 'bg': Color(0xFFEEF2FF)},
@@ -24,7 +26,7 @@ class DepartmentsListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8F9FA),
       body: Column(children: [
         // Top nav
         Container(
@@ -34,7 +36,7 @@ class DepartmentsListScreen extends StatelessWidget {
               left: 8, right: 16, bottom: 12),
           child: Row(children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0f172a)),
+              icon: const Icon(Icons.arrow_back_rounded, color: _dark),
               onPressed: () => Navigator.pop(context),
             ),
             Image.asset('assets/images/logo.png', height: 32),
@@ -43,7 +45,7 @@ class DepartmentsListScreen extends StatelessWidget {
               Text(AppStrings.t(context, 'Departments'),
                   style: GoogleFonts.poppins(
                       fontSize: 16, fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0f172a))),
+                      color: _dark)),
               Text(AppStrings.t(context, 'Select a category'),
                   style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
             ]),
@@ -81,7 +83,7 @@ class DepartmentsListScreen extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(children: [
@@ -100,7 +102,7 @@ class DepartmentsListScreen extends StatelessWidget {
                 Container(
                   width: 36, height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -119,15 +121,15 @@ class DepartmentsListScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                         fontSize: 13, fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0f172a))),
+                        color: _dark)),
                 const SizedBox(height: 4),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(AppStrings.t(context, 'View departments'),
                       style: GoogleFonts.inter(
-                          fontSize: 11, color: const Color(0xFF1E66F5),
+                          fontSize: 11, color: _accent,
                           fontWeight: FontWeight.w500)),
                   const SizedBox(width: 3),
-                  const Icon(Icons.arrow_forward_rounded, size: 12, color: Color(0xFF1E66F5)),
+                  const Icon(Icons.arrow_forward_rounded, size: 12, color: _accent),
                 ]),
               ]),
             ),

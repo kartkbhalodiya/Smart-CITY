@@ -1,16 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../config/routes.dart';
 import '../../providers/complaint_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/complaint.dart';
-import '../../services/storage_service.dart';
-import '../../services/api_service.dart';
-import '../../config/api_config.dart';
-import '../user_track_complaint_detail.dart';
 import '../../l10n/app_strings.dart';
 import 'complaint_detail_screen.dart';
+import '../../widgets/app_bottom_nav.dart';
 
 class UserTrackScreen extends StatefulWidget {
   const UserTrackScreen({super.key});
@@ -19,13 +17,16 @@ class UserTrackScreen extends StatefulWidget {
 }
 
 class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderStateMixin {
-  late TabController _tabController;
+  static const _accent = Color(0xFFFF6B35);
+  static const _dark = Color(0xFF1A1A1A);
+  static const _bg = Color(0xFFF8F9FA);
+
   String _selectedFilter = 'all';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, dynamic>> _filterTabs = [
-    {'key': 'all', 'label': 'All', 'icon': Icons.list_alt, 'color': Color(0xFF1E66F5)},
+    {'key': 'all', 'label': 'All', 'icon': Icons.list_alt, 'color': _accent},
     {'key': 'pending', 'label': 'Pending', 'icon': Icons.pending, 'color': Color(0xFFEAB308)},
     {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified, 'color': Color(0xFF22C55E)},
     {'key': 'reopened', 'label': 'Reopened', 'icon': Icons.refresh, 'color': Color(0xFFEF4444)},
@@ -35,7 +36,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _filterTabs.length, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Force load complaints when screen opens
       _loadUserComplaints();
@@ -52,87 +52,119 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildSearchAndFilters(),
-          _buildTabBar(),
-          Expanded(child: _buildComplaintsList()),
-        ],
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _buildHeaderCard(user),
+            ),
+            const SizedBox(height: 10),
+            _buildSearchAndFilters(),
+            Expanded(child: _buildComplaintsList()),
+          ],
+        ),
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    final user = context.watch<AuthProvider>().user;
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color(0xFF0f172a)),
-        onPressed: () => Navigator.pop(context),
+  Widget _buildHeaderCard(dynamic user) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3E3E3E), Color(0xFF5A5A5A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            AppStrings.t(context, 'Track Complaints'),
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0f172a),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.track_changes_rounded, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.t(context, 'Track Complaints'),
+                  style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.w700, color: Colors.white),
+                ),
+                Text(
+                  AppStrings.t(context, 'Monitor your complaint status'),
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withValues(alpha: 0.82)),
+                ),
+              ],
             ),
           ),
-          Text(
-            AppStrings.t(context, 'Monitor your complaint status'),
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: const Color(0xFF64748b),
+          CircleAvatar(
+            radius: 17,
+            backgroundColor: _accent,
+            child: Text(
+              _getUserInitials(user),
+              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
             ),
           ),
         ],
       ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          child: CircleAvatar(
-            radius: 18,
-            backgroundColor: const Color(0xFF1E66F5),
-            child: Text(
-              _getUserInitials(user),
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
   Widget _buildSearchAndFilters() {
+    final provider = context.watch<ComplaintProvider>();
+    final complaints = provider.complaints;
+    final filterCounts = <String, int>{
+      'all': complaints.length,
+      'pending': complaints.where((c) => c.workStatus == 'pending').length,
+      'solved': complaints.where((c) => c.workStatus == 'solved').length,
+      'reopened': complaints.where((c) => c.workStatus == 'reopened').length,
+      'rejected': complaints.where((c) => c.workStatus == 'rejected').length,
+    };
+
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(16),
+      color: _bg,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Column(
         children: [
           // Search bar
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFEEEEEE)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: TextField(
               controller: _searchController,
@@ -161,8 +193,76 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             ),
           ),
           const SizedBox(height: 16),
-          // Quick stats
+          // Modern quick stats row
           _buildQuickStats(),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _filterTabs.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final tab = _filterTabs[index];
+                final key = tab['key'] as String;
+                final selected = _selectedFilter == key;
+                final count = filterCounts[key] ?? 0;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedFilter = key);
+                    _filterComplaints();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? _dark : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected ? _dark : const Color(0xFFEAEAEA),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          tab['icon'] as IconData,
+                          size: 15,
+                          color: selected ? Colors.white : const Color(0xFF555555),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          AppStrings.t(context, tab['label'] as String),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: selected ? Colors.white : const Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: selected ? _accent : const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: selected ? Colors.white : const Color(0xFF5B5B5B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -172,87 +272,99 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     return Consumer<ComplaintProvider>(
       builder: (context, provider, _) {
         final complaints = provider.complaints;
-        final stats = {
-          'pending': complaints.where((c) => c.workStatus == 'pending').length,
-          'solved': complaints.where((c) => c.workStatus == 'solved').length,
-          'rejected': complaints.where((c) => c.workStatus == 'rejected').length,
-          'reopened': complaints.where((c) => c.workStatus == 'reopened').length,
-        };
+        final stats = <Map<String, dynamic>>[
+          {
+            'label': AppStrings.t(context, 'Total'),
+            'count': complaints.length,
+            'icon': Icons.summarize_rounded,
+            'color': _accent,
+          },
+          {
+            'label': AppStrings.t(context, 'Solved'),
+            'count': complaints.where((c) => c.workStatus == 'solved').length,
+            'icon': Icons.verified_rounded,
+            'color': const Color(0xFF22C55E),
+          },
+          {
+            'label': AppStrings.t(context, 'Pending'),
+            'count': complaints.where((c) => c.workStatus == 'pending').length,
+            'icon': Icons.schedule_rounded,
+            'color': const Color(0xFFEAB308),
+          },
+        ];
 
-        return Row(
-          children: [
-            _buildStatChip(AppStrings.t(context, 'Pending'), stats['pending']!, const Color(0xFFEAB308)),
-            const SizedBox(width: 8),
-            _buildStatChip(AppStrings.t(context, 'Solved'), stats['solved']!, const Color(0xFF22C55E)),
-            const SizedBox(width: 8),
-            _buildStatChip(AppStrings.t(context, 'Rejected'), stats['rejected']!, const Color(0xFF991B1B)),
-            const SizedBox(width: 8),
-            _buildStatChip(AppStrings.t(context, 'Reopened'), stats['reopened']!, const Color(0xFFEF4444)),
-          ],
+        return SizedBox(
+          height: 72,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: stats.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final item = stats[index];
+              return _buildStatCard(
+                label: item['label'] as String,
+                count: item['count'] as int,
+                icon: item['icon'] as IconData,
+                color: item['color'] as Color,
+              );
+            },
+          ),
         );
       },
     );
   }
 
-  Widget _buildStatChip(String label, int count, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              count.toString(),
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabBar() {
+  Widget _buildStatCard({
+    required String label,
+    required int count,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
-      color: Colors.white,
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        indicatorColor: const Color(0xFF1E66F5),
-        indicatorWeight: 3,
-        labelColor: const Color(0xFF1E66F5),
-        unselectedLabelColor: const Color(0xFF64748b),
-        labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
-        onTap: (index) {
-          setState(() => _selectedFilter = _filterTabs[index]['key']);
-          _filterComplaints();
-        },
-        tabs: _filterTabs.map((tab) => Tab(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(tab['icon'] as IconData, size: 16),
-              const SizedBox(width: 6),
-              Text(AppStrings.t(context, tab['label'] as String)),
-            ],
+      width: 120,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEDEDED)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: color),
           ),
-        )).toList(),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$count',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _dark,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -270,7 +382,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircularProgressIndicator(
-                  color: const Color(0xFF1E66F5),
+                  color: _accent,
                   strokeWidth: 3,
                 ),
                 const SizedBox(height: 16),
@@ -315,7 +427,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 ElevatedButton(
                   onPressed: _loadUserComplaints,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E66F5),
+                    backgroundColor: _dark,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -341,7 +453,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         }
 
         return RefreshIndicator(
-          color: const Color(0xFF1E66F5),
+          color: _accent,
           onRefresh: _loadUserComplaints,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -365,9 +477,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -423,7 +536,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             await Future.delayed(const Duration(milliseconds: 100));
 
             // Navigate to detail screen
-            final result = await Navigator.push(
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ComplaintDetailScreen(
@@ -441,37 +554,53 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             }
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Status, Priority, Complaint ID
+                // Top line: ID + status
                 Row(
                   children: [
-                    // Status Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xFFF8F8F8),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(color: const Color(0xFFE7E7E7)),
                       ),
                       child: Text(
-                        statusText.toUpperCase(),
+                        '#${complaint.complaintNumber}',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: _dark,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Priority Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: priorityColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: priorityColor, width: 1),
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(color: priorityColor.withValues(alpha: 0.35)),
                       ),
                       child: Text(
                         complaint.priority.toUpperCase(),
@@ -482,34 +611,28 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    // Complaint ID
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Text(
-                        '#${complaint.complaintNumber}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF0f172a),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 
-                // Title and Category with Emoji
+                // Main title block
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _getCategoryEmoji(complaint.complaintType),
-                      style: const TextStyle(fontSize: 24),
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFECECEC)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _getCategoryEmoji(complaint.complaintType),
+                          style: const TextStyle(fontSize: 21),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -519,7 +642,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                           Text(
                             complaint.title,
                             style: GoogleFonts.poppins(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0f172a),
                             ),
@@ -528,7 +651,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                           Text(
                             _localizedComplaintType(complaint),
                             style: GoogleFonts.inter(
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF64748b),
                             ),
@@ -541,33 +664,39 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 
                 // Subcategory if available
                 if (complaint.subcategory != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E66F5).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF1E66F5).withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.category, size: 14, color: const Color(0xFF1E66F5)),
-                        const SizedBox(width: 6),
-                        Text(
-                          _localizedSubcategory(complaint.subcategory),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1E66F5),
-                          ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _accent.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _accent.withValues(alpha: 0.35)),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.category, size: 14, color: _accent),
+                            const SizedBox(width: 6),
+                            Text(
+                              _localizedSubcategory(complaint.subcategory),
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: _accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-                
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 10),
                 
                 // Description
                 Text(
@@ -575,60 +704,68 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     color: const Color(0xFF64748b),
                     height: 1.4,
                   ),
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 
-                // Location and Time Info
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 16, color: const Color(0xFF64748b)),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        '${complaint.city}, ${complaint.pincode ?? complaint.state}',
+                // Location and Time info strip
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFAFAFA),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFEDEDED)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Color(0xFF64748b)),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '${complaint.city}, ${complaint.pincode ?? complaint.state}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            color: const Color(0xFF64748b),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF64748b)),
+                      const SizedBox(width: 4),
+                      Text(
+                        AppStrings.t(context, _formatDate(complaint.createdAt.toIso8601String())),
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 11.5,
                           color: const Color(0xFF64748b),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.access_time, size: 16, color: const Color(0xFF64748b)),
-                    const SizedBox(width: 4),
-                    Text(
-                      AppStrings.t(context, _formatDate(complaint.createdAt.toIso8601String())),
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: const Color(0xFF64748b),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                
+
                 // Department Assignment Info
                 if (complaint.assignedDepartment != null) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
+                      color: const Color(0xFFFCFCFC),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: const Color(0xFFEEEEEE)),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E66F5).withOpacity(0.1),
+                            color: _accent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.business, size: 18, color: const Color(0xFF1E66F5)),
+                          child: const Icon(Icons.business, size: 18, color: _accent),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -649,7 +786,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF1E66F5),
+                                  color: _accent,
                                 ),
                               ),
                             ],
@@ -658,10 +795,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E66F5),
+                            color: _accent,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(Icons.location_on, size: 14, color: Colors.white),
+                          child: const Icon(Icons.location_on, size: 14, color: Colors.white),
                         ),
                       ],
                     ),
@@ -669,7 +806,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 ],
                 
                 // Rating and Reopen Section
-                if (complaint.workStatus == 'solved') ...[
+                if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved') ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -678,7 +815,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withOpacity(0.1),
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFFF59E0B)),
                           ),
@@ -700,14 +837,14 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         ),
                         const SizedBox(width: 8),
                       ],
-                      // Reopen Button (if within 7 days)
-                      if (_canReopenComplaint(complaint)) ...[
+                      // Reopen Button
+                      if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved') ...[
                         GestureDetector(
                           onTap: () => _showReopenDialog(context, complaint),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withOpacity(0.1),
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: const Color(0xFFEF4444)),
                             ),
@@ -779,7 +916,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E66F5),
+                backgroundColor: _dark,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -829,38 +966,6 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     setState(() {});
   }
 
-  Future<void> _testApiDirectly() async {
-    try {
-      print('=== DIRECT API TEST ===');
-      
-      final response = await ApiService.get('https://janhelp.vercel.app/api/complaints/');
-      print('Direct API Response Keys: ${response.keys}');
-      print('Response Count: ${response['count']}');
-      
-      if (response.containsKey('results')) {
-        final results = response['results'] ?? [];
-        print('Direct API - Complaints found: ${results.length}');
-        
-        if (results.isNotEmpty) {
-          final firstComplaint = results[0];
-          print('First complaint ID: ${firstComplaint['id']}');
-          print('First complaint number: ${firstComplaint['complaint_number']}');
-          print('First complaint type: ${firstComplaint['complaint_type']}');
-        }
-        
-        print('SUCCESS: API is working and returning ${results.length} complaints!');
-      } else if (response['success'] == false) {
-        print('Direct API Error: ${response['message']}');
-      } else {
-        print('Unknown response format: ${response.keys}');
-      }
-      
-      print('=== DIRECT API TEST COMPLETE ===');
-    } catch (e) {
-      print('Direct API Test Error: $e');
-    }
-  }
-
   String _getUserInitials(user) {
     if (user == null) return 'U';
     final firstName = user.firstName?.trim() ?? '';
@@ -875,7 +980,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     switch (status.toLowerCase()) {
       case 'pending': return const Color(0xFFEAB308);
       case 'confirmed': return const Color(0xFFF97316);
-      case 'process': return const Color(0xFF1E66F5);
+      case 'process': return _accent;
+      case 'in_progress': return _accent;
       case 'solved': return const Color(0xFF22C55E);
       case 'reopened': return const Color(0xFFEF4444);
       case 'rejected': return const Color(0xFF991B1B);
@@ -888,6 +994,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       case 'pending': return 'Pending';
       case 'confirmed': return 'Confirmed';
       case 'process': return 'In Progress';
+      case 'in_progress': return 'In Progress';
       case 'solved': return 'Solved';
       case 'reopened': return 'Reopened';
       case 'rejected': return 'Rejected';
@@ -986,152 +1093,215 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     }
   }
 
-  bool _canReopenComplaint(Complaint complaint) {
-    if (complaint.workStatus != 'solved') return false;
-    
-    // Assuming complaint has a solvedAt field - if not available, use updatedAt
-    final solvedDate = complaint.updatedAt;
-    final daysSinceSolved = DateTime.now().difference(solvedDate).inDays;
-    return daysSinceSolved <= 7;
-  }
-
   void _showReopenDialog(BuildContext context, Complaint complaint) {
     final reasonController = TextEditingController();
+    String? proofPath;
     
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      builder: (bottomSheetContext) => StatefulBuilder(
+        builder: (ctx, setDlg) => Container(
+          height: MediaQuery.of(ctx).size.height * 0.78,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    AppStrings.t(context, 'Reopen Complaint'),
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1F2937),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      AppStrings.t(context, 'Reopen Complaint'),
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1F2937),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${AppStrings.t(context, 'Complaint ID')} #${complaint.complaintNumber}',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: const Color(0xFF6B7280),
+                    IconButton(
+                      onPressed: () => Navigator.pop(bottomSheetContext),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                AppStrings.t(context, 'Reason for reopening:'),
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: reasonController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: AppStrings.t(context, 'Please explain why you want to reopen this complaint...'),
-                  hintStyle: GoogleFonts.inter(
+                const SizedBox(height: 8),
+                Text(
+                  '${AppStrings.t(context, 'Complaint ID')} #${complaint.complaintNumber}',
+                  style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: const Color(0xFF9CA3AF),
+                    color: const Color(0xFF6B7280),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF2B6CF6)),
-                  ),
-                  contentPadding: const EdgeInsets.all(16),
                 ),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF6B7280),
-                        side: const BorderSide(color: Color(0xFFE5E7EB)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 20),
+                Text(
+                  '${AppStrings.t(context, 'Reason for reopening:')} *',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonController,
+                  maxLines: 4,
+                  onChanged: (_) => setDlg(() {}),
+                  decoration: InputDecoration(
+                    hintText: AppStrings.t(context, 'Please explain why you want to reopen this complaint...'),
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2B6CF6)),
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '${AppStrings.t(context, 'Upload Proof Image')} *',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () async {
+                    final img = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    if (img != null) setDlg(() => proofPath = img.path);
+                  },
+                  child: Container(
+                    height: 130,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFFF9FAFB),
+                    ),
+                    child: proofPath != null
+                        ? Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.file(
+                                  File(proofPath!),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () => setDlg(() => proofPath = null),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_photo_alternate, size: 36, color: Color(0xFF9CA3AF)),
+                              const SizedBox(height: 6),
+                              Text(
+                                AppStrings.t(context, 'Tap to add proof image'),
+                                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(bottomSheetContext),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF6B7280),
+                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        AppStrings.t(context, 'Cancel'),
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        child: Text(
+                          AppStrings.t(context, 'Cancel'),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (reasonController.text.isNotEmpty) {
-                          _submitReopenRequest(context, complaint, reasonController.text);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: reasonController.text.trim().isNotEmpty && proofPath != null
+                            ? () => _submitReopenRequest(bottomSheetContext, complaint, reasonController.text.trim(), proofPath!)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        AppStrings.t(context, 'Submit'),
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        child: Text(
+                          AppStrings.t(context, 'Submit'),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _submitReopenRequest(BuildContext context, Complaint complaint, String reason) async {
-    Navigator.pop(context); // Close dialog
+  Future<void> _submitReopenRequest(
+    BuildContext bottomSheetContext,
+    Complaint complaint,
+    String reason,
+    String proofPath,
+  ) async {
+    Navigator.pop(bottomSheetContext); // Close dialog
     
     // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1159,10 +1329,14 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     );
     
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      final ok = await Provider.of<ComplaintProvider>(context, listen: false).reopenComplaint(
+        complaint.id,
+        reason,
+        File(proofPath),
+      );
       
-      if (context.mounted) {
+      if (!mounted) return;
+      if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -1172,12 +1346,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             backgroundColor: const Color(0xFF10B981),
           ),
         );
-        
-        // Refresh complaints
         await _loadUserComplaints();
-      }
-    } catch (e) {
-      if (context.mounted) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -1188,6 +1358,17 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           ),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppStrings.t(context, 'Failed to submit reopen request. Please try again.'),
+            style: GoogleFonts.inter(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+        ),
+      );
     }
   }
 }

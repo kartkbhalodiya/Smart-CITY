@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/chat_history_service.dart';
 
 class ChatHistoryScreen extends StatefulWidget {
-  const ChatHistoryScreen({Key? key}) : super(key: key);
+  const ChatHistoryScreen({super.key});
 
   @override
   State<ChatHistoryScreen> createState() => _ChatHistoryScreenState();
@@ -124,6 +124,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   }
 
   Widget _buildSessionCard(ChatSession session) {
+    final isVoiceCall = session.sessionType == 'voice_call';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -145,12 +147,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                 height: 48,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.blue.shade400, Colors.purple.shade400],
+                    colors: isVoiceCall
+                        ? [Colors.orange.shade400, Colors.red.shade400]
+                        : [Colors.blue.shade400, Colors.purple.shade400],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
+                child: Icon(
+                  isVoiceCall ? Icons.call_rounded : Icons.chat_bubble_outline,
                   color: Colors.white,
                   size: 24,
                 ),
@@ -171,6 +175,17 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
+                    if (isVoiceCall) ...[
+                      Text(
+                        'AI Voice Call',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     Row(
                       children: [
                         Icon(
@@ -237,13 +252,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Colors.red.shade400,
+              if (session.canDelete)
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red.shade400,
+                  ),
+                  onPressed: () => _deleteSession(session),
                 ),
-                onPressed: () => _deleteSession(session),
-              ),
             ],
           ),
         ),

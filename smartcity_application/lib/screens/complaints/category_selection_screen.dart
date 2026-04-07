@@ -77,7 +77,7 @@ class CategorySelectionScreen extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(children: [
@@ -96,7 +96,7 @@ class CategorySelectionScreen extends StatelessWidget {
                 Container(
                   width: 36, height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),

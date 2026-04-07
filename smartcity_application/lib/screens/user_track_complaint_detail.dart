@@ -12,7 +12,7 @@ class _MapPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..strokeWidth = 0.5;
 
     // Draw subtle grid pattern like real maps
@@ -93,7 +93,7 @@ class _MapLoadingOverlayState extends State<_MapLoadingOverlay>
     return AnimatedBuilder(
       animation: _pulse,
       builder: (_, __) => Container(
-        color: const Color(0xFFE8F0FE).withOpacity(0.92),
+        color: const Color(0xFFE8F0FE).withValues(alpha: 0.92),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -107,7 +107,7 @@ class _MapLoadingOverlayState extends State<_MapLoadingOverlay>
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1E66F5).withOpacity(0.35),
+                        color: const Color(0xFF1E66F5).withValues(alpha: 0.35),
                         blurRadius: 20,
                         spreadRadius: 4,
                       ),
@@ -139,7 +139,7 @@ class _MapLoadingOverlayState extends State<_MapLoadingOverlay>
 class UserTrackComplaintDetail extends StatefulWidget {
   final Map<String, dynamic> complaint;
 
-  const UserTrackComplaintDetail({Key? key, required this.complaint}) : super(key: key);
+  const UserTrackComplaintDetail({super.key, required this.complaint});
 
   @override
   State<UserTrackComplaintDetail> createState() => _UserTrackComplaintDetailState();
@@ -159,12 +159,20 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   double _currentZoom = 13.0;
   bool _mapLoaded = false;
 
+  double _asDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is bool) return 0.0;
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final complaint = widget.complaint;
     
     // Debug print to check if complaint data is received
-    print('UserTrackComplaintDetail - Complaint data received: $complaint');
+    debugPrint('UserTrackComplaintDetail - Complaint data received: $complaint');
     
     final isSolved = complaint['work_status'] == 'solved';
     final canReopen = complaint['can_reopen'] == true || _canReopenComplaint(complaint);
@@ -330,23 +338,15 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   }
 
   Widget _buildMapAppBar(Map<String, dynamic> complaint) {
-    final lat = (complaint['latitude'] ?? 0.0) is double
-        ? complaint['latitude'] ?? 0.0
-        : double.tryParse(complaint['latitude'].toString()) ?? 0.0;
-    final lng = (complaint['longitude'] ?? 0.0) is double
-        ? complaint['longitude'] ?? 0.0
-        : double.tryParse(complaint['longitude'].toString()) ?? 0.0;
+    final lat = _asDouble(complaint['latitude']);
+    final lng = _asDouble(complaint['longitude']);
 
     final dept = complaint['assigned_department'];
     final deptLat = dept != null
-        ? ((dept['latitude'] ?? 0.0) is double
-            ? dept['latitude'] ?? 0.0
-            : double.tryParse(dept['latitude'].toString()) ?? 0.0)
+        ? _asDouble(dept['latitude'])
         : 0.0;
     final deptLng = dept != null
-        ? ((dept['longitude'] ?? 0.0) is double
-            ? dept['longitude'] ?? 0.0
-            : double.tryParse(dept['longitude'].toString()) ?? 0.0)
+        ? _asDouble(dept['longitude'])
         : 0.0;
 
     final hasComplaintCoords = lat != 0.0 && lng != 0.0;
@@ -441,7 +441,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFEF4444),
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4)],
                           ),
                           child: const Icon(Icons.report, color: Colors.white, size: 12),
                         ),
@@ -463,7 +463,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E66F5),
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4)],
                           ),
                           child: const Icon(Icons.business, color: Colors.white, size: 12),
                         ),
@@ -492,7 +492,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8)],
                   ),
                   child: const Icon(Icons.arrow_back, color: Color(0xFF374151), size: 20),
                 ),
@@ -567,9 +567,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
               ),
               child: Row(
                 children: [
@@ -630,7 +630,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
           decoration: BoxDecoration(
             color: color ?? Colors.white,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 6)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6)],
           ),
           child: Icon(icon, size: 18, color: color != null ? Colors.white : const Color(0xFF374151)),
         ),
@@ -647,7 +647,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -661,7 +661,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -690,10 +690,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(
@@ -752,10 +752,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   }
 
   Widget _buildInteractiveMapSection(Map<String, dynamic> complaint) {
-    final lat = complaint['latitude'] ?? 0.0;
-    final lng = complaint['longitude'] ?? 0.0;
-    final deptLat = complaint['assigned_department']?['latitude'] ?? 0.0;
-    final deptLng = complaint['assigned_department']?['longitude'] ?? 0.0;
+    final lat = _asDouble(complaint['latitude']);
+    final lng = _asDouble(complaint['longitude']);
+    final deptLat = _asDouble(complaint['assigned_department']?['latitude']);
+    final deptLng = _asDouble(complaint['assigned_department']?['longitude']);
     
     return Container(
       margin: const EdgeInsets.all(16),
@@ -764,7 +764,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -780,7 +780,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2B6CF6).withOpacity(0.1),
+                    color: const Color(0xFF2B6CF6).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -899,7 +899,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
+                                          color: Colors.black.withValues(alpha: 0.3),
                                           blurRadius: 6,
                                           offset: const Offset(0, 3),
                                         ),
@@ -938,7 +938,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
+                                          color: Colors.black.withValues(alpha: 0.3),
                                           blurRadius: 6,
                                           offset: const Offset(0, 3),
                                         ),
@@ -970,10 +970,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                             child: Container(
                               height: 6,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 2,
                                     offset: const Offset(0, 1),
                                   ),
@@ -988,10 +988,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                             child: Container(
                               width: 6,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 2,
                                     offset: const Offset(1, 0),
                                   ),
@@ -1015,7 +1015,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                       borderRadius: BorderRadius.circular(8),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Colors.black.withValues(alpha: 0.1),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1039,7 +1039,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                                       borderRadius: BorderRadius.circular(8),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Colors.black.withValues(alpha: 0.1),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         ),
@@ -1063,11 +1063,11 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.95),
+                                color: Colors.white.withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -1257,7 +1257,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color),
       ),
@@ -1284,23 +1284,23 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   }
 
   void _openMap(double lat, double lng) async {
-    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
-    if (await canLaunch(url)) {
-      await launch(url);
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
   void _makeCall(String phone) async {
-    final url = 'tel:$phone';
-    if (await canLaunch(url)) {
-      await launch(url);
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 
   void _sendEmail(String email) async {
-    final url = 'mailto:$email';
-    if (await canLaunch(url)) {
-      await launch(url);
+    final uri = Uri.parse('mailto:$email');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 
@@ -1378,7 +1378,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1394,7 +1394,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -1546,7 +1546,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1562,7 +1562,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -1666,7 +1666,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1682,7 +1682,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -1749,7 +1749,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1765,7 +1765,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -1875,7 +1875,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(icon, color: color, size: 14),
@@ -1919,7 +1919,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1935,7 +1935,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAB308).withOpacity(0.1),
+                    color: const Color(0xFFEAB308).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -2026,9 +2026,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAB308).withOpacity(0.05),
+                color: const Color(0xFFEAB308).withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFEAB308).withOpacity(0.2)),
+                border: Border.all(color: const Color(0xFFEAB308).withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -2153,10 +2153,10 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF59E0B).withOpacity(0.1),
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -2172,7 +2172,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.1),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -2232,7 +2232,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.05),
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -2299,7 +2299,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20)],
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -2324,9 +2324,9 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withOpacity(0.1),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
               ),
               child: Text(
                 '${AppStrings.t(context, 'Complaint ID')} #${widget.complaint['complaint_number'] ?? AppStrings.t(context, 'Unknown')}',
@@ -2468,7 +2468,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -2528,7 +2528,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             LatLng(lat, startLng - 0.002),
             LatLng(lat, endLng + 0.002),
           ],
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withValues(alpha: 0.8),
           strokeWidth: 3.0,
           isDotted: false,
         ),
@@ -2544,7 +2544,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
             LatLng(startLat - 0.002, lng),
             LatLng(endLat + 0.002, lng),
           ],
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withValues(alpha: 0.8),
           strokeWidth: 3.0,
           isDotted: false,
         ),
@@ -2641,12 +2641,14 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
   }
 
   void _getDirections(double lat, double lng) async {
-    final url = lat != 0.0 && lng != 0.0
-        ? 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng'
-        : 'https://www.google.com/maps/dir/?api=1&destination=28.6139,77.2090';
+    final uri = Uri.parse(
+      lat != 0.0 && lng != 0.0
+          ? 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng'
+          : 'https://www.google.com/maps/dir/?api=1&destination=28.6139,77.2090',
+    );
     
-    if (await canLaunch(url)) {
-      await launch(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2670,7 +2672,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
 
   void _shareComplaint(Map<String, dynamic> complaint) {
     // Implement share functionality
-    print('Share complaint: ${complaint['complaint_number']}');
+    debugPrint('Share complaint: ${complaint['complaint_number']}');
   }
 
   Future<void> _pickImage() async {
@@ -2682,7 +2684,7 @@ class _UserTrackComplaintDetailState extends State<UserTrackComplaintDetail> {
         });
       }
     } catch (e) {
-      print('Error picking image: $e');
+      debugPrint('Error picking image: $e');
     }
   }
 
@@ -2776,13 +2778,21 @@ class _FullScreenMapView extends StatefulWidget {
 
 class _FullScreenMapViewState extends State<_FullScreenMapView> {
   double _zoomLevel = 1.0;
+
+  double _asDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is bool) return 0.0;
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
   
   @override
   Widget build(BuildContext context) {
-    final lat = widget.complaint['latitude'] ?? 0.0;
-    final lng = widget.complaint['longitude'] ?? 0.0;
-    final deptLat = widget.complaint['assigned_department']?['latitude'] ?? 0.0;
-    final deptLng = widget.complaint['assigned_department']?['longitude'] ?? 0.0;
+    final lat = _asDouble(widget.complaint['latitude']);
+    final lng = _asDouble(widget.complaint['longitude']);
+    final deptLat = _asDouble(widget.complaint['assigned_department']?['latitude']);
+    final deptLng = _asDouble(widget.complaint['assigned_department']?['longitude']);
     
     return Scaffold(
       backgroundColor: Colors.black,
@@ -2839,7 +2849,7 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -2877,7 +2887,7 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -2948,7 +2958,7 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -3018,12 +3028,14 @@ class _FullScreenMapViewState extends State<_FullScreenMapView> {
   }
   
   void _openExternalMap(double lat, double lng) async {
-    final url = lat != 0.0 && lng != 0.0
-        ? 'https://www.google.com/maps/search/?api=1&query=$lat,$lng'
-        : 'https://www.google.com/maps/search/?api=1&query=28.6139,77.2090';
+    final uri = Uri.parse(
+      lat != 0.0 && lng != 0.0
+          ? 'https://www.google.com/maps/search/?api=1&query=$lat,$lng'
+          : 'https://www.google.com/maps/search/?api=1&query=28.6139,77.2090',
+    );
     
-    if (await canLaunch(url)) {
-      await launch(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }

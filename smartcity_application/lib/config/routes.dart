@@ -4,7 +4,6 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
-import '../screens/complaints/category_selection_screen.dart';
 import '../screens/complaints/submit_complaint_screen.dart';
 import '../screens/complaints/track_complaints_screen.dart';
 import '../screens/complaints/guest_track_screen.dart';
@@ -12,7 +11,9 @@ import '../screens/complaints/complaint_detail_screen.dart';
 import '../screens/complaints/complaint_success_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/dashboard/guest_dashboard_screen.dart';
-import '../screens/dashboard/user_dashboard_screen.dart';
+import '../screens/dashboard/choose_category_modern_screen.dart';
+import '../screens/dashboard/modern_dashboard_screen.dart';
+import '../screens/dashboard/modern_home_screen.dart';
 import '../screens/complaints/user_track.dart';
 import '../screens/departments/departments_list_screen.dart';
 import '../screens/departments/departments_by_category_screen.dart';
@@ -41,6 +42,10 @@ class AppRoutes {
   static const String complaintSuccess = '/complaint-success';
   static const String profile = '/profile';
   static const String aiChat = '/ai-chat';
+  static const String modernDashboard = '/modern-dashboard';
+  static const String chooseCategoryModern = '/choose-category-modern';
+  static const String statsScreen = '/stats-screen';
+  static const String modernHome = '/modern-home';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -64,7 +69,7 @@ class AppRoutes {
 
       case dashboard:
       case userDashboard:
-        return MaterialPageRoute(builder: (_) => const UserDashboardScreen());
+        return MaterialPageRoute(builder: (_) => const ModernHomeScreen());
 
       case guestDashboard:
         return MaterialPageRoute(builder: (_) => const GuestDashboardScreen());
@@ -91,7 +96,7 @@ class AppRoutes {
 
       case categorySelection:
         return MaterialPageRoute(
-            builder: (_) => const CategorySelectionScreen());
+            builder: (_) => const ChooseCategoryModernScreen());
 
       case submitComplaint:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -134,6 +139,18 @@ class AppRoutes {
 
       case aiChat:
         return MaterialPageRoute(builder: (_) => const AIChatScreen());
+
+      case modernDashboard:
+        return MaterialPageRoute(builder: (_) => const ModernDashboardScreen());
+
+      case chooseCategoryModern:
+        return MaterialPageRoute(builder: (_) => const ChooseCategoryModernScreen());
+
+      case statsScreen:
+        return MaterialPageRoute(builder: (_) => const StatsScreen());
+
+      case modernHome:
+        return MaterialPageRoute(builder: (_) => const ModernHomeScreen());
 
       default:
         return MaterialPageRoute(

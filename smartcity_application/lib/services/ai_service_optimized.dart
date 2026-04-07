@@ -14,7 +14,7 @@ Future<Map<String, dynamic>?> _callCityFixLLM(String text) async {
   if (_llmCache.containsKey(cacheKey)) {
     final timestamp = _llmCacheTimestamp[cacheKey];
     if (timestamp != null && DateTime.now().difference(timestamp) < _llmCacheExpiry) {
-      print('✅ Using cached LLM result (${_llmCache.length} items in cache)');
+      debugPrint('✅ Using cached LLM result (${_llmCache.length} items in cache)');
       return _llmCache[cacheKey];
     } else {
       // Cache expired
@@ -24,7 +24,7 @@ Future<Map<String, dynamic>?> _callCityFixLLM(String text) async {
   }
 
   try {
-    print('🚀 Calling CityFix LLM API...');
+    debugPrint('🚀 Calling CityFix LLM API...');
     final startTime = DateTime.now();
     
     final response = await http.post(
@@ -34,7 +34,7 @@ Future<Map<String, dynamic>?> _callCityFixLLM(String text) async {
     ).timeout(const Duration(seconds: 10)); // Reduced from 30 to 10 seconds
 
     final duration = DateTime.now().difference(startTime);
-    print('⏱️ LLM API responded in ${duration.inMilliseconds}ms');
+    debugPrint('⏱️ LLM API responded in ${duration.inMilliseconds}ms');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -52,18 +52,18 @@ Future<Map<String, dynamic>?> _callCityFixLLM(String text) async {
               .key;
           _llmCache.remove(oldestKey);
           _llmCacheTimestamp.remove(oldestKey);
-          print('🗑️ Removed oldest cache entry');
+          debugPrint('🗑️ Removed oldest cache entry');
         }
         
-        print('✅ LLM prediction cached');
+        debugPrint('✅ LLM prediction cached');
         return result;
       }
     }
     
-    print('❌ LLM API returned invalid response');
+    debugPrint('❌ LLM API returned invalid response');
     return null;
   } catch (e) {
-    print('❌ CityFix LLM error: $e');
+    debugPrint('❌ CityFix LLM error: $e');
     return null;
   }
 }
@@ -72,7 +72,7 @@ Future<Map<String, dynamic>?> _callCityFixLLM(String text) async {
 void clearLLMCache() {
   _llmCache.clear();
   _llmCacheTimestamp.clear();
-  print('🗑️ LLM cache cleared');
+  debugPrint('🗑️ LLM cache cleared');
 }
 
 // 4. Update reset() method to also clear LLM cache
@@ -86,5 +86,5 @@ void reset() {
   _categoryConfirmed = false;
   _responseCache.clear();
   clearLLMCache(); // Add this line
-  print('AI Service reset - new session will be created');
+  debugPrint('AI Service reset - new session will be created');
 }

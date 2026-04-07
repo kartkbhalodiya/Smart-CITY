@@ -278,7 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
               Container(
                 width: 80, height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF22C55E).withOpacity(0.1),
+                  color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
@@ -336,7 +336,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           child: Container(
             width: double.infinity,
             height: double.infinity,
-            color: Colors.white.withOpacity(0.85),
+            color: Colors.white.withValues(alpha: 0.85),
           ),
         ),
         SafeArea(
@@ -442,7 +442,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: _primary.withOpacity(0.1),
+              color: _primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
@@ -469,7 +469,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   : const LinearGradient(colors: [Color(0xFFcbd5e1), Color(0xFFcbd5e1)]),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: _emailVerified
-                  ? [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 8))]
+                  ? [BoxShadow(color: _primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 8))]
                   : [],
               ),
               child: Center(
@@ -485,7 +485,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           ),
         ),
         const SizedBox(height: 16),
-        Divider(color: Colors.black.withOpacity(0.08)),
+        Divider(color: Colors.black.withValues(alpha: 0.08)),
         const SizedBox(height: 12),
         GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -502,7 +502,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: _borderColor, width: 1.5),
             ),
@@ -521,7 +521,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Widget _field(TextEditingController c, String hint, IconData icon, TextInputType type) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _borderColor, width: 1.5),
       ),
@@ -542,7 +542,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Widget _addressField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _borderColor, width: 1.5),
       ),
@@ -562,7 +562,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Widget _dropdown(String hint, List<String> items, String? value, ValueChanged<String?>? onChanged) {
     return Container(
       decoration: BoxDecoration(
-        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white.withOpacity(0.9),
+        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _borderColor, width: 1.5),
       ),
@@ -584,7 +584,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Widget _loadingDropdown(String hint) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _borderColor, width: 1.5),
       ),
@@ -604,7 +604,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         // Email input field
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _emailVerified ? const Color(0xFF22c55e) : _borderColor,
@@ -766,7 +766,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             decoration: BoxDecoration(
               color: _locationSet ? const Color(0xFFdbeafe) : const Color(0xFFe5e7eb),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               _detectingLocation
@@ -800,7 +800,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             decoration: BoxDecoration(
               color: const Color(0xFFdbeafe),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: _primary.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               _openingMap

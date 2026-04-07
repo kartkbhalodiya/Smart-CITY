@@ -174,7 +174,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                   Container(
                     width: 76, height: 76,
                     decoration: BoxDecoration(
-                        color: _primary.withOpacity(0.1), shape: BoxShape.circle),
+                        color: _primary.withValues(alpha: 0.1), shape: BoxShape.circle),
                     child: const Icon(Icons.security_rounded, size: 38, color: _primary),
                   ),
                   const SizedBox(height: 18),
@@ -260,21 +260,21 @@ class _PermissionScreenState extends State<PermissionScreen>
             ? const Color(0xFFF0FDF4)
             : permanentDenied
                 ? const Color(0xFFFFF1F2)
-                : p.color.withOpacity(0.05),
+                : p.color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: granted
               ? const Color(0xFF86EFAC)
               : permanentDenied
                   ? const Color(0xFFFFCDD2)
-                  : p.color.withOpacity(0.15),
+                  : p.color.withValues(alpha: 0.15),
         ),
       ),
       child: Row(children: [
         Container(
           width: 42, height: 42,
           decoration: BoxDecoration(
-            color: granted ? const Color(0xFFDCFCE7) : p.color.withOpacity(0.12),
+            color: granted ? const Color(0xFFDCFCE7) : p.color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(11),
           ),
           child: Icon(p.icon, color: granted ? const Color(0xFF059669) : p.color, size: 20),
@@ -298,7 +298,7 @@ class _PermissionScreenState extends State<PermissionScreen>
         else if (permanentDenied)
           const Icon(Icons.block_rounded, color: Color(0xFFEF4444), size: 20)
         else
-          Icon(Icons.radio_button_unchecked_rounded, color: p.color.withOpacity(0.5), size: 20),
+          Icon(Icons.radio_button_unchecked_rounded, color: p.color.withValues(alpha: 0.5), size: 20),
       ]),
     );
   }

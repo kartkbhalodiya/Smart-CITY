@@ -16,9 +16,9 @@ class DepartmentDetailScreen extends StatefulWidget {
 }
 
 class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
-  static const _primary = Color(0xFF1E66F5);
-  static const _bg = Color(0xFFF8FAFC);
-  static const _textDark = Color(0xFF0f172a);
+  static const _primary = Color(0xFFFF6B35);
+  static const _bg = Color(0xFFF8F9FA);
+  static const _textDark = Color(0xFF1A1A1A);
   static const _textMuted = Color(0xFF64748b);
 
   LatLng? _userLocation;
@@ -49,18 +49,18 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   };
 
   static const _gradients = {
-    'police':         [Color(0xFF667eea), Color(0xFF764ba2)],
-    'traffic':        [Color(0xFFf093fb), Color(0xFFf5576c)],
-    'construction':   [Color(0xFF4facfe), Color(0xFF00f2fe)],
-    'water':          [Color(0xFF43e97b), Color(0xFF38f9d7)],
-    'electricity':    [Color(0xFFfa709a), Color(0xFFfee140)],
-    'garbage':        [Color(0xFF30cfd0), Color(0xFF330867)],
-    'road':           [Color(0xFFa8edea), Color(0xFFfed6e3)],
-    'drainage':       [Color(0xFFfbc2eb), Color(0xFFa6c1ee)],
-    'illegal':        [Color(0xFFfdcbf1), Color(0xFFe6dee9)],
-    'transportation': [Color(0xFFa1c4fd), Color(0xFFc2e9fb)],
-    'cyber':          [Color(0xFFd299c2), Color(0xFFfef9d7)],
-    'other':          [Color(0xFF89f7fe), Color(0xFF66a6ff)],
+    'police':         [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'traffic':        [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'construction':   [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'water':          [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'electricity':    [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'garbage':        [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'road':           [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'drainage':       [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'illegal':        [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'transportation': [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'cyber':          [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'other':          [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
   };
 
   @override
@@ -146,7 +146,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     final d = widget.department;
     final type = (d['department_type'] ?? 'other').toString();
     final emoji = _emojiMap[type] ?? '🏢';
-    final grads = _gradients[type] ?? [const Color(0xFF89f7fe), const Color(0xFF66a6ff)];
+    final grads = _gradients[type] ?? [const Color(0xFF1A1A1A), const Color(0xFFFF6B35)];
     final bg = _bgMap[type] ?? const Color(0xFFF8FAFC);
     final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
     final typeDisplay = AppStrings.t(context, (d['department_type_display'] ?? type).toString());
@@ -219,7 +219,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           width: 60, height: 6,
           margin: const EdgeInsets.only(top: 8),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(6),
           ),
         ),
@@ -237,16 +237,16 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
           ),
           child: Column(children: [
             _infoRow('📋', AppStrings.t(context, 'Category'), typeDisplay),
             const SizedBox(height: 14),
-            Divider(color: Colors.black.withOpacity(0.06), height: 1),
+            Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 14),
             _infoRow('🔔', AppStrings.t(context, 'Status'), AppStrings.t(context, 'Not yet configured')),
             const SizedBox(height: 14),
-            Divider(color: Colors.black.withOpacity(0.06), height: 1),
+            Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 14),
             _infoRow('💡', AppStrings.t(context, 'Tip'), AppStrings.t(context, 'Contact admin to add this department')),
           ]),
@@ -256,16 +256,16 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
+            color: const Color(0xFFFFF1EB),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFBFDBFE)),
+            border: Border.all(color: const Color(0xFFFFD9CC)),
           ),
           child: Row(children: [
             const Text('ℹ️', style: TextStyle(fontSize: 22)),
             const SizedBox(width: 12),
             Expanded(child: Text(
                 AppStrings.t(context, 'Once the admin adds this department, you\'ll see full details, contact info, and location here.'),
-                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1D4ED8), height: 1.5))),
+                style: GoogleFonts.inter(fontSize: 12, color: _primary, height: 1.5))),
           ]),
         ),
       ]),
@@ -333,7 +333,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                           gradient: LinearGradient(colors: grads),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
-                          boxShadow: [BoxShadow(color: _primary.withOpacity(0.4), blurRadius: 10)],
+                          boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.4), blurRadius: 10)],
                         ),
                         child: Center(child: Text(emoji, style: const TextStyle(fontSize: 18))),
                       ),
@@ -351,7 +351,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
                           boxShadow: [BoxShadow(
-                              color: const Color(0xFF22C55E).withOpacity(0.4), blurRadius: 8)],
+                              color: const Color(0xFF22C55E).withValues(alpha: 0.4), blurRadius: 8)],
                         ),
                         child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 16),
                       ),
@@ -367,7 +367,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 6)]),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 6)]),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const SizedBox(width: 12, height: 12,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E))),
@@ -383,7 +383,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)]),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)]),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   _legendDot(const Color(0xFF22C55E), AppStrings.t(context, 'You')),
                   const SizedBox(height: 3),
@@ -399,7 +399,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                       color: _primary, borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 8)]),
+                      boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.3), blurRadius: 8)]),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const Icon(Icons.directions_rounded, color: Colors.white, size: 15),
                     const SizedBox(width: 5),
@@ -456,13 +456,13 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
               if (assignedAdmin.isNotEmpty) ...[
                 _detailRow('👤', AppStrings.t(context, 'Assigned Admin'), assignedAdmin),
                 const SizedBox(height: 12),
-                Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
                 const SizedBox(height: 12),
               ],
               if (address.isNotEmpty) ...[
                 _detailRow('📍', AppStrings.t(context, 'Address'), address),
                 const SizedBox(height: 12),
-                Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
                 const SizedBox(height: 12),
               ],
               if (city.isNotEmpty || state.isNotEmpty)
@@ -470,7 +470,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                     [city, state].where((s) => s.isNotEmpty).join(', ')),
               if (sla.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
                 const SizedBox(height: 12),
                 _detailRow('⏱️', AppStrings.t(context, 'Response Time'), '$sla ${AppStrings.t(context, 'hours')}'),
               ],
@@ -489,13 +489,13 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                       const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
                   if (emailAddr.isNotEmpty) ...[
                     const SizedBox(height: 10),
-                    Divider(color: Colors.black.withOpacity(0.06), height: 1),
+                    Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
                     const SizedBox(height: 10),
                   ],
                 ],
                 if (emailAddr.isNotEmpty)
                   _contactRow(Icons.email_outlined, AppStrings.t(context, 'Email Address'), emailAddr,
-                      _primary, const Color(0xFFEFF6FF)),
+                      _primary, const Color(0xFFFFF1EB)),
               ])),
               const SizedBox(height: 14),
 
@@ -553,7 +553,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: child,
     );
@@ -602,7 +602,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 5))],
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 5))],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, color: Colors.white, size: 18),

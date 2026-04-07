@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,6 +14,7 @@ import '../../services/chat_history_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../providers/locale_provider.dart';
+import '../../providers/live_call_provider.dart';
 import '../../config/routes.dart';
 import 'chat_history_screen.dart';
 import 'voice_call_screen.dart';
@@ -32,6 +34,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   
   final List<ChatMessage> _messages = [];
+  int? _selectedMessageIndex;
   bool _isLoading = false;
   bool _showInput = true;
   File? _selectedImage;
@@ -850,6 +853,22 @@ Your complaint has been registered and assigned to the nearest department.
     );
   }
 
+  Future<void> _copyMessageToClipboard(String text) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Copied to clipboard'),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[800]
+              : Colors.black87,
+        ),
+      );
+    } catch (e) {
+      _showError('Failed to copy message');
+    }
+  }
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (_scrollController.hasClients) {
@@ -865,27 +884,65 @@ Your complaint has been registered and assigned to the nearest department.
   /// Open voice call screen
   Future<void> _openVoiceCall() async {
     final user = context.read<AuthProvider>().user;
+    final localeProvider = context.read<LocaleProvider>();
+    final callProvider = context.read<LiveCallProvider>();
     
-    await Navigator.push(
+    // Get current app language
+    final currentLocale = localeProvider.locale.languageCode;
+    
+    // Map locale to speech locale and language name
+    String localeId;
+    String languageName;
+    switch (currentLocale) {
+      case 'hi':
+        localeId = 'hi_IN';
+        languageName = 'hindi';
+        break;
+      case 'gu':
+        localeId = 'gu_IN';
+        languageName = 'gujarati';
+        break;
+      case 'mr':
+        localeId = 'mr_IN';
+        languageName = 'marathi';
+        break;
+      default:
+        localeId = 'en_IN';
+        languageName = 'english';
+    }
+    
+    // Set language and start call
+    await callProvider.setSpeechLocaleId(localeId, languageLabel: _getLanguageLabel(currentLocale));
+    await callProvider.setLanguageAndSkipGreeting(languageName);
+    await callProvider.startCall(userName: user?.fullName ?? 'User');
+    
+    // Navigate to voice call screen
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VoiceCallScreen(
-          aiService: _aiService,
-          userName: user?.fullName ?? 'User',
-        ),
+        builder: (context) => const VoiceCallScreen(),
       ),
     );
+  }
+  
+  String _getLanguageLabel(String code) {
+    switch (code) {
+      case 'hi': return 'Hindi';
+      case 'gu': return 'Gujarati';
+      case 'mr': return 'Marathi';
+      default: return 'English';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0f172a)),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -895,7 +952,7 @@ Your complaint has been registered and assigned to the nearest department.
               height: 40,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue.shade400, Colors.purple.shade400],
+                  colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
                 ),
                 shape: BoxShape.circle,
               ),
@@ -910,7 +967,7 @@ Your complaint has been registered and assigned to the nearest department.
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0f172a),
+                    color: Theme.of(context).textTheme.titleLarge?.color ?? const Color(0xFF0f172a),
                   ),
                 ),
                 Text(
@@ -951,7 +1008,7 @@ Your complaint has been registered and assigned to the nearest department.
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return _buildMessage(_messages[index]);
+                return _buildMessage(_messages[index], index);
               },
             ),
           ),
@@ -962,7 +1019,15 @@ Your complaint has been registered and assigned to the nearest department.
     );
   }
 
-  Widget _buildMessage(ChatMessage message) {
+  Widget _buildMessage(ChatMessage message, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final aiBg = isDark ? Colors.orange.shade800.withOpacity(0.16) : Colors.orange.shade50;
+    final userBg = isDark ? Colors.orange.shade600 : Colors.orange.shade300;
+    final aiTextColor = isDark ? Colors.white : const Color(0xFF0f172a);
+    final userTextColor = isDark ? Colors.white : Colors.black87;
+    final borderRadius = BorderRadius.circular(16);
+    final isSelected = _selectedMessageIndex == index;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -980,7 +1045,7 @@ Your complaint has been registered and assigned to the nearest department.
                   height: 32,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue.shade400, Colors.purple.shade400],
+                      colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
                     ),
                     shape: BoxShape.circle,
                   ),
@@ -992,61 +1057,83 @@ Your complaint has been registered and assigned to the nearest department.
                 child: Column(
                   crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: message.isUser
-                            ? const Color(0xFF1E66F5)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildFormattedText(
-                            message.text,
-                            message.isUser,
-                          ),
-                          if (message.urgencyLevel != null) ...[ 
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: message.isUser
+                            ? null
+                            : () async {
+                                setState(() {
+                                  _selectedMessageIndex = _selectedMessageIndex == index ? null : index;
+                                });
+                                await _copyMessageToClipboard(message.text);
+                              },
+                        borderRadius: borderRadius,
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: message.isUser ? userBg : aiBg,
+                            borderRadius: borderRadius,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
                               ),
-                              decoration: BoxDecoration(
-                                color: _getUrgencyColor(message.urgencyLevel!),
-                                borderRadius: BorderRadius.circular(6),
+                            ],
+                            border: isSelected ? Border.all(color: Colors.orange.shade500, width: 1.5) : null,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFormattedText(
+                                message.text,
+                                message.isUser,
+                                message.isUser ? userTextColor : aiTextColor,
                               ),
-                              child: Text(
-                                '⚠️ ${message.urgencyLevel}',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                              if (!message.isUser) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Tap to copy',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: isDark ? Colors.white70 : Colors.black45,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
-                          if (message.estimatedTime != null) ...[ 
-                            const SizedBox(height: 4),
-                            Text(
-                              '⏱️ Est. Resolution: ${message.estimatedTime}',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: message.isUser
-                                    ? Colors.white70
-                                    : const Color(0xFF64748b),
-                              ),
-                            ),
-                          ],
-                        ],
+                              ],
+                              if (message.urgencyLevel != null) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getUrgencyColor(message.urgencyLevel!),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '⚠️ ${message.urgencyLevel}',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (message.estimatedTime != null) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  '⏱️ Est. Resolution: ${message.estimatedTime}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: message.isUser ? Colors.white70 : const Color(0xFF64748b),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     if (message.imageFile != null) ...[
@@ -1069,11 +1156,11 @@ Your complaint has been registered and assigned to the nearest department.
                 Container(
                   width: 32,
                   height: 32,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1E66F5),
+                  decoration: BoxDecoration(
+                    color: userBg,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.person, color: Colors.white, size: 18),
+                  child: Icon(Icons.person, color: userTextColor, size: 18),
                 ),
               ],
             ],
@@ -1088,16 +1175,7 @@ Your complaint has been registered and assigned to the nearest department.
               }).toList(),
             ),
           ],
-          if (!message.isUser && message.suggestions.isNotEmpty) ...[ 
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: message.suggestions.map((suggestion) {
-                return _buildSuggestion(suggestion);
-              }).toList(),
-            ),
-          ],
+          // suggestion chips removed
         ],
       ),
     );
@@ -1149,11 +1227,11 @@ Your complaint has been registered and assigned to the nearest department.
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E66F5),
+        color: Colors.black.withOpacity(0.65),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E66F5).withOpacity(0.3),
+            color: Colors.black.withOpacity(0.25),
             blurRadius: 8,
           ),
         ],
@@ -1169,37 +1247,7 @@ Your complaint has been registered and assigned to the nearest department.
     );
   }
 
-  Widget _buildSuggestion(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.yellow.shade50,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.yellow.shade700),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            text,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              color: Colors.red,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            'its just example',
-            style: GoogleFonts.inter(
-              fontSize: 8,
-              color: Colors.red.shade700,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // suggestions removed per user request
 
   Widget _buildTypingIndicator() {
     return Container(
@@ -1264,7 +1312,7 @@ Your complaint has been registered and assigned to the nearest department.
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -1280,7 +1328,7 @@ Your complaint has been registered and assigned to the nearest department.
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: TextField(
@@ -1295,7 +1343,7 @@ Your complaint has been registered and assigned to the nearest department.
                   ),
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: const Color(0xFF0f172a),
+                    color: Theme.of(context).textTheme.bodyLarge?.color ?? const Color(0xFF0f172a),
                   ),
                   maxLines: null,
                   textInputAction: TextInputAction.send,
@@ -1311,7 +1359,7 @@ Your complaint has been registered and assigned to the nearest department.
                 height: 48,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.blue.shade400, Colors.purple.shade400],
+                    colors: [Colors.orange.shade400, Colors.deepOrange.shade400],
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -1364,31 +1412,29 @@ Your complaint has been registered and assigned to the nearest department.
     print('💾 Saved session: ${session.id}, completed: ${session.isCompleted}');
   }
 
-  Widget _buildFormattedText(String text, bool isUser) {
+  Widget _buildFormattedText(String text, bool isUser, Color textColor) {
     final parts = <TextSpan>[];
     final regex = RegExp(r'\*\*(.+?)\*\*');
     int lastIndex = 0;
 
     for (final match in regex.allMatches(text)) {
-      // Add normal text before bold
       if (match.start > lastIndex) {
         parts.add(TextSpan(
           text: text.substring(lastIndex, match.start),
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: isUser ? Colors.white : const Color(0xFF0f172a),
+            color: textColor,
             height: 1.5,
           ),
         ));
       }
 
-      // Add bold text
       parts.add(TextSpan(
         text: match.group(1),
         style: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          color: isUser ? Colors.white : const Color(0xFF0f172a),
+          color: textColor,
           height: 1.5,
         ),
       ));
@@ -1396,13 +1442,12 @@ Your complaint has been registered and assigned to the nearest department.
       lastIndex = match.end;
     }
 
-    // Add remaining text
     if (lastIndex < text.length) {
       parts.add(TextSpan(
         text: text.substring(lastIndex),
         style: GoogleFonts.inter(
           fontSize: 14,
-          color: isUser ? Colors.white : const Color(0xFF0f172a),
+          color: textColor,
           height: 1.5,
         ),
       ));

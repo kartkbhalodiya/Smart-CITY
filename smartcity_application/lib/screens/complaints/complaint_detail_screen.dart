@@ -9,11 +9,9 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
-import '../../config/theme.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
 import '../../services/api_service.dart';
-import '../departments/department_detail_screen.dart';
 import '../../l10n/app_strings.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
@@ -25,6 +23,10 @@ class ComplaintDetailScreen extends StatefulWidget {
 }
 
 class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
+  static const _accent = Color(0xFFFF6B35);
+  static const _dark = Color(0xFF1A1A1A);
+  static const _bg = Color(0xFFF8F9FA);
+
   bool _showDeptPopup = false;
   final MapController _mapController = MapController();
   final ScrollController _scrollController = ScrollController();
@@ -51,7 +53,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       // Load the complaint details
       provider.loadComplaintDetail(widget.complaintId).then((_) {
         if (provider.error != null) {
-          print('Error loading complaint: ${provider.error}');
+          debugPrint('Error loading complaint: ${provider.error}');
         }
         // Ensure scroll starts at top after content loads
         if (mounted && _scrollController.hasClients) {
@@ -64,7 +66,20 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppStrings.t(context, 'Complaint Details'))),
+      backgroundColor: _bg,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: _dark),
+        title: Text(
+          AppStrings.t(context, 'Complaint Details'),
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _dark,
+          ),
+        ),
+      ),
       body: Consumer<ComplaintProvider>(
         builder: (context, provider, child) {
           final complaint = provider.selectedComplaint;
@@ -77,7 +92,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                    valueColor: const AlwaysStoppedAnimation<Color>(_accent),
                     strokeWidth: 3,
                   ),
                   const SizedBox(height: 16),
@@ -125,7 +140,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                     icon: const Icon(Icons.refresh),
                     label: Text(AppStrings.t(context, 'Retry')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade700,
+                      backgroundColor: _dark,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
@@ -165,7 +180,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                     icon: const Icon(Icons.arrow_back),
                     label: Text(AppStrings.t(context, 'Go Back')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade700,
+                      backgroundColor: _dark,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
@@ -176,53 +191,96 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           }
           return SingleChildScrollView(
             controller: _scrollController,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(complaint),
                 const SizedBox(height: 16),
-                
-                // User Personal Details Section
-                _buildUserDetailsCard(complaint),
-                
-                // Complaint Details Section
-                _buildComplaintDetailsCard(complaint),
-                
-                // Uploaded Images Section - Show if media exists OR if mediaCount > 0
+                _buildOverviewStrip(complaint),
+                const SizedBox(height: 12),
+                _buildSectionShortcuts(complaint),
+                const SizedBox(height: 16),
+
+                _accordionSection(
+                  title: AppStrings.t(context, 'User Information'),
+                  icon: Icons.person_outline,
+                  initiallyExpanded: true,
+                  child: _buildUserDetailsCard(complaint),
+                ),
+
+                _accordionSection(
+                  title: AppStrings.t(context, 'Complaint Details'),
+                  icon: Icons.description_outlined,
+                  initiallyExpanded: true,
+                  child: _buildComplaintDetailsCard(complaint),
+                ),
+
                 if ((complaint.media != null && complaint.media!.isNotEmpty) || complaint.mediaCount > 0)
-                  _buildUploadedImagesSection(complaint),
-                
-                // Additional Field Responses
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Uploaded Images'),
+                    icon: Icons.photo_library_outlined,
+                    child: _buildUploadedImagesSection(complaint),
+                  ),
+
                 if (complaint.fieldResponses != null && complaint.fieldResponses!.isNotEmpty)
-                  _buildAdditionalFieldsCard(complaint.fieldResponses!),
-                
-                // Assigned Department Section - BEFORE MAP
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Additional Information'),
+                    icon: Icons.info_outline,
+                    child: _buildAdditionalFieldsCard(complaint.fieldResponses!),
+                  ),
+
                 if (complaint.assignedDepartment != null)
-                  _buildDepartmentCard(complaint.assignedDepartment!),
-                
-                // Map Section - AFTER DEPARTMENT
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Assigned Department'),
+                    icon: Icons.business_outlined,
+                    child: _buildDepartmentCard(complaint.assignedDepartment!),
+                  ),
+
                 if (complaint.latitude != 0.0 && complaint.longitude != 0.0)
-                  _buildMapSection(complaint),
-                
-                // Status Timeline
-                _buildStatusTimeline(complaint),
-                
-                // Department work proof
-                if (complaint.workProof != null && complaint.workProof!.isNotEmpty)
-                  _buildMediaSection(AppStrings.t(context, 'Department Proof'), complaint.workProof!),
-                
-                // Rating section
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Location Map'),
+                    icon: Icons.map_outlined,
+                    child: _buildMapSection(complaint),
+                  ),
+
+                _accordionSection(
+                  title: AppStrings.t(context, 'Status Timeline'),
+                  icon: Icons.timeline_outlined,
+                  child: _buildStatusTimeline(complaint),
+                ),
+
+                if (_departmentProofMedia(complaint).isNotEmpty)
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Department Proof'),
+                    icon: Icons.verified_outlined,
+                    child: _buildMediaSection(
+                      AppStrings.t(context, 'Department Proof'),
+                      _departmentProofMedia(complaint),
+                    ),
+                  ),
+
                 if (complaint.citizenRating != null)
-                  _buildExistingRating(complaint)
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Your Rating'),
+                    icon: Icons.star_outline_rounded,
+                    child: _buildExistingRating(complaint),
+                  )
                 else if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved')
-                  _buildRatingForm(complaint),
-                
-                // Reopen button
-                if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved' ||
-                    complaint.canReopen == true)
-                  _buildReopenButton(complaint),
-                
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Rate This Resolution'),
+                    icon: Icons.rate_review_outlined,
+                    child: _buildRatingForm(complaint),
+                    initiallyExpanded: true,
+                  ),
+
+                if (_canReopenComplaint(complaint) || complaint.canReopen == true)
+                  _accordionSection(
+                    title: AppStrings.t(context, 'Need Reopen?'),
+                    icon: Icons.refresh_rounded,
+                    child: _buildReopenButton(complaint),
+                  ),
+                 
                 const SizedBox(height: 20),
               ],
             ),
@@ -237,21 +295,227 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     return months[month - 1];
   }
 
+  Widget _buildOverviewStrip(Complaint complaint) {
+    final createdDate = complaint.createdAt.toString().split(' ')[0];
+    final locationText = complaint.city.isNotEmpty
+        ? '${complaint.city}${complaint.state.isNotEmpty ? ', ${complaint.state}' : ''}'
+        : complaint.address;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEFEFEF)),
+      ),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          _overviewItem(Icons.schedule_rounded, AppStrings.t(context, 'Created'), createdDate),
+          _overviewItem(Icons.location_on_outlined, AppStrings.t(context, 'Area'), locationText),
+          _overviewItem(Icons.flag_outlined, AppStrings.t(context, 'Priority'), complaint.priorityDisplay),
+          _overviewItem(Icons.confirmation_number_outlined, AppStrings.t(context, 'ID'), '#${complaint.complaintNumber}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _overviewItem(IconData icon, String label, String value) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 130),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFEDEDED)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: _accent),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 11.5,
+                    color: _dark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionShortcuts(Complaint complaint) {
+    final chips = <Map<String, dynamic>>[
+      {'icon': Icons.person_outline, 'label': AppStrings.t(context, 'User')},
+      {'icon': Icons.description_outlined, 'label': AppStrings.t(context, 'Details')},
+      if ((complaint.media != null && complaint.media!.isNotEmpty) || complaint.mediaCount > 0)
+        {'icon': Icons.photo_library_outlined, 'label': AppStrings.t(context, 'Media')},
+      if (complaint.assignedDepartment != null)
+        {'icon': Icons.business_outlined, 'label': AppStrings.t(context, 'Department')},
+      if (complaint.latitude != 0.0 && complaint.longitude != 0.0)
+        {'icon': Icons.map_outlined, 'label': AppStrings.t(context, 'Map')},
+      {'icon': Icons.timeline_outlined, 'label': AppStrings.t(context, 'Timeline')},
+    ];
+
+    return SizedBox(
+      height: 34,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final chip = chips[index];
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFEDEDED)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(chip['icon'] as IconData, size: 13, color: _accent),
+                const SizedBox(width: 5),
+                Text(
+                  chip['label'] as String,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF3D3D3D),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _accordionSection({
+    required String title,
+    required IconData icon,
+    required Widget child,
+    bool initiallyExpanded = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFECECEC)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: PageStorageKey<String>('detail-$title'),
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+          collapsedIconColor: const Color(0xFF727272),
+          iconColor: _accent,
+          leading: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: _accent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: _accent),
+          ),
+          title: Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: _dark,
+            ),
+          ),
+          children: [child],
+        ),
+      ),
+    );
+  }
+
+  String _getCategoryEmoji(String category) {
+    switch (category.toLowerCase()) {
+      case 'police':
+        return '🚓';
+      case 'traffic':
+        return '🚦';
+      case 'construction':
+        return '🏗️';
+      case 'water':
+      case 'water supply':
+        return '🚰';
+      case 'electricity':
+        return '💡';
+      case 'garbage':
+        return '🗑️';
+      case 'road':
+      case 'pothole':
+        return '🛣️';
+      case 'drainage':
+        return '🌊';
+      case 'illegal':
+      case 'illegal activity':
+        return '⚠️';
+      case 'transportation':
+        return '🚌';
+      case 'cyber':
+      case 'cyber crime':
+        return '🛡️';
+      default:
+        return '📋';
+    }
+  }
+
+  String _localizedComplaintType(Complaint complaint) {
+    final display = complaint.complaintTypeDisplay.trim();
+    if (display.isNotEmpty) {
+      return AppStrings.t(context, display);
+    }
+    return AppStrings.t(context, complaint.complaintType);
+  }
+
   Widget _buildHeader(Complaint complaint) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade700, Colors.blue.shade500],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A1A), Color(0xFF2D2D2D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -264,8 +528,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
                 ),
                 child: Text(
                   '#${complaint.complaintNumber}',
@@ -283,6 +548,34 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _accent.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_getCategoryEmoji(complaint.complaintType), style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Text(
+                      _localizedComplaintType(complaint),
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Text(
             complaint.title,
             style: GoogleFonts.poppins(
@@ -294,12 +587,12 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.calendar_today, size: 14, color: Colors.white.withOpacity(0.9)),
+              Icon(Icons.calendar_today, size: 14, color: Colors.white.withValues(alpha: 0.9)),
               const SizedBox(width: 6),
               Text(
                 '${AppStrings.t(context, 'Submitted on')} ${complaint.createdAt.toString().split(' ')[0]}',
                 style: GoogleFonts.inter(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 13,
                 ),
               ),
@@ -349,10 +642,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEFEFEF)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -366,10 +660,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: _accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.person, color: Colors.blue.shade700, size: 20),
+                child: const Icon(Icons.person, color: _accent, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -404,10 +698,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEFEFEF)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -421,10 +716,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: _accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.description, color: Colors.orange.shade700, size: 20),
+                child: const Icon(Icons.description, color: _accent, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -491,7 +786,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -555,7 +850,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               itemCount: complaint.media!.length,
               itemBuilder: (context, index) {
                 final item = complaint.media![index];
-                final imageUrl = item.fileUrl.isNotEmpty ? item.fileUrl : item.file;
+                final imageUrl = _resolveMediaUrl(item);
                 
                 return GestureDetector(
                   onTap: () => _viewMedia(item),
@@ -673,7 +968,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                   border: Border.all(color: Colors.grey.shade300, width: 1),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -715,8 +1010,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                           );
                         },
                         errorBuilder: (context, error, stackTrace) {
-                          print('Error loading thumbnail: ${complaint.thumbnail}');
-                          print('Error: $error');
+                          debugPrint('Error loading thumbnail: ${complaint.thumbnail}');
+                          debugPrint('Error: $error');
                           return Container(
                             color: Colors.grey.shade200,
                             child: Center(
@@ -858,7 +1153,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -956,9 +1251,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEFEFEF)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4)),
         ],
@@ -974,10 +1270,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2B6CF6).withOpacity(0.1),
+                    color: _accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.map, color: Color(0xFF2B6CF6), size: 20),
+                  child: const Icon(Icons.map, color: _accent, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1039,7 +1335,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                       polylines: [
                         Polyline(
                           points: [complaintPos, deptPos],
-                          color: const Color(0xFF1E66F5),
+                          color: _accent,
                           strokeWidth: 3.0,
                         ),
                       ],
@@ -1059,7 +1355,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 4,
                               ),
                             ],
@@ -1076,11 +1372,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E66F5),
+                              color: _accent,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 4,
                                 ),
                               ],
@@ -1103,9 +1399,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 _buildLegendItem(const Color(0xFFEF4444), AppStrings.t(context, 'Complaint Site')),
                 if (hasDept) ...[
                   const SizedBox(width: 20),
-                  const Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1E66F5)),
+                  const Icon(Icons.arrow_forward, size: 16, color: _accent),
                   const SizedBox(width: 20),
-                  _buildLegendItem(const Color(0xFF1E66F5), AppStrings.t(context, 'Department')),
+                  _buildLegendItem(_accent, AppStrings.t(context, 'Department')),
                 ],
               ],
             ),
@@ -1145,17 +1441,17 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade700, Colors.blue.shade500],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2B2B2B), Color(0xFF3C3C3C)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1167,7 +1463,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.business, color: Colors.white, size: 20),
@@ -1181,7 +1477,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                       AppStrings.t(context, 'Assigned Department'),
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                     Text(
@@ -1201,15 +1497,15 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
-                if (dept.phone.isNotEmpty) ...[
-                  _buildDeptInfoRow(Icons.phone, dept.phone, Colors.white),
-                  const SizedBox(height: 8),
-                ],
+              if (dept.phone.isNotEmpty) ...[
+                _buildDeptInfoRow(Icons.phone, dept.phone, Colors.white),
+                const SizedBox(height: 8),
+              ],
                 if (dept.email.isNotEmpty) ...[
                   _buildDeptInfoRow(Icons.email, dept.email, Colors.white),
                   const SizedBox(height: 8),
@@ -1250,10 +1546,11 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEFEFEF)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
           ),
         ],
@@ -1263,7 +1560,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.timeline, color: Colors.blue.shade700, size: 20),
+              const Icon(Icons.timeline, color: _accent, size: 20),
               const SizedBox(width: 8),
               Text(
                 AppStrings.t(context, 'Status Timeline'),
@@ -1280,7 +1577,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
             'Submitted',
             complaint.createdAt.toString().split(' ')[0],
             Icons.assignment_turned_in,
-            Colors.blue,
+            _accent,
             isCompleted: true,
           ),
           _buildTimelineStep(
@@ -1385,6 +1682,40 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
+  String _resolveMediaUrl(ComplaintMedia media) {
+    final fileUrl = media.fileUrl.trim();
+    if (fileUrl.isNotEmpty) return fileUrl;
+
+    final file = media.file.trim();
+    if (file.isEmpty) return file;
+
+    if (file.startsWith('http://') || file.startsWith('https://')) {
+      return file;
+    }
+
+    if (file.startsWith('/')) {
+      final base = ApiConfig.baseUrl.replaceAll('/api', '');
+      return '$base$file';
+    }
+
+    return file;
+  }
+
+  List<ComplaintMedia> _departmentProofMedia(Complaint complaint) {
+    if (complaint.workProof != null && complaint.workProof!.isNotEmpty) {
+      return complaint.workProof!;
+    }
+    final media = complaint.media;
+    if (media == null || media.isEmpty) return const [];
+    return media.where((m) {
+      final type = m.fileType.toLowerCase();
+      return type.contains('work') ||
+          type.contains('proof') ||
+          type.contains('completion') ||
+          type.contains('resolved');
+    }).toList();
+  }
+
   Widget _buildMediaSection(String title, List<ComplaintMedia> media) {
     if (media.isEmpty) return const SizedBox.shrink();
 
@@ -1396,7 +1727,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1456,7 +1787,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
             itemCount: media.length,
             itemBuilder: (context, index) {
               final item = media[index];
-              final imageUrl = item.fileUrl.isNotEmpty ? item.fileUrl : item.file;
+              final imageUrl = _resolveMediaUrl(item);
               
               return GestureDetector(
                 onTap: () => _viewMedia(item),
@@ -1466,7 +1797,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                     border: Border.all(color: Colors.green.shade300, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -1545,7 +1876,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 maxScale: 4.0,
                 child: Center(
                   child: Image.network(
-                    media.fileUrl,
+                    _resolveMediaUrl(media),
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -1628,9 +1959,9 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: Colors.green.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.2)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1698,6 +2029,15 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
+  bool _canReopenComplaint(Complaint complaint) {
+    if (!(complaint.workStatus == 'solved' || complaint.workStatus == 'resolved')) {
+      return false;
+    }
+    if (complaint.canReopen == true) return true;
+    final daysSinceSolved = DateTime.now().difference(complaint.updatedAt).inDays;
+    return daysSinceSolved <= 7;
+  }
+
   void _showReopenDialog(Complaint complaint) {
     // Clear form before showing dialog
     _reopenReasonCtrl.clear();
@@ -1729,7 +2069,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withOpacity(0.1),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('#${complaint.complaintNumber}',
@@ -1927,14 +2267,14 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         );
       }
       
-      print('Submitting reopen request with reason: ${request.fields['reason']}');
-      print('Has proof file: ${_reopenProofPath != null}');
+      debugPrint('Submitting reopen request with reason: ${request.fields['reason']}');
+      debugPrint('Has proof file: ${_reopenProofPath != null}');
       
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       final res = json.decode(response.body);
       
-      print('Reopen response: $res');
+      debugPrint('Reopen response: $res');
       
       setState(() => _isSubmittingReopen = false);
       
@@ -1987,7 +2327,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       if (mounted) Navigator.pop(context);
       
       if (mounted) {
-        print('Error submitting reopen: $e');
+        debugPrint('Error submitting reopen: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${AppStrings.t(context, 'Error')}: $e'),
@@ -2041,7 +2381,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
       }
       return null;
     } catch (e) {
-      print('Error uploading proof to Cloudinary: $e');
+      debugPrint('Error uploading proof to Cloudinary: $e');
       return null;
     }
   }
@@ -2080,7 +2420,7 @@ class _DeptPopup extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 12,
               offset: const Offset(0, 4))
         ],
@@ -2091,7 +2431,7 @@ class _DeptPopup extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E66F5).withOpacity(0.1),
+              color: const Color(0xFF1E66F5).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.business,
@@ -2131,7 +2471,7 @@ class _DeptPopup extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                      color: const Color(0xFF1E66F5).withOpacity(0.3),
+                      color: const Color(0xFF1E66F5).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3))
                 ],
@@ -2186,9 +2526,9 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(AppStrings.t(context, statusText),
           style: TextStyle(

@@ -24,6 +24,8 @@ class DepartmentsByCategoryScreen extends StatefulWidget {
 }
 
 class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScreen> {
+  static const _accent = Color(0xFFFF6B35);
+  static const _dark = Color(0xFF1A1A1A);
   List<Map<String, dynamic>> _departments = [];
   bool _loading = true;
 
@@ -54,7 +56,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8F9FA),
       body: Column(children: [
         _topNav(),
         Expanded(child: _body()),
@@ -70,7 +72,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
           left: 8, right: 16, bottom: 12),
       child: Row(children: [
         IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0f172a)),
+          icon: const Icon(Icons.arrow_back_rounded, color: _dark),
           onPressed: () => Navigator.pop(context),
         ),
         Container(
@@ -86,7 +88,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
           Text(AppStrings.t(context, widget.categoryName),
               style: GoogleFonts.poppins(
                   fontSize: 16, fontWeight: FontWeight.w700,
-                  color: const Color(0xFF0f172a))),
+                  color: _dark)),
           Text(_loading ? AppStrings.t(context, 'Loading...') : '${_departments.length} ${AppStrings.t(context, _departments.length == 1 ? 'department' : 'departments')}',
               style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
         ]),
@@ -96,7 +98,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
 
   Widget _body() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF1E66F5)));
+      return const Center(child: CircularProgressIndicator(color: _accent));
     }
 
     if (_departments.isEmpty) {
@@ -104,7 +106,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF1E66F5),
+      color: _accent,
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -130,14 +132,14 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
             width: 55, height: 5,
             margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           const SizedBox(height: 28),
           Text(AppStrings.t(context, 'No Departments Found'),
               style: GoogleFonts.poppins(
-                  fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFF0f172a))),
+                  fontSize: 20, fontWeight: FontWeight.w700, color: _dark)),
           const SizedBox(height: 8),
           Text('${AppStrings.t(context, 'No')} ${widget.categoryName} ${AppStrings.t(context, 'departments')}\n${AppStrings.t(context, 'have been added by the admin yet.')}',
               textAlign: TextAlign.center,
@@ -148,9 +150,9 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: const Color(0xFFFFF1EB),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
+              border: Border.all(color: const Color(0xFFFFD9CC)),
             ),
             child: Row(children: [
               const Text('ℹ️', style: TextStyle(fontSize: 20)),
@@ -158,7 +160,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
               Expanded(child: Text(
                   AppStrings.t(context, 'Once the admin adds departments for this category, they will appear here.'),
                   style: GoogleFonts.inter(
-                      fontSize: 12, color: const Color(0xFF1D4ED8), height: 1.5))),
+                      fontSize: 12, color: _accent, height: 1.5))),
             ]),
           ),
         ]),
@@ -183,7 +185,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Row(children: [
           // Left pastel emoji panel
@@ -200,7 +202,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
               Container(
                 width: 28, height: 3,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -215,7 +217,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
                 Text(name,
                     style: GoogleFonts.poppins(
                         fontSize: 14, fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0f172a))),
+                        color: _dark)),
                 if (assignedAdmin.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Row(children: [
@@ -251,7 +253,7 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
                     _chip(Icons.phone_rounded, phone, const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
                   if (phone.isNotEmpty && email.isNotEmpty) const SizedBox(width: 6),
                   if (email.isNotEmpty)
-                    Flexible(child: _chip(Icons.email_outlined, email, const Color(0xFF1E66F5), const Color(0xFFEFF6FF))),
+                    Flexible(child: _chip(Icons.email_outlined, email, _accent, const Color(0xFFFFF1EB))),
                 ]),
               ]),
             ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class GroqContextAnalyzer {
   static const String _apiKey = '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';
@@ -104,7 +105,7 @@ Return ONLY valid JSON, no other text.''';
           final jsonStr = jsonMatch.group(0)!;
           final result = jsonDecode(jsonStr);
           
-          print('Groq Context Analysis: ${result['reasoning']}');
+          debugPrint('Groq Context Analysis: ${result['reasoning']}');
           
           return {
             'success': true,
@@ -117,14 +118,14 @@ Return ONLY valid JSON, no other text.''';
           'error': 'Could not parse AI response',
         };
       } else {
-        print('Groq API error: ${response.statusCode}');
+        debugPrint('Groq API error: ${response.statusCode}');
         return {
           'success': false,
           'error': 'AI service unavailable',
         };
       }
     } catch (e) {
-      print('Groq context analysis error: $e');
+      debugPrint('Groq context analysis error: $e');
       return {
         'success': false,
         'error': e.toString(),
@@ -200,7 +201,7 @@ Return ONLY valid JSON.''';
       
       return {'success': false};
     } catch (e) {
-      print('Multiple issues detection error: $e');
+      debugPrint('Multiple issues detection error: $e');
       return {'success': false};
     }
   }
@@ -267,7 +268,7 @@ Return ONLY the question text, no JSON or extra formatting.''';
       
       return 'Could you provide more details?';
     } catch (e) {
-      print('Smart follow-up generation error: $e');
+      debugPrint('Smart follow-up generation error: $e');
       return 'Could you provide more details?';
     }
   }

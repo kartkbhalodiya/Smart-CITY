@@ -70,48 +70,64 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(children: [
-        // Background image
-        Image.network(
-          'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
-        ),
-        // Blur layer
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(color: Colors.black.withOpacity(0.25)),
-        ),
-        SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: SlideTransition(
-                position: _slide,
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.5)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0x261E66F5),
-                        blurRadius: 50,
-                        offset: const Offset(0, 20),
-                      )
-                    ],
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Stack(
+              children: [
+                SizedBox.expand(
+                  child: Image.network(
+                    'https://res.cloudinary.com/dk1q50evg/image/upload/v1773347108/login-bg-mobile.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Color(0xFFE0E7EF),
+                      child: Center(
+                        child: Icon(Icons.broken_image, size: 64, color: Colors.grey[400]),
+                      ),
+                    ),
                   ),
-                  padding: const EdgeInsets.all(30),
-                  child: _sent ? _successView() : _formView(),
+                ),
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      color: Colors.transparent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: SlideTransition(
+                  position: _slide,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 40,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                    child: _sent ? _successView() : _formView(),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -135,7 +151,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         width: 64,
         height: 64,
         decoration: BoxDecoration(
-          color: const Color(0xFF1E66F5).withOpacity(0.1),
+          color: const Color(0xFF1E66F5).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.lock_reset_rounded,
@@ -218,7 +234,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       // Email field
       Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFe2e8f0), width: 1.5),
         ),
@@ -261,7 +277,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 letterSpacing: 0.5),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E66F5),
+            backgroundColor: const Color(0xFFFF6B35), // Orange color
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
@@ -303,7 +319,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: const Color(0xFF22C55E).withOpacity(0.1),
+          color: const Color(0xFF22C55E).withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.mark_email_read_rounded,

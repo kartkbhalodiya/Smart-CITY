@@ -7,9 +7,11 @@ import 'config/routes.dart';
 import 'providers/auth_provider.dart';
 import 'providers/complaint_provider.dart';
 import 'providers/category_provider.dart';
+import 'providers/live_call_provider.dart';
 import 'providers/locale_provider.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
+import 'widgets/live_call_bubble.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +47,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ComplaintProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => LiveCallProvider()),
         ChangeNotifierProvider(
           create: (_) {
             final provider = LocaleProvider();
@@ -66,6 +69,14 @@ class MyApp extends StatelessWidget {
               Locale('hi'),
               Locale('gu'),
             ],
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  if (child != null) child,
+                  const LiveCallBubble(),
+                ],
+              );
+            },
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,

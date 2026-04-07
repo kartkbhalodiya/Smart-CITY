@@ -65,14 +65,20 @@ class ComplaintProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final response = await ComplaintService.getDashboardStats();
+    try {
+      final response = await ComplaintService.getDashboardStats();
+
+      if (response['success'] == true) {
+        _stats = DashboardStats.fromJson(response['stats']);
+      } else {
+        _error = response['message'];
+      }
+    } catch (e) {
+      _error = 'Error loading stats: $e';
+      debugPrint('Exception in loadDashboardStats: $e');
+    }
 
     _isLoading = false;
-    if (response['success'] == true) {
-      _stats = DashboardStats.fromJson(response['stats']);
-    } else {
-      _error = response['message'];
-    }
     notifyListeners();
   }
 
@@ -85,12 +91,18 @@ class ComplaintProvider with ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    debugPrint('[ComplaintProvider] Loading complaints...');
+    debugPrint('[ComplaintProvider] Filters - Status: $workStatus, Type: $complaintType, Search: $search');
+
     try {
       final response = await ComplaintService.getComplaints(
         workStatus: workStatus,
         complaintType: complaintType,
         search: search,
       );
+
+      debugPrint('[ComplaintProvider] Response received: ${response.keys}');
+      debugPrint('[ComplaintProvider] Success: ${response['success']}');
 
       // Handle both success format and direct data format
       if (response['success'] == true) {
@@ -99,28 +111,31 @@ class ComplaintProvider with ChangeNotifier {
         _complaints = (results as List)
             .map((json) => Complaint.fromJson(json))
             .toList();
+        debugPrint('[ComplaintProvider] Loaded ${_complaints.length} complaints (success format)');
       } else if (response.containsKey('results')) {
         // Direct data format (like your API)
         final results = response['results'] ?? [];
         _complaints = (results as List)
             .map((json) => Complaint.fromJson(json))
             .toList();
-        debugPrint('Loaded ${_complaints.length} complaints directly from API');
+        debugPrint('[ComplaintProvider] Loaded ${_complaints.length} complaints (direct format)');
       } else if (response['success'] == false) {
         // Error format
         _error = response['message'] ?? 'Failed to load complaints';
+        debugPrint('[ComplaintProvider] Error: $_error');
       } else {
         // Unknown format
         _error = 'Unexpected API response format';
-        debugPrint('Unknown API response: $response');
+        debugPrint('[ComplaintProvider] Unknown format. Full response: $response');
       }
     } catch (e) {
       _error = 'Error loading complaints: $e';
-      debugPrint('Exception in loadComplaints: $e');
+      debugPrint('[ComplaintProvider] Exception: $e');
     }
     
     _isLoading = false;
     notifyListeners();
+    debugPrint('[ComplaintProvider] Load complete. Total complaints: ${_complaints.length}');
   }
 
   Future<void> loadComplaintDetail(int id) async {
@@ -230,7 +245,17 @@ class ComplaintProvider with ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    await Future.wait([loadDashboardStats(), loadComplaints()]);
+    try {
+      await Future.wait([
+        loadDashboardStats(),
+        loadComplaints(),
+      ]);
+    } catch (e) {
+      debugPrint('Error during refresh: $e');
+      _error = 'Refresh failed';
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   void clearError() {

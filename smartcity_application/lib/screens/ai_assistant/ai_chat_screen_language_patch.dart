@@ -4,6 +4,7 @@
 
 // 1. ADD IMPORT at top
 import '../../providers/locale_provider.dart';
+import 'package:flutter/foundation.dart';
 
 // 2. UPDATE initState() method - ADD THESE LINES:
 @override
@@ -14,7 +15,7 @@ void initState() {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     final localeProvider = context.read<LocaleProvider>();
     _aiService.setAppLanguage(localeProvider.locale.languageCode);
-    print('🌐 AI language initialized to: ${localeProvider.locale.languageCode}');
+    debugPrint('🌐 AI language initialized to: ${localeProvider.locale.languageCode}');
   });
   
   _initializeChat();

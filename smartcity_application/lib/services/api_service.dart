@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'storage_service.dart';
 import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   static Future<String?> getToken() async {
@@ -27,11 +28,17 @@ class ApiService {
 
   static Future<Map<String, dynamic>> get(String url, {bool includeAuth = true}) async {
     try {
+      debugPrint('[ApiService GET] URL: $url');
       final headers = await _getHeaders(includeAuth: includeAuth);
+      debugPrint('[ApiService GET] Headers: $headers');
+      
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
       ).timeout(ApiConfig.receiveTimeout);
+
+      debugPrint('[ApiService GET] Status: ${response.statusCode}');
+      debugPrint('[ApiService GET] Body length: ${response.body.length}');
 
       if (response.statusCode == 401 && includeAuth) {
         return await _retryWithRefresh('GET', url);
@@ -39,7 +46,7 @@ class ApiService {
 
       return _handleResponse(response);
     } catch (e) {
-      print('[ApiService GET] ERROR: $e');
+      debugPrint('[ApiService GET] ERROR: $e');
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -63,7 +70,7 @@ class ApiService {
 
       return _handleResponse(response);
     } catch (e) {
-      print('[ApiService POST] URL: $url | ERROR: $e');
+      debugPrint('[ApiService POST] URL: $url | ERROR: $e');
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -122,7 +129,11 @@ class ApiService {
       if (method == 'PUT') return await put(url, body!);
       if (method == 'DELETE') return await delete(url);
     }
-    return {'success': false, 'message': 'Session expired. Please login again.'};
+    return {
+      'success': false,
+      'message': 'Unable to verify session right now. Please try again.',
+      'code': 'auth_refresh_failed',
+    };
   }
 
   static Future<Map<String, dynamic>> postMultipart(

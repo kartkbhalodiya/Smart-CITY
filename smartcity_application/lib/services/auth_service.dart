@@ -3,6 +3,7 @@ import '../config/api_config.dart';
 import '../models/user.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   static Future<Map<String, dynamic>> sendOtp(String email) async {
@@ -103,11 +104,11 @@ class AuthService {
         return true;
       }
     } catch (e) {
-      print('Token refresh failed: $e');
+      debugPrint('Token refresh failed: $e');
     }
-    
-    // If refresh fails, log out
-    await logout();
+
+    // Don't force logout on refresh failure (network/transient issues).
+    // Let the app keep current session data unless user explicitly logs out.
     return false;
   }
 

@@ -61,6 +61,10 @@ dependencies:
   flutter_tts: ^4.0.2
   audioplayers: ^6.1.0
   speech_to_text: ^7.3.0
+  record: ^6.2.0
+  flutter_audio_capture: ^1.1.12
+  flutter_pcm_sound: ^3.3.3
+  volume_controller: ^2.0.7
 
 dev_dependencies:
   flutter_test:
@@ -93,3 +97,4 @@ flutter:
     - assets/images/logo.png
     - assets/images/login_bg.jpg
     - assets/images/janhelp_icon.png
+    - web/favicon.png

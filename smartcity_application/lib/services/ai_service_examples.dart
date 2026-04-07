@@ -1,6 +1,7 @@
 // 🚀 Enhanced Conversational AI Service - Usage Examples
 
 import 'package:smartcity_application/services/conversational_ai_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Example 1: Basic Usage
 void basicUsageExample() async {
@@ -14,9 +15,9 @@ void basicUsageExample() async {
     language: 'en',
   );
   
-  print(response.message);
-  print('Buttons: ${response.buttons}');
-  print('Suggestions: ${response.suggestions}');
+  debugPrint(response.message);
+  debugPrint('Buttons: ${response.buttons}');
+  debugPrint('Suggestions: ${response.suggestions}');
 }
 
 /// Example 2: Quick Complaint Filing
@@ -35,8 +36,8 @@ void quickComplaintExample() async {
   // - Location: Main Street near hospital
   // - Urgency: High (keyword "dangerous")
   
-  print('AI detected category: ${response1.step}');
-  print('Urgency: ${response1.urgencyLevel}');
+  debugPrint('AI detected category: ${response1.step}');
+  debugPrint('Urgency: ${response1.urgencyLevel}');
 }
 
 /// Example 3: Urgent Issue Handling
@@ -51,9 +52,9 @@ void urgentIssueExample() async {
   
   // Check AI insights
   final insights = aiService.getAIInsights();
-  print('Sentiment: ${insights['sentiment']}'); // urgent
-  print('Urgency Score: ${insights['urgency_score']}'); // 0.9
-  print('Priority: ${insights['priority']}'); // Critical
+  debugPrint('Sentiment: ${insights['sentiment']}'); // urgent
+  debugPrint('Urgency Score: ${insights['urgency_score']}'); // 0.9
+  debugPrint('Priority: ${insights['priority']}'); // Critical
 }
 
 /// Example 4: Multi-step Conversation
@@ -66,43 +67,43 @@ void multiStepConversationExample() async {
     userName: 'Amit Patel',
     userCity: 'Ahmedabad',
   );
-  print('Step 1: ${response.message}');
+  debugPrint('Step 1: ${response.message}');
   
   // Step 2: Category selection
   response = await aiService.processInput('Water problem');
-  print('Step 2: ${response.message}');
+  debugPrint('Step 2: ${response.message}');
   
   // Step 3: Subcategory
   response = await aiService.processInput('No water supply');
-  print('Step 3: ${response.message}');
+  debugPrint('Step 3: ${response.message}');
   
   // Step 4: Description
   response = await aiService.processInput(
     'No water in our area for the last 3 days. Many families affected.',
   );
-  print('Step 4: ${response.message}');
+  debugPrint('Step 4: ${response.message}');
   
   // Step 5: Date
   response = await aiService.processInput('Started 3 days ago');
-  print('Step 5: ${response.message}');
+  debugPrint('Step 5: ${response.message}');
   
   // Step 6: Location
   response = await aiService.processInput('Sector 5, Block A, near park');
-  print('Step 6: ${response.message}');
+  debugPrint('Step 6: ${response.message}');
   
   // Step 7: Photo
   response = await aiService.processInput('Skip photo');
-  print('Step 7: ${response.message}');
+  debugPrint('Step 7: ${response.message}');
   
   // Step 8: Confirmation
   response = await aiService.processInput('Submit');
-  print('Step 8: ${response.message}');
+  debugPrint('Step 8: ${response.message}');
   
   // Get final complaint data
   final complaintData = aiService.getComplaintData();
-  print('Complaint ID: ${complaintData['complaint_id']}');
-  print('Department: ${complaintData['department']}');
-  print('Priority: ${complaintData['priority']}');
+  debugPrint('Complaint ID: ${complaintData['complaint_id']}');
+  debugPrint('Department: ${complaintData['department']}');
+  debugPrint('Priority: ${complaintData['priority']}');
 }
 
 /// Example 5: Getting AI Insights
@@ -118,13 +119,13 @@ void aiInsightsExample() async {
   // Get comprehensive AI insights
   final insights = aiService.getAIInsights();
   
-  print('=== AI Insights ===');
-  print('Sentiment: ${insights['sentiment']}'); // negative
-  print('Urgency Score: ${insights['urgency_score']}'); // 0.7
-  print('Urgency Level: ${insights['urgency_level']}'); // High
-  print('Priority: ${insights['priority']}'); // High
-  print('Estimated Resolution: ${insights['estimated_resolution']}'); // 1-2 days
-  print('AI Context: ${insights['ai_context']}');
+  debugPrint('=== AI Insights ===');
+  debugPrint('Sentiment: ${insights['sentiment']}'); // negative
+  debugPrint('Urgency Score: ${insights['urgency_score']}'); // 0.7
+  debugPrint('Urgency Level: ${insights['urgency_level']}'); // High
+  debugPrint('Priority: ${insights['priority']}'); // High
+  debugPrint('Estimated Resolution: ${insights['estimated_resolution']}'); // 1-2 days
+  debugPrint('AI Context: ${insights['ai_context']}');
 }
 
 /// Example 6: Conversation Statistics
@@ -139,13 +140,13 @@ void conversationStatsExample() async {
   // Get statistics
   final stats = aiService.getConversationStats();
   
-  print('=== Conversation Stats ===');
-  print('Duration: ${stats['duration_seconds']} seconds');
-  print('Messages: ${stats['messages_count']}');
-  print('Current Step: ${stats['current_step']}');
-  print('Sentiment: ${stats['sentiment']}');
-  print('Urgency Score: ${stats['urgency_score']}');
-  print('Retry Count: ${stats['retry_count']}');
+  debugPrint('=== Conversation Stats ===');
+  debugPrint('Duration: ${stats['duration_seconds']} seconds');
+  debugPrint('Messages: ${stats['messages_count']}');
+  debugPrint('Current Step: ${stats['current_step']}');
+  debugPrint('Sentiment: ${stats['sentiment']}');
+  debugPrint('Urgency Score: ${stats['urgency_score']}');
+  debugPrint('Retry Count: ${stats['retry_count']}');
 }
 
 /// Example 7: Smart Mode Toggle
@@ -162,7 +163,7 @@ void smartModeExample() async {
   );
   
   // Smart mode provides AI-enhanced suggestions
-  print('Smart suggestions: ${response.suggestions}');
+  debugPrint('Smart suggestions: ${response.suggestions}');
   
   // Disable smart mode for basic experience
   aiService.setSmartMode(false);
@@ -170,7 +171,7 @@ void smartModeExample() async {
   response = await aiService.processInput('Water issue');
   
   // Basic mode with standard suggestions
-  print('Basic suggestions: ${response.suggestions}');
+  debugPrint('Basic suggestions: ${response.suggestions}');
 }
 
 /// Example 8: Error Handling
@@ -186,17 +187,17 @@ void errorHandlingExample() async {
     );
     
     // AI provides helpful guidance
-    print(response.message); // "I didn't quite catch that..."
-    print('Helpful buttons: ${response.buttons}');
+    debugPrint(response.message); // "I didn't quite catch that..."
+    debugPrint('Helpful buttons: ${response.buttons}');
     
     // User tries again with unclear input
     response = await aiService.processInput('abc');
     
     // After retries, AI shows all categories
-    print('Retry count: ${aiService.getConversationStats()['retry_count']}');
+    debugPrint('Retry count: ${aiService.getConversationStats()['retry_count']}');
     
   } catch (e) {
-    print('Error: $e');
+    debugPrint('Error: $e');
   }
 }
 
@@ -208,23 +209,23 @@ void resetExample() async {
   await aiService.processInput('Hello', userName: 'User', userCity: 'City');
   await aiService.processInput('Road problem');
   
-  print('Before reset: ${aiService.getConversationStats()['messages_count']}');
+  debugPrint('Before reset: ${aiService.getConversationStats()['messages_count']}');
   
   // Reset conversation
   aiService.reset();
   
-  print('After reset: ${aiService.getConversationStats()['messages_count']}');
+  debugPrint('After reset: ${aiService.getConversationStats()['messages_count']}');
   
   // Start fresh
   final response = await aiService.processInput('Hi');
-  print('Fresh start: ${response.message}');
+  debugPrint('Fresh start: ${response.message}');
 }
 
 /// Example 10: Complete Complaint Flow with All Features
 void completeFlowExample() async {
   final aiService = ConversationalAIService();
   
-  print('=== Starting Complete Complaint Flow ===\n');
+  debugPrint('=== Starting Complete Complaint Flow ===\n');
   
   // Step 1: Natural language complaint
   var response = await aiService.processInput(
@@ -234,9 +235,9 @@ void completeFlowExample() async {
     language: 'en',
   );
   
-  print('AI Response: ${response.message}');
-  print('Detected Step: ${response.step}');
-  print('Urgency: ${response.urgencyLevel}\n');
+  debugPrint('AI Response: ${response.message}');
+  debugPrint('Detected Step: ${response.step}');
+  debugPrint('Urgency: ${response.urgencyLevel}\n');
   
   // AI automatically extracted:
   // - Category: Road
@@ -250,53 +251,53 @@ void completeFlowExample() async {
     response = await aiService.processInput(
       'The pothole is about 2 feet deep and 4 feet wide. Water accumulates and vehicles get damaged.',
     );
-    print('Description added: ${response.step}\n');
+    debugPrint('Description added: ${response.step}\n');
   }
   
   if (response.step == 'date') {
     response = await aiService.processInput('2 weeks ago');
-    print('Date confirmed: ${response.step}\n');
+    debugPrint('Date confirmed: ${response.step}\n');
   }
   
   if (response.step == 'location') {
     response = await aiService.processInput('Yes, MG Road near City Mall');
-    print('Location confirmed: ${response.step}\n');
+    debugPrint('Location confirmed: ${response.step}\n');
   }
   
   if (response.step == 'photo') {
     response = await aiService.processInput('Take Photo Now');
-    print('Photo option selected: ${response.step}\n');
+    debugPrint('Photo option selected: ${response.step}\n');
   }
   
   if (response.step == 'confirm') {
-    print('=== Final Summary ===');
-    print(response.message);
-    print('\nEstimated Resolution: ${response.estimatedResolutionTime}');
+    debugPrint('=== Final Summary ===');
+    debugPrint(response.message);
+    debugPrint('\nEstimated Resolution: ${response.estimatedResolutionTime}');
     
     response = await aiService.processInput('Submit Complaint');
   }
   
   if (response.step == 'submitted') {
-    print('\n=== Complaint Submitted ===');
+    debugPrint('\n=== Complaint Submitted ===');
     final complaintData = response.complaintData;
-    print('Complaint ID: ${complaintData?['complaint_id']}');
-    print('Department: ${complaintData?['department']}');
-    print('Priority: ${complaintData?['priority']}');
-    print('Tracking URL: ${complaintData?['tracking_url']}');
+    debugPrint('Complaint ID: ${complaintData?['complaint_id']}');
+    debugPrint('Department: ${complaintData?['department']}');
+    debugPrint('Priority: ${complaintData?['priority']}');
+    debugPrint('Tracking URL: ${complaintData?['tracking_url']}');
   }
   
   // Get final insights
-  print('\n=== AI Insights ===');
+  debugPrint('\n=== AI Insights ===');
   final insights = aiService.getAIInsights();
-  print('Sentiment: ${insights['sentiment']}');
-  print('Urgency Score: ${insights['urgency_score']}');
-  print('Priority: ${insights['priority']}');
+  debugPrint('Sentiment: ${insights['sentiment']}');
+  debugPrint('Urgency Score: ${insights['urgency_score']}');
+  debugPrint('Priority: ${insights['priority']}');
   
   // Get conversation stats
-  print('\n=== Conversation Stats ===');
+  debugPrint('\n=== Conversation Stats ===');
   final stats = aiService.getConversationStats();
-  print('Duration: ${stats['duration_seconds']} seconds');
-  print('Total Messages: ${stats['messages_count']}');
+  debugPrint('Duration: ${stats['duration_seconds']} seconds');
+  debugPrint('Total Messages: ${stats['messages_count']}');
 }
 
 /// Example 11: Testing Different Categories
@@ -326,39 +327,39 @@ void categoryTestingExample() async {
     );
     
     final data = aiService.getComplaintData();
-    print('Input: $testCase');
-    print('Detected Category: ${data['category']}');
-    print('Urgency: ${aiService.getAIInsights()['urgency_level']}');
-    print('---');
+    debugPrint('Input: $testCase');
+    debugPrint('Detected Category: ${data['category']}');
+    debugPrint('Urgency: ${aiService.getAIInsights()['urgency_level']}');
+    debugPrint('---');
   }
 }
 
 /// Main function to run examples
 void main() async {
-  print('🚀 Enhanced Conversational AI Service - Examples\n');
+  debugPrint('🚀 Enhanced Conversational AI Service - Examples\n');
   
   // Run examples
-  print('Example 1: Basic Usage');
+  debugPrint('Example 1: Basic Usage');
   await basicUsageExample();
-  print('\n---\n');
+  debugPrint('\n---\n');
   
-  print('Example 2: Quick Complaint');
+  debugPrint('Example 2: Quick Complaint');
   await quickComplaintExample();
-  print('\n---\n');
+  debugPrint('\n---\n');
   
-  print('Example 3: Urgent Issue');
+  debugPrint('Example 3: Urgent Issue');
   await urgentIssueExample();
-  print('\n---\n');
+  debugPrint('\n---\n');
   
-  print('Example 5: AI Insights');
+  debugPrint('Example 5: AI Insights');
   await aiInsightsExample();
-  print('\n---\n');
+  debugPrint('\n---\n');
   
-  print('Example 6: Conversation Stats');
+  debugPrint('Example 6: Conversation Stats');
   await conversationStatsExample();
-  print('\n---\n');
+  debugPrint('\n---\n');
   
   // Run complete flow
-  print('\n=== COMPLETE FLOW EXAMPLE ===\n');
+  debugPrint('\n=== COMPLETE FLOW EXAMPLE ===\n');
   await completeFlowExample();
 }

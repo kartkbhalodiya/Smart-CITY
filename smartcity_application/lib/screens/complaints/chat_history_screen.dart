@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/conversational_ai_service.dart';
-import '../l10n/app_strings.dart';
+import '../../services/conversational_ai_service.dart';
 
 class ChatHistoryScreen extends StatefulWidget {
   const ChatHistoryScreen({super.key});
@@ -275,7 +274,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E66F5).withOpacity(0.1),
+              color: const Color(0xFF1E66F5).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -359,7 +358,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -372,8 +371,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
           height: 48,
           decoration: BoxDecoration(
             color: isCompleted 
-                ? const Color(0xFF10B981).withOpacity(0.1)
-                : const Color(0xFF1E66F5).withOpacity(0.1),
+                ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                : const Color(0xFF1E66F5).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(

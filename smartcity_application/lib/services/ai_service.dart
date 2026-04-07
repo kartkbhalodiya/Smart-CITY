@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../config/ai_training_data.dart';
 import '../config/api_config.dart';
 import 'storage_service.dart';
+import 'package:flutter/foundation.dart';
 
 class AssistantReply {
   final String response;
@@ -432,16 +433,16 @@ class AIService {
     // Generate unique session ID if not exists
     if (_sessionId.isEmpty || _sessionId == 'default') {
       _sessionId = 'flutter_${DateTime.now().millisecondsSinceEpoch}_${input.hashCode.abs()}';
-      print('Generated new session ID: $_sessionId');
+      debugPrint('Generated new session ID: $_sessionId');
     }
 
-    print('Current state: $_conversationState');
-    print('Input: $input');
-    print('Is greeting only: ${_isGreetingOnly(input)}');
+    debugPrint('Current state: $_conversationState');
+    debugPrint('Input: $input');
+    debugPrint('Is greeting only: ${_isGreetingOnly(input)}');
 
     // Check for greeting BEFORE adding to history or calling LLM
     if (_isGreetingOnly(input)) {
-      print('Detected as greeting-only, showing welcome message');
+      debugPrint('Detected as greeting-only, showing welcome message');
       _history.add({'role': 'user', 'content': input});
       _currentLanguage = _detectLanguage(input);
       _userMood = _detectMood(input);
@@ -461,11 +462,11 @@ class AIService {
     // Otherwise, use app's selected language for response
     if (detectedLanguage == 'hinglish' || detectedLanguage == 'hi' || detectedLanguage == 'gu') {
       _currentLanguage = detectedLanguage;
-      print('🗣️ User typed in: $detectedLanguage');
+      debugPrint('🗣️ User typed in: $detectedLanguage');
     } else {
       // User typed in English, use app's selected language for response
       _currentLanguage = _appLanguage;
-      print('🌐 Using app language: $_appLanguage');
+      debugPrint('🌐 Using app language: $_appLanguage');
     }
     
     _userMood = _detectMood(input);
@@ -624,12 +625,12 @@ class AIService {
     try {
       final llmResult = await _callOpenRouterLLM(input);
       if (llmResult != null) {
-        print('OpenRouter LLM prediction successful');
+        debugPrint('OpenRouter LLM prediction successful');
         return _buildReplyFromLLM(llmResult, input);
       }
-      print('OpenRouter LLM returned null, falling back to local analysis');
+      debugPrint('OpenRouter LLM returned null, falling back to local analysis');
     } catch (e) {
-      print('OpenRouter LLM failed: $e, falling back to local analysis');
+      debugPrint('OpenRouter LLM failed: $e, falling back to local analysis');
     }
     
     // Fallback to local offline analysis
@@ -2096,7 +2097,7 @@ class AIService {
   // Call OpenRouter API with Qwen model
   Future<Map<String, dynamic>?> _callOpenRouterLLM(String text) async {
     try {
-      print('Calling OpenRouter API with text: $text');
+      debugPrint('Calling OpenRouter API with text: $text');
       
       final response = await http.post(
         Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
@@ -2146,11 +2147,11 @@ Return ONLY valid JSON, no other text.'''
         }),
       ).timeout(const Duration(seconds: 15));
 
-      print('OpenRouter response status: ${response.statusCode}');
-      print('OpenRouter response body: ${response.body}');
+      debugPrint('OpenRouter response status: ${response.statusCode}');
+      debugPrint('OpenRouter response body: ${response.body}');
 
       if (response.statusCode != 200) {
-        print('HTTP error: ${response.statusCode}');
+        debugPrint('HTTP error: ${response.statusCode}');
         return null;
       }
 
@@ -2158,11 +2159,11 @@ Return ONLY valid JSON, no other text.'''
       final content = data['choices']?[0]?['message']?['content'] as String?;
       
       if (content == null) {
-        print('No content in response');
+        debugPrint('No content in response');
         return null;
       }
 
-      print('OpenRouter content: $content');
+      debugPrint('OpenRouter content: $content');
 
       // Parse JSON response from the model
       try {
@@ -2175,15 +2176,15 @@ Return ONLY valid JSON, no other text.'''
         }
         
         final result = jsonDecode(jsonStr) as Map<String, dynamic>;
-        print('Parsed result: $result');
+        debugPrint('Parsed result: $result');
         return result;
       } catch (e) {
-        print('Error parsing JSON response: $e');
+        debugPrint('Error parsing JSON response: $e');
         return null;
       }
     } catch (e, stackTrace) {
-      print('OpenRouter API error: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('OpenRouter API error: $e');
+      debugPrint('Stack trace: $stackTrace');
       return null;
     }
   }
@@ -2412,7 +2413,7 @@ Return ONLY valid JSON, no other text.'''
     _dateProvided = false;
     _finalSummary = {};
     _responseCache.clear();
-    print('AI Service reset - new session will be created');
+    debugPrint('AI Service reset - new session will be created');
   }
 
   /// Set the app's selected language for AI responses
@@ -2420,7 +2421,7 @@ Return ONLY valid JSON, no other text.'''
     if (['en', 'hi', 'gu'].contains(languageCode)) {
       _appLanguage = languageCode;
       _currentLanguage = languageCode;
-      print('✅ App language set to: $languageCode');
+      debugPrint('✅ App language set to: $languageCode');
     }
   }
 }

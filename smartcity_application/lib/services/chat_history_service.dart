@@ -9,6 +9,8 @@ class ChatSession {
   final List<Map<String, dynamic>> messages;
   final String? complaintId;
   final bool isCompleted;
+  final String sessionType;
+  final bool canDelete;
 
   ChatSession({
     required this.id,
@@ -18,6 +20,8 @@ class ChatSession {
     required this.messages,
     this.complaintId,
     this.isCompleted = false,
+    this.sessionType = 'chat',
+    this.canDelete = true,
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,6 +32,8 @@ class ChatSession {
         'messages': messages,
         'complaintId': complaintId,
         'isCompleted': isCompleted,
+        'sessionType': sessionType,
+        'canDelete': canDelete,
       };
 
   factory ChatSession.fromJson(Map<String, dynamic> json) => ChatSession(
@@ -38,6 +44,8 @@ class ChatSession {
         messages: List<Map<String, dynamic>>.from(json['messages'] ?? []),
         complaintId: json['complaintId'],
         isCompleted: json['isCompleted'] ?? false,
+        sessionType: json['sessionType'] ?? 'chat',
+        canDelete: json['canDelete'] ?? true,
       );
 
   String get displayTime {

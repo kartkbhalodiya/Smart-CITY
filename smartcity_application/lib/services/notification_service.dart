@@ -10,6 +10,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
+  static const int _liveCallNotificationId = 7011;
 
   static Future<void> init() async {
     const androidSettings =
@@ -48,6 +49,40 @@ class NotificationService {
       const NotificationDetails(android: androidDetails),
       payload: AppRoutes.aiChat,
     );
+  }
+
+  static Future<void> showLiveCallStatus({
+    required String title,
+    required String body,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'ai_live_call',
+      'AI Live Call',
+      channelDescription: 'Ongoing live AI call status',
+      importance: Importance.max,
+      priority: Priority.high,
+      ongoing: true,
+      onlyAlertOnce: false,
+      showWhen: true,
+      autoCancel: false,
+      enableVibration: false,
+      enableLights: false,
+      playSound: false,
+      category: AndroidNotificationCategory.call,
+      visibility: NotificationVisibility.public,
+    );
+
+    await _plugin.show(
+      _liveCallNotificationId,
+      title,
+      body,
+      const NotificationDetails(android: androidDetails),
+      payload: AppRoutes.aiChat,
+    );
+  }
+
+  static Future<void> cancelLiveCallStatus() async {
+    await _plugin.cancel(_liveCallNotificationId);
   }
 
   static void _handleNotificationTap(String? payload) {

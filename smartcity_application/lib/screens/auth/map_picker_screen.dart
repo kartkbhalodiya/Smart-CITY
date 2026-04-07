@@ -148,7 +148,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             color: _primary,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: [BoxShadow(color: _primary.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+                            boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: const Icon(Icons.location_on, color: Colors.white, size: 18),
                         ),
@@ -174,7 +174,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       child: CircularProgressIndicator(
                         strokeWidth: 4,
                         valueColor: const AlwaysStoppedAnimation(_primary),
-                        backgroundColor: _primary.withOpacity(0.15),
+                        backgroundColor: _primary.withValues(alpha: 0.15),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -216,7 +216,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8)],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8)],
                       ),
                       child: const Icon(Icons.arrow_back_rounded, size: 20, color: Color(0xFF0f172a)),
                     ),
@@ -228,7 +228,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 8)],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8)],
                       ),
                       child: Text(
                         AppStrings.t(context, 'Pick Location on Map'),
@@ -249,7 +249,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, -4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, -4))],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -267,7 +267,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: _primary.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: _primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
                         child: const Icon(Icons.location_pin, color: _primary, size: 18),
                       ),
                       const SizedBox(width: 10),
