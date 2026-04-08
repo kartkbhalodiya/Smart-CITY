@@ -220,6 +220,41 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
                   'preferred_contact_phone', 'preferred_contact_email', 
                   'preferred_contact_sms', 'media_files', 'guest_name', 'guest_email', 'guest_phone']
 
+    def to_internal_value(self, data):
+        data = data.copy() if hasattr(data, 'copy') else data
+        
+        # Map complaint_type to valid backend keys before DRF validation rejects it
+        complaint_type_raw = str(data.get('complaint_type', '')).strip().lower()
+        if complaint_type_raw:
+            type_map = {
+                'electricity': 'electricity',
+                'road/pothole': 'road',
+                'road': 'road',
+                'pothole': 'road',
+                'water supply': 'water',
+                'water': 'water',
+                'garbage/sanitation': 'garbage',
+                'garbage': 'garbage',
+                'drainage/sewage': 'drainage',
+                'drainage': 'drainage',
+                'traffic': 'traffic',
+                'police': 'police',
+                'construction': 'construction',
+                'illegal': 'illegal',
+                'transportation': 'transportation',
+                'cyber': 'cyber',
+            }
+            
+            matched_type = 'other'
+            for k, v in type_map.items():
+                if k in complaint_type_raw:
+                    matched_type = v
+                    break
+            
+            data['complaint_type'] = matched_type
+            
+        return super().to_internal_value(data)
+
     def validate(self, attrs):
         raw = getattr(self, 'initial_data', {})
 
