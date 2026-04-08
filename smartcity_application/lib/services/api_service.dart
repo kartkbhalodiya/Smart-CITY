@@ -143,31 +143,72 @@ class ApiService {
     bool includeAuth = true,
   }) async {
     try {
-      final token = includeAuth ? await StorageService.getToken() : null;
-      final request = http.MultipartRequest('POST', Uri.parse(url));
-
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-
-      // Add fields
-      request.fields.addAll(fields);
-
-      // Add files
-      for (var file in files) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'media_files',
-          file.path,
-        ));
-      }
-
-      final streamedResponse = await request.send().timeout(ApiConfig.receiveTimeout);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      return _handleResponse(response);
+      return await _postMultipartInternal(
+        url,
+        fields,
+        files,
+        includeAuth: includeAuth,
+        allowRetry: true,
+      );
     } catch (e) {
       return {'success': false, 'message': 'Upload error: $e'};
     }
+  }
+
+  static Future<Map<String, dynamic>> _postMultipartInternal(
+    String url,
+    Map<String, String> fields,
+    List<File> files, {
+    required bool includeAuth,
+    required bool allowRetry,
+  }) async {
+    final token = includeAuth ? await StorageService.getToken() : null;
+    final request = http.MultipartRequest('POST', Uri.parse(url));
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.fields.addAll(fields);
+
+    for (final file in files) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'media_files',
+        file.path,
+      ));
+    }
+
+    final streamedResponse = await request.send().timeout(ApiConfig.receiveTimeout);
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 401 && includeAuth && allowRetry) {
+      debugPrint('[ApiService] 401 detected. Attempting token refresh...');
+      final refreshed = await AuthService.refreshToken();
+      if (refreshed) {
+        debugPrint('[ApiService] Refresh succeeded. Retrying request with new token.');
+        return _postMultipartInternal(
+          url,
+          fields,
+          files,
+          includeAuth: includeAuth,
+          allowRetry: false,
+        );
+      } else {
+        debugPrint('[ApiService] Refresh failed. Attempting Guest Fallback...');
+        // If refresh fails, try one last time WITHOUT authentication.
+        // This allows endpoints like AI complaint submission to succeed as 'guest'
+        // instead of failing terminal with 401.
+        return _postMultipartInternal(
+          url,
+          fields,
+          files,
+          includeAuth: false,
+          allowRetry: false,
+        );
+      }
+    }
+
+    return _handleResponse(response);
   }
 
   static Map<String, dynamic> _handleResponse(http.Response response) {

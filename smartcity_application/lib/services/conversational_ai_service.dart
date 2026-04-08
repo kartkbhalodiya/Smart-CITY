@@ -36,6 +36,7 @@ class ConversationalAIService {
   DateTime _conversationStartTime = DateTime.now();
   Map<String, dynamic>? _userProfile;
   String? _currentChatId;
+  final bool _strictBackendTaxonomy = true;
   bool _backendCategoriesLoadAttempted = false;
   List<Map<String, String>> _backendCategories = [];
   final Map<String, List<String>> _backendSubcategories = {};
@@ -1054,6 +1055,10 @@ class ConversationalAIService {
           .toList();
     }
 
+    if (_strictBackendTaxonomy) {
+      return [];
+    }
+
     return categories.values
         .map((c) => {
               'key': c['key'],
@@ -1097,7 +1102,7 @@ class ConversationalAIService {
 
   bool _hasCategoryKey(String key) {
     if (key.trim().isEmpty) return false;
-    if (categories.containsKey(key)) return true;
+    if (!_strictBackendTaxonomy && categories.containsKey(key)) return true;
     return _backendCategories.any((category) => category['key'] == key);
   }
 
@@ -1204,6 +1209,8 @@ class ConversationalAIService {
     if (backendSubs != null && backendSubs.isNotEmpty) {
       return backendSubs;
     }
+
+    if (_strictBackendTaxonomy) return [];
 
     final subs = subcategories[categoryKey];
     if (subs == null) return ['Other'];
@@ -1542,6 +1549,23 @@ Rules:
       await _ensureBackendCategoriesLoaded();
     }
 
+    if (_strictBackendTaxonomy && _backendCategories.isEmpty) {
+      return ConversationResponse(
+        message: _localize(
+          'Category service is syncing from backend. Please try again in a few seconds.',
+          'कैटेगरी सेवा बैकएंड से सिंक हो रही है। कृपया कुछ सेकंड बाद फिर कोशिश करें।',
+          'કેટેગરી સેવા બેકએન્ડમાંથી સિંક થઈ રહી છે. કૃપા કરીને થોડા સેકન્ડ પછી ફરી પ્રયાસ કરો.',
+          'Category service backend se sync ho rahi hai. Please kuch second baad try karo.',
+        ),
+        buttons: [
+          _localize('Retry', 'फिर कोशिश करें', 'ફરી પ્રયાસ કરો', 'Retry'),
+        ],
+        suggestions: [],
+        step: _currentStep,
+        showInput: true,
+      );
+    }
+
     // IMPORTANT: Don't check for new issues when user is providing details for current complaint
     // Only check when user is in early stages (greeting, category selection)
     final isProvidingDetails = _currentStep == 'problem' || 
@@ -1834,6 +1858,20 @@ Main kai languages mein help kar sakta hun!''',
     }
 
     final categoryButtons = _getCategories().map((c) => '${c['emoji']} ${c['name']}').toList();
+    if (categoryButtons.isEmpty) {
+      return ConversationResponse(
+        message: _localize(
+          'I could not load complaint categories from backend yet. Please tap retry.',
+          'मैं अभी बैकएंड से शिकायत श्रेणियां लोड नहीं कर पाया। कृपया रीट्राई दबाएं।',
+          'હું હજી બેકએન્ડમાંથી ફરિયાદ કેટેગરી લોડ કરી શક્યો નથી. કૃપા કરીને રિટ્રાય દબાવો.',
+          'Main abhi backend se complaint categories load nahi kar paaya. Please retry dabao.',
+        ),
+        buttons: [_localize('Retry', 'फिर कोशिश करें', 'ફરી પ્રયાસ કરો', 'Retry')],
+        suggestions: [],
+        step: 'greeting',
+        showInput: true,
+      );
+    }
     
     debugPrint('📝 Showing ${categoryButtons.length} categories to user');
 
@@ -1915,6 +1953,22 @@ ${_localize(
       );
     }
 
+    final availableCategories = _getCategories();
+    if (_strictBackendTaxonomy && availableCategories.isEmpty) {
+      return ConversationResponse(
+        message: _localize(
+          'Backend categories are not available right now. Please retry.',
+          'बैकएंड कैटेगरी अभी उपलब्ध नहीं हैं। कृपया फिर कोशिश करें।',
+          'બેકએન્ડ કેટેગરી હાલ ઉપલબ્ધ નથી. કૃપા કરીને ફરી પ્રયાસ કરો.',
+          'Backend categories abhi available nahi hain. Please retry karo.',
+        ),
+        buttons: [_localize('Retry', 'फिर कोशिश करें', 'ફરી પ્રયાસ કરો', 'Retry')],
+        suggestions: [],
+        step: 'category',
+        showInput: true,
+      );
+    }
+
     final detectedCategory = await _detectCategoryWithAI(userInput);
     
     if (detectedCategory != null) {
@@ -1961,6 +2015,20 @@ ${_localize(
       _currentStep = 'subcategory';
       
       final subs = _getSubcategories(detectedCategory['key']!);
+      if (_strictBackendTaxonomy && subs.isEmpty) {
+        return ConversationResponse(
+          message: _localize(
+            'Subcategories for this category are missing in backend. Please contact admin.',
+            'इस कैटेगरी की सबकैटेगरी बैकएंड में उपलब्ध नहीं है। कृपया एडमिन से संपर्क करें।',
+            'આ કેટેગરી માટે સબકેટેગરી બેકએન્ડમાં ઉપલબ્ધ નથી. કૃપા કરીને એડમિનનો સંપર્ક કરો.',
+            'Is category ki subcategories backend mein available nahi hain. Please admin se contact karo.',
+          ),
+          buttons: [_localize('Choose Another Category', 'दूसरी कैटेगरी चुनें', 'બીજી કેટેગરી પસંદ કરો', 'Choose Another Category')],
+          suggestions: [],
+          step: 'category',
+          showInput: true,
+        );
+      }
       
       String empathyNote = '';
       if (_urgencyScore > 0.7) {
@@ -2057,6 +2125,20 @@ ${_localize('Or just pick from these common issues:', 'या इन साम�
     if (categoryKey != null && matchedSub == null && looksDetailedComplaint) {
       _complaintData['raw_description'] = userInput;
       final subs = _getSubcategories(categoryKey);
+      if (_strictBackendTaxonomy && subs.isEmpty) {
+        return ConversationResponse(
+          message: _localize(
+            'No backend subcategories found for the selected category. Please choose another category.',
+            'चयनित कैटेगरी के लिए बैकएंड सबकैटेगरी नहीं मिली। कृपया दूसरी कैटेगरी चुनें।',
+            'પસંદ કરેલી કેટેગરી માટે બેકએન્ડ સબકેટેગરી મળી નથી. કૃપા કરીને બીજી કેટેગરી પસંદ કરો.',
+            'Selected category ke liye backend subcategories nahi mili. Please dusri category choose karo.',
+          ),
+          buttons: [_localize('Back to Categories', 'कैटेगरी पर वापस जाएं', 'કેટેગરી પર પાછા જાઓ', 'Back to Categories')],
+          suggestions: [],
+          step: 'category',
+          showInput: true,
+        );
+      }
       return ConversationResponse(
         message: _localize(
           'I understood the complaint details, but I still need the closest issue type before I save it correctly. Please choose the best matching subcategory.',
@@ -3288,28 +3370,71 @@ Respond: VALID or INVALID|reason''';
   
   /// Get keywords for category detection
   List<String> _getCategoryKeywords(String categoryKey) {
+    final dynamicKeywords = <String>{};
+    final categoryMeta = _getCategories().firstWhere(
+      (category) => category['key'] == categoryKey,
+      orElse: () => const <String, String>{},
+    );
+    final categoryName = (categoryMeta['name'] ?? '').toString().trim();
+    if (categoryName.isNotEmpty) {
+      dynamicKeywords.add(_normalizeTextForMatching(categoryName));
+      for (final token in _extractMeaningfulTokens(categoryName)) {
+        dynamicKeywords.add(token);
+      }
+    }
+    for (final subcategory in _getSubcategories(categoryKey)) {
+      final normalizedSubcategory = _normalizeTextForMatching(subcategory);
+      if (normalizedSubcategory.isNotEmpty) {
+        dynamicKeywords.add(normalizedSubcategory);
+      }
+      for (final token in _extractMeaningfulTokens(subcategory)) {
+        dynamicKeywords.add(token);
+      }
+    }
+
     switch (categoryKey) {
       case 'road':
-        return ['road', 'pothole', 'khado', 'sadak', 'rasta', 'street'];
+        dynamicKeywords.addAll(['road', 'pothole', 'khado', 'sadak', 'rasta', 'street']);
+        break;
       case 'water':
-        return ['water', 'pani', 'paani', 'tap', 'supply'];
+        dynamicKeywords.addAll(['water', 'pani', 'paani', 'tap', 'supply']);
+        break;
       case 'electricity':
-        return ['electricity', 'power', 'light', 'bijli', 'current'];
+        dynamicKeywords.addAll(['electricity', 'power', 'light', 'bijli', 'current']);
+        break;
       case 'garbage':
-        return ['garbage', 'trash', 'kachra', 'waste', 'dustbin'];
+        dynamicKeywords.addAll(['garbage', 'trash', 'kachra', 'waste', 'dustbin']);
+        break;
       case 'drainage':
-        return ['drain', 'sewage', 'nali', 'gutter'];
+        dynamicKeywords.addAll(['drain', 'sewage', 'nali', 'gutter']);
+        break;
       case 'traffic':
-        return ['traffic', 'signal', 'jam'];
+        dynamicKeywords.addAll(['traffic', 'signal', 'jam']);
+        break;
       case 'police':
-        return ['police', 'theft', 'stolen', 'chorai', 'chori', 'robbery'];
+        dynamicKeywords.addAll(['police', 'theft', 'stolen', 'chorai', 'chori', 'robbery']);
+        break;
       case 'construction':
-        return ['construction', 'building'];
+        dynamicKeywords.addAll(['construction', 'building']);
+        break;
       case 'cyber':
-        return ['cyber', 'fraud', 'scam', 'hacked'];
+        dynamicKeywords.addAll(['cyber', 'fraud', 'scam', 'hacked']);
+        break;
       default:
-        return [categoryKey];
+        dynamicKeywords.add(_normalizeTextForMatching(categoryKey));
+        break;
     }
+    return dynamicKeywords.where((keyword) => keyword.trim().isNotEmpty).toList();
+  }
+
+  List<String> _extractMeaningfulTokens(String input) {
+    final normalized = _normalizeTextForMatching(input);
+    if (normalized.isEmpty) return const <String>[];
+    return normalized
+        .split(RegExp(r'[^a-z0-9\u0900-\u097F\u0A80-\u0AFF]+'))
+        .map((token) => token.trim())
+        .where((token) => token.length >= 3)
+        .toList();
   }
   
   /// Get current step progress description
@@ -3343,6 +3468,59 @@ Respond: VALID or INVALID|reason''';
   Map<String, String>? _fuzzyMatchCategory(String input) {
     final lower = input.toLowerCase();
     final normalizedInput = _normalizeTextForMatching(input);
+
+    final categoryScores = <String, int>{};
+    for (final category in _getCategories()) {
+      final key = (category['key'] ?? '').toString().trim();
+      final name = (category['name'] ?? '').toString().trim();
+      if (key.isEmpty) continue;
+
+      var score = 0;
+      final normalizedKey = _normalizeTextForMatching(key);
+      final normalizedName = _normalizeTextForMatching(name);
+
+      if (normalizedKey.isNotEmpty && normalizedInput.contains(normalizedKey)) {
+        score += 5;
+      }
+      if (normalizedName.isNotEmpty) {
+        if (normalizedInput == normalizedName) {
+          score += 8;
+        } else if (normalizedInput.contains(normalizedName) ||
+            normalizedName.contains(normalizedInput)) {
+          score += 5;
+        }
+      }
+
+      for (final keyword in _getCategoryKeywords(key)) {
+        final normalizedKeyword = _normalizeTextForMatching(keyword);
+        if (normalizedKeyword.isEmpty) continue;
+        if (normalizedInput == normalizedKeyword) {
+          score += 6;
+        } else if (normalizedInput.contains(normalizedKeyword)) {
+          score += 2;
+        }
+      }
+
+      if (score > 0) {
+        categoryScores[key] = score;
+      }
+    }
+
+    if (categoryScores.isNotEmpty) {
+      final bestEntry = categoryScores.entries.reduce(
+        (a, b) => a.value >= b.value ? a : b,
+      );
+      if (bestEntry.value >= 4) {
+        final bestCategory = _findCategoryByKey(bestEntry.key);
+        if (bestCategory != null) {
+          return bestCategory;
+        }
+      }
+    }
+
+    if (_strictBackendTaxonomy) {
+      return null;
+    }
     
     // Check each category for matches
     for (var entry in categories.entries) {

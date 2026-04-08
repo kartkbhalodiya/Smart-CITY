@@ -109,16 +109,27 @@ class AuthService {
         includeAuth: false,
       );
 
+      // SimpleJWT returns {'access': '...', 'refresh': '...'} when rotating
       if (response['access'] != null) {
         await StorageService.saveToken(response['access']);
+        
+        // Save new refresh token if rotation is enabled on backend
+        if (response['refresh'] != null) {
+          await StorageService.saveRefreshToken(response['refresh']);
+        }
         return true;
+      }
+
+      // If refresh token is explicitly rejected as invalid/blacklisted
+      if (response['success'] == false && 
+          (response['code'] == 'token_not_valid' || response['message']?.toString().toLowerCase().contains('invalid') == true)) {
+        debugPrint('Refresh token is invalid/expired. Clearing session tokens.');
+        await StorageService.clearAuthTokens();
       }
     } catch (e) {
       debugPrint('Token refresh failed: $e');
     }
 
-    // Don't force logout on refresh failure (network/transient issues).
-    // Let the app keep current session data unless user explicitly logs out.
     return false;
   }
 

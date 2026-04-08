@@ -209,9 +209,9 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     
-    preferred_contact_phone = serializers.BooleanField(required=False, default=False)
-    preferred_contact_email = serializers.BooleanField(required=False, default=False)
-    preferred_contact_sms = serializers.BooleanField(required=False, default=False)
+    preferred_contact_phone = serializers.CharField(required=False, allow_blank=True, default='')
+    preferred_contact_email = serializers.CharField(required=False, allow_blank=True, default='')
+    preferred_contact_sms = serializers.CharField(required=False, allow_blank=True, default='')
     
     class Meta:
         model = Complaint
@@ -258,6 +258,39 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
             if address:
                 attrs['address'] = address
 
+        complaint_type = str(
+            attrs.get('complaint_type') or pick('complaint_type', 'category_key', 'category')
+        ).strip().lower()
+        complaint_type_map = {
+            'police': 'police',
+            'police complaint': 'police',
+            'traffic': 'traffic',
+            'traffic complaint': 'traffic',
+            'construction': 'construction',
+            'construction complaint': 'construction',
+            'water': 'water',
+            'water supply': 'water',
+            'electricity': 'electricity',
+            'garbage': 'garbage',
+            'garbage/sanitation': 'garbage',
+            'garbage sanitation': 'garbage',
+            'road': 'road',
+            'road/pothole': 'road',
+            'road pothole': 'road',
+            'drainage': 'drainage',
+            'drainage/sewage': 'drainage',
+            'drainage sewage': 'drainage',
+            'illegal': 'illegal',
+            'illegal activities': 'illegal',
+            'transportation': 'transportation',
+            'cyber': 'cyber',
+            'cyber crime': 'cyber',
+            'other': 'other',
+            'other complaint': 'other',
+        }
+        if complaint_type:
+            attrs['complaint_type'] = complaint_type_map.get(complaint_type, complaint_type)
+
         language = str(attrs.get('language', '')).strip().lower()
         language_map = {
             'english': 'en',
@@ -296,6 +329,15 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
                     continue
 
             attrs['date_of_occurrence'] = parsed_date
+
+        # Coerce preferred_contact_* from string → bool
+        # (multipart forms always send strings; model stores BooleanField)
+        def _to_bool(val):
+            return str(val).strip().lower() in {'1', 'true', 'yes'}
+
+        attrs['preferred_contact_phone'] = _to_bool(attrs.get('preferred_contact_phone', ''))
+        attrs['preferred_contact_email'] = _to_bool(attrs.get('preferred_contact_email', ''))
+        attrs['preferred_contact_sms'] = _to_bool(attrs.get('preferred_contact_sms', ''))
 
         return attrs
     

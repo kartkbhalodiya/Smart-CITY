@@ -45,6 +45,17 @@ class StorageService {
     await _secureStorage.delete(key: _refreshTokenKey);
   }
 
+  static Future<void> clearAuthTokens() async {
+    await deleteToken();
+    await deleteRefreshToken();
+  }
+
+  static Future<void> clearUserSession() async {
+    await clearAuthTokens();
+    await deleteUserData();
+    await setLoggedIn(false);
+  }
+
   // User Data
   static Future<void> saveUserData(String userData) async {
     try {

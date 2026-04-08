@@ -67,6 +67,123 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
   }
 
+  double _readComplaintCoordinate(Map<String, dynamic> complaintData, String key) {
+    final raw = complaintData[key];
+    if (raw is num) {
+      return raw.toDouble();
+    }
+    return double.tryParse((raw ?? '').toString().trim()) ?? 0.0;
+  }
+
+  Map<String, dynamic>? _asStringDynamicMap(dynamic value) {
+    if (value is Map) {
+      return value.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return null;
+  }
+
+  String _pickFirstNonEmpty(List<dynamic> values, {String fallback = ''}) {
+    for (final value in values) {
+      final text = (value ?? '').toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    return fallback;
+  }
+
+  String _resolveComplaintTypeKey(Map<String, dynamic> complaintData) {
+    final rawType = _pickFirstNonEmpty([
+      complaintData['category_key'],
+      complaintData['complaint_type'],
+      complaintData['category'],
+    ]).toLowerCase();
+    final normalized = rawType.trim();
+
+    const typeMap = {
+      'police complaint': 'police',
+      'traffic complaint': 'traffic',
+      'construction complaint': 'construction',
+      'water supply': 'water',
+      'garbage/sanitation': 'garbage',
+      'road/pothole': 'road',
+      'drainage/sewage': 'drainage',
+      'illegal activities': 'illegal',
+      'cyber crime': 'cyber',
+      'other complaint': 'other',
+    };
+
+    return typeMap[normalized] ?? normalized;
+  }
+
+  Map<String, String> _extractSubmittedComplaintDetails(
+    Map<String, dynamic> complaintData,
+    Map<String, dynamic>? complaintResponse,
+  ) {
+    final departmentData = _asStringDynamicMap(complaintResponse?['assigned_department']);
+
+    return {
+      'category': _pickFirstNonEmpty([
+        complaintResponse?['complaint_type_display'],
+        complaintData['category'],
+        complaintResponse?['complaint_type'],
+        complaintData['category_key'],
+      ], fallback: 'Unknown'),
+      'subcategory': _pickFirstNonEmpty([
+        complaintResponse?['subcategory'],
+        complaintData['subcategory_display'],
+        complaintData['subcategory'],
+      ], fallback: 'Unknown'),
+      'department': _pickFirstNonEmpty([
+        departmentData?['name'],
+        complaintData['assigned_department'],
+        complaintData['department'],
+      ], fallback: 'Assignment in progress'),
+      'departmentPhone': _pickFirstNonEmpty([
+        departmentData?['phone'],
+        complaintData['department_phone'],
+      ]),
+      'departmentEmail': _pickFirstNonEmpty([
+        departmentData?['email'],
+        complaintData['department_email'],
+      ]),
+      'priority': _pickFirstNonEmpty([
+        complaintResponse?['priority_display'],
+        complaintData['priority'],
+      ], fallback: 'Normal'),
+      'slaHours': _pickFirstNonEmpty([
+        departmentData?['sla_hours'],
+      ], fallback: '48'),
+    };
+  }
+
+  String _buildComplaintSubmittedMessage(
+    Map<String, dynamic> complaintData,
+    Map<String, dynamic>? complaintResponse,
+    String complaintId,
+  ) {
+    final submitted = _extractSubmittedComplaintDetails(complaintData, complaintResponse);
+    final phoneLine = submitted['departmentPhone']!.isNotEmpty
+        ? 'Contact: ${submitted['departmentPhone']}\n'
+        : '';
+    final emailLine = submitted['departmentEmail']!.isNotEmpty
+        ? 'Email: ${submitted['departmentEmail']}\n'
+        : '';
+
+    return '''Complaint Submitted Successfully!
+
+Complaint ID: $complaintId
+Category: ${submitted['category']}
+Subcategory: ${submitted['subcategory']}
+Assigned Department: ${submitted['department']}
+${phoneLine}${emailLine}Priority: ${submitted['priority']}
+Est. Resolution: ${submitted['slaHours']} hours
+
+Your complaint has been saved in the backend with the real matched category and subcategory.
+
+Track your complaint in "My Complaints" section.''';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -494,7 +611,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       }
 
       {
-        final chatCategoryKey = (complaintData['category_key'] ?? '').toString();
+        final chatCategoryKey = _resolveComplaintTypeKey(complaintData);
         final chatSubcategory = (complaintData['subcategory'] ?? '').toString();
         final chatDescription =
             (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString();
@@ -552,8 +669,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
           'complaint_type': chatCategoryKey,
           'subcategory': chatSubcategory,
           'address': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
-          'latitude': (_selectedLatLng?.latitude ?? complaintData['latitude'] ?? 0.0).toString(),
-          'longitude': (_selectedLatLng?.longitude ?? complaintData['longitude'] ?? 0.0).toString(),
+          'latitude': (_selectedLatLng?.latitude ?? _readComplaintCoordinate(complaintData, 'latitude')).toString(),
+          'longitude': (_selectedLatLng?.longitude ?? _readComplaintCoordinate(complaintData, 'longitude')).toString(),
           'priority': _mapAiPriorityForBackend(complaintData['priority']),
           'uploaded_only_verification': 'true',
         };
@@ -586,35 +703,29 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
         if (result != null && result['success'] == true) {
           await complaintProvider.loadComplaints();
-          final complaintResponse = result['complaint'] as Map<String, dynamic>?;
+          final complaintResponse = _asStringDynamicMap(result['complaint']);
           final complaintId =
               complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';
-          final departmentData =
-              complaintResponse?['assigned_department'] as Map<String, dynamic>?;
-          final assignedDepartment = departmentData?['name'] ?? 'Municipal Corporation';
-          final departmentPhone = departmentData?['phone'] ?? '';
-          final departmentEmail = departmentData?['email'] ?? '';
-          final slaHours = departmentData?['sla_hours'] ?? 48;
-          final priority =
-              complaintResponse?['priority_display'] ?? complaintData['priority'] ?? 'Normal';
-          final estimatedResolution = '$slaHours hours';
+          final submittedDetails =
+              _extractSubmittedComplaintDetails(complaintData, complaintResponse);
 
           complaintData['complaint_id'] = complaintId;
           complaintData['status'] = 'submitted';
-          complaintData['department'] = assignedDepartment;
+          complaintData['category'] = submittedDetails['category'];
+          complaintData['subcategory_display'] = submittedDetails['subcategory'];
+          complaintData['subcategory'] = submittedDetails['subcategory'];
+          complaintData['assigned_department'] = submittedDetails['department'];
+          complaintData['department'] = submittedDetails['department'];
+          complaintData['department_phone'] = submittedDetails['departmentPhone'];
+          complaintData['department_email'] = submittedDetails['departmentEmail'];
 
           setState(() {
             _messages.add(ChatMessage(
-              text: '''Complaint Submitted Successfully!
-
-Complaint ID: $complaintId
-Assigned to: $assignedDepartment
-${departmentPhone.isNotEmpty ? 'Contact: $departmentPhone\n' : ''}${departmentEmail.isNotEmpty ? 'Email: $departmentEmail\n' : ''}Priority: $priority
-Est. Resolution: $estimatedResolution
-
-Your complaint has been registered and assigned to the nearest department.
-
-Track your complaint in "My Complaints" section.''',
+              text: _buildComplaintSubmittedMessage(
+                complaintData,
+                complaintResponse,
+                complaintId,
+              ),
               isUser: false,
               timestamp: DateTime.now(),
               buttons: const ['📋 View My Complaints', '➕ File Another', '🏠 Home'],
@@ -719,8 +830,8 @@ Track your complaint in "My Complaints" section.''',
         'complaint_type': categoryKey, // Use complaint_type to match backend
         'subcategory': subcategory,
         'address': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
-        'latitude': (_selectedLatLng?.latitude ?? 0.0).toString(),
-        'longitude': (_selectedLatLng?.longitude ?? 0.0).toString(),
+        'latitude': (_selectedLatLng?.latitude ?? _readComplaintCoordinate(complaintData, 'latitude')).toString(),
+        'longitude': (_selectedLatLng?.longitude ?? _readComplaintCoordinate(complaintData, 'longitude')).toString(),
         'priority': _mapAiPriorityForBackend(complaintData['priority']),
       };
       _addIfNotEmpty(submitData, 'date_of_occurrence', complaintData['date_noticed']);
@@ -761,26 +872,32 @@ Track your complaint in "My Complaints" section.''',
       if (result != null && result['success'] == true) {
         await complaintProvider.loadComplaints();
         // Extract real data from backend response
-        final complaintResponse = result['complaint'] as Map<String, dynamic>?;
+        final complaintResponse = _asStringDynamicMap(result['complaint']);
         final complaintId = complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';
         
-        // Get real department info from backend
-        final departmentData = complaintResponse?['assigned_department'] as Map<String, dynamic>?;
-        final assignedDepartment = departmentData?['name'] ?? 'Municipal Corporation';
-        final departmentPhone = departmentData?['phone'] ?? '';
-        final departmentEmail = departmentData?['email'] ?? '';
-        final slaHours = departmentData?['sla_hours'] ?? 48;
-        
-        // Get priority from response
-        final priority = complaintResponse?['priority_display'] ?? complaintData['priority'] ?? 'Normal';
-        
-        // Calculate estimated resolution time
-        final estimatedResolution = '$slaHours hours';
+        final submittedDetails =
+            _extractSubmittedComplaintDetails(complaintData, complaintResponse);
+        final matchedCategory = submittedDetails['category'] ?? 'Unknown';
+        final matchedSubcategory = submittedDetails['subcategory'] ?? 'Unknown';
+        final assignedDepartment =
+            '${submittedDetails['department'] ?? 'Assignment in progress'}\n'
+            'Matched Category: $matchedCategory\n'
+            'Matched Subcategory: $matchedSubcategory';
+        final departmentPhone = submittedDetails['departmentPhone'] ?? '';
+        final departmentEmail = submittedDetails['departmentEmail'] ?? '';
+        final priority = submittedDetails['priority'] ?? 'Normal';
+        final estimatedResolution = '${submittedDetails['slaHours'] ?? '48'} hours';
         
         // Update AI with real complaint ID
         complaintData['complaint_id'] = complaintId;
         complaintData['status'] = 'submitted';
-        complaintData['department'] = assignedDepartment;
+        complaintData['category'] = submittedDetails['category'];
+        complaintData['subcategory_display'] = submittedDetails['subcategory'];
+        complaintData['subcategory'] = submittedDetails['subcategory'];
+        complaintData['assigned_department'] = submittedDetails['department'];
+        complaintData['department'] = submittedDetails['department'];
+        complaintData['department_phone'] = submittedDetails['departmentPhone'];
+        complaintData['department_email'] = submittedDetails['departmentEmail'];
         
         setState(() {
           _messages.add(ChatMessage(
