@@ -92,30 +92,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
     return fallback;
   }
 
-  String _resolveComplaintTypeKey(Map<String, dynamic> complaintData) {
-    final rawType = _pickFirstNonEmpty([
-      complaintData['category_key'],
-      complaintData['complaint_type'],
-      complaintData['category'],
-    ]).toLowerCase();
-    final normalized = rawType.trim();
-
-    const typeMap = {
-      'police complaint': 'police',
-      'traffic complaint': 'traffic',
-      'construction complaint': 'construction',
-      'water supply': 'water',
-      'garbage/sanitation': 'garbage',
-      'road/pothole': 'road',
-      'drainage/sewage': 'drainage',
-      'illegal activities': 'illegal',
-      'cyber crime': 'cyber',
-      'other complaint': 'other',
-    };
-
-    return typeMap[normalized] ?? normalized;
-  }
-
   Map<String, String> _extractSubmittedComplaintDetails(
     Map<String, dynamic> complaintData,
     Map<String, dynamic>? complaintResponse,
@@ -611,7 +587,7 @@ Track your complaint in "My Complaints" section.''';
       }
 
       {
-        final chatCategoryKey = _resolveComplaintTypeKey(complaintData);
+        final chatCategoryKey = (complaintData['category_key'] ?? '').toString();
         final chatSubcategory = (complaintData['subcategory'] ?? '').toString();
         final chatDescription =
             (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString();

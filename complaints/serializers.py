@@ -258,39 +258,6 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
             if address:
                 attrs['address'] = address
 
-        complaint_type = str(
-            attrs.get('complaint_type') or pick('complaint_type', 'category_key', 'category')
-        ).strip().lower()
-        complaint_type_map = {
-            'police': 'police',
-            'police complaint': 'police',
-            'traffic': 'traffic',
-            'traffic complaint': 'traffic',
-            'construction': 'construction',
-            'construction complaint': 'construction',
-            'water': 'water',
-            'water supply': 'water',
-            'electricity': 'electricity',
-            'garbage': 'garbage',
-            'garbage/sanitation': 'garbage',
-            'garbage sanitation': 'garbage',
-            'road': 'road',
-            'road/pothole': 'road',
-            'road pothole': 'road',
-            'drainage': 'drainage',
-            'drainage/sewage': 'drainage',
-            'drainage sewage': 'drainage',
-            'illegal': 'illegal',
-            'illegal activities': 'illegal',
-            'transportation': 'transportation',
-            'cyber': 'cyber',
-            'cyber crime': 'cyber',
-            'other': 'other',
-            'other complaint': 'other',
-        }
-        if complaint_type:
-            attrs['complaint_type'] = complaint_type_map.get(complaint_type, complaint_type)
-
         language = str(attrs.get('language', '')).strip().lower()
         language_map = {
             'english': 'en',

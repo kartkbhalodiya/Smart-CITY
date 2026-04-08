@@ -54,7 +54,6 @@ class SmartCityAI:
     _corpus_index_lock = threading.Lock()
     _corpus_index_ready = False
     _corpus_token_index: Dict[str, List[int]] = {}
-    _strict_backend_taxonomy = True
 
     TAXONOMY = {
         "Police Complaint": {
@@ -582,7 +581,7 @@ class SmartCityAI:
     def _category_catalog_reply(self) -> str:
         language = self._current_language()
         lines = []
-        for cat, subs in sorted(self._active_taxonomy().items()):
+        for cat, subs in sorted(self.TAXONOMY.items()):
             name = self._localized_category_name(cat, language)
             lines.append(f"- {name} ({len(subs)} subcategories)")
         header = {
@@ -598,7 +597,7 @@ class SmartCityAI:
 
     def _subcategory_catalog_reply(self, category: str) -> str:
         language = self._current_language()
-        sub_map = self._active_taxonomy().get(category)
+        sub_map = self.TAXONOMY.get(category)
         if not sub_map:
             return {
                 "english": "Category not found.",
@@ -620,7 +619,7 @@ class SmartCityAI:
     def _full_catalog_reply(self) -> str:
         language = self._current_language()
         blocks = []
-        for category, sub_map in sorted(self._active_taxonomy().items()):
+        for category, sub_map in sorted(self.TAXONOMY.items()):
             category_name = self._localized_category_name(category, language)
             rows = [f"{category_name}:"]
             for sub, keys in sub_map.items():
@@ -814,7 +813,7 @@ class SmartCityAI:
 
     def _build_model_prompt(self, user_text: str, analysis: Analysis, missing: List[str], fallback: str) -> str:
         catalog_lines = []
-        for cat, sub_map in self._active_taxonomy().items():
+        for cat, sub_map in self.TAXONOMY.items():
             catalog_lines.append(f"{cat}: {', '.join(sub_map.keys())}")
         catalog_text = " | ".join(catalog_lines)
         direct_mode = self._is_short_category_trigger(user_text, analysis)
@@ -965,21 +964,12 @@ class SmartCityAI:
         return len(ta & tb) / max(1, len(tb))
 
     def _category_hints(self, normalized_text: str) -> List[str]:
-        taxonomy = self._active_taxonomy()
         scored = []
-        for category, sub_map in taxonomy.items():
+        for category, aliases in self.CATEGORY_ALIASES.items():
             score = 0
             if self._normalize(category) in normalized_text:
                 score += 6
-            dynamic_aliases = set(self.CATEGORY_ALIASES.get(category, [])) if not self._strict_backend_taxonomy else set()
-            dynamic_aliases.add(category)
-            for subcategory in sub_map.keys():
-                dynamic_aliases.add(subcategory)
-                for token in re.split(r"[^a-zA-Z0-9\u0900-\u097F\u0A80-\u0AFF]+", subcategory):
-                    token = token.strip()
-                    if len(token) >= 3:
-                        dynamic_aliases.add(token)
-            for alias in dynamic_aliases:
+            for alias in aliases:
                 k = self._normalize(alias)
                 if k and k in normalized_text:
                     score += 2
@@ -1075,45 +1065,6 @@ class SmartCityAI:
         self.genai_client = None
         self.model = None
         self.model_name = getattr(settings, "GENAI_MODEL", "gpt-4o")
-        self._backend_taxonomy_cache: Dict[str, Dict[str, List[str]]] = {}
-        self._backend_taxonomy_loaded = False
-
-    def _load_backend_taxonomy(self) -> Dict[str, Dict[str, List[str]]]:
-        if self._backend_taxonomy_loaded:
-            return self._backend_taxonomy_cache
-        self._backend_taxonomy_loaded = True
-        try:
-            from .models import ComplaintCategory
-            categories = (
-                ComplaintCategory.objects
-                .filter(is_active=True)
-                .prefetch_related("subcategories")
-                .order_by("display_order", "name")
-            )
-            taxonomy: Dict[str, Dict[str, List[str]]] = {}
-            for category in categories:
-                category_name = (category.name or "").strip()
-                if not category_name:
-                    continue
-                sub_map: Dict[str, List[str]] = {}
-                for subcategory in category.subcategories.filter(is_active=True).order_by("display_order", "name"):
-                    sub_name = (subcategory.name or "").strip()
-                    if not sub_name:
-                        continue
-                    seed_tokens = [token for token in re.split(r"[^a-zA-Z0-9\u0900-\u097F\u0A80-\u0AFF]+", sub_name) if token]
-                    sub_map[sub_name] = seed_tokens[:4]
-                if sub_map:
-                    taxonomy[category_name] = sub_map
-            self._backend_taxonomy_cache = taxonomy
-        except Exception:
-            self._backend_taxonomy_cache = {}
-        return self._backend_taxonomy_cache
-
-    def _active_taxonomy(self) -> Dict[str, Dict[str, List[str]]]:
-        backend = self._load_backend_taxonomy()
-        if backend:
-            return backend
-        return {} if self._strict_backend_taxonomy else self.TAXONOMY
 
     @classmethod
     def for_session(cls, session_id: str = "default") -> "SmartCityAI":
