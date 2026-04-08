@@ -83,8 +83,18 @@ class AuthService {
   }
 
   static Future<Map<String, dynamic>> logout() async {
-    final response = await ApiService.post(ApiConfig.logout, {});
-    await StorageService.clearAll();
+    Map<String, dynamic> response = {'success': true};
+    try {
+      response = await ApiService.post(ApiConfig.logout, {});
+    } catch (e) {
+      debugPrint('Logout API failed: $e');
+      response = {
+        'success': false,
+        'message': 'Logout request failed, but local session was cleared.',
+      };
+    } finally {
+      await StorageService.clearAll();
+    }
     return response;
   }
 
@@ -113,15 +123,63 @@ class AuthService {
   }
 
   static Future<User?> getCurrentUser() async {
-    final userData = StorageService.getUserData();
-    if (userData != null) {
-      return User.fromJson(jsonDecode(userData));
+    try {
+      final userData = StorageService.getUserData();
+      if (userData != null && userData.trim().isNotEmpty) {
+        return User.fromJson(jsonDecode(userData));
+      }
+    } catch (e) {
+      debugPrint('Failed to parse cached user: $e');
     }
     return null;
   }
 
-  static Future<bool> isAuthenticated() async {
+  static Future<User?> fetchCurrentUserProfile() async {
+    try {
+      final response = await ApiService.get(ApiConfig.userProfile);
+      if (response['success'] != true) {
+        return null;
+      }
+
+      final payload = response['data'] is Map<String, dynamic>
+          ? response['data'] as Map<String, dynamic>
+          : response;
+      final profile = payload['profile'];
+      if (profile is! Map<String, dynamic>) {
+        return null;
+      }
+
+      await StorageService.saveUserData(jsonEncode(profile));
+      await StorageService.setLoggedIn(true);
+      return User.fromJson(profile);
+    } catch (e) {
+      debugPrint('Failed to fetch current user profile: $e');
+      return null;
+    }
+  }
+
+  static Future<User?> restoreSession() async {
+    final hasSession = await StorageService.hasActiveSession();
+    if (!hasSession) {
+      return null;
+    }
+
+    final cachedUser = await getCurrentUser();
     final token = await StorageService.getToken();
-    return token != null && StorageService.isLoggedIn();
+    final hasToken = token != null && token.trim().isNotEmpty;
+
+    if (!hasToken) {
+      final refreshed = await refreshToken();
+      if (!refreshed) {
+        return cachedUser;
+      }
+    }
+
+    final serverUser = await fetchCurrentUserProfile();
+    return serverUser ?? cachedUser;
+  }
+
+  static Future<bool> isAuthenticated() async {
+    return await StorageService.hasActiveSession();
   }
 }

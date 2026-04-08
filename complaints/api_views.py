@@ -380,13 +380,25 @@ def logout_user(request):
 @permission_classes([IsAuthenticated])
 def user_profile(request):
     """Get or update user profile"""
+    def clean_text(value, fallback=''):
+        if value is None:
+            return fallback
+        text = str(value).strip()
+        if text.lower() in {'not provided', 'not specified', 'none', 'null'}:
+            return fallback
+        return text
+
     try:
         profile = request.user.citizenprofile
     except CitizenProfile.DoesNotExist:
         profile = CitizenProfile.objects.create(
             user=request.user,
             surname='',
+            state='',
+            district='',
+            taluka='',
             city='',
+            pincode='',
             address='',
             mobile_no=''
         )
@@ -401,18 +413,52 @@ def user_profile(request):
     elif request.method == 'PUT':
         # Update user fields
         user = request.user
-        user.first_name = request.data.get('first_name', user.first_name)
-        user.last_name = request.data.get('last_name', user.last_name)
+        old_email = user.email
+        if 'first_name' in request.data:
+            user.first_name = clean_text(request.data.get('first_name'))
+        if 'last_name' in request.data:
+            user.last_name = clean_text(request.data.get('last_name'))
+        incoming_email = (request.data.get('email') or '').strip().lower()
+        if 'email' in request.data and incoming_email:
+            if User.objects.filter(email__iexact=incoming_email).exclude(id=user.id).exists():
+                return Response({
+                    'success': False,
+                    'message': 'This email is already linked to another account'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            user.email = incoming_email
+            if not user.username or user.username == old_email:
+                user.username = incoming_email
         user.save()
         
         # Update profile fields
-        profile.surname = request.data.get('surname', profile.surname)
-        profile.mobile_no = request.data.get('mobile_no', profile.mobile_no)
-        profile.state = request.data.get('state', profile.state)
-        profile.district = request.data.get('district', profile.district)
-        profile.city = request.data.get('city', profile.city)
-        profile.address = request.data.get('address', profile.address)
-        profile.aadhaar_number = request.data.get('aadhaar_number', profile.aadhaar_number)
+        if 'surname' in request.data:
+            profile.surname = clean_text(request.data.get('surname'))
+        if 'mobile_no' in request.data:
+            profile.mobile_no = clean_text(request.data.get('mobile_no'))
+        if 'state' in request.data:
+            profile.state = clean_text(request.data.get('state'))
+        if 'district' in request.data:
+            profile.district = clean_text(request.data.get('district'))
+        if 'taluka' in request.data:
+            profile.taluka = clean_text(request.data.get('taluka'))
+        if 'city' in request.data:
+            profile.city = clean_text(request.data.get('city'))
+        if 'pincode' in request.data:
+            profile.pincode = clean_text(request.data.get('pincode'))
+        if 'address' in request.data:
+            profile.address = clean_text(request.data.get('address'))
+        if 'aadhaar_number' in request.data:
+            profile.aadhaar_number = clean_text(request.data.get('aadhaar_number'))
+        if 'latitude' in request.data:
+            try:
+                profile.latitude = float(request.data.get('latitude') or 0)
+            except (TypeError, ValueError):
+                pass
+        if 'longitude' in request.data:
+            try:
+                profile.longitude = float(request.data.get('longitude') or 0)
+            except (TypeError, ValueError):
+                pass
         profile.save()
         
         serializer = CitizenProfileSerializer(profile, context={'request': request})
@@ -453,6 +499,20 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         if images:
             return images
         return request.FILES.getlist('media_files')
+
+    def _get_remote_image_as_file(self, url):
+        """Download remote image (Cloudinary URL) for AI verification."""
+        if not url: return None
+        import requests
+        from django.core.files.base import ContentFile
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                # Use a specific filename for identification
+                return ContentFile(response.content, name="voice_assistant_proof.jpg")
+        except Exception as e:
+            print(f"Failed to fetch remote image for AI verification: {e}")
+        return None
 
     def _is_uploaded_only_verification_mode(self, request):
         """App-only mode: run Gemini validation when proof is uploaded, but do not require proof."""
@@ -542,11 +602,12 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         subcat = (request.data.get('subcategory') or '').strip()
         desc = (request.data.get('description') or '').strip()
         images = self._get_uploaded_media_files(request)
+        remote_url = request.data.get('image_url')
         
         # Categories that skip AI but still might have images
         skip_keys = ['police', 'cyber', 'other']
 
-        if not images:
+        if not images and not remote_url:
             if ctype in skip_keys:
                 return Response({'success': True, 'message': 'No images to verify (optional for this category)'})
             return Response({
@@ -556,9 +617,18 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 'proof_received': False,
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # Get the first available image (local or remote)
+        verify_image = images[0] if images else self._get_remote_image_as_file(remote_url)
+        if not verify_image:
+            return Response({
+                'success': False,
+                'message': 'Failed to access the proof image for verification.',
+                'ai_verification_failed': True
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         from .ai_utils import verify_complaint_proof
         is_valid, ai_msg = verify_complaint_proof(
-            images[0],
+            verify_image,
             category_label,
             category_key=ctype,
             subcategory=subcat,
@@ -593,31 +663,34 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 uploaded_only_mode = self._is_uploaded_only_verification_mode(request)
                 proof_expected = self._is_proof_expected(request)
                 
-                # --- AI Image Verification (New) ---
                 from .ai_utils import verify_complaint_proof
                 # Get human-readable category name for the prompt
                 category_label = dict(Complaint.COMPLAINT_TYPES).get(ctype, ctype or 'selected category')
                 images = self._get_uploaded_media_files(request)
+                remote_url = request.data.get('image_url')
                 
                 # Categories that skip AI but still might have images
                 skip_keys = ['police', 'cyber', 'other']
 
-                if images:
-                    # Check first uploaded image
-                    is_valid, ai_msg = verify_complaint_proof(
-                        images[0],
-                        category_label,
-                        category_key=ctype,
-                        subcategory=subcat,
-                        complaint_description=desc,
-                    )
-                    if not is_valid:
-                        selected_issue = subcat or category_label
-                        payload, response_status = self._build_ai_failure_response(selected_issue, ai_msg)
-                        return Response({
-                            'success': False,
-                            **payload,
-                        }, status=response_status)
+                if images or remote_url:
+                    # Get image to verify
+                    verify_image = images[0] if images else self._get_remote_image_as_file(remote_url)
+                    
+                    if verify_image:
+                        is_valid, ai_msg = verify_complaint_proof(
+                            verify_image,
+                            category_label,
+                            category_key=ctype,
+                            subcategory=subcat,
+                            complaint_description=desc,
+                        )
+                        if not is_valid:
+                            selected_issue = subcat or category_label
+                            payload, response_status = self._build_ai_failure_response(selected_issue, ai_msg)
+                            return Response({
+                                'success': False,
+                                **payload,
+                            }, status=response_status)
                 elif proof_expected:
                     return Response({
                         'success': False,

@@ -5,15 +5,17 @@ import '../services/auth_service.dart';
 class AuthProvider with ChangeNotifier {
   User? _user;
   bool _isLoading = false;
+  bool _isAuthenticated = false;
   String? _error;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _isAuthenticated;
 
   Future<void> loadUser() async {
-    _user = await AuthService.getCurrentUser();
+    _user = await AuthService.restoreSession();
+    _isAuthenticated = await AuthService.isAuthenticated();
     notifyListeners();
   }
 
@@ -45,9 +47,11 @@ class AuthProvider with ChangeNotifier {
     _isLoading = false;
     if (response['success'] == true) {
       if (response['user'] != null) _user = User.fromJson(response['user']);
+      _isAuthenticated = true;
       notifyListeners();
     } else {
       _error = response['message'] ?? 'Login failed';
+      _isAuthenticated = false;
       notifyListeners();
     }
     return response;
@@ -63,9 +67,11 @@ class AuthProvider with ChangeNotifier {
     _isLoading = false;
     if (response['success'] == true) {
       _user = User.fromJson(response['user']);
+      _isAuthenticated = true;
       notifyListeners();
     } else {
       _error = response['message'] ?? 'Invalid OTP';
+      _isAuthenticated = false;
       notifyListeners();
     }
     return response;
@@ -83,10 +89,12 @@ class AuthProvider with ChangeNotifier {
       if (response['user'] != null) {
         _user = User.fromJson(response['user']);
       }
+      _isAuthenticated = true;
       notifyListeners();
       return true;
     } else {
       _error = response['message'] ?? 'Registration failed';
+      _isAuthenticated = false;
       notifyListeners();
       return false;
     }
@@ -95,6 +103,8 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     await AuthService.logout();
     _user = null;
+    _isAuthenticated = false;
+    _error = null;
     notifyListeners();
   }
 

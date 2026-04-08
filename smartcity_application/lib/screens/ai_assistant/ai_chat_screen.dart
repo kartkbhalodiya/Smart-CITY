@@ -43,6 +43,30 @@ class _AIChatScreenState extends State<AIChatScreen> {
   String? _currentSessionId;
   String? _complaintId;
 
+  String _mapAiPriorityForBackend(dynamic rawPriority) {
+    final normalized = (rawPriority ?? 'normal').toString().trim().toLowerCase();
+    switch (normalized) {
+      case 'critical':
+      case 'urgent':
+        return 'high';
+      case 'high':
+        return 'high';
+      case 'medium':
+        return 'medium';
+      case 'low':
+      case 'normal':
+      default:
+        return 'normal';
+    }
+  }
+
+  void _addIfNotEmpty(Map<String, String> target, String key, dynamic value) {
+    final text = (value ?? '').toString().trim();
+    if (text.isNotEmpty) {
+      target[key] = text;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -127,7 +151,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     // Prepare user profile
     final userProfile = {
       'fullName': user?.fullName,
-      'mobile': null,
+      'mobile': user?.mobileNo,
       'email': user?.email,
     };
     
@@ -187,7 +211,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       return;
     }
     
-    if (text.contains('✅ Submit')) {
+    if (_isSubmitAction(text)) {
       _handleSubmitComplaint();
       return;
     }
@@ -226,6 +250,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
     if (_messages.length > 1) {
       _saveCurrentSession();
     }
+  }
+
+  bool _isSubmitAction(String text) {
+    final normalized = text.toLowerCase();
+    return normalized.contains('submit') ||
+        normalized.contains('सबमिट') ||
+        normalized.contains('સબમિટ') ||
+        normalized.contains('sabmit');
   }
 
   Future<void> _handleCurrentLocation() async {
@@ -519,25 +551,33 @@ class _AIChatScreenState extends State<AIChatScreen> {
           'description': chatDescription,
           'complaint_type': chatCategoryKey,
           'subcategory': chatSubcategory,
-          'location': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
+          'address': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
           'latitude': (_selectedLatLng?.latitude ?? complaintData['latitude'] ?? 0.0).toString(),
           'longitude': (_selectedLatLng?.longitude ?? complaintData['longitude'] ?? 0.0).toString(),
-          'priority': (complaintData['priority'] ?? 'normal').toString().toLowerCase(),
-          'date_noticed': (complaintData['date_noticed'] ?? '').toString(),
+          'priority': _mapAiPriorityForBackend(complaintData['priority']),
           'uploaded_only_verification': 'true',
         };
+        _addIfNotEmpty(submitData, 'date_of_occurrence', complaintData['date_noticed']);
 
         if (complaintData.containsKey('contact_name') &&
             complaintData['contact_name'].toString().isNotEmpty) {
-          submitData['contact_name'] = complaintData['contact_name'].toString();
+          final name = complaintData['contact_name'].toString();
+          submitData['guest_name'] = name;
+          submitData['name'] = name;
         }
         if (complaintData.containsKey('contact_mobile') &&
             complaintData['contact_mobile'].toString().isNotEmpty) {
-          submitData['contact_mobile'] = complaintData['contact_mobile'].toString();
+          final mobile = complaintData['contact_mobile'].toString();
+          submitData['guest_phone'] = mobile;
+          submitData['mobile_no'] = mobile;
+          submitData['preferred_contact_phone'] = 'true';
         }
         if (complaintData.containsKey('contact_email') &&
             complaintData['contact_email'].toString().isNotEmpty) {
-          submitData['contact_email'] = complaintData['contact_email'].toString();
+          final email = complaintData['contact_email'].toString();
+          submitData['guest_email'] = email;
+          submitData['email'] = email;
+          submitData['preferred_contact_email'] = 'true';
         }
 
         print('Submitting AI chat complaint with data: $submitData');
@@ -545,6 +585,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
         final result = await complaintProvider.createComplaint(submitData, selectedFiles);
 
         if (result != null && result['success'] == true) {
+          await complaintProvider.loadComplaints();
           final complaintResponse = result['complaint'] as Map<String, dynamic>?;
           final complaintId =
               complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';
@@ -677,22 +718,30 @@ Track your complaint in "My Complaints" section.''',
         'description': description,
         'complaint_type': categoryKey, // Use complaint_type to match backend
         'subcategory': subcategory,
-        'location': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
+        'address': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
         'latitude': (_selectedLatLng?.latitude ?? 0.0).toString(),
         'longitude': (_selectedLatLng?.longitude ?? 0.0).toString(),
-        'priority': (complaintData['priority'] ?? 'normal').toString().toLowerCase(),
-        'date_noticed': (complaintData['date_noticed'] ?? '').toString(),
+        'priority': _mapAiPriorityForBackend(complaintData['priority']),
       };
+      _addIfNotEmpty(submitData, 'date_of_occurrence', complaintData['date_noticed']);
       
       // Add contact details if available
       if (complaintData.containsKey('contact_name') && complaintData['contact_name'].toString().isNotEmpty) {
-        submitData['contact_name'] = complaintData['contact_name'].toString();
+        final name = complaintData['contact_name'].toString();
+        submitData['guest_name'] = name;
+        submitData['name'] = name;
       }
       if (complaintData.containsKey('contact_mobile') && complaintData['contact_mobile'].toString().isNotEmpty) {
-        submitData['contact_mobile'] = complaintData['contact_mobile'].toString();
+        final mobile = complaintData['contact_mobile'].toString();
+        submitData['guest_phone'] = mobile;
+        submitData['mobile_no'] = mobile;
+        submitData['preferred_contact_phone'] = 'true';
       }
       if (complaintData.containsKey('contact_email') && complaintData['contact_email'].toString().isNotEmpty) {
-        submitData['contact_email'] = complaintData['contact_email'].toString();
+        final email = complaintData['contact_email'].toString();
+        submitData['guest_email'] = email;
+        submitData['email'] = email;
+        submitData['preferred_contact_email'] = 'true';
       }
       
       // Add image URL if uploaded
@@ -710,6 +759,7 @@ Track your complaint in "My Complaints" section.''',
       final result = await complaintProvider.createComplaint(submitData, files);
 
       if (result != null && result['success'] == true) {
+        await complaintProvider.loadComplaints();
         // Extract real data from backend response
         final complaintResponse = result['complaint'] as Map<String, dynamic>?;
         final complaintId = complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';

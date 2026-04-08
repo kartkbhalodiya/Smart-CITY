@@ -5,6 +5,8 @@ class User {
   final String firstName;
   final String lastName;
   final String? token;
+  final String? mobileNo;
+  final String? aadhaarNumber;
 
   User({
     required this.id,
@@ -13,9 +15,20 @@ class User {
     required this.firstName,
     required this.lastName,
     this.token,
+    this.mobileNo,
+    this.aadhaarNumber,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // If the json is actually a profile object, extract the user part first
+    if (json.containsKey('user') && json['user'] is Map<String, dynamic>) {
+      final userPart = Map<String, dynamic>.from(json['user']);
+      // Inject profile fields into the user part for persistence
+      userPart['mobile_no'] = json['mobile_no'];
+      userPart['aadhaar_number'] = json['aadhaar_number'];
+      return User.fromJson(userPart);
+    }
+
     return User(
       id: json['id'] ?? 0,
       username: json['username'] ?? '',
@@ -23,6 +36,8 @@ class User {
       firstName: json['first_name'] ?? '',
       lastName: json['last_name'] ?? '',
       token: json['token'],
+      mobileNo: json['mobile_no'],
+      aadhaarNumber: json['aadhaar_number'],
     );
   }
 
@@ -34,6 +49,8 @@ class User {
       'first_name': firstName,
       'last_name': lastName,
       'token': token,
+      'mobile_no': mobileNo,
+      'aadhaar_number': aadhaarNumber,
     };
   }
 

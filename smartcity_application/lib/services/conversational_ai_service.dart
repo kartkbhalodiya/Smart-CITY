@@ -36,6 +36,9 @@ class ConversationalAIService {
   DateTime _conversationStartTime = DateTime.now();
   Map<String, dynamic>? _userProfile;
   String? _currentChatId;
+  bool _backendCategoriesLoadAttempted = false;
+  List<Map<String, String>> _backendCategories = [];
+  final Map<String, List<String>> _backendSubcategories = {};
   
   // Chat persistence keys
   static const String _chatHistoryKey = 'chat_history';
@@ -1035,17 +1038,39 @@ class ConversationalAIService {
   /// Get current chat ID
   String? getCurrentChatId() => _currentChatId;
   List<Map<String, dynamic>> _getCategories() {
-    return categories.values.map((c) => {
-      'key': c['key'],
-      'name': _getCategoryName(c['key']!),
-      'emoji': c['emoji'],
-    }).toList();
+    if (_backendCategories.isNotEmpty) {
+      return _backendCategories
+          .map((category) => {
+                'key': category['key'],
+                'name': _getCategoryName(
+                  category['key']!,
+                  fallbackName: category['name'],
+                ),
+                'emoji': _getCategoryEmoji(
+                  category['key']!,
+                  fallbackEmoji: category['emoji'],
+                ),
+              })
+          .toList();
+    }
+
+    return categories.values
+        .map((c) => {
+              'key': c['key'],
+              'name': _getCategoryName(c['key']!),
+              'emoji': c['emoji'],
+            })
+        .toList();
   }
   
   /// Get category name in current language
-  String _getCategoryName(String key) {
+  String _getCategoryName(String key, {String? fallbackName}) {
     final category = categories[key];
-    if (category == null) return key;
+    if (category == null) {
+      return (fallbackName?.trim().isNotEmpty ?? false)
+          ? fallbackName!.trim()
+          : key;
+    }
     
     switch (_userLanguage) {
       case 'hi':
@@ -1058,9 +1083,128 @@ class ConversationalAIService {
         return category['en'] ?? key;
     }
   }
+
+  String _getCategoryEmoji(String key, {String? fallbackEmoji}) {
+    final category = categories[key];
+    if (category != null && (category['emoji']?.isNotEmpty ?? false)) {
+      return category['emoji']!;
+    }
+    if (fallbackEmoji?.trim().isNotEmpty ?? false) {
+      return fallbackEmoji!.trim();
+    }
+    return '📝';
+  }
+
+  bool _hasCategoryKey(String key) {
+    if (key.trim().isEmpty) return false;
+    if (categories.containsKey(key)) return true;
+    return _backendCategories.any((category) => category['key'] == key);
+  }
+
+  Map<String, String>? _findCategoryByKey(String key) {
+    if (!_hasCategoryKey(key)) {
+      return null;
+    }
+
+    Map<String, String>? backendCategory;
+    for (final category in _backendCategories) {
+      if (category['key'] == key) {
+        backendCategory = category;
+        break;
+      }
+    }
+
+    return {
+      'key': key,
+      'name': _getCategoryName(
+        key,
+        fallbackName: backendCategory?['name'],
+      ),
+      'emoji': _getCategoryEmoji(
+        key,
+        fallbackEmoji: backendCategory?['emoji'],
+      ),
+    };
+  }
+
+  Future<void> _ensureBackendCategoriesLoaded() async {
+    if (_backendCategoriesLoadAttempted) {
+      return;
+    }
+    _backendCategoriesLoadAttempted = true;
+
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConfig.categories),
+        headers: const {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(ApiConfig.receiveTimeout);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        debugPrint('Backend categories request failed: ${response.statusCode}');
+        return;
+      }
+
+      final decoded = jsonDecode(response.body);
+      final rawCategories = decoded is Map<String, dynamic>
+          ? decoded['categories']
+          : decoded;
+      if (rawCategories is! List) {
+        return;
+      }
+
+      final parsedCategories = <Map<String, String>>[];
+      final parsedSubcategories = <String, List<String>>{};
+
+      for (final rawCategory in rawCategories) {
+        if (rawCategory is! Map) continue;
+        final category = Map<String, dynamic>.from(rawCategory);
+        final key = (category['key'] ?? '').toString().trim();
+        if (key.isEmpty) continue;
+
+        final name = (category['name'] ?? '').toString().trim();
+        final emoji = (category['emoji'] ?? '').toString().trim();
+
+        parsedCategories.add({
+          'key': key,
+          'name': name.isNotEmpty ? name : key,
+          'emoji': emoji.isNotEmpty ? emoji : _getCategoryEmoji(key),
+        });
+
+        final rawSubcategories = category['subcategories'];
+        if (rawSubcategories is List) {
+          final names = rawSubcategories
+              .whereType<Map>()
+              .map((sub) => (sub['name'] ?? '').toString().trim())
+              .where((name) => name.isNotEmpty)
+              .toList();
+          if (names.isNotEmpty) {
+            parsedSubcategories[key] = names;
+          }
+        }
+      }
+
+      if (parsedCategories.isNotEmpty) {
+        _backendCategories = parsedCategories;
+      }
+      if (parsedSubcategories.isNotEmpty) {
+        _backendSubcategories
+          ..clear()
+          ..addAll(parsedSubcategories);
+      }
+    } catch (e) {
+      debugPrint('Failed to load backend categories: $e');
+    }
+  }
   
   /// Get subcategories with multi-language support
   List<String> _getSubcategories(String categoryKey) {
+    final backendSubs = _backendSubcategories[categoryKey];
+    if (backendSubs != null && backendSubs.isNotEmpty) {
+      return backendSubs;
+    }
+
     final subs = subcategories[categoryKey];
     if (subs == null) return ['Other'];
     
@@ -1075,6 +1219,312 @@ class ConversationalAIService {
         return subs['en'] ?? ['Other'];
     }
   }
+
+  String _normalizeSubcategoryToEnglish(String categoryKey, String userInput) {
+    final backendSubs = _backendSubcategories[categoryKey];
+    final backendMatch = _matchSubcategoryFromList(
+      backendSubs ?? const <String>[],
+      userInput,
+    );
+    if (backendMatch != null) {
+      return backendMatch;
+    }
+
+    final subs = subcategories[categoryKey];
+    if (subs == null) {
+      return userInput.trim();
+    }
+
+    final englishSubs = subs['en'] ?? const <String>[];
+    final variants = <String, List<String>>{
+      'en': englishSubs,
+      'hi': subs['hi'] ?? const <String>[],
+      'gu': subs['gu'] ?? const <String>[],
+      'hinglish': subs['hinglish'] ?? const <String>[],
+    };
+
+    final normalizedInput = _normalizeTextForMatching(userInput);
+    for (var i = 0; i < englishSubs.length; i++) {
+      final englishValue = englishSubs[i];
+      for (final languageValues in variants.values) {
+        if (i >= languageValues.length) continue;
+        final candidate = _normalizeTextForMatching(languageValues[i]);
+        if (candidate.isNotEmpty &&
+            (normalizedInput == candidate ||
+                normalizedInput.contains(candidate) ||
+                candidate.contains(normalizedInput))) {
+          final exactBackendMatch = _matchSubcategoryFromList(
+            backendSubs ?? const <String>[],
+            englishValue,
+          );
+          if (exactBackendMatch != null) {
+            return exactBackendMatch;
+          }
+          return englishValue;
+        }
+      }
+    }
+
+    return userInput.trim();
+  }
+
+  String? _matchSubcategoryFromList(List<String> options, String input) {
+    final normalizedInput = _normalizeTextForMatching(input);
+    if (normalizedInput.isEmpty) {
+      return null;
+    }
+
+    String? containsMatch;
+    for (final option in options) {
+      final normalizedOption = _normalizeTextForMatching(option);
+      if (normalizedOption.isEmpty) continue;
+
+      if (normalizedInput == normalizedOption) {
+        return option;
+      }
+
+      if (normalizedInput.contains(normalizedOption) ||
+          normalizedOption.contains(normalizedInput)) {
+        containsMatch ??= option;
+      }
+    }
+    return containsMatch;
+  }
+
+  String? _fallbackSubcategoryOption(List<String> options) {
+    for (final option in options) {
+      final normalized = _normalizeTextForMatching(option);
+      if (normalized.contains('other')) {
+        return option;
+      }
+    }
+    return null;
+  }
+
+  bool _looksLikeDetailedComplaint(String input) {
+    final normalized = input.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (normalized.length < 25) {
+      return false;
+    }
+    final words = normalized
+        .split(' ')
+        .where((word) => word.trim().isNotEmpty)
+        .length;
+    return words >= 5;
+  }
+
+  Future<String?> _detectSubcategoryForCategory(
+    String categoryKey,
+    String input,
+  ) async {
+    final availableSubcategories = _getSubcategories(categoryKey);
+    if (availableSubcategories.isEmpty) {
+      return null;
+    }
+
+    final directMatch = _matchSubcategoryFromList(availableSubcategories, input);
+    if (directMatch != null) {
+      return directMatch;
+    }
+
+    final normalizedMatch = _normalizeSubcategoryToEnglish(categoryKey, input);
+    final backendMatch = _matchSubcategoryFromList(
+      availableSubcategories,
+      normalizedMatch,
+    );
+    if (backendMatch != null) {
+      return backendMatch;
+    }
+
+    if (!_looksLikeDetailedComplaint(input)) {
+      return null;
+    }
+
+    try {
+      final prompt = '''Pick the single best backend subcategory for this complaint.
+
+Category key: $categoryKey
+Complaint text: "$input"
+
+Available subcategories:
+${availableSubcategories.map((sub) => '- $sub').join('\n')}
+
+Rules:
+- Respond with exactly one subcategory name from the list above.
+- If nothing matches well, respond with UNKNOWN.''';
+
+      final response = await _callGroqAPI(
+        prompt,
+        maxTokens: 80,
+        temperature: 0.1,
+      );
+
+      if (response != null) {
+        final aiMatch = _matchSubcategoryFromList(
+          availableSubcategories,
+          response,
+        );
+        if (aiMatch != null) {
+          return aiMatch;
+        }
+      }
+    } catch (e) {
+      debugPrint('Subcategory detection failed: $e');
+    }
+
+    return _fallbackSubcategoryOption(availableSubcategories);
+  }
+
+  String _normalizeTextForMatching(String input) {
+    return _convertDigitsToAscii(input)
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  String _convertDigitsToAscii(String input) {
+    const digitMap = {
+      '०': '0',
+      '१': '1',
+      '२': '2',
+      '३': '3',
+      '४': '4',
+      '५': '5',
+      '६': '6',
+      '७': '7',
+      '८': '8',
+      '९': '9',
+      '૦': '0',
+      '૧': '1',
+      '૨': '2',
+      '૩': '3',
+      '૪': '4',
+      '૫': '5',
+      '૬': '6',
+      '૭': '7',
+      '૮': '8',
+      '૯': '9',
+    };
+
+    var output = input;
+    digitMap.forEach((key, value) {
+      output = output.replaceAll(key, value);
+    });
+    return output;
+  }
+
+  String _normalizePhoneValue(String input) {
+    return _convertDigitsToAscii(input).replaceAll(RegExp(r'[^0-9+]'), '');
+  }
+
+  String _normalizeEmailValue(String input) {
+    return _convertDigitsToAscii(input).trim().toLowerCase().replaceAll(' ', '');
+  }
+
+  String _normalizeContactNameValue(String input) {
+    final profileName = (_userProfile?['fullName'] ?? '').toString().trim();
+    if (profileName.isNotEmpty) {
+      return profileName;
+    }
+    return input.trim();
+  }
+
+  bool _matchesIntentPhrase(String input, String phrase) {
+    final normalizedInput = _normalizeTextForMatching(input);
+    final normalizedPhrase = _normalizeTextForMatching(phrase);
+    if (normalizedInput.isEmpty || normalizedPhrase.isEmpty) {
+      return false;
+    }
+    if (normalizedInput == normalizedPhrase) {
+      return true;
+    }
+    return normalizedInput.startsWith('$normalizedPhrase ') ||
+        normalizedInput.endsWith(' $normalizedPhrase') ||
+        normalizedInput.contains(' $normalizedPhrase ');
+  }
+
+  bool _matchesAnyIntentPhrase(String input, List<String> phrases) {
+    for (final phrase in phrases) {
+      if (_matchesIntentPhrase(input, phrase)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _isAffirmativeResponse(String input) => _matchesAnyIntentPhrase(input, [
+        'yes',
+        'y',
+        'yeah',
+        'yep',
+        'ok',
+        'okay',
+        'confirm',
+        'confirmed',
+        'correct',
+        'right',
+        'sure',
+        'haan',
+        'haan ji',
+        'han',
+        'ha',
+        'hmm',
+        'hm',
+        'hmmm',
+        'ji',
+        'ji ha',
+        'bilkul',
+        'theek',
+        'thik',
+        'sahi',
+        'yes please',
+      ]);
+
+  bool _isNegativeResponse(String input) => _matchesAnyIntentPhrase(input, [
+        'no',
+        'n',
+        'nope',
+        'nah',
+        'nahi',
+        'nahin',
+        'nai',
+        'na',
+        'galat',
+        'wrong',
+      ]);
+
+  bool _isSkipResponse(String input) => _matchesAnyIntentPhrase(input, [
+        'skip',
+        'skip it',
+        'later',
+        'baad mein',
+        'baad me',
+        'chhod',
+        'chod',
+      ]);
+
+  bool _isEditResponse(String input) => _matchesAnyIntentPhrase(input, [
+        'edit',
+        'change',
+        'modify',
+        'sampadit',
+        'संपादित',
+      ]);
+
+  bool _isSubmitLikeResponse(String input) {
+    return _matchesAnyIntentPhrase(input, [
+          'submit',
+          'sabmit',
+          'submitt',
+          'submit karo',
+          'submit kar do',
+          'submitt karo',
+          'सबमिट',
+          'સબમિટ',
+        ]) ||
+        _isAffirmativeResponse(input);
+  }
+
   Future<ConversationResponse> processInput(
     String userInput, {
     String? userName,
@@ -1087,6 +1537,10 @@ class ConversationalAIService {
     if (userCity != null) _userCity = userCity;
     if (language != null) _userLanguage = language;
     if (userProfile != null) _userProfile = userProfile;
+
+    if (!_backendCategoriesLoadAttempted) {
+      await _ensureBackendCategoriesLoaded();
+    }
 
     // IMPORTANT: Don't check for new issues when user is providing details for current complaint
     // Only check when user is in early stages (greeting, category selection)
@@ -1109,9 +1563,9 @@ class ConversationalAIService {
       final newProblemDetected = await _detectCategoryWithAI(userInput);
       if (newProblemDetected != null && 
           newProblemDetected['key'] != _complaintData['category_key'] &&
-          !userInput.toLowerCase().contains('yes') &&
-          !userInput.toLowerCase().contains('no') &&
-          !userInput.toLowerCase().contains('skip') &&
+          !_isAffirmativeResponse(userInput) &&
+          !_isNegativeResponse(userInput) &&
+          !_isSkipResponse(userInput) &&
           userInput.length > 15) {
         
         // Store the new problem for later
@@ -1468,6 +1922,41 @@ ${_localize(
       _complaintData['category_key'] = detectedCategory['key'];
       _complaintData['category_emoji'] = detectedCategory['emoji'];
       _complaintData['raw_description'] = userInput;
+
+      final detectedSubcategory = await _detectSubcategoryForCategory(
+        detectedCategory['key']!,
+        userInput,
+      );
+      final looksDetailedComplaint = _looksLikeDetailedComplaint(userInput);
+      if (detectedSubcategory != null) {
+        _complaintData['subcategory_display'] = detectedSubcategory;
+        _complaintData['subcategory'] = _normalizeSubcategoryToEnglish(
+          detectedCategory['key']!,
+          detectedSubcategory,
+        );
+      }
+
+      if (looksDetailedComplaint && detectedSubcategory != null) {
+        _currentStep = 'problem';
+        final problemResponse = await _handleProblemDescription(userInput);
+        return ConversationResponse(
+          message: '''${detectedCategory['emoji']} ${_localize(
+            'I understood your full complaint and matched it to **${detectedCategory['name']} → ${_complaintData['subcategory_display']}**.',
+            'मैंने आपकी पूरी शिकायत समझ ली और उसे **${detectedCategory['name']} → ${_complaintData['subcategory_display']}** से मैच कर दिया है।',
+            'મેં તમારી સંપૂર્ણ ફરિયાદ સમજી લીધી અને તેને **${detectedCategory['name']} → ${_complaintData['subcategory_display']}** સાથે મેચ કરી છે.',
+            'Maine aapki full complaint samajh li aur use **${detectedCategory['name']} → ${_complaintData['subcategory_display']}** se match kar diya hai.',
+          )}\n\n${problemResponse.message}''',
+          buttons: problemResponse.buttons,
+          suggestions: problemResponse.suggestions,
+          step: problemResponse.step,
+          showInput: problemResponse.showInput,
+          inputPlaceholder: problemResponse.inputPlaceholder,
+          complaintData: problemResponse.complaintData,
+          urgencyLevel: problemResponse.urgencyLevel,
+          estimatedResolutionTime: problemResponse.estimatedResolutionTime,
+          aiInsights: problemResponse.aiInsights,
+        );
+      }
       
       _currentStep = 'subcategory';
       
@@ -1558,29 +2047,76 @@ ${_localize('Or just pick from these common issues:', 'या इन साम�
   /// Step 3: Subcategory selection with multi-language support
   Future<ConversationResponse> _handleSubcategorySelection(String userInput) async {
     final categoryKey = _complaintData['category_key'] as String?;
+    final looksDetailedComplaint = _looksLikeDetailedComplaint(userInput);
     
     String? matchedSub;
     if (categoryKey != null) {
-      final subs = _getSubcategories(categoryKey);
-      for (var sub in subs) {
-        if (userInput.toLowerCase().contains(sub.toLowerCase())) {
-          matchedSub = sub;
-          break;
-        }
-      }
+      matchedSub = await _detectSubcategoryForCategory(categoryKey, userInput);
     }
-    
-    _complaintData['subcategory'] = matchedSub ?? userInput;
+
+    if (categoryKey != null && matchedSub == null && looksDetailedComplaint) {
+      _complaintData['raw_description'] = userInput;
+      final subs = _getSubcategories(categoryKey);
+      return ConversationResponse(
+        message: _localize(
+          'I understood the complaint details, but I still need the closest issue type before I save it correctly. Please choose the best matching subcategory.',
+          'मैंने शिकायत का विवरण समझ लिया है, लेकिन सही तरीके से सेव करने से पहले मुझे सबसे नज़दीकी समस्या प्रकार चाहिए। कृपया सही सबकैटेगरी चुनें।',
+          'મેં ફરિયાદની વિગત સમજી લીધી છે, પરંતુ તેને યોગ્ય રીતે સેવ કરતા પહેલા મને સૌથી નજીકનો પ્રશ્ન પ્રકાર જોઈએ. કૃપા કરીને યોગ્ય સબકેટેગરી પસંદ કરો.',
+          'Maine complaint detail samajh li hai, lekin sahi save karne se pehle mujhe closest issue type chahiye. Please best subcategory choose karo.',
+        ),
+        buttons: subs,
+        suggestions: subs.take(3).toList(),
+        step: 'subcategory',
+        showInput: true,
+        inputPlaceholder: _localize(
+          'Choose or type the closest issue type...',
+          'सबसे नज़दीकी समस्या प्रकार चुनें या लिखें...',
+          'સૌથી નજીકનો પ્રશ્ન પ્રકાર પસંદ કરો અથવા લખો...',
+          'Closest issue type choose ya type karo...',
+        ),
+      );
+    }
+
+    final chosenSubcategory = matchedSub ?? userInput;
+    _complaintData['subcategory_display'] = chosenSubcategory;
+    _complaintData['subcategory'] = categoryKey != null
+        ? _normalizeSubcategoryToEnglish(categoryKey, chosenSubcategory)
+        : chosenSubcategory;
+
+    if (categoryKey != null &&
+        matchedSub != null &&
+        looksDetailedComplaint) {
+      _currentStep = 'problem';
+      final problemResponse = await _handleProblemDescription(userInput);
+      return ConversationResponse(
+        message: '''${_localize(
+          'I picked **${_complaintData['subcategory_display']}** from your full problem and added your description too.',
+          'मैंने आपकी पूरी समस्या से **${_complaintData['subcategory_display']}** चुना है और विवरण भी जोड़ दिया है।',
+          'મેં તમારી સંપૂર્ણ સમસ્યામાંથી **${_complaintData['subcategory_display']}** પસંદ કર્યું છે અને વિગત પણ ઉમેરી છે.',
+          'Maine aapki full problem se **${_complaintData['subcategory_display']}** choose kiya hai aur detail bhi add kar di hai.',
+        )}\n\n${problemResponse.message}''',
+        buttons: problemResponse.buttons,
+        suggestions: problemResponse.suggestions,
+        step: problemResponse.step,
+        showInput: problemResponse.showInput,
+        inputPlaceholder: problemResponse.inputPlaceholder,
+        complaintData: problemResponse.complaintData,
+        urgencyLevel: problemResponse.urgencyLevel,
+        estimatedResolutionTime: problemResponse.estimatedResolutionTime,
+        aiInsights: problemResponse.aiInsights,
+      );
+    }
+
     _currentStep = 'problem';
     
     final smartQuestions = _getSmartQuestions(categoryKey ?? '');
     
     return ConversationResponse(
       message: '''${_localize(
-        'Perfect! So it\'s **${_complaintData['subcategory']}**. I\'ve got that noted down. ✅',
-        'बिल्कुल सही! तो यह **${_complaintData['subcategory']}** है। मैंने इसे नोट कर लिया है। ✅',
-        'પરફેક્ટ! તો તે **${_complaintData['subcategory']}** છે. મેં તે નોંધ્યું છે. ✅',
-        'Perfect! To ye **${_complaintData['subcategory']}** hai. Maine note kar liya hai. ✅'
+        'Perfect! So it\'s **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}**. I\'ve got that noted down. ✅',
+        'बिल्कुल सही! तो यह **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** है। मैंने इसे नोट कर लिया है। ✅',
+        'પરફેક્ટ! તો તે **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** છે. મેં તે નોંધ્યું છે. ✅',
+        'Perfect! To ye **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** hai. Maine note kar liya hai. ✅'
       )}
 
 ${_localize(
@@ -2031,7 +2567,8 @@ ${_localize(
 
   /// Step 8: Photo upload
   Future<ConversationResponse> _handlePhotoUpload(String userInput) async {
-    _complaintData['has_photo'] = !userInput.toLowerCase().contains('skip');
+    _complaintData['has_photo'] =
+        !(_isSkipResponse(userInput) || _isNegativeResponse(userInput));
     _currentStep = 'personal_details';
     return _showPersonalDetailsConfirmation();
   }
@@ -2204,10 +2741,21 @@ ${_localize(
 
   /// Step 10: Handle personal details - Multi-language support
   Future<ConversationResponse> _handlePersonalDetails(String userInput) async {
-    if (userInput.toLowerCase().contains('confirm')) {
+    final hasName = _complaintData.containsKey('contact_name') &&
+        _complaintData['contact_name'].toString().isNotEmpty;
+    final hasMobile = _complaintData.containsKey('contact_mobile') &&
+        _complaintData['contact_mobile'].toString().isNotEmpty;
+    final hasEmail = _complaintData.containsKey('contact_email') &&
+        _complaintData['contact_email'].toString().isNotEmpty;
+    final hasAllDetails = hasName && hasMobile && hasEmail;
+
+    if (hasAllDetails &&
+        (_matchesAnyIntentPhrase(userInput, ['confirm details', 'details confirm']) ||
+            _isAffirmativeResponse(userInput))) {
       _currentStep = 'summary';
       return _showEnhancedFinalSummary();
-    } else if (userInput.toLowerCase().contains('edit')) {
+    } else if (hasAllDetails &&
+        (_isEditResponse(userInput) || _isNegativeResponse(userInput))) {
       return ConversationResponse(
         message: '''✏️ ${_localize(
           '**Update Personal Details**',
@@ -2244,25 +2792,20 @@ ${_localize(
     } else {
       // Parse input based on what's missing
       final parts = userInput.split(',').map((e) => e.trim()).toList();
-      
-      // Check what was already filled from profile
-      final hasName = _complaintData.containsKey('contact_name') && _complaintData['contact_name'].toString().isNotEmpty;
-      final hasMobile = _complaintData.containsKey('contact_mobile') && _complaintData['contact_mobile'].toString().isNotEmpty;
-      final hasEmail = _complaintData.containsKey('contact_email') && _complaintData['contact_email'].toString().isNotEmpty;
-      
+
       final missingCount = [hasName, hasMobile, hasEmail].where((has) => !has).length;
       
       if (parts.length >= missingCount) {
         int partIndex = 0;
         
         if (!hasName && partIndex < parts.length) {
-          _complaintData['contact_name'] = parts[partIndex++];
+          _complaintData['contact_name'] = _normalizeContactNameValue(parts[partIndex++]);
         }
         if (!hasMobile && partIndex < parts.length) {
-          _complaintData['contact_mobile'] = parts[partIndex++];
+          _complaintData['contact_mobile'] = _normalizePhoneValue(parts[partIndex++]);
         }
         if (!hasEmail && partIndex < parts.length) {
-          _complaintData['contact_email'] = parts[partIndex++];
+          _complaintData['contact_email'] = _normalizeEmailValue(parts[partIndex++]);
         }
         
         _currentStep = 'summary';
@@ -2337,7 +2880,7 @@ ${_localize(
     )}
 
 ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रेणी:**', '**કેટેગરી:**', '**Category:**')} ${_complaintData['category']}
-📋 ${_localize('**Issue:**', '**समस्या:**', '**સમસ્યા:**', '**Issue:**')} ${_complaintData['subcategory']}
+📋 ${_localize('**Issue:**', '**समस्या:**', '**સમસ્યા:**', '**Issue:**')} ${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}
 📝 ${_localize('**Description:**', '**विवरण:**', '**વિવરણ:**', '**Description:**')} ${_complaintData['description']}
 📅 ${_localize('**Noticed:**', '**देखा गया:**', '**જોયું:**', '**Notice kiya:**')} ${_complaintData['date_noticed']}
 📍 ${_localize('**Location:**', '**स्थान:**', '**સ્થાન:**', '**Location:**')} ${_complaintData['location']}
@@ -2378,12 +2921,33 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
 
   /// Step 12: Confirmation
   Future<ConversationResponse> _handleConfirmation(String userInput) async {
-    if (userInput.toLowerCase().contains('submit')) {
-      _currentStep = 'submitted';
-      _complaintData['submission_time'] = DateTime.now().toIso8601String();
-      _complaintData['conversation_duration'] = DateTime.now().difference(_conversationStartTime).inSeconds;
-      return _showEnhancedSuccess();
-    } else if (userInput.toLowerCase().contains('edit')) {
+    final isSubmit = _isSubmitLikeResponse(userInput);
+    final isEdit = _isEditResponse(userInput);
+    final isCancel = _matchesAnyIntentPhrase(userInput, [
+          'cancel',
+          'रद्द',
+          'રદ',
+        ]) ||
+        _isNegativeResponse(userInput);
+
+    if (isSubmit) {
+      return ConversationResponse(
+        message: _localize(
+          'Please tap the **Submit** button below so I can save this complaint in the backend and generate a real complaint ID.',
+          'कृपया नीचे दिए गए **सबमिट** बटन पर टैप करें, ताकि मैं शिकायत को बैकएंड में सेव कर सकूं और असली शिकायत आईडी बना सकूं।',
+          'કૃપા કરીને નીચેના **સબમિટ** બટન પર ટેપ કરો, જેથી હું ફરિયાદને બેકએન્ડમાં સેવ કરી શકું અને સાચી ફરિયાદ આઈડી બનાવી શકું.',
+          'Please neeche wale **Submit** button pe tap karo, tabhi backend me real complaint save hogi aur asli complaint ID milegi.'
+        ),
+        buttons: [
+          '✅ ${_localize('Submit', 'सबमिट करें', 'સબમિટ કરો', 'Submit Karo')}',
+          '✏️ ${_localize('Edit', 'संपादित करें', 'સંપાદિત કરો', 'Edit Karo')}',
+          '❌ ${_localize('Cancel', 'रद्द करें', 'રદ કરો', 'Cancel')}'
+        ],
+        suggestions: [],
+        step: 'confirm',
+        showInput: false,
+      );
+    } else if (isEdit) {
       _currentStep = 'language_selection';
       _complaintData.clear();
       _userLanguage = 'en'; // Reset language
@@ -2396,6 +2960,9 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
         step: 'language_selection',
         showInput: true,
       );
+    }
+    if (isCancel) {
+      return _resetConversation();
     }
     return _resetConversation();
   }
@@ -2466,13 +3033,9 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
         debugPrint('Detected Category: $categoryKey');
         
         if (categoryKey != null && categoryKey != 'null') {
-          if (categories.containsKey(categoryKey)) {
-            final category = categories[categoryKey]!;
-            return {
-              'key': category['key']!,
-              'name': _getCategoryName(category['key']!),
-              'emoji': category['emoji']!,
-            };
+          final matchedCategory = _findCategoryByKey(categoryKey.toString());
+          if (matchedCategory != null) {
+            return matchedCategory;
           }
         }
       }
@@ -2497,7 +3060,7 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
 User complaint: "$input"
 
 Available categories:
-${categories.entries.map((entry) => '- ${entry.key}: ${entry.value['en']} (${entry.value['emoji']})').join('\n')}
+${_getCategories().map((category) => '- ${category['key']}: ${category['name']} (${category['emoji']})').join('\n')}
 
 Examples:
 - "maru bag chorai gyu chhe" → police (theft in Gujarati)
@@ -2506,7 +3069,7 @@ Examples:
 - "light nathi" → electricity (no power in Gujarati)
 - "kachra pado chhe" → garbage (garbage lying in Gujarati)
 
-Respond with ONLY the category key (road, water, electricity, police, garbage, drainage, traffic, construction, cyber, street_light, public_toilet, or other).
+Respond with ONLY the category key from the list above.
 No explanation, just the key.''';
 
       final response = await _callGroqAPI(prompt, maxTokens: 50, temperature: 0.1);
@@ -2514,14 +3077,10 @@ No explanation, just the key.''';
       if (response != null) {
         final categoryKey = response.trim().toLowerCase();
         
-        if (categories.containsKey(categoryKey)) {
-          final category = categories[categoryKey]!;
+        final matchedCategory = _findCategoryByKey(categoryKey);
+        if (matchedCategory != null) {
           debugPrint('Groq AI detected category: $categoryKey for input: $input');
-          return {
-            'key': category['key']!,
-            'name': _getCategoryName(category['key']!),
-            'emoji': category['emoji']!,
-          };
+          return matchedCategory;
         }
       }
     } catch (e) {
@@ -2705,9 +3264,9 @@ Respond: VALID or INVALID|reason''';
     final lower = input.toLowerCase();
     final detectedCategories = <Map<String, String>>[];
     
-    for (var entry in categories.entries) {
-      final key = entry.key;
-      final category = entry.value;
+    for (final category in _getCategories()) {
+      final key = (category['key'] ?? '').toString();
+      if (key.isEmpty) continue;
       final keywords = _getCategoryKeywords(key);
       
       for (var keyword in keywords) {
@@ -2715,8 +3274,8 @@ Respond: VALID or INVALID|reason''';
           if (!detectedCategories.any((c) => c['key'] == key)) {
             detectedCategories.add({
               'key': key,
-              'name': _getCategoryName(key),
-              'emoji': category['emoji']!,
+              'name': (category['name'] ?? key).toString(),
+              'emoji': (category['emoji'] ?? '📝').toString(),
             });
           }
           break;
@@ -2783,6 +3342,7 @@ Respond: VALID or INVALID|reason''';
   }
   Map<String, String>? _fuzzyMatchCategory(String input) {
     final lower = input.toLowerCase();
+    final normalizedInput = _normalizeTextForMatching(input);
     
     // Check each category for matches
     for (var entry in categories.entries) {
@@ -2802,18 +3362,26 @@ Respond: VALID or INVALID|reason''';
         };
       }
     }
+
+    for (final category in _getCategories()) {
+      final key = (category['key'] ?? '').toString();
+      final name = (category['name'] ?? '').toString();
+      if (key.isEmpty || name.isEmpty) continue;
+
+      final normalizedName = _normalizeTextForMatching(name);
+      if (lower.contains(key) ||
+          normalizedInput.contains(normalizedName) ||
+          normalizedName.contains(normalizedInput)) {
+        final matched = _findCategoryByKey(key);
+        if (matched != null) {
+          return matched;
+        }
+      }
+    }
     
     // Find category by key helper
     Map<String, String>? findByKey(String key) {
-      if (categories.containsKey(key)) {
-        final category = categories[key]!;
-        return {
-          'key': key,
-          'name': _getCategoryName(key),
-          'emoji': category['emoji']!,
-        };
-      }
-      return null;
+      return _findCategoryByKey(key);
     }
     
     // Common English keywords
@@ -2947,30 +3515,59 @@ Respond: VALID or INVALID|reason''';
 
   /// Normalize date
   String _normalizeDateInput(String input) {
-    final lower = input.toLowerCase();
+    final normalizedInput = _convertDigitsToAscii(input).trim();
+    final lower = normalizedInput.toLowerCase();
     final now = DateTime.now();
-    
-    if (lower.contains('today')) return DateFormat('dd MMM yyyy').format(now);
-    if (lower.contains('yesterday')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 1)));
-    if (lower.contains('2-3') || lower.contains('few')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 3)));
-    if (lower.contains('week')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 7)));
-    if (lower.contains('weeks')) return DateFormat('dd MMM yyyy').format(now.subtract(const Duration(days: 14)));
-    
-    return input;
+
+    String iso(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
+
+    if (lower.contains('today') || lower.contains('आज') || lower.contains('આજે') || lower.contains('aaj')) {
+      return iso(now);
+    }
+    if (lower.contains('yesterday') || lower.contains('कल') || lower.contains('ગઈકાલે') || lower.contains('kal')) {
+      return iso(now.subtract(const Duration(days: 1)));
+    }
+    if (lower.contains('2-3') || lower.contains('few') || lower.contains('कुछ दिन') || lower.contains('કેટલાક દિવસ')) {
+      return iso(now.subtract(const Duration(days: 3)));
+    }
+    if (lower.contains('last week') || lower.contains('पिछले सप्ताह') || lower.contains('ગયા અઠવાડિયે')) {
+      return iso(now.subtract(const Duration(days: 7)));
+    }
+    if (lower.contains('week') || lower.contains('सप्ताह') || lower.contains('અઠવાડિયા') || lower.contains('haft')) {
+      return iso(now.subtract(const Duration(days: 7)));
+    }
+    if (lower.contains('weeks') || lower.contains('हफ्तों') || lower.contains('અઠવાડિયાઓ')) {
+      return iso(now.subtract(const Duration(days: 14)));
+    }
+
+    for (final fmt in ['yyyy-MM-dd', 'dd/MM/yyyy', 'd/M/yyyy', 'dd-MM-yyyy', 'd-M-yyyy', 'dd MMM yyyy', 'd MMM yyyy']) {
+      try {
+        final parsed = DateFormat(fmt).parseStrict(normalizedInput);
+        return iso(parsed);
+      } catch (_) {}
+    }
+
+    return normalizedInput;
   }
 
   /// Calculate duration
   int _calculateDuration(String dateStr) {
-    try {
-      final date = DateFormat('dd MMM yyyy').parse(dateStr);
-      return DateTime.now().difference(date).inDays;
-    } catch (e) {
-      return 1;
+    for (final fmt in ['yyyy-MM-dd', 'dd MMM yyyy', 'dd/MM/yyyy', 'dd-MM-yyyy']) {
+      try {
+        final date = DateFormat(fmt).parseStrict(dateStr);
+        return DateTime.now().difference(date).inDays;
+      } catch (_) {}
     }
+    return 1;
   }
 
   /// Get smart suggestions
   List<String> _getSmartSuggestions(String categoryKey) {
+    final dynamicSubs = _getSubcategories(categoryKey);
+    if (dynamicSubs.isNotEmpty && dynamicSubs.first != 'Other') {
+      return dynamicSubs.take(3).toList();
+    }
+
     final subs = subcategories[categoryKey];
     if (subs == null) return ['Other'];
     

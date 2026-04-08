@@ -125,14 +125,33 @@ class _ProfileScreenState extends State<ProfileScreen>
           : response;
       final profile = payload['profile'];
       if (profile is! Map<String, dynamic>) return;
+      final user = profile['user'] is Map<String, dynamic>
+          ? profile['user'] as Map<String, dynamic>
+          : const <String, dynamic>{};
 
-      final serverState = (profile['state'] ?? '').toString().trim();
-      final serverCity = (profile['city'] ?? '').toString().trim();
+      String clean(dynamic value) {
+        final text = (value ?? '').toString().trim();
+        if (text.toLowerCase() == 'not provided' ||
+            text.toLowerCase() == 'not specified' ||
+            text.toLowerCase() == 'null' ||
+            text.toLowerCase() == 'none') {
+          return '';
+        }
+        return text;
+      }
+
+      final serverState = clean(profile['state']);
+      final serverCity = clean(profile['city']);
+      final firstName = clean(user['first_name']);
+      final lastName = clean(user['last_name']);
+      final fullName = '$firstName $lastName'.trim();
 
       setState(() {
-        _mobileController.text = (profile['mobile_no'] ?? '').toString();
-        _addressController.text = (profile['address'] ?? '').toString();
-        _aadhaarController.text = (profile['aadhaar_number'] ?? '').toString();
+        _fullNameController.text = fullName;
+        _emailController.text = clean(user['email']);
+        _mobileController.text = clean(profile['mobile_no']);
+        _addressController.text = clean(profile['address']);
+        _aadhaarController.text = clean(profile['aadhaar_number']);
         _selectedState = serverState.isEmpty ? null : serverState;
         _selectedCity = serverCity.isEmpty ? null : serverCity;
         if (_selectedState != null) {
@@ -745,6 +764,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       final body = {
         'first_name': names['first'] ?? '',
         'last_name': names['last'] ?? '',
+        'email': _emailController.text.trim(),
         'surname': names['last'] ?? '',
         'mobile_no': _mobileController.text.trim(),
         'state': (_selectedState ?? '').trim(),
@@ -760,10 +780,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       setState(() => _isLoading = false);
 
       if (response['success'] == true) {
-        // Sync local auth user with the new nested user object from Django's profile return
+        // Sync local auth user with the new profile data (which now includes user and mobile/aadhaar)
         final profileData = response['profile'];
-        if (profileData != null && profileData['user'] != null) {
-          StorageService.saveUserData(jsonEncode(profileData['user']));
+        if (profileData != null) {
+          // User.fromJson can now handle this full profile object correctly
+          await StorageService.saveUserData(jsonEncode(profileData));
         }
         await Provider.of<AuthProvider>(context, listen: false).loadUser();
         messenger.showSnackBar(

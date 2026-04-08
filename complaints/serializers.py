@@ -23,6 +23,18 @@ class CitizenProfileSerializer(serializers.ModelSerializer):
                   'city', 'pincode', 'address', 'mobile_no', 'aadhaar_number', 
                   'latitude', 'longitude']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        for key in ['surname', 'state', 'district', 'taluka', 'city', 'pincode', 'address', 'mobile_no', 'aadhaar_number']:
+            value = data.get(key)
+            if value is None:
+                data[key] = ''
+                continue
+            text = str(value).strip()
+            if text.lower() in {'not provided', 'not specified', 'none', 'null'}:
+                data[key] = ''
+        return data
+
 
 class ComplaintMediaSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
@@ -189,6 +201,8 @@ class ComplaintDetailSerializer(serializers.ModelSerializer):
 
 class ComplaintCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating complaints"""
+    priority = serializers.CharField(required=False, allow_blank=True)
+    date_of_occurrence = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     media_files = serializers.ListField(
         child=serializers.FileField(),
         write_only=True,
@@ -205,6 +219,85 @@ class ComplaintCreateSerializer(serializers.ModelSerializer):
                   'date_of_occurrence', 'latitude', 'longitude', 'city', 'state', 'pincode', 'address',
                   'preferred_contact_phone', 'preferred_contact_email', 
                   'preferred_contact_sms', 'media_files', 'guest_name', 'guest_email', 'guest_phone']
+
+    def validate(self, attrs):
+        raw = getattr(self, 'initial_data', {})
+
+        def pick(*keys):
+            for key in keys:
+                value = raw.get(key)
+                if value is None:
+                    continue
+                text = str(value).strip()
+                if text:
+                    return text
+            return ''
+
+        if not attrs.get('guest_name'):
+            guest_name = pick('guest_name', 'contact_name', 'name')
+            if guest_name:
+                attrs['guest_name'] = guest_name
+
+        if not attrs.get('guest_phone'):
+            guest_phone = pick('guest_phone', 'contact_mobile', 'mobile_no', 'phone')
+            if guest_phone:
+                attrs['guest_phone'] = guest_phone
+
+        if not attrs.get('guest_email'):
+            guest_email = pick('guest_email', 'contact_email', 'email')
+            if guest_email:
+                attrs['guest_email'] = guest_email
+
+        if not attrs.get('date_of_occurrence'):
+            occurrence = pick('date_of_occurrence', 'date_noticed')
+            if occurrence:
+                attrs['date_of_occurrence'] = occurrence
+
+        if not attrs.get('address'):
+            address = pick('address', 'location')
+            if address:
+                attrs['address'] = address
+
+        language = str(attrs.get('language', '')).strip().lower()
+        language_map = {
+            'english': 'en',
+            'hindi': 'hi',
+            'hinglish': 'hi',
+            'gujarati': 'gu',
+            'marathi': 'mr',
+        }
+        if language in language_map:
+            attrs['language'] = language_map[language]
+
+        priority = str(attrs.get('priority', '')).strip().lower()
+        priority_map = {
+            'critical': 'high',
+            'urgent': 'high',
+            'high': 'high',
+            'medium': 'medium',
+            'normal': 'normal',
+            'low': 'normal',
+            '': 'normal',
+        }
+        attrs['priority'] = priority_map.get(priority, 'normal')
+
+        raw_occurrence = attrs.get('date_of_occurrence')
+        if raw_occurrence in (None, ''):
+            attrs['date_of_occurrence'] = None
+        else:
+            from datetime import datetime
+
+            parsed_date = None
+            for fmt in ('%Y-%m-%d', '%d %b %Y', '%d %B %Y', '%d-%m-%Y', '%d/%m/%Y'):
+                try:
+                    parsed_date = datetime.strptime(str(raw_occurrence).strip(), fmt).date()
+                    break
+                except ValueError:
+                    continue
+
+            attrs['date_of_occurrence'] = parsed_date
+
+        return attrs
     
     def create(self, validated_data):
         media_files = validated_data.pop('media_files', [])
