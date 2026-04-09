@@ -14,10 +14,8 @@ import '../../services/chat_history_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/complaint_provider.dart';
 import '../../providers/locale_provider.dart';
-import '../../providers/live_call_provider.dart';
 import '../../config/routes.dart';
 import 'chat_history_screen.dart';
-import 'voice_call_screen.dart';
 
 class AIChatScreen extends StatefulWidget {
   const AIChatScreen({Key? key}) : super(key: key);
@@ -1024,61 +1022,7 @@ Your complaint has been registered and assigned to the nearest department.
     });
   }
 
-  /// Open voice call screen
-  Future<void> _openVoiceCall() async {
-    final user = context.read<AuthProvider>().user;
-    final localeProvider = context.read<LocaleProvider>();
-    final callProvider = context.read<LiveCallProvider>();
-    
-    // Get current app language
-    final currentLocale = localeProvider.locale.languageCode;
-    
-    // Map locale to speech locale and language name
-    String localeId;
-    String languageName;
-    switch (currentLocale) {
-      case 'hi':
-        localeId = 'hi_IN';
-        languageName = 'hindi';
-        break;
-      case 'gu':
-        localeId = 'gu_IN';
-        languageName = 'gujarati';
-        break;
-      case 'mr':
-        localeId = 'mr_IN';
-        languageName = 'marathi';
-        break;
-      default:
-        localeId = 'en_IN';
-        languageName = 'english';
-    }
-    
-    // Set language and start call
-    await callProvider.setSpeechLocaleId(localeId, languageLabel: _getLanguageLabel(currentLocale));
-    await callProvider.setLanguageAndSkipGreeting(languageName);
-    await callProvider.startCall(userName: user?.fullName ?? 'User');
-    
-    // Navigate to voice call screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const VoiceCallScreen(),
-      ),
-    );
-  }
-  
-  String _getLanguageLabel(String code) {
-    switch (code) {
-      case 'hi': return 'Hindi';
-      case 'gu': return 'Gujarati';
-      case 'mr': return 'Marathi';
-      default: return 'English';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  void _scrollToBottom() {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -1125,12 +1069,6 @@ Your complaint has been registered and assigned to the nearest department.
           ],
         ),
         actions: [
-          // Voice Call Button
-          IconButton(
-            icon: const Icon(Icons.phone, color: Color(0xFF64748b)),
-            tooltip: 'Start Voice Call',
-            onPressed: () => _openVoiceCall(),
-          ),
           IconButton(
             icon: const Icon(Icons.history, color: Color(0xFF64748b)),
             tooltip: 'Chat History',

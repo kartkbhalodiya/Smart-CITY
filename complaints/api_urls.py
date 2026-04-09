@@ -17,11 +17,6 @@ from .api_views import (
 from .enhanced_ai_views import enhanced_ai_chat, ai_reset_session, ai_session_status
 from .test_cityfix import test_cityfix_llm
 from .category_api import get_all_categories_subcategories
-from .ml_voice_api_views import (
-    ml_voice_process, ml_voice_emotion_detect, ml_voice_resolve_date,
-    ml_voice_session_summary, ml_voice_reset_session, ml_voice_generate_response,
-    ml_voice_intake_analyze, ml_voice_analyze_conversation,
-)
 
 router = DefaultRouter()
 router.register(r'complaints', ComplaintViewSet, basename='complaint')
@@ -73,16 +68,6 @@ urlpatterns = [
     path('ai/check-duplicate/', ai_check_duplicate, name='api_ai_check_duplicate'),
     path('ai/gemini-status/', ai_gemini_status, name='api_ai_gemini_status'),
     path('ai/get-department/', ai_get_department, name='api_ai_get_department'),
-    
-    # ML Voice Assistant (Advanced)
-    path('ml-voice/process/', ml_voice_process, name='ml_voice_process'),
-    path('ml-voice/intake-analyze/', ml_voice_intake_analyze, name='ml_voice_intake_analyze'),
-    path('ml-voice/analyze-conversation/', ml_voice_analyze_conversation, name='ml_voice_analyze_conversation'),
-    path('ml-voice/emotion/', ml_voice_emotion_detect, name='ml_voice_emotion'),
-    path('ml-voice/resolve-date/', ml_voice_resolve_date, name='ml_voice_date'),
-    path('ml-voice/session/<str:session_id>/', ml_voice_session_summary, name='ml_voice_session'),
-    path('ml-voice/session/<str:session_id>/reset/', ml_voice_reset_session, name='ml_voice_reset'),
-    path('ml-voice/generate-response/', ml_voice_generate_response, name='ml_voice_generate'),
     
     # Cloudinary
     path('cloudinary/signature/', get_cloudinary_signature, name='api_cloudinary_signature'),
