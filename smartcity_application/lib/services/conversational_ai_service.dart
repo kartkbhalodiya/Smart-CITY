@@ -1879,40 +1879,46 @@ ${_localize(
       _retryCount++;
     }
 
-    // Check if user is trying to report multiple issues at once
-    final multipleIssuesDetected = _detectMultipleIssues(userInput);
-    if (multipleIssuesDetected != null && multipleIssuesDetected.length > 1) {
-      return ConversationResponse(
-        message: '''${_localize(
-          'I can see you\'re dealing with multiple problems! 😟 That must be really frustrating.',
-          'मैं देख सकता हूं कि आप कई समस्याओं से निपट रहे हैं! 😟 यह वास्तव में निराशाजनक होना चाहिए।',
-          'હું જોઈ શકું છું કે તમે અનેક સમસ્યાઓ સાથે વ્યવહાર કરી રહ્યા છો! 😟 તે ખરેખર નિરાશાજનક હોવું જોઈએ।',
-          'Main dekh sakta hun ki aap kai problems se deal kar rahe hain! 😟 Ye bahut frustrating hoga.'
-        )}
+    // IMPORTANT: Don't check for multiple issues if user clicked a category button
+    // Category buttons have emoji at start
+    final isCategoryButton = userInput.contains(RegExp(r'^[\p{Emoji}]', unicode: true));
+    
+    // Only check for multiple issues if user typed a long description (not a button click)
+    if (!isCategoryButton && userInput.length > 30) {
+      final multipleIssuesDetected = _detectMultipleIssues(userInput);
+      if (multipleIssuesDetected != null && multipleIssuesDetected.length > 1) {
+        return ConversationResponse(
+          message: '''${_localize(
+            'I can see you\'re dealing with multiple problems! 😟 That must be really frustrating.',
+            'मैं देख सकता हूं कि आप कई समस्याओं से निपट रहे हैं! 😟 यह वास्तव में निराशाजनक होना चाहिए।',
+            'હું જોઈ શકું છું કે તમે અનેક સમસ્યાઓ સાથે વ્યવહાર કરી રહ્યા છો! 😟 તે ખરેખર નિરાશાજનક હોવું જોઈએ।',
+            'Main dekh sakta hun ki aap kai problems se deal kar rahe hain! 😟 Ye bahut frustrating hoga.'
+          )}
 
 ${_localize(
-          'You mentioned:',
-          'आपने उल्लेख किया:',
-          'તમે ઉલ્લેખ કર્યો:',
-          'Aapne mention kiya:'
-        )}
+            'You mentioned:',
+            'आपने उल्लेख किया:',
+            'તમે ઉલ્લેખ કર્યો:',
+            'Aapne mention kiya:'
+          )}
 ${multipleIssuesDetected.map((issue) => '• ${issue['emoji']} ${issue['name']}').join('\n')}
 
 ${_localize(
-          'To help you better, let\'s handle one issue at a time so each gets the attention it deserves. Which one is bothering you the most right now?',
-          'आपकी बेहतर मदद के लिए, आइए एक समय में एक मुद्दे को संभालते हैं ताकि प्रत्येक को वह ध्यान मिले जिसका वह हकदार है। अभी आपको कौन सा सबसे ज्यादा परेशान कर रहा है?',
-          'તમને વધુ સારી રીતે મદદ કરવા માટે, ચાલો એક સમયે એક મુદ્દાને હેન્ડલ કરીએ જેથી દરેકને તે ધ્યાન મળે જેનો તે હકદાર છે। અત્યારે તમને કયો સૌથી વધુ પરેશાન કરી રહ્યો છે?',
-          'Aapki better help ke liye, ek time mein ek issue handle karte hain. Abhi sabse zyada kya pareshan kar raha hai?'
-        )}''',
-        buttons: multipleIssuesDetected.map((issue) => '${issue['emoji']} ${issue['name']}').toList(),
-        suggestions: [
-          _localize('The most urgent one', 'सबसे जरूरी वाला', 'સૌથી તાત્કાલિક', 'Sabse urgent wala'),
-          _localize('All are equally important', 'सभी समान रूप से महत्वपूर्ण हैं', 'બધા સમાન રીતે મહત્વપૂર્ણ છે', 'Sab equally important hain')
-        ],
-        step: 'category',
-        showInput: true,
-        inputPlaceholder: _localize('Which one first?', 'पहले कौन सा?', 'પહેલા કયો?', 'Pehle kaun sa?'),
-      );
+            'To help you better, let\'s handle one issue at a time so each gets the attention it deserves. Which one is bothering you the most right now?',
+            'आपकी बेहतर मदद के लिए, आइए एक समय में एक मुद्दे को संभालते हैं ताकि प्रत्येक को वह ध्यान मिले जिसका वह हकदार है। अभी आपको कौन सा सबसे ज्यादा परेशान कर रहा है?',
+            'તમને વધુ સારી રીતે મદદ કરવા માટે, ચાલો એક સમયે એક મુદ્દાને હેન્ડલ કરીએ જેથી દરેકને તે ધ્યાન મળે જેનો તે હકદાર છે। અત્યારે તમને કયો સૌથી વધુ પરેશાન કરી રહ્યો છે?',
+            'Aapki better help ke liye, ek time mein ek issue handle karte hain. Abhi sabse zyada kya pareshan kar raha hai?'
+          )}''',
+          buttons: multipleIssuesDetected.map((issue) => '${issue['emoji']} ${issue['name']}').toList(),
+          suggestions: [
+            _localize('The most urgent one', 'सबसे जरूरी वाला', 'સૌથી તાત્કાલિક', 'Sabse urgent wala'),
+            _localize('All are equally important', 'सभी समान रूप से महत्वपूर्ण हैं', 'બધા સમાન રીતે મહત્વપૂર્ણ છે', 'Sab equally important hain')
+          ],
+          step: 'category',
+          showInput: true,
+          inputPlaceholder: _localize('Which one first?', 'पहले कौन सा?', 'પહેલા કયો?', 'Pehle kaun sa?'),
+        );
+      }
     }
 
     final detectedCategory = await _detectCategoryWithAI(userInput);

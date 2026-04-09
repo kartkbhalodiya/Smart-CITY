@@ -216,7 +216,7 @@ This project is submitted to the **Google Developer Student Clubs Solution Chall
 | Push Notifications | Supabase |
 | Cache | Redis / LocMemCache |
 | Maps | Leaflet.js, OpenStreetMap Nominatim |
-| Deployment | Vercel (web), Render (API) |
+| Deployment | Railway |
 | Fonts | Google Fonts |
 
 ---

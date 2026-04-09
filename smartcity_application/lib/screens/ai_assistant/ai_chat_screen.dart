@@ -16,6 +16,7 @@ import '../../providers/complaint_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../config/routes.dart';
 import 'chat_history_screen.dart';
+import '../../widgets/subcategory_selection_dialog.dart';
 
 class AIChatScreen extends StatefulWidget {
   const AIChatScreen({Key? key}) : super(key: key);
@@ -307,6 +308,12 @@ Track your complaint in "My Complaints" section.''';
       return;
     }
 
+    // Check if this is a category button click - show subcategory dialog
+    if (_shouldShowSubcategoryDialog(text)) {
+      await _showSubcategoryDialogForCategory(text);
+      return;
+    }
+
     setState(() {
       _messages.add(ChatMessage(
         text: text,
@@ -341,6 +348,81 @@ Track your complaint in "My Complaints" section.''';
     if (_messages.length > 1) {
       _saveCurrentSession();
     }
+  }
+
+  // Check if we should show subcategory dialog
+  bool _shouldShowSubcategoryDialog(String text) {
+    // Disabled - show subcategories as buttons in chat instead
+    return false;
+  }
+
+  // Show subcategory dialog for selected category
+  Future<void> _showSubcategoryDialogForCategory(String categoryButton) async {
+    setState(() {
+      _messages.add(ChatMessage(
+        text: categoryButton,
+        isUser: true,
+        timestamp: DateTime.now(),
+      ));
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    // Send to AI to get subcategories
+    final response = await _aiService.processInput(categoryButton);
+
+    // Extract category info
+    final categoryEmoji = categoryButton.split(' ').first;
+    final categoryName = categoryButton.substring(categoryButton.indexOf(' ') + 1);
+    
+    // Check if response has subcategories (buttons without emojis at start)
+    final hasSubcategories = response.buttons.isNotEmpty && 
+        response.buttons.length >= 3 &&
+        response.buttons.every((btn) => !btn.startsWith(RegExp(r'^[\p{Emoji}\s]+', unicode: true)));
+    
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (hasSubcategories) {
+      // Show dialog instead of adding message with buttons
+      await showSubcategoryDialog(
+        context: context,
+        categoryName: categoryName,
+        categoryEmoji: categoryEmoji,
+        subcategories: response.buttons,
+        onSelected: (selectedSubcategory) {
+          // User selected a subcategory from dialog
+          _handleSubcategorySelection(selectedSubcategory);
+        },
+      );
+      // Don't save session here - wait for subcategory selection
+    } else {
+      // No subcategories, show normal response
+      setState(() {
+        _messages.add(ChatMessage(
+          text: response.message,
+          isUser: false,
+          buttons: response.buttons,
+          suggestions: response.suggestions,
+          timestamp: DateTime.now(),
+          urgencyLevel: response.urgencyLevel,
+          estimatedTime: response.estimatedResolutionTime,
+        ));
+        _showInput = response.showInput;
+      });
+      _scrollToBottom();
+      
+      if (_messages.length > 1) {
+        _saveCurrentSession();
+      }
+    }
+  }
+
+  // Handle subcategory selection from dialog
+  void _handleSubcategorySelection(String subcategory) {
+    // Simply send the subcategory as a normal message
+    _sendMessage(subcategory);
   }
 
   bool _isSubmitAction(String text) {
@@ -1022,7 +1104,8 @@ Your complaint has been registered and assigned to the nearest department.
     });
   }
 
-  void _scrollToBottom() {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -1297,6 +1380,12 @@ Your complaint has been registered and assigned to the nearest department.
         child: _buttonContainer(text),
       );
     }
+    
+    // Check if this is a subcategory button (appears after category selection)
+    // Subcategories don't have emojis at the start
+    final isSubcategory = !text.startsWith(RegExp(r'[\p{Emoji}]', unicode: true)) && 
+                          _messages.isNotEmpty &&
+                          _messages.last.buttons.contains(text);
     
     return GestureDetector(
       onTap: () => _sendMessage(text),

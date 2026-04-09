@@ -31,11 +31,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['janhelps.in', 'www.janhelps.in', '.vercel.app', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['janhelps.in', 'www.janhelps.in', '127.0.0.1', 'localhost']
 if os.getenv('ALLOWED_HOSTS'):
     ALLOWED_HOSTS.extend([host.strip() for host in os.getenv('ALLOWED_HOSTS').split(',') if host.strip()])
 if not DEBUG and os.getenv('RENDER_EXTERNAL_HOSTNAME'):
     ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
+if not DEBUG and os.getenv('RAILWAY_PUBLIC_DOMAIN'):
+    ALLOWED_HOSTS.append(os.getenv('RAILWAY_PUBLIC_DOMAIN'))
 
 
 # Application definition
@@ -208,7 +210,7 @@ CITYFIX_LLM_URL = os.getenv('CITYFIX_LLM_URL', 'https://kartik1911-cityfix-llm.h
 LOGIN_URL = '/login/'
 
 # Base URL for emails and links
-BASE_URL = os.getenv('BASE_URL', 'https://janhelp.vercel.app')
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
 # Session settings - Keep user logged in
 SESSION_COOKIE_AGE = 1209600  # 2 weeks
