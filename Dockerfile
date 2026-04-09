@@ -21,5 +21,5 @@ RUN python manage.py collectstatic --noinput
 # Expose port
 EXPOSE 8000
 
-# Start Gunicorn
-CMD gunicorn --bind 0.0.0.0:${PORT:-8000} smartcity.wsgi:application
+# Start Gunicorn through a shell so Railway's PORT env var expands correctly
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8000} smartcity.wsgi:application"]
