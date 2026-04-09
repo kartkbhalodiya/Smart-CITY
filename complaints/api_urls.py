@@ -16,10 +16,11 @@ from .api_views import (
 )
 from .enhanced_ai_views import enhanced_ai_chat, ai_reset_session, ai_session_status
 from .test_cityfix import test_cityfix_llm
+from .category_api import get_all_categories_subcategories
 from .ml_voice_api_views import (
     ml_voice_process, ml_voice_emotion_detect, ml_voice_resolve_date,
     ml_voice_session_summary, ml_voice_reset_session, ml_voice_generate_response,
-    ml_voice_intake_analyze,
+    ml_voice_intake_analyze, ml_voice_analyze_conversation,
 )
 
 router = DefaultRouter()
@@ -43,6 +44,7 @@ urlpatterns = [
     
     # Categories
     path('categories/', get_categories, name='api_categories'),
+    path('categories/all-with-subcategories/', get_all_categories_subcategories, name='api_all_categories_subcategories'),
     path('categories/<str:category_key>/subcategories/', get_subcategories, name='api_subcategories'),
     
     # Departments
@@ -75,6 +77,7 @@ urlpatterns = [
     # ML Voice Assistant (Advanced)
     path('ml-voice/process/', ml_voice_process, name='ml_voice_process'),
     path('ml-voice/intake-analyze/', ml_voice_intake_analyze, name='ml_voice_intake_analyze'),
+    path('ml-voice/analyze-conversation/', ml_voice_analyze_conversation, name='ml_voice_analyze_conversation'),
     path('ml-voice/emotion/', ml_voice_emotion_detect, name='ml_voice_emotion'),
     path('ml-voice/resolve-date/', ml_voice_resolve_date, name='ml_voice_date'),
     path('ml-voice/session/<str:session_id>/', ml_voice_session_summary, name='ml_voice_session'),

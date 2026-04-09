@@ -356,3 +356,56 @@ def ml_voice_intake_analyze(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ml_voice_analyze_conversation(request):
+    """
+    Analyze full conversation history with Gemini 2.5 Flash to extract complaint details.
+
+    POST /api/ml-voice/analyze-conversation/
+    Body: {
+        "conversation_history": [
+            {"role": "assistant", "text": "Hello..."},
+            {"role": "user", "text": "road broken"},
+            ...
+        ],
+        "preferred_language": "english"
+    }
+
+    Returns: {
+        "success": true,
+        "category_key": "road",
+        "category_name": "Road/Pothole",
+        "subcategory": "Broken Road",
+        "problem_summary": "Road is broken near sector 5",
+        "description": "Full description...",
+        "location_hint": "sector 5",
+        "urgency": "medium",
+        "confidence": 0.85,
+        "reasoning": "User mentioned broken road..."
+    }
+    """
+    try:
+        conversation_history = request.data.get('conversation_history', [])
+        preferred_language = request.data.get('preferred_language', 'english')
+
+        if not conversation_history:
+            return Response({
+                'success': False,
+                'error': 'Conversation history is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        service = VoiceComplaintIntakeService()
+        analysis = service.analyze_with_gemini(
+            conversation_history=conversation_history,
+            preferred_language=preferred_language,
+        )
+        return Response(analysis)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,8 +1,15 @@
 import re
+import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from django.conf import settings
 
 from .models import ComplaintCategory
+
+try:
+    from google import genai as google_genai
+except Exception:
+    google_genai = None
 
 
 @dataclass
@@ -15,51 +22,20 @@ class _CategoryEntry:
 class VoiceComplaintIntakeService:
     """Backend-first structured complaint understanding for live voice intake."""
 
-    CATEGORY_ALIASES = {
-        'police': ['police', 'crime', 'theft', 'chori', 'robbery', 'attack', 'harassment'],
-        'traffic': ['traffic', 'signal', 'parking', 'accident', 'jam', 'vehicle'],
-        'construction': ['construction', 'building', 'illegal construction', 'collapse', 'debris'],
-        'water': ['water', 'pani', 'paani', 'pipeline', 'leak', 'supply', 'dirty water'],
-        'electricity': ['electricity', 'bijli', 'light', 'power', 'wire', 'transformer', 'spark'],
-        'garbage': ['garbage', 'kachra', 'waste', 'dustbin', 'sanitation', 'cleaning'],
-        'road': ['road', 'sadak', 'pothole', 'khadda', 'hole', 'broken road', 'footpath'],
-        'drainage': ['drain', 'drainage', 'sewage', 'gutter', 'nali', 'overflow', 'waterlogging'],
-        'illegal': ['illegal', 'encroachment', 'unauthorized', 'kabza'],
-        'transportation': ['transport', 'bus', 'auto', 'taxi', 'public transport'],
-        'cyber': ['cyber', 'fraud', 'scam', 'otp', 'phishing', 'hack', 'online fraud'],
-        'other': ['other', 'misc', 'general issue'],
-    }
-
-    SUBCATEGORY_ALIASES = {
-        'road': {
-            'Pothole on Road': ['pothole', 'khadda', 'gadda', 'hole in road'],
-            'Broken Road': ['broken road', 'damaged road', 'road cracked', 'sadak kharab'],
-            'Water Logging on Road': ['water logging', 'waterlogged road', 'pani jama'],
-            'Dangerous Conditions': ['dangerous road', 'unsafe road'],
-        },
-        'water': {
-            'No Water Supply': ['no water', 'water not coming', 'pani nahi'],
-            'Water Leakage': ['water leak', 'pipeline leak', 'pipe leak'],
-            'Burst Water Pipeline': ['burst pipeline', 'pipeline phat gaya'],
-            'Dirty / Contaminated Water': ['dirty water', 'ganda pani', 'contaminated water'],
-        },
-        'electricity': {
-            'Power Outage': ['power cut', 'no electricity', 'bijli gayi'],
-            'Street Light Not Working': ['street light', 'pole light', 'road light'],
-            'Exposed Electrical Wires': ['open wire', 'exposed wire', 'hanging wire'],
-            'Transformer Issue': ['transformer issue', 'transformer blast'],
-        },
-        'garbage': {
-            'Garbage Not Collected': ['garbage not collected', 'kachra jama', 'kooda pada'],
-            'Overflowing Garbage Bin': ['overflowing bin', 'dustbin full', 'bin overflow'],
-            'Illegal Garbage Dumping': ['illegal dumping', 'waste dumping'],
-        },
-        'drainage': {
-            'Blocked Drain': ['drain blocked', 'nali jam', 'sewer blocked'],
-            'Drain Overflow': ['drain overflow', 'gutter overflow'],
-            'Broken Drain Cover': ['drain cover broken', 'manhole open'],
-            'Sewage Leakage': ['sewage leakage', 'ganda pani leak'],
-        },
+    # Basic keyword hints for faster category detection (lightweight)
+    CATEGORY_KEYWORDS = {
+        'police': ['police', 'crime', 'theft', 'chori', 'robbery', 'attack', 'assault', 'harassment', 'threat', 'violence', 'missing', 'fraud', 'scam'],
+        'traffic': ['traffic', 'signal', 'parking', 'accident', 'jam', 'vehicle', 'overspeeding', 'helmet', 'seatbelt', 'drunk', 'driving'],
+        'construction': ['construction', 'building', 'illegal construction', 'collapse', 'debris', 'excavation', 'footpath', 'bridge', 'flyover'],
+        'water': ['water', 'pani', 'paani', 'pipeline', 'leak', 'supply', 'dirty water', 'tap', 'tanker', 'pressure'],
+        'electricity': ['electricity', 'bijli', 'light', 'power', 'wire', 'transformer', 'spark', 'outage', 'meter', 'pole'],
+        'garbage': ['garbage', 'kachra', 'waste', 'dustbin', 'sanitation', 'cleaning', 'dumping', 'burning', 'dead animal'],
+        'road': ['road', 'sadak', 'pothole', 'khadda', 'gadda', 'hole', 'broken road', 'waterlogging', 'manhole'],
+        'drainage': ['drain', 'drainage', 'sewage', 'gutter', 'nali', 'overflow', 'waterlogging', 'manhole', 'sewer', 'blockage'],
+        'illegal': ['illegal', 'encroachment', 'unauthorized', 'kabza', 'noise', 'loudspeaker', 'gambling', 'nuisance'],
+        'transportation': ['transport', 'bus', 'auto', 'taxi', 'rickshaw', 'public transport', 'overcharge', 'route'],
+        'cyber': ['cyber', 'fraud', 'scam', 'otp', 'phishing', 'hack', 'online fraud', 'upi', 'banking', 'social media'],
+        'other': ['other', 'misc', 'general', 'park', 'animal', 'tree', 'community'],
     }
 
     GREETING_RE = re.compile(
@@ -71,6 +47,78 @@ class VoiceComplaintIntakeService:
         r'\b(?:at|near|beside|opposite|behind|in front of|around)\s+([a-z0-9\s,/-]{4,80})',
         re.I,
     )
+
+    def analyze_with_gemini(
+        self,
+        conversation_history: List[Dict[str, str]],
+        preferred_language: str = 'english',
+    ) -> Dict[str, Any]:
+        """Analyze full conversation with Gemini 2.5 Flash to extract complaint details."""
+        try:
+            api_key = getattr(settings, 'GEMINI_API_KEY', None)
+            if not api_key or not google_genai:
+                return {'success': False, 'error': 'Gemini API not configured'}
+
+            # Build conversation text
+            conversation_text = "\n".join([
+                f"{msg.get('role', 'user')}: {msg.get('text', msg.get('content', ''))}"
+                for msg in conversation_history
+            ])
+
+            # Load catalog for reference
+            catalog = self._load_catalog()
+            catalog_text = self._build_catalog_text(catalog)
+
+            prompt = f"""You are an expert complaint categorization AI. Analyze this full conversation between a citizen and voice assistant.
+
+Available Categories and Subcategories:
+{catalog_text}
+
+Conversation:
+{conversation_text}
+
+Extract and return ONLY valid JSON with these fields:
+{{
+  "category_key": "exact key from catalog (e.g., 'road', 'water', 'police')",
+  "category_name": "full category name",
+  "subcategory": "exact subcategory name from catalog",
+  "problem_summary": "clear 1-2 sentence summary in {preferred_language}",
+  "description": "detailed description from conversation in {preferred_language}",
+  "location_hint": "extracted location if mentioned",
+  "urgency": "low|medium|high|critical",
+  "confidence": 0.0-1.0,
+  "reasoning": "why you chose this category/subcategory"
+}}
+
+Rules:
+- Use EXACT category keys and subcategory names from the catalog
+- If unclear, use best match with lower confidence
+- Extract all location mentions
+- Combine all user messages into coherent description
+- Return ONLY valid JSON, no markdown"""
+
+            client = google_genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=prompt,
+            )
+
+            result_text = (getattr(response, 'text', '') or '').strip()
+            result_text = result_text.replace('```json', '').replace('```', '').strip()
+
+            analysis = json.loads(result_text)
+            analysis['success'] = True
+            analysis['source'] = 'gemini_conversation_analysis'
+            return analysis
+
+        except json.JSONDecodeError as e:
+            return {
+                'success': False,
+                'error': f'Failed to parse Gemini response: {str(e)}',
+                'raw_response': result_text if 'result_text' in locals() else ''
+            }
+        except Exception as e:
+            return {'success': False, 'error': f'Gemini analysis failed: {str(e)}'}
 
     def analyze(
         self,
@@ -168,30 +216,33 @@ class VoiceComplaintIntakeService:
             key_phrase = self._normalize(category.key)
             name_phrase = self._normalize(category.name)
 
+            # Exact key match
             if key_phrase and key_phrase in normalized_text:
                 score += 5.0
+            
+            # Exact name match
             if name_phrase and name_phrase in normalized_text:
                 score += 6.0
 
+            # Token overlap with category name
             name_tokens = self._tokenize(name_phrase)
             score += 1.2 * len(tokens.intersection(name_tokens))
 
-            for alias in self.CATEGORY_ALIASES.get(category.key, []):
-                alias_phrase = self._normalize(alias)
-                if alias_phrase and alias_phrase in normalized_text:
+            # Keyword hints for faster detection
+            for keyword in self.CATEGORY_KEYWORDS.get(category.key, []):
+                keyword_phrase = self._normalize(keyword)
+                if keyword_phrase and keyword_phrase in normalized_text:
                     score += 3.2
 
+            # Check subcategory names for better category detection
             for subcategory in category.subcategories:
                 sub_phrase = self._normalize(subcategory)
                 if sub_phrase and sub_phrase in normalized_text:
                     score += 3.5
-
-            alias_map = self.SUBCATEGORY_ALIASES.get(category.key, {})
-            for aliases in alias_map.values():
-                for alias in aliases:
-                    alias_phrase = self._normalize(alias)
-                    if alias_phrase and alias_phrase in normalized_text:
-                        score += 2.0
+                
+                # Token overlap with subcategory
+                sub_tokens = self._tokenize(sub_phrase)
+                score += 0.8 * len(tokens.intersection(sub_tokens))
 
             if score > 0:
                 scored.append({
@@ -227,14 +278,12 @@ class VoiceComplaintIntakeService:
             sub_phrase = self._normalize(subcategory)
             sub_tokens = self._tokenize(sub_phrase)
 
+            # Exact subcategory name match
             if sub_phrase and sub_phrase in normalized_text:
                 score += 6.0
+            
+            # Token overlap
             score += 1.5 * len(tokens.intersection(sub_tokens))
-
-            for alias in self.SUBCATEGORY_ALIASES.get(category_key, {}).get(subcategory, []):
-                alias_phrase = self._normalize(alias)
-                if alias_phrase and alias_phrase in normalized_text:
-                    score += 4.0
 
             if score > 0:
                 scored.append({
@@ -243,6 +292,7 @@ class VoiceComplaintIntakeService:
                 })
 
         if not scored:
+            # Fallback to 'Other' or 'General' subcategory
             fallback = next(
                 (name for name in category.subcategories if name.lower() in {'other', 'general complaint', 'general'}),
                 '',
@@ -314,3 +364,12 @@ class VoiceComplaintIntakeService:
 
     def _tokenize(self, text: str) -> set[str]:
         return {token for token in (text or '').split() if len(token) >= 3}
+
+    def _build_catalog_text(self, catalog: List[_CategoryEntry]) -> str:
+        """Build human-readable catalog for Gemini prompt."""
+        lines = []
+        for entry in catalog:
+            lines.append(f"\n{entry.name} (key: '{entry.key}'):")
+            for sub in entry.subcategories:
+                lines.append(f"  - {sub}")
+        return ''.join(lines)
