@@ -59,6 +59,16 @@ class ApiConfig {
   static const String aiReset = '$baseUrl/ai/reset/';
   static const String aiCheckDuplicate = '$baseUrl/ai/check-duplicate/';
   static const String aiGetDepartment = '$baseUrl/ai/get-department/';
+  static const String mlVoiceProcess = '$baseUrl/ml-voice/process/';
+  static const String mlVoiceIntakeAnalyze = '$baseUrl/ml-voice/intake-analyze/';
+  static const String mlVoiceEmotion = '$baseUrl/ml-voice/emotion/';
+  static const String mlVoiceResolveDate = '$baseUrl/ml-voice/resolve-date/';
+  static String mlVoiceSession(String sessionId) =>
+      '$baseUrl/ml-voice/session/$sessionId/';
+  static String mlVoiceResetSession(String sessionId) =>
+      '$baseUrl/ml-voice/session/$sessionId/reset/';
+  static const String mlVoiceGenerateResponse =
+      '$baseUrl/ml-voice/generate-response/';
 
   // Cloudinary
   static const String cloudinarySignature = '$baseUrl/cloudinary/signature/';

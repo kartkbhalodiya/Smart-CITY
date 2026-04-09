@@ -13,6 +13,7 @@ import json
 import uuid
 
 from .ml_voice_assistant import MLVoiceAssistant
+from .voice_intake_service import VoiceComplaintIntakeService
 
 
 # Session storage for voice assistants (in production, use Redis)
@@ -311,6 +312,45 @@ def ml_voice_generate_response(request):
             'response': response
         })
         
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def ml_voice_intake_analyze(request):
+    """
+    Analyze the citizen's first problem statement into structured complaint data.
+
+    POST /api/ml-voice/intake-analyze/
+    Body: {
+        "text": "road is broken near sector 5",
+        "preferred_language": "english",
+        "existing_category": "optional-category-key"
+    }
+    """
+    try:
+        text = request.data.get('text', '').strip()
+        preferred_language = request.data.get('preferred_language', 'english')
+        existing_category = request.data.get('existing_category')
+
+        if not text:
+            return Response({
+                'success': False,
+                'error': 'Text is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        service = VoiceComplaintIntakeService()
+        analysis = service.analyze(
+            text=text,
+            preferred_language=preferred_language,
+            existing_category=existing_category,
+        )
+        return Response(analysis)
     except Exception as e:
         return Response({
             'success': False,

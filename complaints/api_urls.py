@@ -18,7 +18,8 @@ from .enhanced_ai_views import enhanced_ai_chat, ai_reset_session, ai_session_st
 from .test_cityfix import test_cityfix_llm
 from .ml_voice_api_views import (
     ml_voice_process, ml_voice_emotion_detect, ml_voice_resolve_date,
-    ml_voice_session_summary, ml_voice_reset_session, ml_voice_generate_response
+    ml_voice_session_summary, ml_voice_reset_session, ml_voice_generate_response,
+    ml_voice_intake_analyze,
 )
 
 router = DefaultRouter()
@@ -73,6 +74,7 @@ urlpatterns = [
     
     # ML Voice Assistant (Advanced)
     path('ml-voice/process/', ml_voice_process, name='ml_voice_process'),
+    path('ml-voice/intake-analyze/', ml_voice_intake_analyze, name='ml_voice_intake_analyze'),
     path('ml-voice/emotion/', ml_voice_emotion_detect, name='ml_voice_emotion'),
     path('ml-voice/resolve-date/', ml_voice_resolve_date, name='ml_voice_date'),
     path('ml-voice/session/<str:session_id>/', ml_voice_session_summary, name='ml_voice_session'),

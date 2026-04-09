@@ -90,14 +90,6 @@ class ContextManager:
         """Update conversation metadata"""
         self.metadata[key] = value
 
-    def update_extracted_data(self, data: Dict):
-        """Accumulates all extracted data from stages"""
-        if 'accumulated_data' not in self.metadata:
-            self.metadata['accumulated_data'] = {}
-        for k, v in data.items():
-            if v:  # Only update if value is present
-                self.metadata['accumulated_data'][k] = v
-
 
 class ResponseGenerator:
     """Generates natural, context-aware responses"""
@@ -226,16 +218,13 @@ class MLVoiceAssistant:
             text, stage, emotion_data, extracted_data, context
         )
         
-        # Update accumulated data in context
-        self.context_manager.update_extracted_data(extracted_data)
-        
         # Determine next stage
         next_stage = self._determine_next_stage(stage, extracted_data, emotion_data)
         
         # Add AI response to context
         self.context_manager.add_turn('assistant', response)
         
-        result = {
+        return {
             'response': response,
             'emotion': emotion_data,
             'next_stage': next_stage,
@@ -243,12 +232,6 @@ class MLVoiceAssistant:
             'requires_emergency': emotion_data['is_emergency'],
             'context_summary': self.context_manager.get_context_summary()
         }
-        
-        # If moving to submission, generate the finalized JSON payload
-        if next_stage == 'submitting' or stage == 'confirm':
-            result['final_payload'] = self.get_final_payload()
-            
-        return result
     
     def _extract_stage_data(self, text: str, stage: str) -> Dict:
         """Extract relevant data based on current stage"""
@@ -359,31 +342,7 @@ class MLVoiceAssistant:
             'history': self.context_manager.history,
             'metadata': self.context_manager.metadata,
             'stage': self.context_manager.stage,
-            'turn_count': len(self.context_manager.history),
-            'final_payload': self.get_final_payload()
-        }
-        
-    def get_final_payload(self) -> Dict:
-        """Returns the structured JSON format required for complaint submission mapping"""
-        data = self.context_manager.metadata.get('accumulated_data', {})
-        
-        # Format the exact JSON structure required by the backend
-        return {
-            "category": data.get('category', 'Other'),
-            "subcategory": data.get('subcategory', 'General'),
-            "description": data.get('description', self.context_manager.get_context_summary()[:100]),
-            "address": data.get('address', 'Not strictly provided'),
-            "geo_coordinates": {
-                "lat": float(data.get('latitude', 0.0)),
-                "lng": float(data.get('longitude', 0.0))
-            },
-            "date": data.get('resolved_date', datetime.now().strftime('%Y-%m-%d')),
-            "photo": data.get('photo_url', ''),
-            "user_details": {
-                "name": data.get('contact_name', ''),
-                "phone": data.get('contact_phone', '')
-            },
-            "department": f"Assigned to {data.get('category', 'General')} Department"
+            'turn_count': len(self.context_manager.history)
         }
     
     def reset(self):
