@@ -1,6 +1,4 @@
-<div align="center">
 
-<img src="submission_assets/preview/screen-01.png" alt="JanHelp Banner" width="100%"/>
 
 # 🏙️ JanHelp — Smart City Complaint Management System
 
