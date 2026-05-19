@@ -8,7 +8,7 @@ The Flutter app in `smartcity_application/` is a separate client and is excluded
 - Root Directory: `./`
 - Framework Preset: Other
 - Install Command: leave empty
-- Build Command: `python manage.py collectstatic --noinput`
+- Build Command: `python scripts/vercel_build.py`
 - Output Directory: leave empty
 
 These values are also encoded in `vercel.json`.
@@ -43,6 +43,8 @@ MAPPLE_API_KEY=your-mappls-key
 CITYFIX_LLM_URL=https://kartik1911-cityfix-llm.hf.space
 ```
 
+`DATABASE_URL` must be available to Vercel for both build and runtime. The build script runs `python manage.py migrate --noinput`; without `DATABASE_URL`, Vercel now fails the build instead of deploying pages that crash with `Server Error (500)`.
+
 Leave `REDIS_URL` unset unless `django-redis` is added back to `requirements.txt`.
 
 ## Deploy Commands
@@ -53,7 +55,7 @@ vercel deploy --prebuilt
 vercel deploy --prod --prebuilt
 ```
 
-After the first production deploy, run migrations against the production database from a trusted local shell:
+If you need to repair an already-deployed database manually, run migrations against the production database from a trusted local shell:
 
 ```powershell
 $env:DATABASE_URL="postgres://USER:PASSWORD@HOST:5432/DBNAME"
