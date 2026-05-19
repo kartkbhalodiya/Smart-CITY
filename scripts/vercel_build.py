@@ -1,7 +1,11 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 from urllib.parse import urlparse
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
 
 from smartcity.database_url import normalize_database_url
 
