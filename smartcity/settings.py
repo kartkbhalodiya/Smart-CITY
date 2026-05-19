@@ -14,6 +14,8 @@ from pathlib import Path
 import os
 import sys
 
+from smartcity.database_url import normalize_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -115,10 +117,12 @@ WSGI_APPLICATION = "smartcity.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if os.getenv('DATABASE_URL'):
+DATABASE_URL = normalize_database_url(os.getenv('DATABASE_URL', ''))
+if DATABASE_URL:
+    os.environ['DATABASE_URL'] = DATABASE_URL
     import dj_database_url
     db_config = dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
+        default=DATABASE_URL,
         conn_max_age=0,
         ssl_require=True
     )

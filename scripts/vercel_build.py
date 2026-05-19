@@ -3,13 +3,19 @@ import subprocess
 import sys
 from urllib.parse import urlparse
 
+from smartcity.database_url import normalize_database_url
+
 
 def run_manage(*args):
     subprocess.check_call([sys.executable, "manage.py", *args])
 
 
 def main():
-    database_url = os.getenv("DATABASE_URL", "")
+    raw_database_url = os.getenv("DATABASE_URL", "")
+    database_url = normalize_database_url(raw_database_url)
+    if database_url != raw_database_url:
+        os.environ["DATABASE_URL"] = database_url
+        print("INFO: Normalized DATABASE_URL to the Supabase pooler host.", file=sys.stderr)
 
     if os.getenv("VERCEL") and not database_url:
         print(

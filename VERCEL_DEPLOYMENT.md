@@ -47,6 +47,8 @@ CITYFIX_LLM_URL=https://kartik1911-cityfix-llm.hf.space
 
 The build script runs `python manage.py migrate --noinput`; without a valid pooler `DATABASE_URL`, Vercel now fails the build instead of deploying pages that crash with `Server Error (500)`.
 
+For this project, legacy values that use `@host:5432` or `@db.aaywhmjmsdkjzabtzfpg.supabase.co:5432` are normalized in code to the verified pooler host `aws-1-ap-northeast-1.pooler.supabase.com:6543`. Still prefer storing the real pooler URL in Vercel so production config is explicit.
+
 Leave `REDIS_URL` unset unless `django-redis` is added back to `requirements.txt`.
 
 ## Deploy Commands
