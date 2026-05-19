@@ -3,7 +3,7 @@
   "installCommand": "pip install -r requirements.txt",
   "buildCommand": "python manage.py collectstatic --noinput",
   "functions": {
-    "api/index.py": {
+    "api/**/*.py": {
       "maxDuration": 60,
       "excludeFiles": "{smartcity_application/**,.venv/**,Lib/**,media/**,docs/**,submission_assets/**,.github/**,.qodo/**,.vscode/**,.zencoder/**,.zenflow/**,analysis_output.txt,temp_patch.txt,*.jpeg,*.pptx,*.pdf}"
     }
