@@ -2,6 +2,7 @@ smartcity_application/
 .venv/
 Lib/
 media/
+staticfiles/
 docs/
 submission_assets/
 .github/

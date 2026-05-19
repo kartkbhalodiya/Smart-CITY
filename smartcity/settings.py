@@ -245,7 +245,14 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 # Cache configuration
 REDIS_URL = os.getenv('REDIS_URL', '').strip()
 
-if REDIS_URL:
+try:
+    import django_redis  # noqa: F401
+except ImportError:
+    HAS_DJANGO_REDIS = False
+else:
+    HAS_DJANGO_REDIS = True
+
+if REDIS_URL and HAS_DJANGO_REDIS:
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',

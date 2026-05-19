@@ -7,7 +7,7 @@ The Flutter app in `smartcity_application/` is a separate client and is excluded
 
 - Root Directory: `./`
 - Framework Preset: Other
-- Install Command: `pip install -r requirements.txt`
+- Install Command: leave empty
 - Build Command: `python manage.py collectstatic --noinput`
 - Output Directory: leave empty
 
@@ -42,6 +42,8 @@ REDIS_URL=redis://USER:PASSWORD@HOST:6379
 MAPPLE_API_KEY=your-mappls-key
 CITYFIX_LLM_URL=https://kartik1911-cityfix-llm.hf.space
 ```
+
+Leave `REDIS_URL` unset unless `django-redis` is added back to `requirements.txt`.
 
 ## Deploy Commands
 
