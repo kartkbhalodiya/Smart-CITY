@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
+import os
 import random
 import string
 import secrets
@@ -31,6 +32,18 @@ from .email_utils import (
 )
 from .conversational_ai import SmartCityAI
 from .cityfix_client import cityfix_llm
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """Database-free deployment probe for Vercel and uptime checks."""
+    return Response({
+        'success': True,
+        'status': 'ok',
+        'service': 'smartcity',
+        'runtime': 'vercel' if os.getenv('VERCEL') else 'local',
+    })
 
 
 # Authentication Views

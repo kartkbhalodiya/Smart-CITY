@@ -22,6 +22,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _csv_env(name):
+    return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
+
+
+def _https_origin(host):
+    host = host.strip()
+    if not host:
+        return None
+    if host.startswith(("http://", "https://")):
+        return host.rstrip("/")
+    return f"https://{host}".rstrip("/")
+
+
+VERCEL_URL = os.getenv("VERCEL_URL", "").strip()
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -31,13 +47,21 @@ SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-tcc8=x$k4$_or+a=+yo8-l+=lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['janhelps.in', 'www.janhelps.in', '127.0.0.1', 'localhost']
-if os.getenv('ALLOWED_HOSTS'):
-    ALLOWED_HOSTS.extend([host.strip() for host in os.getenv('ALLOWED_HOSTS').split(',') if host.strip()])
+ALLOWED_HOSTS = [
+    'janhelps.in',
+    'www.janhelps.in',
+    'janhelp.vercel.app',
+    '127.0.0.1',
+    'localhost',
+]
+if VERCEL_URL:
+    ALLOWED_HOSTS.append(VERCEL_URL)
+ALLOWED_HOSTS.extend(_csv_env('ALLOWED_HOSTS'))
 if not DEBUG and os.getenv('RENDER_EXTERNAL_HOSTNAME'):
     ALLOWED_HOSTS.append(os.getenv('RENDER_EXTERNAL_HOSTNAME'))
 if not DEBUG and os.getenv('RAILWAY_PUBLIC_DOMAIN'):
     ALLOWED_HOSTS.append(os.getenv('RAILWAY_PUBLIC_DOMAIN'))
+ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
 
 
 # Application definition
@@ -80,7 +104,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            "debug": True,
+            "debug": DEBUG,
         },
     },
 ]
@@ -210,7 +234,7 @@ CITYFIX_LLM_URL = os.getenv('CITYFIX_LLM_URL', 'https://kartik1911-cityfix-llm.h
 LOGIN_URL = '/login/'
 
 # Base URL for emails and links
-BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
+BASE_URL = os.getenv('BASE_URL', _https_origin(VERCEL_URL) if VERCEL_URL else 'http://localhost:8000')
 
 # Session settings - Keep user logged in
 SESSION_COOKIE_AGE = 1209600  # 2 weeks
@@ -304,6 +328,13 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     X_FRAME_OPTIONS = 'DENY'
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+    csrf_origin_hosts = [
+        host for host in ALLOWED_HOSTS
+        if host not in {'localhost', '127.0.0.1'} and not host.startswith('.')
+    ]
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
+        [origin for origin in (_https_origin(host) for host in csrf_origin_hosts) if origin]
+        + _csv_env('CSRF_TRUSTED_ORIGINS')
+    ))
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True

@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 from .api_views import (
+    health_check,
     ComplaintViewSet,
     register_user, send_otp, verify_otp, logout_user, login_with_password,
     user_profile, dashboard_stats,
@@ -22,6 +23,8 @@ router = DefaultRouter()
 router.register(r'complaints', ComplaintViewSet, basename='complaint')
 
 urlpatterns = [
+    path('health/', health_check, name='api_health'),
+
     # Authentication
     path('auth/register/', register_user, name='api_register'),
     path('auth/login/', login_with_password, name='api_login'),
