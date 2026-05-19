@@ -13,6 +13,8 @@ The Flutter app in `smartcity_application/` is a separate client and is excluded
 
 These values are also encoded in `vercel.json`.
 
+Large non-backend folders are excluded from the deployment upload through `.vercelignore`.
+
 ## Required Environment Variables
 
 Set these in Vercel Project Settings before deploying:
