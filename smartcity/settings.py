@@ -207,7 +207,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 
 # Resend Configuration (Recommended - Free & Fast)
-RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '').strip()
 
 # Fallback to SMTP if Resend not configured
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
@@ -215,7 +215,18 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@janhelps.in')
+RESEND_FROM_EMAIL = (
+    os.getenv('RESEND_FROM_EMAIL')
+    or os.getenv('DEFAULT_FROM_EMAIL')
+    or EMAIL_HOST_USER
+    or 'noreply@janhelps.in'
+).strip()
+DEFAULT_FROM_EMAIL = RESEND_FROM_EMAIL
+RESEND_TEST_RECIPIENTS = [email.lower() for email in _csv_env('RESEND_TEST_RECIPIENTS')]
+legacy_resend_test_recipient = os.getenv('RESEND_TEST_RECIPIENT', '').strip().lower()
+if legacy_resend_test_recipient:
+    RESEND_TEST_RECIPIENTS.append(legacy_resend_test_recipient)
+RESEND_TEST_RECIPIENTS = list(dict.fromkeys(RESEND_TEST_RECIPIENTS))
 
 # SMS Configuration
 SMS_BACKEND = os.getenv('SMS_BACKEND', 'console')  # options: console, twilio, etc.
@@ -237,8 +248,14 @@ CITYFIX_LLM_URL = os.getenv('CITYFIX_LLM_URL', 'https://kartik1911-cityfix-llm.h
 # Login URL
 LOGIN_URL = '/login/'
 
-# Base URL for emails and links
-BASE_URL = os.getenv('BASE_URL', _https_origin(VERCEL_URL) if VERCEL_URL else 'http://localhost:8000')
+# Base URL for emails and public links. Do not derive production email links
+# from Vercel preview hosts; JanHelp's canonical public domain is janhelps.in.
+DEFAULT_PUBLIC_BASE_URL = 'https://janhelps.in'
+BASE_URL = _https_origin(
+    os.getenv('BASE_URL')
+    or os.getenv('PUBLIC_BASE_URL')
+    or ('http://localhost:8000' if DEBUG else DEFAULT_PUBLIC_BASE_URL)
+)
 
 # Session settings - Keep user logged in
 SESSION_COOKIE_AGE = 1209600  # 2 weeks

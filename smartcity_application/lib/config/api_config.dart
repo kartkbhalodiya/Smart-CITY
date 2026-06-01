@@ -1,12 +1,12 @@
 class ApiConfig {
   // Base URL - Production API
-  static const String baseUrl = 'https://janhelp.vercel.app/api';
-  
+  static const String baseUrl = 'https://janhelps.in/api';
+
   // For local testing, uncomment the line below and comment the production URL above:
   // static const String baseUrl = 'http://10.0.2.2:8000/api';
-  
+
   // For Android Emulator use: http://10.0.2.2:8000/api
-  // For iOS Simulator use: http://127.0.0.1:8000/api  
+  // For iOS Simulator use: http://127.0.0.1:8000/api
   // For Real Device use: http://YOUR_IP:8000/api (e.g., http://192.168.1.100:8000/api)
 
   // Authentication Endpoints
@@ -60,7 +60,8 @@ class ApiConfig {
   static const String aiCheckDuplicate = '$baseUrl/ai/check-duplicate/';
   static const String aiGetDepartment = '$baseUrl/ai/get-department/';
   static const String mlVoiceProcess = '$baseUrl/ml-voice/process/';
-  static const String mlVoiceIntakeAnalyze = '$baseUrl/ml-voice/intake-analyze/';
+  static const String mlVoiceIntakeAnalyze =
+      '$baseUrl/ml-voice/intake-analyze/';
   static const String mlVoiceEmotion = '$baseUrl/ml-voice/emotion/';
   static const String mlVoiceResolveDate = '$baseUrl/ml-voice/resolve-date/';
   static String mlVoiceSession(String sessionId) =>

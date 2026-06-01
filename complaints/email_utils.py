@@ -4,34 +4,68 @@ from django.conf import settings
 from django.utils import timezone
 import requests
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _extract_email_address(value):
+    if not value:
+        return ''
+    email = str(value).strip()
+    if '<' in email and '>' in email:
+        email = email.split('<', 1)[1].split('>', 1)[0]
+    return email.strip().lower()
+
+
+def _response_error_message(response):
+    try:
+        error_data = response.json() if response.text else {}
+    except ValueError:
+        return response.text
+    return error_data.get('message') or error_data.get('name') or response.text
+
 
 def send_email_with_resend(recipient_email, subject, html_content):
     """
     Send email using Resend API (Fast & Free)
     """
     try:
-        resend_api_key = getattr(settings, 'RESEND_API_KEY', '')
-        
-        print(f"[Email] DEBUG: Resend API Key present: {bool(resend_api_key)}")
-        if resend_api_key:
-            print(f"[Email] DEBUG: API Key starts with: {resend_api_key[:10]}...")
-        
+        resend_api_key = getattr(settings, 'RESEND_API_KEY', '').strip()
+
         if not resend_api_key:
-            print("[Email] Resend API key not configured, falling back to SMTP")
+            logger.warning("[Email] Resend API key is not configured")
             return False
-        
+
+        from_email = getattr(
+            settings,
+            'RESEND_FROM_EMAIL',
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@janhelps.in'),
+        ).strip()
+        recipient = _extract_email_address(recipient_email)
+
+        if _extract_email_address(from_email).endswith('@resend.dev'):
+            allowed_recipients = {
+                _extract_email_address(email)
+                for email in getattr(settings, 'RESEND_TEST_RECIPIENTS', [])
+                if email
+            }
+            if recipient not in allowed_recipients:
+                logger.error(
+                    "[Email] Refusing Resend test sender '%s' for '%s'. "
+                    "Verify janhelps.in in Resend and set "
+                    "RESEND_FROM_EMAIL=noreply@janhelps.in.",
+                    from_email,
+                    recipient_email,
+                )
+                return False
+
         url = "https://api.resend.com/emails"
         headers = {
             "Authorization": f"Bearer {resend_api_key}",
             "Content-Type": "application/json"
         }
-        
-        # Use the verified email from Resend or fallback
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
-        
-        # IMPORTANT: For Resend testing, you can only send to your verified email
-        # To send to any email, you need to verify a domain at resend.com/domains
-        
+
         payload = {
             "from": from_email,
             "to": [recipient_email],
@@ -41,23 +75,28 @@ def send_email_with_resend(recipient_email, subject, html_content):
         
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         
-        if response.status_code == 200:
-            print(f"[Email] SUCCESS: Resend API: Email sent successfully to {recipient_email}")
+        if 200 <= response.status_code < 300:
+            logger.info("[Email] Resend accepted email to %s", recipient_email)
             return True
         else:
-            error_data = response.json() if response.text else {}
-            error_msg = error_data.get('message', response.text)
-            print(f"[Email] ERROR: Resend API Error: {response.status_code} - {error_msg}")
-            
-            # If it's a domain verification error, inform but continue with SMTP
+            error_msg = _response_error_message(response)
+            logger.error(
+                "[Email] Resend rejected email to %s: HTTP %s - %s",
+                recipient_email,
+                response.status_code,
+                error_msg,
+            )
+
             if response.status_code == 403 and 'domain' in error_msg.lower():
-                print(f"[Email] INFO: Resend requires domain verification for production use")
-                print(f"[Email] INFO: Visit https://resend.com/domains to verify your domain")
-            
+                logger.error(
+                    "[Email] Verify janhelps.in at https://resend.com/domains "
+                    "and use RESEND_FROM_EMAIL=noreply@janhelps.in."
+                )
+
             return False
-            
+
     except Exception as e:
-        print(f"[Email] ERROR: Resend API Exception: {str(e)}")
+        logger.exception("[Email] Resend API exception while sending to %s: %s", recipient_email, e)
         return False
 
 def send_email_template(template_name, context, recipient_email, subject):
