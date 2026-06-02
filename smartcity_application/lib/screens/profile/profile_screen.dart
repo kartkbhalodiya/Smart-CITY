@@ -20,8 +20,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  static const _accent = Color(0xFFFF6B35);
-  static const _dark = Color(0xFF1A1A1A);
+  static const _accent = Color(0xFF2F80ED);
+  static const _dark = Color(0xFF0B1020);
+  static const _textMuted = Color(0xFFA3A7B4);
 
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -45,8 +46,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _ac =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _ac = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 600));
     _slide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
     _ac.forward();
@@ -57,7 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+      final localeProvider =
+          Provider.of<LocaleProvider>(context, listen: false);
       final user = auth.user;
       _fullNameController.text = user?.fullName ?? '';
       _emailController.text = user?.email ?? '';
@@ -180,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
         child: SlideTransition(
           position: _slide,
@@ -233,7 +235,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   setState(() {
                                     _selectedState = v;
                                     _selectedCity = null;
-                                    _cities = v == null ? [] : (_citiesByState[v] ?? []);
+                                    _cities = v == null
+                                        ? []
+                                        : (_citiesByState[v] ?? []);
                                   });
                                 },
                               ),
@@ -327,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           IconButton(
             icon:
-                const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A1A)),
+                const Icon(Icons.arrow_back_rounded, color: Color(0xFF0B1020)),
             onPressed: () => Navigator.pop(context),
           ),
           Expanded(
@@ -353,14 +357,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A1A), Color(0xFF2D2D2D)],
+          colors: [Color(0xFF0B1020), Color(0xFF2F80ED)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.22),
+            color: const Color(0xFF0B1020).withValues(alpha: 0.22),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -419,7 +423,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFFFB088),
+                      color: const Color(0xFF5BC7FF),
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -466,79 +470,100 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _inputField(String label, IconData icon, TextEditingController controller,
-      TextInputType type) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 11, color: _accent),
-            const SizedBox(width: 6),
-            Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748b))),
-          ],
+  Widget _inputField(String label, IconData icon,
+      TextEditingController controller, TextInputType type) {
+    return _fieldShell(
+      child: TextField(
+        controller: controller,
+        keyboardType: type,
+        cursorColor: _dark,
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: _dark,
         ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFECECEC), width: 1.5),
+        decoration: InputDecoration(
+          hintText: label,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: _textMuted,
           ),
-          child: TextField(
-            controller: controller,
-            keyboardType: type,
-            style: GoogleFonts.inter(fontSize: 13, color: _dark),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              isDense: true,
-            ),
-          ),
+          prefixIcon: Icon(icon, color: const Color(0xFF8B90A0), size: 22),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _fieldShell({required Widget child, double radius = 20}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.95),
+          width: 1.35,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: child,
+      ),
     );
   }
 
   Widget _textAreaField(
       String label, IconData icon, TextEditingController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 11, color: _accent),
-            const SizedBox(width: 6),
-            Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748b))),
-          ],
+    return _fieldShell(
+      child: TextField(
+        controller: controller,
+        maxLines: 3,
+        cursorColor: _dark,
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: _dark,
         ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFECECEC), width: 1.5),
+        decoration: InputDecoration(
+          hintText: label,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: _textMuted,
           ),
-          child: TextField(
-            controller: controller,
-            maxLines: 3,
-            style: GoogleFonts.inter(fontSize: 13, color: _dark),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(14),
-              isDense: true,
-            ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(bottom: 50),
+            child: Icon(icon, color: const Color(0xFF8B90A0), size: 22),
           ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
         ),
-      ],
+      ),
     );
   }
 
@@ -547,123 +572,159 @@ class _ProfileScreenState extends State<ProfileScreen>
     final isStateDropdown = label == AppStrings.t(context, 'State');
     final isLoading = isStateDropdown && _loadingStates;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 11, color: _accent),
-            const SizedBox(width: 6),
-            Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748b))),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFECECEC), width: 1.5),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: items.contains(value) ? value : null,
-              hint: Text(
-                isLoading
-                    ? AppStrings.t(context, 'Loading...')
-                    : '${AppStrings.t(context, 'Select ')}$label',
-                style: GoogleFonts.inter(
-                    fontSize: 13, color: const Color(0xFF64748b)),
+    return _fieldShell(
+      child: SizedBox(
+        height: 62,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(icon, color: const Color(0xFF8B90A0), size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: items.contains(value) ? value : null,
+                    hint: Text(
+                      isLoading
+                          ? AppStrings.t(context, 'Loading...')
+                          : '${AppStrings.t(context, 'Select ')}$label',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: _textMuted,
+                      ),
+                    ),
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(18),
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 21,
+                            color: _dark,
+                          ),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: _dark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    dropdownColor: Colors.white,
+                    items: items
+                        .map(
+                          (item) =>
+                              DropdownMenuItem(value: item, child: Text(item)),
+                        )
+                        .toList(),
+                    onChanged: (items.isEmpty || isLoading) ? null : onChanged,
+                  ),
+                ),
               ),
-              isExpanded: true,
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.keyboard_arrow_down,
-                      size: 18, color: Color(0xFF64748b)),
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: _dark, fontWeight: FontWeight.w500),
-              dropdownColor: Colors.white,
-              items: items
-                  .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-                  .toList(),
-              onChanged: (items.isEmpty || isLoading) ? null : onChanged,
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _infoField(String label, IconData icon, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return _fieldShell(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        color: Colors.white,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, size: 11, color: _accent),
-            const SizedBox(width: 6),
-            Text(label,
-                style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748b))),
+            Icon(icon, color: const Color(0xFF8B90A0), size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5,
+                      color: _textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: _dark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFECECEC), width: 1.5),
-          ),
-          child: Text(value,
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: _dark, fontWeight: FontWeight.w500)),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _languageSelector() {
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1EB).withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _accent.withValues(alpha: 0.25), width: 1.5),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedLanguage,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: _accent),
-          style: GoogleFonts.inter(
-              fontSize: 13, color: _dark, fontWeight: FontWeight.w500),
-          dropdownColor: Colors.white,
-          items: [
-            DropdownMenuItem(
-                value: 'en', child: Text(AppStrings.t(context, 'English'))),
-            DropdownMenuItem(
-                value: 'hi', child: Text(AppStrings.t(context, 'Hindi'))),
-            DropdownMenuItem(
-                value: 'gu', child: Text(AppStrings.t(context, 'Gujarati'))),
-          ],
-          onChanged: (value) async {
-            if (value == null) return;
-            setState(() => _selectedLanguage = value);
-            await localeProvider.setLocale(value);
-          },
+    return _fieldShell(
+      child: SizedBox(
+        height: 62,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.language_rounded,
+                  color: Color(0xFF8B90A0), size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedLanguage,
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(18),
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 21, color: _dark),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: _dark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    dropdownColor: Colors.white,
+                    items: [
+                      DropdownMenuItem(
+                        value: 'en',
+                        child: Text(AppStrings.t(context, 'English')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'hi',
+                        child: Text(AppStrings.t(context, 'Hindi')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'gu',
+                        child: Text(AppStrings.t(context, 'Gujarati')),
+                      ),
+                    ],
+                    onChanged: (value) async {
+                      if (value == null) return;
+                      setState(() => _selectedLanguage = value);
+                      await localeProvider.setLocale(value);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -678,14 +739,12 @@ class _ProfileScreenState extends State<ProfileScreen>
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+            colors: [Color(0xFF0B1020), Color(0xFF2F80ED)],
           ),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-                color: const Color(0x331A1A1A),
-                blurRadius: 16,
-                offset: const Offset(0, 8))
+                color: Color(0x331A1A1A), blurRadius: 16, offset: Offset(0, 8))
           ],
         ),
         child: _isLoading
@@ -717,7 +776,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       onTap: () async {
         await auth.logout();
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+          Navigator.pushNamedAndRemoveUntil(
+              context, AppRoutes.login, (_) => false);
         }
       },
       child: Container(
@@ -758,6 +818,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
     final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final successMessage =
+        AppStrings.t(context, 'Profile updated successfully!');
+    final unableMessage = AppStrings.t(context, 'Unable to save profile');
+    final networkMessage = AppStrings.t(context, 'Network error, try again');
 
     try {
       final names = _splitName(_fullNameController.text);
@@ -786,10 +851,12 @@ class _ProfileScreenState extends State<ProfileScreen>
           // User.fromJson can now handle this full profile object correctly
           await StorageService.saveUserData(jsonEncode(profileData));
         }
-        await Provider.of<AuthProvider>(context, listen: false).loadUser();
+        if (!mounted) return;
+        await authProvider.loadUser();
+        if (!mounted) return;
         messenger.showSnackBar(
           SnackBar(
-            content: Text(AppStrings.t(context, 'Profile updated successfully!')),
+            content: Text(successMessage),
             backgroundColor: const Color(0xFF2ECC71),
             behavior: SnackBarBehavior.floating,
             shape:
@@ -799,8 +866,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       } else {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(response['message']?.toString() ??
-                AppStrings.t(context, 'Unable to save profile')),
+            content: Text(response['message']?.toString() ?? unableMessage),
             backgroundColor: const Color(0xFFE74C3C),
             behavior: SnackBarBehavior.floating,
             shape:
@@ -813,10 +879,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       setState(() => _isLoading = false);
       messenger.showSnackBar(
         SnackBar(
-          content: Text(AppStrings.t(context, 'Network error, try again')),
+          content: Text(networkMessage),
           backgroundColor: const Color(0xFFE74C3C),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }

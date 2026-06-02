@@ -9,6 +9,10 @@ from .api_views import (
     ComplaintViewSet,
     register_user, send_otp, verify_otp, logout_user, login_with_password,
     user_profile, dashboard_stats,
+    super_admin_app_overview, city_admin_app_overview, department_admin_app_overview,
+    admin_app_resource, admin_app_resource_detail, admin_app_complaint_status,
+    admin_app_department_detail, admin_app_citizen_detail, admin_app_heatmap,
+    admin_app_change_password,
     get_categories, get_subcategories, get_departments,
     track_guest_complaint_api, department_forgot_password,
     get_states_cities, guest_stats,
@@ -39,6 +43,16 @@ urlpatterns = [
     
     # Dashboard
     path('dashboard/stats/', dashboard_stats, name='api_dashboard_stats'),
+    path('admin/super/overview/', super_admin_app_overview, name='api_super_admin_app_overview'),
+    path('admin/city/overview/', city_admin_app_overview, name='api_city_admin_app_overview'),
+    path('admin/department/overview/', department_admin_app_overview, name='api_department_admin_app_overview'),
+    path('admin/mobile/complaints/<int:complaint_id>/status/', admin_app_complaint_status, name='api_admin_app_complaint_status'),
+    path('admin/mobile/departments/<int:department_id>/detail/', admin_app_department_detail, name='api_admin_app_department_detail'),
+    path('admin/mobile/citizens/<int:profile_id>/detail/', admin_app_citizen_detail, name='api_admin_app_citizen_detail'),
+    path('admin/mobile/heatmap/', admin_app_heatmap, name='api_admin_app_heatmap'),
+    path('admin/mobile/password/', admin_app_change_password, name='api_admin_app_change_password'),
+    path('admin/mobile/<str:resource>/', admin_app_resource, name='api_admin_app_resource'),
+    path('admin/mobile/<str:resource>/<int:object_id>/', admin_app_resource_detail, name='api_admin_app_resource_detail'),
     
     # Categories
     path('categories/', get_categories, name='api_categories'),

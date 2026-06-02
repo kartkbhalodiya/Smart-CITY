@@ -1,25 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+class SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
+  const SmoothPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.isFirst) return child;
+
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutExpo,
+      reverseCurve: Curves.easeInCubic,
+    );
+    final fade = Tween<double>(begin: 0, end: 1).animate(curved);
+    final scale = Tween<double>(begin: 0.985, end: 1).animate(curved);
+    final yOffset = Tween<double>(begin: 20, end: 0).animate(curved);
+
+    return FadeTransition(
+      opacity: fade,
+      child: Transform.translate(
+        offset: Offset(0, yOffset.value),
+        child: Transform.scale(
+          scale: scale.value,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class AppColors {
   // Primary Colors
   static const Color primaryBlue = Color(0xFF1E66F5);
   static const Color greenAccent = Color(0xFF2ECC71);
   static const Color textDark = Color(0xFF0f172a);
   static const Color textMuted = Color(0xFF64748b);
-  
+
   // Status Colors
-  static const Color submitted = Color(0xFFFCD34D);  // Yellow
-  static const Color assigned = Color(0xFFFB923C);   // Orange
+  static const Color submitted = Color(0xFFFCD34D); // Yellow
+  static const Color assigned = Color(0xFFFB923C); // Orange
   static const Color inProgress = Color(0xFF60A5FA); // Blue
-  static const Color resolved = Color(0xFF34D399);   // Green
-  static const Color reopened = Color(0xFFF87171);   // Red
-  
+  static const Color resolved = Color(0xFF34D399); // Green
+  static const Color reopened = Color(0xFFF87171); // Red
+
   // Background Colors
   static const Color background = Color(0xFFF8FAFC);
   static const Color cardBackground = Color(0xFFFFFFFF);
   static const Color sectionBackground = Color(0xFFF7F9FC);
-  
+
   // Other Colors
   static const Color error = Color(0xFFE74C3C);
   static const Color warning = Color(0xFFF39C12);
@@ -33,7 +68,16 @@ class AppTheme {
       useMaterial3: true,
       primaryColor: AppColors.primaryBlue,
       scaffoldBackgroundColor: AppColors.background,
-      
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: SmoothPageTransitionsBuilder(),
+          TargetPlatform.iOS: SmoothPageTransitionsBuilder(),
+          TargetPlatform.macOS: SmoothPageTransitionsBuilder(),
+          TargetPlatform.windows: SmoothPageTransitionsBuilder(),
+          TargetPlatform.linux: SmoothPageTransitionsBuilder(),
+        },
+      ),
+
       // Color Scheme
       colorScheme: const ColorScheme.light(
         primary: AppColors.primaryBlue,
@@ -41,7 +85,7 @@ class AppTheme {
         error: AppColors.error,
         surface: AppColors.cardBackground,
       ),
-      
+
       // App Bar Theme
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
@@ -54,7 +98,7 @@ class AppTheme {
           color: AppColors.textDark,
         ),
       ),
-      
+
       // Text Theme
       textTheme: TextTheme(
         displayLarge: GoogleFonts.poppins(
@@ -113,7 +157,7 @@ class AppTheme {
           color: AppColors.textMuted,
         ),
       ),
-      
+
       // Card Theme
       cardTheme: CardThemeData(
         color: AppColors.cardBackground,
@@ -123,7 +167,7 @@ class AppTheme {
         ),
         shadowColor: Colors.black.withValues(alpha: 0.06),
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -138,19 +182,21 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+          borderSide:
+              const BorderSide(color: AppColors.primaryBlue, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         hintStyle: GoogleFonts.inter(
           fontSize: 13,
           color: AppColors.textMuted,
         ),
       ),
-      
+
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -168,7 +214,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,

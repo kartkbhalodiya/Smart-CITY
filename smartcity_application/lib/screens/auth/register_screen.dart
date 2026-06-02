@@ -1,6 +1,8 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/api_config.dart';
@@ -18,7 +20,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _mobileCtrl = TextEditingController();
@@ -33,29 +35,30 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   List<String> _states = [];
   Map<String, List<String>> _citiesByState = {};
   double? _lat, _lng;
-  bool _locationSet = false, _isLoading = false, _detectingLocation = false, _loadingStates = true, _openingMap = false;
+  bool _locationSet = false,
+      _isLoading = false,
+      _detectingLocation = false,
+      _loadingStates = true,
+      _openingMap = false;
 
   // Email OTP verification
-  bool _sendingOtp = false, _otpSent = false, _verifyingOtp = false, _emailVerified = false;
+  bool _sendingOtp = false,
+      _otpSent = false,
+      _verifyingOtp = false,
+      _emailVerified = false;
   String? _otpError;
   int _resendSeconds = 0;
   Timer? _resendTimer;
 
-  late AnimationController _ac;
-  late Animation<Offset> _slideAnim;
-
-  static const _primary = Color(0xFF1E66F5);
-  static const _textDark = Color(0xFF0f172a);
-  static const _textMuted = Color(0xFF64748b);
-  static const _borderColor = Color(0xFFe2e8f0);
+  static const _primary = Color(0xFF111827);
+  static const _green = Color(0xFF22C55E);
+  static const _red = Color(0xFFEF4444);
+  static const _textDark = Color(0xFF111827);
+  static const _textMuted = Color(0xFF64748B);
 
   @override
   void initState() {
     super.initState();
-    _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
-    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
-    _ac.forward();
     _fetchStatesCities();
   }
 
@@ -73,10 +76,15 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   @override
   void dispose() {
-    _ac.dispose();
     _resendTimer?.cancel();
-    _firstNameCtrl.dispose(); _lastNameCtrl.dispose(); _mobileCtrl.dispose();
-    _emailCtrl.dispose(); _pincodeCtrl.dispose(); _addressCtrl.dispose(); _aadhaarCtrl.dispose(); _otpCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    _mobileCtrl.dispose();
+    _emailCtrl.dispose();
+    _pincodeCtrl.dispose();
+    _addressCtrl.dispose();
+    _aadhaarCtrl.dispose();
+    _otpCtrl.dispose();
     super.dispose();
   }
 
@@ -84,18 +92,26 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     setState(() => _detectingLocation = true);
     final pos = await LocationService.getCurrentLocation();
     if (pos != null) {
-      final addr = await LocationService.getAddressFromCoordinates(pos.latitude, pos.longitude);
+      final addr = await LocationService.getAddressFromCoordinates(
+          pos.latitude, pos.longitude);
       setState(() {
-        _lat = pos.latitude; _lng = pos.longitude;
-        _locationSet = true; _detectingLocation = false;
-        if (_addressCtrl.text.isEmpty && addr['address']!.isNotEmpty) _addressCtrl.text = addr['address']!;
-        if (addr['pincode']!.isNotEmpty) _pincodeCtrl.text = addr['pincode']!;
+        _lat = pos.latitude;
+        _lng = pos.longitude;
+        _locationSet = true;
+        _detectingLocation = false;
+        if (_addressCtrl.text.isEmpty && addr['address']!.isNotEmpty) {
+          _addressCtrl.text = addr['address']!;
+        }
+        if (addr['pincode']!.isNotEmpty) {
+          _pincodeCtrl.text = addr['pincode']!;
+        }
         // Auto-select state
         final detectedState = addr['state'] ?? '';
         if (detectedState.isNotEmpty) {
           final matchedState = _states.firstWhere(
-            (s) => s.toLowerCase().contains(detectedState.toLowerCase()) ||
-                   detectedState.toLowerCase().contains(s.toLowerCase()),
+            (s) =>
+                s.toLowerCase().contains(detectedState.toLowerCase()) ||
+                detectedState.toLowerCase().contains(s.toLowerCase()),
             orElse: () => '',
           );
           if (matchedState.isNotEmpty) {
@@ -104,8 +120,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             if (detectedCity.isNotEmpty) {
               final cities = _citiesByState[matchedState] ?? [];
               final matchedCity = cities.firstWhere(
-                (c) => c.toLowerCase().contains(detectedCity.toLowerCase()) ||
-                       detectedCity.toLowerCase().contains(c.toLowerCase()),
+                (c) =>
+                    c.toLowerCase().contains(detectedCity.toLowerCase()) ||
+                    detectedCity.toLowerCase().contains(c.toLowerCase()),
                 orElse: () => '',
               );
               if (matchedCity.isNotEmpty) _selectedCity = matchedCity;
@@ -117,7 +134,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       setState(() => _detectingLocation = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.t(context, 'Could not get location.'))),
+          SnackBar(
+              content: Text(AppStrings.t(context, 'Could not get location.'))),
         );
       }
     }
@@ -130,8 +148,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     setState(() => _openingMap = false);
     final result = await Navigator.push<MapPickerResult>(
       context,
-      MaterialPageRoute(
-        builder: (_) => MapPickerScreen(
+      AppRoutes.smoothRoute<MapPickerResult>(
+        const RouteSettings(name: 'register-map-picker'),
+        (_) => MapPickerScreen(
           initialLat: _lat,
           initialLng: _lng,
         ),
@@ -148,8 +167,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         // Auto-select state
         if (result.state.isNotEmpty) {
           final matchedState = _states.firstWhere(
-            (s) => s.toLowerCase().contains(result.state.toLowerCase()) ||
-                   result.state.toLowerCase().contains(s.toLowerCase()),
+            (s) =>
+                s.toLowerCase().contains(result.state.toLowerCase()) ||
+                result.state.toLowerCase().contains(s.toLowerCase()),
             orElse: () => '',
           );
           if (matchedState.isNotEmpty) {
@@ -158,8 +178,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             if (result.city.isNotEmpty) {
               final cities = _citiesByState[matchedState] ?? [];
               final matchedCity = cities.firstWhere(
-                (c) => c.toLowerCase().contains(result.city.toLowerCase()) ||
-                       result.city.toLowerCase().contains(c.toLowerCase()),
+                (c) =>
+                    c.toLowerCase().contains(result.city.toLowerCase()) ||
+                    result.city.toLowerCase().contains(c.toLowerCase()),
                 orElse: () => '',
               );
               if (matchedCity.isNotEmpty) _selectedCity = matchedCity;
@@ -186,22 +207,34 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.t(context, 'Enter a valid email first'))),
+        SnackBar(
+            content: Text(AppStrings.t(context, 'Enter a valid email first'))),
       );
       return;
     }
     if (_resendSeconds > 0) return;
 
-    setState(() { _sendingOtp = true; _otpError = null; });
+    setState(() {
+      _sendingOtp = true;
+      _otpError = null;
+    });
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final success = await auth.sendOtp(email);
-    setState(() { _sendingOtp = false; });
+    setState(() {
+      _sendingOtp = false;
+    });
     if (success) {
-      setState(() { _otpSent = true; _emailVerified = false; _otpCtrl.clear(); });
+      setState(() {
+        _otpSent = true;
+        _emailVerified = false;
+        _otpCtrl.clear();
+      });
       _startResendTimer();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Failed to send OTP'))),
+        SnackBar(
+            content: Text(
+                auth.error ?? AppStrings.t(context, 'Failed to send OTP'))),
       );
     }
   }
@@ -209,10 +242,14 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Future<void> _verifyEmailOtp() async {
     final otp = _otpCtrl.text.trim();
     if (otp.length != 6) {
-      setState(() => _otpError = AppStrings.t(context, 'Enter the 6-digit OTP'));
+      setState(
+          () => _otpError = AppStrings.t(context, 'Enter the 6-digit OTP'));
       return;
     }
-    setState(() { _verifyingOtp = true; _otpError = null; });
+    setState(() {
+      _verifyingOtp = true;
+      _otpError = null;
+    });
     final result = await ApiService.post(
       ApiConfig.verifyOtp,
       {'email': _emailCtrl.text.trim(), 'otp': otp},
@@ -220,9 +257,13 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     );
     setState(() => _verifyingOtp = false);
     if (result['success'] == true) {
-      setState(() { _emailVerified = true; _otpSent = false; });
+      setState(() {
+        _emailVerified = true;
+        _otpSent = false;
+      });
     } else {
-      setState(() => _otpError = result['message'] ?? AppStrings.t(context, 'Invalid OTP'));
+      setState(() => _otpError =
+          result['message'] ?? AppStrings.t(context, 'Invalid OTP'));
     }
   }
 
@@ -235,7 +276,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     }
     if (!_emailVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.t(context, 'Please verify your email first'))),
+        SnackBar(
+            content:
+                Text(AppStrings.t(context, 'Please verify your email first'))),
       );
       return;
     }
@@ -254,12 +297,14 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       'longitude': _lng?.toString() ?? '',
     });
     setState(() => _isLoading = false);
-    
+
     if (success && mounted) {
       _showRegistrationSuccessDialog();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(auth.error ?? AppStrings.t(context, 'Registration failed'))),
+        SnackBar(
+            content: Text(
+                auth.error ?? AppStrings.t(context, 'Registration failed'))),
       );
     }
   }
@@ -276,25 +321,31 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 80, height: 80,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
-                  child: Icon(Icons.check_circle_rounded, color: Color(0xFF22C55E), size: 54),
+                  child: Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF22C55E), size: 54),
                 ),
               ),
               const SizedBox(height: 24),
               Text(
                 AppStrings.t(context, 'Registration Successful!'),
-                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark),
+                style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _textDark),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               Text(
                 '${AppStrings.t(context, 'Your account has been created for')} ${_emailCtrl.text.trim()}. ${AppStrings.t(context, 'Please login to continue.')}',
-                style: GoogleFonts.inter(fontSize: 13, color: _textMuted, height: 1.5),
+                style: GoogleFonts.inter(
+                    fontSize: 13, color: _textMuted, height: 1.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -309,10 +360,12 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: Text(AppStrings.t(context, 'OKAY, LOGIN'), style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+                  child: Text(AppStrings.t(context, 'OKAY, LOGIN'),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
@@ -325,77 +378,115 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(children: [
-        Image.network(
-          'https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile',
-          fit: BoxFit.cover, width: double.infinity, height: double.infinity,
-          errorBuilder: (_, __, ___) => Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF667eea), Color(0xFF764ba2)]))),
-        ),
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Colors.white.withValues(alpha: 0.85),
+      backgroundColor: const Color(0xFFF6F7FB),
+      resizeToAvoidBottomInset: false,
+      body: _RegisterBackground(
+        child: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+              final keyboardLift =
+                  bottomInset > 0 ? math.min(bottomInset * 0.06, 20.0) : 0.0;
+              final contentWidth =
+                  constraints.maxWidth > 560 ? 430.0 : constraints.maxWidth;
+              final horizontalPadding = constraints.maxWidth > 560 ? 0.0 : 24.0;
+              return Padding(
+                padding: EdgeInsets.only(bottom: keyboardLift),
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    18,
+                    horizontalPadding,
+                    28 + math.min(bottomInset * 0.08, 28.0),
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: contentWidth,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: 1),
+                        duration: const Duration(milliseconds: 520),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 18 * (1 - value)),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: RepaintBoundary(child: _formContent()),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
-        SafeArea(
-          child: SlideTransition(
-            position: _slideAnim,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: _formContent(),
-            ),
-          ),
-        ),
-      ]),
+      ),
     );
   }
 
   Widget _formContent() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Back button
         Align(
           alignment: Alignment.centerLeft,
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _borderColor),
-              ),
-              child: const Icon(Icons.arrow_back_rounded, size: 18, color: _textDark),
+          child: _iconButton(
+              Icons.arrow_back_rounded, () => Navigator.pop(context)),
+        ),
+        const SizedBox(height: 10),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            AppStrings.t(context, 'Create Account'),
+            maxLines: 1,
+            softWrap: false,
+            style: GoogleFonts.poppins(
+              fontSize: 35,
+              height: 1.02,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+              color: const Color(0xFF0A0A0A),
             ),
           ),
         ),
-        const SizedBox(height: 14),
-        // Logo
-        Image.asset('assets/images/logo.png', height: 80),
         const SizedBox(height: 8),
-        // Brand subtitle
         Text(
-          AppStrings.t(context, 'COMPLAINT MANAGEMENT SYSTEM'),
-          style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: _primary, letterSpacing: 1.2),
+          AppStrings.t(context, 'Register your JanHelp citizen profile.'),
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            height: 1.42,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF7A7F8C),
+          ),
         ),
-        const SizedBox(height: 4),
-        // Heading
-        Text(
-          AppStrings.t(context, 'Create Account'),
-          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark),
-        ),
-        const SizedBox(height: 20),
-        // First + Last name row
+        const SizedBox(height: 18),
         Row(children: [
-          Expanded(child: _field(_firstNameCtrl, AppStrings.t(context, 'First Name (Optional)'), Icons.person_outline, TextInputType.name)),
+          Expanded(
+              child: _field(
+                  _firstNameCtrl,
+                  AppStrings.t(context, 'First Name (Optional)'),
+                  Icons.person_outline,
+                  TextInputType.name)),
           const SizedBox(width: 12),
-          Expanded(child: _field(_lastNameCtrl, AppStrings.t(context, 'Last Name (Optional)'), Icons.person_outline, TextInputType.name)),
+          Expanded(
+              child: _field(
+                  _lastNameCtrl,
+                  AppStrings.t(context, 'Last Name (Optional)'),
+                  Icons.person_outline,
+                  TextInputType.name)),
         ]),
         const SizedBox(height: 12),
-        _field(_mobileCtrl, AppStrings.t(context, 'Mobile Number (Optional)'), Icons.phone_outlined, TextInputType.phone),
+        _field(_mobileCtrl, AppStrings.t(context, 'Mobile Number (Optional)'),
+            Icons.phone_outlined, TextInputType.phone),
         const SizedBox(height: 12),
         _emailFieldWithVerify(),
         if (_otpSent) ...[
@@ -403,35 +494,50 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
           _otpVerifyBox(),
         ],
         const SizedBox(height: 12),
-        _field(_pincodeCtrl, AppStrings.t(context, 'Pincode (Optional)'), Icons.location_on_outlined, TextInputType.number),
+        _field(_pincodeCtrl, AppStrings.t(context, 'Pincode (Optional)'),
+            Icons.location_on_outlined, TextInputType.number),
         const SizedBox(height: 12),
         // State + City row
         Row(children: [
-          Expanded(child: _loadingStates
-            ? _loadingDropdown(AppStrings.t(context, 'Select State'))
-            : _dropdown(AppStrings.t(context, 'Select State (Opt)'), _states, _selectedState,
-                (v) => setState(() { _selectedState = v; _selectedCity = null; }))),
+          Expanded(
+              child: _loadingStates
+                  ? _loadingDropdown(AppStrings.t(context, 'Select State'))
+                  : _dropdown(
+                      AppStrings.t(context, 'Select State (Opt)'),
+                      _states,
+                      _selectedState,
+                      (v) => setState(() {
+                            _selectedState = v;
+                            _selectedCity = null;
+                          }))),
           const SizedBox(width: 12),
-          Expanded(child: _loadingStates
-            ? _loadingDropdown(AppStrings.t(context, 'Select City'))
-            : _dropdown(
-                AppStrings.t(context, 'Select City (Opt)'),
-                _selectedState != null ? (_citiesByState[_selectedState!] ?? []) : [],
-                _selectedCity,
-                _selectedState == null ? null : (v) => setState(() => _selectedCity = v),
-              )),
+          Expanded(
+              child: _loadingStates
+                  ? _loadingDropdown(AppStrings.t(context, 'Select City'))
+                  : _dropdown(
+                      AppStrings.t(context, 'Select City (Opt)'),
+                      _selectedState != null
+                          ? (_citiesByState[_selectedState!] ?? [])
+                          : [],
+                      _selectedCity,
+                      _selectedState == null
+                          ? null
+                          : (v) => setState(() => _selectedCity = v),
+                    )),
         ]),
         const SizedBox(height: 12),
         _addressField(),
         const SizedBox(height: 12),
-        _field(_aadhaarCtrl, AppStrings.t(context, 'Aadhaar Number (Optional)'), Icons.credit_card_outlined, TextInputType.number),
+        _field(_aadhaarCtrl, AppStrings.t(context, 'Aadhaar Number (Optional)'),
+            Icons.credit_card_outlined, TextInputType.number),
         const SizedBox(height: 14),
         // Location section
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            AppStrings.t(context, '📍 Location (GPS)'),
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark),
+            AppStrings.t(context, 'Location (GPS)'),
+            style: GoogleFonts.inter(
+                fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
           ),
         ),
         const SizedBox(height: 10),
@@ -442,98 +548,129 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: _primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _green.withValues(alpha: 0.38)),
             ),
             child: Row(children: [
-              const Icon(Icons.location_pin, size: 14, color: _primary),
+              const Icon(Icons.location_pin, size: 14, color: _green),
               const SizedBox(width: 6),
-              Text(
-                '${AppStrings.t(context, 'Lat')}: ${_lat!.toStringAsFixed(6)},  ${AppStrings.t(context, 'Lng')}: ${_lng!.toStringAsFixed(6)}',
-                style: GoogleFonts.inter(fontSize: 12, color: _textDark),
+              Expanded(
+                child: Text(
+                  '${AppStrings.t(context, 'Lat')}: ${_lat!.toStringAsFixed(6)},  ${AppStrings.t(context, 'Lng')}: ${_lng!.toStringAsFixed(6)}',
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: _textDark),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ]),
           ),
         ],
         const SizedBox(height: 16),
-        // Register button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: GestureDetector(
-            onTap: (_isLoading || !_emailVerified) ? null : _register,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: _emailVerified
-                  ? const LinearGradient(colors: [Color(0xFF1E66F5), Color(0xFF2ECC71), Color(0xFF764ba2)])
-                  : const LinearGradient(colors: [Color(0xFFcbd5e1), Color(0xFFcbd5e1)]),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: _emailVerified
-                  ? [BoxShadow(color: _primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 8))]
-                  : [],
-              ),
-              child: Center(
-                child: _isLoading
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      const Icon(Icons.person_add_outlined, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                      Text(AppStrings.t(context, 'REGISTER NOW'), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5)),
-                    ]),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Divider(color: Colors.black.withValues(alpha: 0.08)),
-        const SizedBox(height: 12),
+        _registerButton(),
+        const SizedBox(height: 18),
         GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: RichText(text: TextSpan(
+          child: RichText(
+              text: TextSpan(
             text: AppStrings.t(context, 'Already have an account?  '),
             style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
-            children: [TextSpan(text: AppStrings.t(context, 'Login'), style: GoogleFonts.inter(fontSize: 12, color: _primary, fontWeight: FontWeight.w600))],
+            children: [
+              TextSpan(
+                  text: AppStrings.t(context, 'Login'),
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _primary,
+                      fontWeight: FontWeight.w800))
+            ],
           )),
         ),
         const SizedBox(height: 10),
-        GestureDetector(
+        _secondaryAction(
+          icon: Icons.search_rounded,
+          label: AppStrings.t(context, 'Track Complaint as Guest'),
           onTap: () => Navigator.pushNamed(context, AppRoutes.guestTrack),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _borderColor, width: 1.5),
-            ),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.search_rounded, size: 15, color: _textDark),
-              const SizedBox(width: 6),
-              Text(AppStrings.t(context, 'Track Complaint as Guest'), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _textDark)),
-            ]),
-          ),
         ),
         const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _field(TextEditingController c, String hint, IconData icon, TextInputType type) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borderColor, width: 1.5),
+  Widget _iconButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 18, color: _textDark),
       ),
-      child: TextField(
-        controller: c, keyboardType: type,
-        style: GoogleFonts.inter(fontSize: 14, color: _textDark),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
-          prefixIcon: Icon(icon, color: _textMuted, size: 16),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    );
+  }
+
+  Widget _field(
+      TextEditingController c, String hint, IconData icon, TextInputType type) {
+    return Container(
+      height: 62,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.95), width: 1.35),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: TextField(
+          controller: c,
+          keyboardType: type,
+          cursorColor: _textDark,
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: _textDark,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFFA3A7B4),
+            ),
+            prefixIcon: Icon(icon, color: const Color(0xFF8B90A0), size: 22),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          ),
         ),
       ),
     );
@@ -542,39 +679,90 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   Widget _addressField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borderColor, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.95), width: 1.35),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: TextField(
-        controller: _addressCtrl, maxLines: 3,
-        style: GoogleFonts.inter(fontSize: 14, color: _textDark),
-        decoration: InputDecoration(
-          hintText: AppStrings.t(context, 'Address (Optional)'),
-          hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(14),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: TextField(
+          controller: _addressCtrl,
+          maxLines: 3,
+          cursorColor: _textDark,
+          style: GoogleFonts.inter(
+              fontSize: 15, fontWeight: FontWeight.w700, color: _textDark),
+          decoration: InputDecoration(
+            hintText: AppStrings.t(context, 'Address (Optional)'),
+            hintStyle: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFFA3A7B4)),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.all(16),
+          ),
         ),
       ),
     );
   }
 
-  Widget _dropdown(String hint, List<String> items, String? value, ValueChanged<String?>? onChanged) {
+  Widget _dropdown(String hint, List<String> items, String? value,
+      ValueChanged<String?>? onChanged) {
     return Container(
+      height: 62,
       decoration: BoxDecoration(
-        color: onChanged == null ? const Color(0xFFF1F5F9) : Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borderColor, width: 1.5),
+        color: onChanged == null ? const Color(0xFFF4F5F8) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.95), width: 1.35),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(hint, style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
+          hint: Text(hint,
+              style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFFA3A7B4))),
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: _textMuted, size: 18),
-          style: GoogleFonts.inter(fontSize: 13, color: _textDark),
-          items: items.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          borderRadius: BorderRadius.circular(18),
+          dropdownColor: Colors.white,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded,
+              color: _textDark, size: 21),
+          style: GoogleFonts.inter(
+              fontSize: 14, fontWeight: FontWeight.w700, color: _textDark),
+          items: items
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
           onChanged: onChanged,
         ),
       ),
@@ -583,16 +771,27 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   Widget _loadingDropdown(String hint) {
     return Container(
+      height: 62,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _borderColor, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.95), width: 1.35),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
       child: Row(children: [
-        const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary)),
+        const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: _textDark)),
         const SizedBox(width: 10),
-        Text(hint, style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
+        Expanded(
+            child: Text(hint,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _textMuted))),
       ]),
     );
   }
@@ -601,79 +800,359 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Email input field
         Container(
+          height: 62,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _emailVerified ? const Color(0xFF22c55e) : _borderColor,
-              width: 1.5,
+              color: _emailVerified
+                  ? _green.withValues(alpha: 0.82)
+                  : Colors.white.withValues(alpha: 0.95),
+              width: _emailVerified ? 1.7 : 1.35,
             ),
-          ),
-          child: TextField(
-            controller: _emailCtrl,
-            keyboardType: TextInputType.emailAddress,
-            enabled: !_emailVerified,
-            style: GoogleFonts.inter(fontSize: 14, color: _textDark),
-            onChanged: (_) {
-              if (_emailVerified || _otpSent) {
-                setState(() { _emailVerified = false; _otpSent = false; _otpCtrl.clear(); });
-              }
-            },
-            decoration: InputDecoration(
-              hintText: AppStrings.t(context, 'Email Address'),
-              hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
-              prefixIcon: Icon(
-                _emailVerified ? Icons.verified_outlined : Icons.email_outlined,
-                color: _emailVerified ? const Color(0xFF22c55e) : _textMuted,
-                size: 18,
+            boxShadow: [
+              if (_emailVerified)
+                BoxShadow(
+                  color: _green.withValues(alpha: 0.18),
+                  blurRadius: 14,
+                  spreadRadius: 1,
+                ),
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
               ),
-              suffixIcon: _emailVerified
-                ? Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.check_circle, color: Color(0xFF22c55e), size: 16),
-                      const SizedBox(width: 4),
-                      Text(AppStrings.t(context, 'Verified'), style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF22c55e), fontWeight: FontWeight.w700)),
-                    ]),
-                  )
-                : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: TextField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              enabled: !_emailVerified,
+              cursorColor: _textDark,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _textDark,
+              ),
+              onChanged: (_) {
+                if (_emailVerified || _otpSent) {
+                  setState(() {
+                    _emailVerified = false;
+                    _otpSent = false;
+                    _otpCtrl.clear();
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                hintText: AppStrings.t(context, 'Email Address'),
+                hintStyle: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFFA3A7B4),
+                ),
+                prefixIcon: Icon(
+                  _emailVerified
+                      ? Icons.verified_outlined
+                      : Icons.email_outlined,
+                  color: _emailVerified ? _green : const Color(0xFF8B90A0),
+                  size: 22,
+                ),
+                suffixIcon: _emailVerified
+                    ? const Icon(Icons.check_circle_rounded,
+                        color: _green, size: 23)
+                    : const SizedBox(width: 24),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              ),
             ),
           ),
         ),
-        // Verify / Resend button below the field
         if (!_emailVerified) ...[
           const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: ElevatedButton.icon(
-              onPressed: (_sendingOtp || _resendSeconds > 0) ? null : _sendEmailOtp,
-              icon: _sendingOtp
-                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Icon(_otpSent ? Icons.refresh_rounded : Icons.send_rounded, size: 15),
-              label: Text(
-                _sendingOtp
-                    ? AppStrings.t(context, 'Sending...')
-                    : (_otpSent
-                        ? (_resendSeconds > 0
-                            ? '${AppStrings.t(context, 'Resend in')} ${_resendSeconds}s'
-                            : AppStrings.t(context, 'Resend OTP'))
-                        : AppStrings.t(context, 'Send Verification OTP')),
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _otpSent ? const Color(0xFF0f172a) : _primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+          _smallActionButton(
+            enabled: !_sendingOtp && _resendSeconds == 0,
+            loading: _sendingOtp,
+            icon: _otpSent ? Icons.refresh_rounded : Icons.send_rounded,
+            label: _sendingOtp
+                ? AppStrings.t(context, 'Sending...')
+                : (_otpSent
+                    ? (_resendSeconds > 0
+                        ? '${AppStrings.t(context, 'Resend in')} ${_resendSeconds}s'
+                        : AppStrings.t(context, 'Resend OTP'))
+                    : AppStrings.t(context, 'Send Verification OTP')),
+            onTap: _sendEmailOtp,
+          ),
+        ] else ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _green.withValues(alpha: 0.38)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, size: 18, color: _green),
+                const SizedBox(width: 8),
+                Text(
+                  AppStrings.t(context, 'Verified'),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: _green,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _smallActionButton({
+    required bool enabled,
+    required bool loading,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTapDown: enabled ? (_) => HapticFeedback.selectionClick() : null,
+      onTap: enabled ? onTap : null,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.62,
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(17),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1A1A1A), Color(0xFF050505)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 16,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.18),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: loading
+                      ? const SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(icon, color: Colors.white, size: 17),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                label,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _registerButton() {
+    final enabled = _emailVerified && !_isLoading;
+    return GestureDetector(
+      onTapDown: enabled ? (_) => HapticFeedback.selectionClick() : null,
+      onTap: enabled ? _register : null,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.62,
+        child: Container(
+          width: double.infinity,
+          height: 62,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1A1A1A), Color(0xFF050505)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.22),
+                blurRadius: 30,
+                offset: const Offset(0, 14),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 20,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.18),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.24)),
+                  ),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 21,
+                                width: 21,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.4,
+                                ),
+                              )
+                            : Text(
+                                AppStrings.t(context, 'REGISTER NOW'),
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                      const Positioned(
+                        right: 10,
+                        top: 8,
+                        child: _ArrowCircle(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _secondaryAction({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.92),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.055),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 17, color: _textDark),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: _textDark,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -684,18 +1163,31 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFeff6ff),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFbfdbfe), width: 1.5),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color: Colors.white.withValues(alpha: 0.95), width: 1.35),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              const Icon(Icons.mark_email_read_outlined, size: 14, color: Color(0xFF1e40af)),
+              const Icon(Icons.mark_email_read_outlined,
+                  size: 16, color: _textDark),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   '${AppStrings.t(context, 'OTP sent to')} ${_emailCtrl.text.trim()}',
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1e40af), fontWeight: FontWeight.w500),
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: _textMuted,
+                      fontWeight: FontWeight.w700),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -707,18 +1199,26 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   height: 44,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _otpError != null ? Colors.red : _borderColor, width: 1.5),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                        color:
+                            _otpError != null ? _red : const Color(0xFFE5E7EB),
+                        width: 1.5),
                   ),
                   child: TextField(
                     controller: _otpCtrl,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
-                    style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark, letterSpacing: 6),
+                    style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: _textDark,
+                        letterSpacing: 6),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       hintText: '------',
-                      hintStyle: GoogleFonts.poppins(fontSize: 16, color: _textMuted, letterSpacing: 4),
+                      hintStyle: GoogleFonts.poppins(
+                          fontSize: 16, color: _textMuted, letterSpacing: 4),
                       border: InputBorder.none,
                       counterText: '',
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -734,20 +1234,34 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                   height: 44,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: _primary,
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF1A1A1A), Color(0xFF050505)],
+                    ),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Center(
                     child: _verifyingOtp
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(AppStrings.t(context, 'Submit'), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : Text(AppStrings.t(context, 'Submit'),
+                            style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white)),
                   ),
                 ),
               ),
             ]),
             if (_otpError != null) ...[
               const SizedBox(height: 6),
-              Text(_otpError!, style: GoogleFonts.inter(fontSize: 11, color: Colors.red)),
+              Text(_otpError!,
+                  style: GoogleFonts.inter(
+                      fontSize: 11, fontWeight: FontWeight.w700, color: _red)),
             ],
           ]),
         ),
@@ -757,32 +1271,52 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
   Widget _locationButtons() {
     return Row(children: [
-      // Use Current Location
       Expanded(
         child: GestureDetector(
           onTap: _detectingLocation ? null : _detectLocation,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 11),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: _locationSet ? const Color(0xFFdbeafe) : const Color(0xFFe5e7eb),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4))],
+              color: _locationSet ? const Color(0xFFF0FDF4) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: _locationSet
+                      ? _green.withValues(alpha: 0.42)
+                      : Colors.white.withValues(alpha: 0.95)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 18,
+                  offset: const Offset(0, 9),
+                ),
+              ],
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               _detectingLocation
-                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary))
-                : Icon(_locationSet ? Icons.check : Icons.location_searching_rounded, size: 15,
-                    color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: _textDark))
+                  : Icon(
+                      _locationSet
+                          ? Icons.check
+                          : Icons.location_searching_rounded,
+                      size: 15,
+                      color: _locationSet ? _green : _textDark),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   _detectingLocation
                       ? AppStrings.t(context, 'Detecting...')
                       : (_locationSet
-                          ? AppStrings.t(context, 'Location Set ✓')
+                          ? AppStrings.t(context, 'Location Set')
                           : AppStrings.t(context, 'Use Current')),
-                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700,
-                      color: _locationSet ? const Color(0xFF1e40af) : const Color(0xFF374151)),
+                  style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _locationSet ? _green : _textDark),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -791,32 +1325,111 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         ),
       ),
       const SizedBox(width: 10),
-      // Pick on Map
       Expanded(
         child: GestureDetector(
           onTap: _openingMap ? null : _openMapPicker,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 11),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFdbeafe),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 18,
+                  offset: const Offset(0, 9),
+                ),
+              ],
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               _openingMap
-                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _primary))
-                : const Icon(Icons.map_outlined, size: 15, color: Color(0xFF1e40af)),
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: _textDark))
+                  : const Icon(Icons.map_outlined, size: 15, color: _textDark),
               const SizedBox(width: 6),
-              Text(
-                _openingMap
-                    ? AppStrings.t(context, 'Opening...')
-                    : AppStrings.t(context, 'Pick on Map'),
-                style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF1e40af)),
+              Flexible(
+                child: Text(
+                  _openingMap
+                      ? AppStrings.t(context, 'Opening...')
+                      : AppStrings.t(context, 'Pick on Map'),
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _textDark),
+                ),
               ),
             ]),
           ),
         ),
       ),
     ]);
+  }
+}
+
+class _ArrowCircle extends StatelessWidget {
+  const _ArrowCircle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.10),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.18),
+            Colors.white.withValues(alpha: 0.06),
+          ],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: const Icon(
+        Icons.arrow_forward_rounded,
+        color: Colors.white,
+        size: 21,
+      ),
+    );
+  }
+}
+
+class _RegisterBackground extends StatelessWidget {
+  final Widget child;
+
+  const _RegisterBackground({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFFF6F7FB),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFFFFF),
+                  Color(0xFFF8F8FA),
+                  Color(0xFFF4F5F8),
+                ],
+                stops: [0.0, 0.40, 1.0],
+              ),
+            ),
+          ),
+        ),
+        child,
+      ],
+    );
   }
 }

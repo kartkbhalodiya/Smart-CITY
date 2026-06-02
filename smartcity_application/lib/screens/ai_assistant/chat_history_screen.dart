@@ -148,7 +148,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isVoiceCall
-                        ? [Colors.orange.shade400, Colors.red.shade400]
+                        ? [const Color(0xFF2F80ED), Colors.red.shade400]
                         : [Colors.blue.shade400, Colors.purple.shade400],
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -181,7 +181,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Colors.orange.shade700,
+                          color: const Color(0xFF0B1020),
                         ),
                       ),
                       const SizedBox(height: 4),

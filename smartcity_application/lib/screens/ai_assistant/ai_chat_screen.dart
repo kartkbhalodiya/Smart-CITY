@@ -216,7 +216,7 @@ Track your complaint in "My Complaints" section.''';
     } else {
       // Clear any old completed session and start fresh
       if (currentSession != null && currentSession.isCompleted) {
-        print('🗑️ Clearing completed session');
+        print('Clearing completed session');
         await _historyService.clearCurrentSession();
       }
       
@@ -375,7 +375,7 @@ Track your complaint in "My Complaints" section.''';
     final categoryEmoji = categoryButton.split(' ').first;
     final categoryName = categoryButton.substring(categoryButton.indexOf(' ') + 1);
     
-    // Check if response has subcategories (buttons without emojis at start)
+    // Check if response has subcategories.
     final hasSubcategories = response.buttons.isNotEmpty && 
         response.buttons.length >= 3 &&
         response.buttons.every((btn) => !btn.startsWith(RegExp(r'^[\p{Emoji}\s]+', unicode: true)));
@@ -784,7 +784,7 @@ Track your complaint in "My Complaints" section.''';
               ),
               isUser: false,
               timestamp: DateTime.now(),
-              buttons: const ['📋 View My Complaints', '➕ File Another', '🏠 Home'],
+              buttons: const ['View My Complaints', 'File Another', 'Home'],
             ));
             _isLoading = false;
           });
@@ -959,7 +959,7 @@ Track your complaint in "My Complaints" section.''';
           _messages.add(ChatMessage(
             text: '''🎉 **Complaint Submitted Successfully!**
 
-📋 **Complaint ID:** $complaintId
+**Complaint ID:** $complaintId
 🏛️ **Assigned to:** $assignedDepartment
 ${departmentPhone.isNotEmpty ? '📞 **Contact:** $departmentPhone\n' : ''}${departmentEmail.isNotEmpty ? '📧 **Email:** $departmentEmail\n' : ''}📈 **Priority:** $priority
 ⏱️ **Est. Resolution:** $estimatedResolution
@@ -969,7 +969,7 @@ Your complaint has been registered and assigned to the nearest department.
 ✅ Track your complaint in "My Complaints" section.''',
             isUser: false,
             timestamp: DateTime.now(),
-            buttons: ['📋 View My Complaints', '➕ File Another', '🏠 Home'],
+            buttons: ['View My Complaints', 'File Another', 'Home'],
           ));
           _isLoading = false;
         });
@@ -1185,8 +1185,8 @@ Your complaint has been registered and assigned to the nearest department.
 
   Widget _buildMessage(ChatMessage message, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final aiBg = isDark ? Colors.orange.shade800.withOpacity(0.16) : Colors.orange.shade50;
-    final userBg = isDark ? Colors.orange.shade600 : Colors.orange.shade300;
+    final aiBg = isDark ? const Color(0xFF2F80ED).withOpacity(0.16) : const Color(0xFFEFF7FF);
+    final userBg = isDark ? const Color(0xFF2F80ED) : const Color(0xFFDCEBFF);
     final aiTextColor = isDark ? Colors.white : const Color(0xFF0f172a);
     final userTextColor = isDark ? Colors.white : Colors.black87;
     final borderRadius = BorderRadius.circular(16);
@@ -1244,7 +1244,7 @@ Your complaint has been registered and assigned to the nearest department.
                                 blurRadius: 8,
                               ),
                             ],
-                            border: isSelected ? Border.all(color: Colors.orange.shade500, width: 1.5) : null,
+                            border: isSelected ? Border.all(color: const Color(0xFF2F80ED), width: 1.5) : null,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1347,14 +1347,14 @@ Your complaint has been registered and assigned to the nearest department.
 
   Widget _buildButton(String text) {
     // Handle navigation buttons
-    if (text.contains('📋 View My Complaints') || text.contains('📋 My Complaints')) {
+    if (text.contains('View My Complaints') || text.contains('My Complaints')) {
       return GestureDetector(
         onTap: () => Navigator.pushNamed(context, AppRoutes.userTrack),
         child: _buttonContainer(text),
       );
     }
     
-    if (text.contains('🏠 Home')) {
+    if (text.contains('Home')) {
       return GestureDetector(
         onTap: () => Navigator.pushNamedAndRemoveUntil(
           context,
@@ -1365,7 +1365,7 @@ Your complaint has been registered and assigned to the nearest department.
       );
     }
     
-    if (text.contains('➕ File Another') || text.contains('➕ New Complaint')) {
+    if (text.contains('File Another') || text.contains('➕ New Complaint')) {
       return GestureDetector(
         onTap: () {
           setState(() {
@@ -1382,7 +1382,7 @@ Your complaint has been registered and assigned to the nearest department.
     }
     
     // Check if this is a subcategory button (appears after category selection)
-    // Subcategories don't have emojis at the start
+    // Subcategory labels are plain text.
     final isSubcategory = !text.startsWith(RegExp(r'[\p{Emoji}]', unicode: true)) && 
                           _messages.isNotEmpty &&
                           _messages.last.buttons.contains(text);
@@ -1529,7 +1529,7 @@ Your complaint has been registered and assigned to the nearest department.
                 height: 48,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.orange.shade400, Colors.deepOrange.shade400],
+                    colors: [const Color(0xFF2F80ED), const Color(0xFF5BC7FF)],
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -1822,13 +1822,13 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
+                  color: const Color(0xFFDCEBFF),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange, width: 2),
+                  border: Border.all(color: const Color(0xFF2F80ED), width: 2),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+                    const Icon(Icons.warning_amber_rounded, color: const Color(0xFF2F80ED), size: 24),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -1836,7 +1836,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.orange.shade900,
+                          color: const Color(0xFF0B1020),
                         ),
                       ),
                     ),

@@ -165,7 +165,8 @@ class StorageService {
     final fullName = pickString([
       raw['full_name'],
       sourceUser['full_name'],
-      '${firstName.isNotEmpty ? firstName : ''} ${lastName.isNotEmpty ? lastName : ''}'.trim(),
+      '${firstName.isNotEmpty ? firstName : ''} ${lastName.isNotEmpty ? lastName : ''}'
+          .trim(),
       raw['name'],
       merged['full_name'],
     ]);
@@ -183,6 +184,15 @@ class StorageService {
       sourceUser['email'],
       merged['email'],
     ]);
+    final role = pickString([
+      raw['role'],
+      sourceUser['role'],
+      raw['user_role'],
+      sourceUser['user_role'],
+      merged['role'],
+      merged['user_role'],
+      'citizen',
+    ]).toLowerCase();
 
     if (raw.containsKey('id')) merged['profile_id'] = raw['id'];
     if (raw.containsKey('state')) merged['state'] = raw['state'];
@@ -190,7 +200,9 @@ class StorageService {
     if (raw.containsKey('city')) merged['city'] = raw['city'];
     if (raw.containsKey('address')) merged['address'] = raw['address'];
     if (raw.containsKey('pincode')) merged['pincode'] = raw['pincode'];
-    if (raw.containsKey('aadhaar_number')) merged['aadhaar_number'] = raw['aadhaar_number'];
+    if (raw.containsKey('aadhaar_number')) {
+      merged['aadhaar_number'] = raw['aadhaar_number'];
+    }
     if (raw.containsKey('latitude')) merged['latitude'] = raw['latitude'];
     if (raw.containsKey('longitude')) merged['longitude'] = raw['longitude'];
 
@@ -202,6 +214,7 @@ class StorageService {
     merged['mobile_no'] = mobile;
     merged['mobile'] = mobile;
     merged['phone'] = mobile;
+    merged['role'] = role.isEmpty ? 'citizen' : role;
 
     return merged;
   }

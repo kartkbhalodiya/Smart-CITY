@@ -24,7 +24,7 @@ GoogleService-Info.plist
 env/
 venv/
 ENV/
-Lib/
+/Lib/
 pyvenv.cfg
 .python-version
 CACHEDIR.TAG

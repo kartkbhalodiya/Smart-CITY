@@ -6,6 +6,21 @@ import 'storage_service.dart';
 import 'package:flutter/foundation.dart';
 
 class AuthService {
+  static Map<String, dynamic>? _userDataWithRole(
+      Map<String, dynamic> response) {
+    final userData = response['user'];
+    if (userData is! Map) {
+      return null;
+    }
+
+    final normalized = Map<String, dynamic>.from(userData);
+    normalized['role'] = (response['role'] ?? normalized['role'] ?? 'citizen')
+        .toString()
+        .trim()
+        .toLowerCase();
+    return normalized;
+  }
+
   static Future<Map<String, dynamic>> sendOtp(String email) async {
     return await ApiService.post(
       ApiConfig.sendOtp,
@@ -14,7 +29,8 @@ class AuthService {
     );
   }
 
-  static Future<Map<String, dynamic>> loginWithPassword(String identifier, String password) async {
+  static Future<Map<String, dynamic>> loginWithPassword(
+      String identifier, String password) async {
     final response = await ApiService.post(
       ApiConfig.login,
       {'identifier': identifier, 'password': password},
@@ -23,17 +39,24 @@ class AuthService {
     if (response['success'] == true) {
       final token = response['access'] ?? response['token'];
       final refreshToken = response['refresh'];
-      final userData = response['user'];
-      
-      if (token != null) await StorageService.saveToken(token);
-      if (refreshToken != null) await StorageService.saveRefreshToken(refreshToken);
-      if (userData != null) await StorageService.saveUserData(jsonEncode(userData));
+      final userData = _userDataWithRole(response);
+
+      if (token != null) {
+        await StorageService.saveToken(token);
+      }
+      if (refreshToken != null) {
+        await StorageService.saveRefreshToken(refreshToken);
+      }
+      if (userData != null) {
+        await StorageService.saveUserData(jsonEncode(userData));
+      }
       await StorageService.setLoggedIn(true);
     }
     return response;
   }
 
-  static Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
+  static Future<Map<String, dynamic>> verifyOtp(
+      String email, String otp) async {
     final response = await ApiService.post(
       ApiConfig.verifyOtp,
       {'email': email, 'otp': otp},
@@ -44,18 +67,25 @@ class AuthService {
       // Save token and user data
       final token = response['access'] ?? response['token'];
       final refreshToken = response['refresh'];
-      final userData = response['user'];
+      final userData = _userDataWithRole(response);
 
-      if (token != null) await StorageService.saveToken(token);
-      if (refreshToken != null) await StorageService.saveRefreshToken(refreshToken);
-      if (userData != null) await StorageService.saveUserData(jsonEncode(userData));
+      if (token != null) {
+        await StorageService.saveToken(token);
+      }
+      if (refreshToken != null) {
+        await StorageService.saveRefreshToken(refreshToken);
+      }
+      if (userData != null) {
+        await StorageService.saveUserData(jsonEncode(userData));
+      }
       await StorageService.setLoggedIn(true);
     }
 
     return response;
   }
 
-  static Future<Map<String, dynamic>> register(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> register(
+      Map<String, dynamic> data) async {
     final response = await ApiService.post(
       ApiConfig.register,
       data,
@@ -65,7 +95,10 @@ class AuthService {
     if (response['success'] == true) {
       final token = response['access'] ?? response['token'];
       final refreshToken = response['refresh'];
-      final userData = response['user'];
+      final userData = _userDataWithRole({
+        ...response,
+        'role': response['role'] ?? 'citizen',
+      });
 
       if (token != null) {
         await StorageService.saveToken(token);
@@ -112,7 +145,7 @@ class AuthService {
       // SimpleJWT returns {'access': '...', 'refresh': '...'} when rotating
       if (response['access'] != null) {
         await StorageService.saveToken(response['access']);
-        
+
         // Save new refresh token if rotation is enabled on backend
         if (response['refresh'] != null) {
           await StorageService.saveRefreshToken(response['refresh']);
@@ -121,9 +154,15 @@ class AuthService {
       }
 
       // If refresh token is explicitly rejected as invalid/blacklisted
-      if (response['success'] == false && 
-          (response['code'] == 'token_not_valid' || response['message']?.toString().toLowerCase().contains('invalid') == true)) {
-        debugPrint('Refresh token is invalid/expired. Clearing session tokens.');
+      if (response['success'] == false &&
+          (response['code'] == 'token_not_valid' ||
+              response['message']
+                      ?.toString()
+                      .toLowerCase()
+                      .contains('invalid') ==
+                  true)) {
+        debugPrint(
+            'Refresh token is invalid/expired. Clearing session tokens.');
         await StorageService.clearAuthTokens();
       }
     } catch (e) {

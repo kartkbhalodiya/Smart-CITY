@@ -13,13 +13,13 @@ import 'services/storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -27,11 +27,11 @@ void main() async {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  
+
   // Initialize storage
   await StorageService.init();
   await NotificationService.init();
-  
+
   runApp(const MyApp());
 }
 
@@ -71,11 +71,55 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
+            builder: (context, child) {
+              return _KeyboardInsetSmoother(
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             initialRoute: AppRoutes.splash,
             onGenerateRoute: AppRoutes.generateRoute,
           );
         },
       ),
+    );
+  }
+}
+
+class _KeyboardInsetSmoother extends StatelessWidget {
+  const _KeyboardInsetSmoother({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.maybeOf(context);
+    if (mediaQuery == null || mediaQuery.disableAnimations) {
+      return child;
+    }
+
+    final targetBottomInset = mediaQuery.viewInsets.bottom;
+    final isKeyboardOpening = targetBottomInset > 0;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: targetBottomInset),
+      duration: Duration(milliseconds: isKeyboardOpening ? 360 : 260),
+      curve: isKeyboardOpening
+          ? Curves.fastEaseInToSlowEaseOut
+          : Curves.easeOutCubic,
+      child: RepaintBoundary(child: child),
+      builder: (context, bottomInset, child) {
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            viewInsets: EdgeInsets.fromLTRB(
+              mediaQuery.viewInsets.left,
+              mediaQuery.viewInsets.top,
+              mediaQuery.viewInsets.right,
+              bottomInset,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }

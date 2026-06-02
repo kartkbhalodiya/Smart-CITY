@@ -16,51 +16,63 @@ class DepartmentDetailScreen extends StatefulWidget {
 }
 
 class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
-  static const _primary = Color(0xFFFF6B35);
-  static const _bg = Color(0xFFF8F9FA);
-  static const _textDark = Color(0xFF1A1A1A);
-  static const _textMuted = Color(0xFF64748b);
+  static const _primary = Color(0xFF2F80ED);
+  static const _bg = Color(0xFFF7F8FA);
+  static const _textDark = Color(0xFF101828);
+  static const _textMuted = Color(0xFF5B6B86);
+  static const _line = Color(0xFFEEF2F6);
 
   LatLng? _userLocation;
   bool _locating = true;
   final MapController _mapCtrl = MapController();
   bool _mapReady = false;
 
-  static const _emojiMap = {
-    'police': '🚓', 'traffic': '🚦', 'construction': '🏗️',
-    'water': '🚰', 'electricity': '💡', 'garbage': '🗑️',
-    'road': '🛣️', 'drainage': '🌊', 'illegal': '⚠️',
-    'transportation': '🚌', 'cyber': '🛡️', 'other': '📋',
-  };
-
   static const _bgMap = {
-    'police':         Color(0xFFEEF2FF),
-    'traffic':        Color(0xFFFFF7ED),
-    'construction':   Color(0xFFF0F9FF),
-    'water':          Color(0xFFF0FDF4),
-    'electricity':    Color(0xFFFFFBEB),
-    'garbage':        Color(0xFFECFDF5),
-    'road':           Color(0xFFFAF5FF),
-    'drainage':       Color(0xFFEFF6FF),
-    'illegal':        Color(0xFFFFF1F2),
+    'police': Color(0xFFEEF2FF),
+    'traffic': Color(0xFFFFF7ED),
+    'construction': Color(0xFFF0F9FF),
+    'water': Color(0xFFF0FDF4),
+    'electricity': Color(0xFFFFFBEB),
+    'garbage': Color(0xFFECFDF5),
+    'road': Color(0xFFFAF5FF),
+    'drainage': Color(0xFFEFF6FF),
+    'illegal': Color(0xFFFFF1F2),
     'transportation': Color(0xFFF0F9FF),
-    'cyber':          Color(0xFFF5F3FF),
-    'other':          Color(0xFFF8FAFC),
+    'cyber': Color(0xFFF5F3FF),
+    'other': Color(0xFFF8FAFC),
   };
 
   static const _gradients = {
-    'police':         [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'traffic':        [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'construction':   [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'water':          [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'electricity':    [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'garbage':        [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'road':           [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'drainage':       [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'illegal':        [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'transportation': [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'cyber':          [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
-    'other':          [Color(0xFF1A1A1A), Color(0xFFFF6B35)],
+    'police': [Color(0xFF0B1020), Color(0xFF2F80ED)],
+    'traffic': [Color(0xFF0B1020), Color(0xFF3478F6)],
+    'construction': [Color(0xFF0B1020), Color(0xFF4D8DFF)],
+    'water': [Color(0xFF0B1020), Color(0xFF2BC4B6)],
+    'electricity': [Color(0xFF0B1020), Color(0xFF4D8DFF)],
+    'garbage': [Color(0xFF0B1020), Color(0xFF2BC4B6)],
+    'road': [Color(0xFF0B1020), Color(0xFF4D8DFF)],
+    'drainage': [Color(0xFF0B1020), Color(0xFF7EA1D8)],
+    'illegal': [Color(0xFF0B1020), Color(0xFFEF4444)],
+    'transportation': [Color(0xFF0B1020), Color(0xFF8B5CF6)],
+    'cyber': [Color(0xFF0B1020), Color(0xFF6366F1)],
+    'other': [Color(0xFF0B1020), Color(0xFF5B6B86)],
+  };
+
+  static const _categoryAssetMap = {
+    'police': 'assets/images/cat_police.png',
+    'traffic': 'assets/images/cat_traffic.png',
+    'construction': 'assets/images/cat_construction.png',
+    'water': 'assets/images/cat_waste_overflow.png',
+    'electric': 'assets/images/cat_electric.png',
+    'electricity': 'assets/images/cat_electric.png',
+    'garbage': 'assets/images/cat_garbage.png',
+    'road': 'assets/images/cat_roads.png',
+    'roads': 'assets/images/cat_roads.png',
+    'drainage': 'assets/images/cat_drainage.png',
+    'illegal': 'assets/images/cat_illegal.png',
+    'transport': 'assets/images/cat_transportation.png',
+    'transportation': 'assets/images/cat_transportation.png',
+    'cyber': 'assets/images/cat_cyber.png',
+    'other': 'assets/images/cat_other.png',
   };
 
   @override
@@ -72,14 +84,20 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   Future<void> _getUserLocation() async {
     try {
       LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
-      if (perm == LocationPermission.deniedForever || perm == LocationPermission.denied) {
+      if (perm == LocationPermission.denied)
+        perm = await Geolocator.requestPermission();
+      if (perm == LocationPermission.deniedForever ||
+          perm == LocationPermission.denied) {
         if (mounted) setState(() => _locating = false);
         return;
       }
-      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
       if (mounted) {
-        setState(() { _userLocation = LatLng(pos.latitude, pos.longitude); _locating = false; });
+        setState(() {
+          _userLocation = LatLng(pos.latitude, pos.longitude);
+          _locating = false;
+        });
         if (_mapReady) _fitBounds();
       }
     } catch (_) {
@@ -88,8 +106,12 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   }
 
   LatLng get _deptLatLng {
-    final lat = double.tryParse(widget.department['latitude']?.toString() ?? '') ?? 20.5937;
-    final lng = double.tryParse(widget.department['longitude']?.toString() ?? '') ?? 78.9629;
+    final lat =
+        double.tryParse(widget.department['latitude']?.toString() ?? '') ??
+            20.5937;
+    final lng =
+        double.tryParse(widget.department['longitude']?.toString() ?? '') ??
+            78.9629;
     return LatLng(lat, lng);
   }
 
@@ -104,23 +126,36 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
         (d['city'] ?? '').toString().isNotEmpty;
   }
 
+  String _categoryAssetFor(String type) {
+    final passedAsset = widget.department['category_asset']?.toString();
+    if (passedAsset != null && passedAsset.isNotEmpty) return passedAsset;
+    return _categoryAssetMap[type] ?? _categoryAssetMap['other']!;
+  }
+
   void _fitBounds() {
-    if (_userLocation == null) { _mapCtrl.move(_deptLatLng, 14); return; }
+    if (_userLocation == null) {
+      _mapCtrl.move(_deptLatLng, 14);
+      return;
+    }
     final bounds = LatLngBounds.fromPoints([_userLocation!, _deptLatLng]);
-    _mapCtrl.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)));
+    _mapCtrl.fitCamera(
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)));
   }
 
   void _onMapReady() {
     _mapReady = true;
-    Future.delayed(const Duration(milliseconds: 300), () { if (mounted) _fitBounds(); });
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _fitBounds();
+    });
   }
 
   Future<void> _openDirections() async {
     final d = _deptLatLng;
     final googleMapsUrl = Uri.parse(
         'https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}&travelmode=driving');
-    final appleMapsUrl = Uri.parse('https://maps.apple.com/?daddr=${d.latitude},${d.longitude}');
-    
+    final appleMapsUrl =
+        Uri.parse('https://maps.apple.com/?daddr=${d.latitude},${d.longitude}');
+
     if (await canLaunchUrl(googleMapsUrl)) {
       await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
     } else if (await canLaunchUrl(appleMapsUrl)) {
@@ -145,23 +180,26 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   Widget build(BuildContext context) {
     final d = widget.department;
     final type = (d['department_type'] ?? 'other').toString();
-    final emoji = _emojiMap[type] ?? '🏢';
-    final grads = _gradients[type] ?? [const Color(0xFF1A1A1A), const Color(0xFFFF6B35)];
+    final categoryAsset = _categoryAssetFor(type);
+    final grads =
+        _gradients[type] ?? [const Color(0xFF0B1020), const Color(0xFF2F80ED)];
     final bg = _bgMap[type] ?? const Color(0xFFF8FAFC);
     final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
-    final typeDisplay = AppStrings.t(context, (d['department_type_display'] ?? type).toString());
+    final typeDisplay = AppStrings.t(
+        context, (d['department_type_display'] ?? type).toString());
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent, statusBarIconBrightness: Brightness.dark),
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark),
       child: Scaffold(
         backgroundColor: _bg,
         body: Column(children: [
-          _topNav(emoji, bg, name, typeDisplay),
+          _topNav(categoryAsset, name, typeDisplay),
           Expanded(
             child: _hasRealData
-                ? _detailBody(d, emoji, grads, bg)
-                : _emptyState(emoji, bg, name, typeDisplay),
+                ? _detailBody(d, categoryAsset, grads, bg)
+                : _emptyState(categoryAsset, name, typeDisplay),
           ),
         ]),
       ),
@@ -169,32 +207,49 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   }
 
   // ── Top nav ──────────────────────────────────────────────────────────────
-  Widget _topNav(String emoji, Color bg, String name, String typeDisplay) {
+  Widget _topNav(String categoryAsset, String name, String typeDisplay) {
     return Container(
-      color: Colors.white,
+      color: _bg,
       padding: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top,
-          left: 8, right: 16, bottom: 12),
+          left: 8,
+          right: 16,
+          bottom: 12),
       child: Row(children: [
         IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: _textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        // Full emoji in pastel box — no gradient bg
+        // Category asset
         Container(
-          width: 42, height: 42,
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
-            color: bg,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _line),
           ),
-          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
+          clipBehavior: Clip.antiAlias,
+          child: Image.asset(
+            categoryAsset,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.corporate_fare_rounded,
+              color: _primary,
+              size: 24,
+            ),
+          ),
         ),
         const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(name,
               style: GoogleFonts.poppins(
                   fontSize: 15, fontWeight: FontWeight.w700, color: _textDark),
-              maxLines: 1, overflow: TextOverflow.ellipsis),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
           Text(typeDisplay,
               style: GoogleFonts.inter(fontSize: 12, color: _textMuted)),
         ])),
@@ -203,24 +258,29 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
   }
 
   // ── Empty state — no department added by admin yet ────────────────────────
-  Widget _emptyState(String emoji, Color bg, String name, String typeDisplay) {
+  Widget _emptyState(String categoryAsset, String name, String typeDisplay) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(children: [
         const SizedBox(height: 40),
-        // Big emoji with pastel bg circle
         Container(
-          width: 120, height: 120,
-          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 60))),
-        ),
-        // Shadow below emoji
-        Container(
-          width: 60, height: 6,
-          margin: const EdgeInsets.only(top: 8),
+          width: 124,
+          height: 124,
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(6),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: _line),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Image.asset(
+            categoryAsset,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.corporate_fare_rounded,
+              color: _primary,
+              size: 52,
+            ),
           ),
         ),
         const SizedBox(height: 28),
@@ -228,27 +288,35 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
             style: GoogleFonts.poppins(
                 fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
         const SizedBox(height: 8),
-        Text('${AppStrings.t(context, 'The')} $name ${AppStrings.t(context, 'department has not been')}\n${AppStrings.t(context, 'set up by the admin yet.')}',
+        Text(
+            '${AppStrings.t(context, 'The')} $name ${AppStrings.t(context, 'department has not been')}\n${AppStrings.t(context, 'set up by the admin yet.')}',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 14, color: _textMuted, height: 1.5)),
+            style: GoogleFonts.inter(
+                fontSize: 14, color: _textMuted, height: 1.5)),
         const SizedBox(height: 32),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
+            ],
           ),
           child: Column(children: [
-            _infoRow('📋', AppStrings.t(context, 'Category'), typeDisplay),
+            _infoRow(Icons.category_rounded, AppStrings.t(context, 'Category'),
+                typeDisplay),
             const SizedBox(height: 14),
             Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 14),
-            _infoRow('🔔', AppStrings.t(context, 'Status'), AppStrings.t(context, 'Not yet configured')),
+            _infoRow(Icons.notifications_outlined, AppStrings.t(context, 'Status'),
+                AppStrings.t(context, 'Not yet configured')),
             const SizedBox(height: 14),
             Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
             const SizedBox(height: 14),
-            _infoRow('💡', AppStrings.t(context, 'Tip'), AppStrings.t(context, 'Contact admin to add this department')),
+            _infoRow(Icons.lightbulb_outline_rounded, AppStrings.t(context, 'Tip'),
+                AppStrings.t(context, 'Contact admin to add this department')),
           ]),
         ),
         const SizedBox(height: 24),
@@ -256,47 +324,55 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF1EB),
+            color: const Color(0xFFEFF7FF),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFFFD9CC)),
+            border: Border.all(color: const Color(0xFFDCEBFF)),
           ),
           child: Row(children: [
-            const Text('ℹ️', style: TextStyle(fontSize: 22)),
+            const Icon(Icons.info_outline_rounded, color: _primary, size: 22),
             const SizedBox(width: 12),
-            Expanded(child: Text(
-                AppStrings.t(context, 'Once the admin adds this department, you\'ll see full details, contact info, and location here.'),
-                style: GoogleFonts.inter(fontSize: 12, color: _primary, height: 1.5))),
+            Expanded(
+                child: Text(
+                    AppStrings.t(context,
+                        'Once the admin adds this department, you\'ll see full details, contact info, and location here.'),
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: _primary, height: 1.5))),
           ]),
         ),
       ]),
     );
   }
 
-  Widget _infoRow(String emoji, String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Row(children: [
-      Text(emoji, style: const TextStyle(fontSize: 20)),
+      Icon(icon, size: 20, color: _primary),
       const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
-        Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
+        Text(value,
+            style: GoogleFonts.inter(
+                fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
       ])),
     ]);
   }
 
   // ── Full detail body ──────────────────────────────────────────────────────
-  Widget _detailBody(Map<String, dynamic> d, String emoji, List<Color> grads, Color bg) {
+  Widget _detailBody(Map<String, dynamic> d, String categoryAsset,
+      List<Color> grads, Color bg) {
     final name = (d['name'] ?? AppStrings.t(context, 'Department')).toString();
     final city = (d['city'] ?? '').toString();
     final state = (d['state'] ?? '').toString();
     final address = (d['address'] ?? '').toString();
     final phone = (d['phone'] ?? '').toString();
     final emailAddr = (d['email'] ?? '').toString();
-    final assignedAdmin = (d['assigned_admin'] ?? d['admin_name'] ?? '').toString();
+    final assignedAdmin =
+        (d['assigned_admin'] ?? d['admin_name'] ?? '').toString();
     final sla = (d['sla_hours'] ?? '').toString();
 
     return SingleChildScrollView(
       child: Column(children: [
-
         // ── Map ────────────────────────────────────────────────────────────
         SizedBox(
           height: 220,
@@ -325,35 +401,60 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 MarkerLayer(markers: [
                   Marker(
                     point: _deptLatLng,
-                    width: 52, height: 60,
+                    width: 52,
+                    height: 60,
                     child: Column(children: [
                       Container(
-                        width: 40, height: 40,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(colors: grads),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
-                          boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.4), blurRadius: 10)],
+                          boxShadow: [
+                            BoxShadow(
+                                color: _primary.withValues(alpha: 0.4),
+                                blurRadius: 10)
+                          ],
                         ),
-                        child: Center(child: Text(emoji, style: const TextStyle(fontSize: 18))),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          categoryAsset,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.corporate_fare_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
                       ),
-                      CustomPaint(size: const Size(12, 8), painter: _PinTail(colors: grads)),
+                      CustomPaint(
+                          size: const Size(12, 8),
+                          painter: _PinTail(colors: grads)),
                     ]),
                   ),
                   if (_userLocation != null)
                     Marker(
                       point: _userLocation!,
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       child: Container(
-                        width: 36, height: 36,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: const Color(0xFF22C55E),
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2.5),
-                          boxShadow: [BoxShadow(
-                              color: const Color(0xFF22C55E).withValues(alpha: 0.4), blurRadius: 8)],
+                          boxShadow: [
+                            BoxShadow(
+                                color: const Color(0xFF22C55E)
+                                    .withValues(alpha: 0.4),
+                                blurRadius: 8)
+                          ],
                         ),
-                        child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 16),
+                        child: const Icon(Icons.my_location_rounded,
+                            color: Colors.white, size: 16),
                       ),
                     ),
                 ]),
@@ -361,51 +462,81 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
             ),
             if (_locating)
               Positioned(
-                top: 10, left: 10,
+                top: 10,
+                left: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 6)]),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 6)
+                      ]),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const SizedBox(width: 12, height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E))),
+                    const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Color(0xFF22C55E))),
                     const SizedBox(width: 6),
-                    Text(AppStrings.t(context, 'Locating...'), style: GoogleFonts.inter(fontSize: 11, color: _textDark)),
+                    Text(AppStrings.t(context, 'Locating...'),
+                        style:
+                            GoogleFonts.inter(fontSize: 11, color: _textDark)),
                   ]),
                 ),
               ),
             Positioned(
-              bottom: 10, left: 10,
+              bottom: 10,
+              left: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)]),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _legendDot(const Color(0xFF22C55E), AppStrings.t(context, 'You')),
-                  const SizedBox(height: 3),
-                  _legendDot(_primary, AppStrings.t(context, 'Department')),
-                ]),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 6)
+                    ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _legendDot(const Color(0xFF22C55E),
+                          AppStrings.t(context, 'You')),
+                      const SizedBox(height: 3),
+                      _legendDot(_primary, AppStrings.t(context, 'Department')),
+                    ]),
               ),
             ),
             Positioned(
-              bottom: 10, right: 10,
+              bottom: 10,
+              right: 10,
               child: GestureDetector(
                 onTap: _openDirections,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                      color: _primary, borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.3), blurRadius: 8)]),
+                      color: _primary,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                            color: _primary.withValues(alpha: 0.3),
+                            blurRadius: 8)
+                      ]),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.directions_rounded, color: Colors.white, size: 15),
+                    const Icon(Icons.directions_rounded,
+                        color: Colors.white, size: 15),
                     const SizedBox(width: 5),
                     Text(AppStrings.t(context, 'Directions'),
                         style: GoogleFonts.poppins(
-                            fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white)),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white)),
                   ]),
                 ),
               ),
@@ -415,94 +546,146 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
 
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             // ── Department header card ──────────────────────────────────
-            _card(child: Row(children: [
-              // Full emoji in pastel bg — no gradient box
+            _card(
+                child: Row(children: [
+              // Category asset
               Container(
-                width: 64, height: 64,
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
-                  color: bg,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _line),
                 ),
-                child: Center(child: Text(emoji, style: const TextStyle(fontSize: 34))),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  categoryAsset,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.corporate_fare_rounded,
+                    color: _primary,
+                    size: 32,
+                  ),
+                ),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name,
-                    style: GoogleFonts.poppins(
-                        fontSize: 17, fontWeight: FontWeight.w700, color: _textDark)),
-                if (city.isNotEmpty || state.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748b)),
-                    const SizedBox(width: 3),
-                    Flexible(child: Text(
-                        [city, state].where((s) => s.isNotEmpty).join(', '),
-                        style: GoogleFonts.inter(fontSize: 12, color: _textMuted))),
-                  ]),
-                ],
-              ])),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(name,
+                        style: GoogleFonts.poppins(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: _textDark)),
+                    if (city.isNotEmpty || state.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 13, color: Color(0xFF64748b)),
+                        const SizedBox(width: 3),
+                        Flexible(
+                            child: Text(
+                                [city, state]
+                                    .where((s) => s.isNotEmpty)
+                                    .join(', '),
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: _textMuted))),
+                      ]),
+                    ],
+                  ])),
             ])),
             const SizedBox(height: 14),
 
             // ── Department details card ─────────────────────────────────
-            _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(AppStrings.t(context, 'Department Details'),
-                  style: GoogleFonts.poppins(
-                      fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
-              const SizedBox(height: 14),
-              if (assignedAdmin.isNotEmpty) ...[
-                _detailRow('👤', AppStrings.t(context, 'Assigned Admin'), assignedAdmin),
-                const SizedBox(height: 12),
-                Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
-                const SizedBox(height: 12),
-              ],
-              if (address.isNotEmpty) ...[
-                _detailRow('📍', AppStrings.t(context, 'Address'), address),
-                const SizedBox(height: 12),
-                Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
-                const SizedBox(height: 12),
-              ],
-              if (city.isNotEmpty || state.isNotEmpty)
-                _detailRow('🏙️', AppStrings.t(context, 'City / State'),
-                    [city, state].where((s) => s.isNotEmpty).join(', ')),
-              if (sla.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
-                const SizedBox(height: 12),
-                _detailRow('⏱️', AppStrings.t(context, 'Response Time'), '$sla ${AppStrings.t(context, 'hours')}'),
-              ],
-            ])),
+            _card(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(AppStrings.t(context, 'Department Details'),
+                      style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _textDark)),
+                  const SizedBox(height: 14),
+                  if (assignedAdmin.isNotEmpty) ...[
+                    _detailRow(Icons.person_outline_rounded,
+                        AppStrings.t(context, 'Assigned Admin'), assignedAdmin),
+                    const SizedBox(height: 12),
+                    Divider(
+                        color: Colors.black.withValues(alpha: 0.06), height: 1),
+                    const SizedBox(height: 12),
+                  ],
+                  if (address.isNotEmpty) ...[
+                    _detailRow(Icons.location_on_outlined,
+                        AppStrings.t(context, 'Address'), address),
+                    const SizedBox(height: 12),
+                    Divider(
+                        color: Colors.black.withValues(alpha: 0.06), height: 1),
+                    const SizedBox(height: 12),
+                  ],
+                  if (city.isNotEmpty || state.isNotEmpty)
+                    _detailRow(Icons.location_city_outlined,
+                        AppStrings.t(context, 'City / State'),
+                        [city, state].where((s) => s.isNotEmpty).join(', ')),
+                  if (sla.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Divider(
+                        color: Colors.black.withValues(alpha: 0.06), height: 1),
+                    const SizedBox(height: 12),
+                    _detailRow(Icons.timer_outlined,
+                        AppStrings.t(context, 'Response Time'),
+                        '$sla ${AppStrings.t(context, 'hours')}'),
+                  ],
+                ])),
             const SizedBox(height: 14),
 
             // ── Contact card ────────────────────────────────────────────
             if (phone.isNotEmpty || emailAddr.isNotEmpty) ...[
-              _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(AppStrings.t(context, 'Contact Information'),
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, fontWeight: FontWeight.w700, color: _textDark)),
-                const SizedBox(height: 14),
-                if (phone.isNotEmpty) ...[
-                  _contactRow(Icons.phone_rounded, AppStrings.t(context, 'Phone Number'), phone,
-                      const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
-                  if (emailAddr.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Divider(color: Colors.black.withValues(alpha: 0.06), height: 1),
-                    const SizedBox(height: 10),
-                  ],
-                ],
-                if (emailAddr.isNotEmpty)
-                  _contactRow(Icons.email_outlined, AppStrings.t(context, 'Email Address'), emailAddr,
-                      _primary, const Color(0xFFFFF1EB)),
-              ])),
+              _card(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(AppStrings.t(context, 'Contact Information'),
+                        style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _textDark)),
+                    const SizedBox(height: 14),
+                    if (phone.isNotEmpty) ...[
+                      _contactRow(
+                          Icons.phone_rounded,
+                          AppStrings.t(context, 'Phone Number'),
+                          phone,
+                          const Color(0xFF22C55E),
+                          const Color(0xFFDCFCE7)),
+                      if (emailAddr.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Divider(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            height: 1),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                    if (emailAddr.isNotEmpty)
+                      _contactRow(
+                          Icons.email_outlined,
+                          AppStrings.t(context, 'Email Address'),
+                          emailAddr,
+                          _primary,
+                          const Color(0xFFEFF7FF)),
+                  ])),
               const SizedBox(height: 14),
 
               // ── Action buttons ──────────────────────────────────────
               Row(children: [
                 if (phone.isNotEmpty)
-                  Expanded(child: _actionBtn(
+                  Expanded(
+                      child: _actionBtn(
                     icon: Icons.phone_rounded,
                     label: AppStrings.t(context, 'Call Now'),
                     color: const Color(0xFF22C55E),
@@ -511,7 +694,8 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 if (phone.isNotEmpty && emailAddr.isNotEmpty)
                   const SizedBox(width: 12),
                 if (emailAddr.isNotEmpty)
-                  Expanded(child: _actionBtn(
+                  Expanded(
+                      child: _actionBtn(
                     icon: Icons.email_rounded,
                     label: AppStrings.t(context, 'Send Email'),
                     color: _primary,
@@ -529,13 +713,15 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                 onPressed: _openDirections,
                 icon: const Icon(Icons.directions_rounded, size: 18),
                 label: Text(AppStrings.t(context, 'Get Directions'),
-                    style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700)),
+                    style: GoogleFonts.poppins(
+                        fontSize: 13, fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: _primary,
                   elevation: 0,
                   side: const BorderSide(color: Color(0xFFe2e8f0), width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -553,17 +739,24 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3))
+        ],
       ),
       child: child,
     );
   }
 
-  Widget _detailRow(String emoji, String label, String value) {
+  Widget _detailRow(IconData icon, String label, String value) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(emoji, style: const TextStyle(fontSize: 20)),
+      Icon(icon, size: 20, color: _primary),
       const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
         Text(value,
             style: GoogleFonts.inter(
@@ -572,15 +765,20 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     ]);
   }
 
-  Widget _contactRow(IconData icon, String label, String value, Color iconColor, Color iconBg) {
+  Widget _contactRow(IconData icon, String label, String value, Color iconColor,
+      Color iconBg) {
     return Row(children: [
       Container(
-        width: 42, height: 42,
-        decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+            color: iconBg, borderRadius: BorderRadius.circular(12)),
         child: Icon(icon, size: 20, color: iconColor),
       ),
       const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
         Text(value,
             style: GoogleFonts.inter(
@@ -602,14 +800,21 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 5))],
+          boxShadow: [
+            BoxShadow(
+                color: color.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 5))
+          ],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, color: Colors.white, size: 18),
           const SizedBox(width: 8),
           Text(label,
               style: GoogleFonts.poppins(
-                  fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white)),
         ]),
       ),
     );
@@ -617,7 +822,9 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
 
   Widget _legendDot(Color color, String label) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 8, height: 8,
+      Container(
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
       const SizedBox(width: 5),
       Text(label, style: GoogleFonts.inter(fontSize: 10, color: _textMuted)),
@@ -638,6 +845,7 @@ class _PinTail extends CustomPainter {
       ..close();
     canvas.drawPath(path, paint);
   }
+
   @override
   bool shouldRepaint(_) => false;
 }

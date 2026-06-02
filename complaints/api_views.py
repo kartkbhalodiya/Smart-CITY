@@ -5,8 +5,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import IntegrityError, transaction
 from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import timedelta
@@ -19,7 +23,8 @@ import requests
 from .models import (
     Complaint, ComplaintMedia, ComplaintResolutionProof, ComplaintReopenProof,
     CitizenProfile, Department, DepartmentUser, ComplaintCategory, ComplaintSubcategory,
-    ComplaintCategoryField, ComplaintFieldResponse, OTP, CityAdmin
+    ComplaintCategoryField, ComplaintFieldResponse, OTP, CityAdmin, ManagedState,
+    ManagedCity
 )
 from .serializers import (
     ComplaintListSerializer, ComplaintDetailSerializer, ComplaintCreateSerializer,
@@ -44,6 +49,302 @@ def health_check(request):
         'service': 'smartcity',
         'runtime': 'vercel' if os.getenv('VERCEL') else 'local',
     })
+
+
+ACTIVE_WORK_STATUSES = ['pending', 'confirmed', 'process', 'reopened']
+
+DEPARTMENT_TYPE_LABELS = {
+    'police': 'Police Department',
+    'traffic': 'Traffic Department',
+    'construction': 'Construction Department',
+    'water': 'Water Supply Department',
+    'electricity': 'Electricity Department',
+    'garbage': 'Garbage Department',
+    'road': 'Road/Pothole Department',
+    'drainage': 'Drainage Department',
+    'illegal': 'Illegal Activity Department',
+    'transportation': 'Transportation Department',
+    'cyber': 'Cyber Fraud Department',
+    'other': 'Other Department',
+}
+
+
+def _get_user_role(user):
+    if user.is_superuser:
+        return 'superadmin'
+    if CityAdmin.objects.filter(user=user).exists():
+        return 'city_admin'
+    if DepartmentUser.objects.filter(user=user).exists():
+        return 'department'
+    return 'citizen'
+
+
+def _city_admin_complaints(city_admin):
+    return Complaint.objects.filter(
+        Q(city__iexact=city_admin.city_name, state__iexact=city_admin.state) |
+        Q(assigned_department__city_admin=city_admin)
+    ).distinct()
+
+
+def _city_admin_departments(city_admin):
+    return Department.objects.filter(
+        Q(city_admin=city_admin) |
+        Q(city__iexact=city_admin.city_name, state__iexact=city_admin.state)
+    ).distinct()
+
+
+def _department_type_label(department_type):
+    return DEPARTMENT_TYPE_LABELS.get(department_type, department_type or 'Department')
+
+
+def _admin_stat(label, value, icon, color):
+    return {
+        'label': label,
+        'value': int(value or 0),
+        'icon': icon,
+        'color': color,
+    }
+
+
+def _admin_section(title, subtitle, count, icon, route_key, color):
+    return {
+        'title': title,
+        'subtitle': subtitle,
+        'count': int(count or 0),
+        'icon': icon,
+        'route': route_key,
+        'color': color,
+    }
+
+
+def _serialize_departments(request, departments, limit=20):
+    department_rows = list(departments.order_by('name')[:limit])
+    data = DepartmentSerializer(
+        department_rows,
+        many=True,
+        context={'request': request},
+    ).data
+    cleaned = []
+    for item, department in zip(data, department_rows):
+        row = dict(item)
+        row['department_type_display'] = _department_type_label(row.get('department_type'))
+        row['city_admin_id'] = department.city_admin_id
+        cleaned.append(row)
+    return cleaned
+
+
+def _admin_overview_payload(
+    request,
+    *,
+    role,
+    title,
+    scope,
+    complaints,
+    departments,
+    citizen_count,
+    sections,
+    city_admins=None,
+):
+    complaints = complaints.select_related('assigned_department', 'user')
+    departments = departments.select_related('city_admin', 'city_admin__user')
+
+    total_complaints = complaints.count()
+    pending_complaints = complaints.filter(work_status='pending').count()
+    in_progress_complaints = complaints.filter(work_status__in=['confirmed', 'process']).count()
+    resolved_complaints = complaints.filter(work_status='solved').count()
+    reopened_complaints = complaints.filter(work_status='reopened').count()
+    today_complaints = complaints.filter(created_at__date=timezone.localdate()).count()
+
+    recent_complaints = ComplaintListSerializer(
+        complaints.order_by('-created_at')[:12],
+        many=True,
+        context={'request': request},
+    ).data
+
+    payload = {
+        'success': True,
+        'role': role,
+        'title': title,
+        'scope': scope,
+        'stats': [
+            _admin_stat('Total', total_complaints, 'assignment', 'blue'),
+            _admin_stat('Pending', pending_complaints, 'pending', 'orange'),
+            _admin_stat('In progress', in_progress_complaints, 'sync', 'purple'),
+            _admin_stat('Solved', resolved_complaints, 'check', 'green'),
+            _admin_stat('Reopened', reopened_complaints, 'restart', 'red'),
+            _admin_stat('Today', today_complaints, 'today', 'teal'),
+        ],
+        'sections': sections,
+        'complaints': recent_complaints,
+        'departments': _serialize_departments(request, departments),
+        'summary': {
+            'total_complaints': total_complaints,
+            'pending_complaints': pending_complaints,
+            'in_progress_complaints': in_progress_complaints,
+            'resolved_complaints': resolved_complaints,
+            'reopened_complaints': reopened_complaints,
+            'department_count': departments.count(),
+            'citizen_count': int(citizen_count or 0),
+        },
+    }
+
+    if city_admins is not None:
+        payload['city_admins'] = [
+            {
+                'id': admin.id,
+                'name': admin.user.get_full_name() or admin.user.username,
+                'email': admin.user.email,
+                'city': admin.city_name,
+                'state': admin.state,
+                'is_active': admin.is_active,
+            }
+            for admin in city_admins.select_related('user').order_by('city_name', 'user__first_name')[:20]
+        ]
+
+    return payload
+
+
+def _admin_forbidden(message='This account is not allowed to open this admin dashboard.'):
+    return Response(
+        {'success': False, 'message': message},
+        status=status.HTTP_403_FORBIDDEN,
+    )
+
+
+def _role_scoped_complaints(user):
+    role = _get_user_role(user)
+    if role == 'superadmin':
+        return Complaint.objects.all()
+    if role == 'city_admin':
+        city_admin = CityAdmin.objects.filter(user=user, is_active=True).first()
+        return _city_admin_complaints(city_admin) if city_admin else Complaint.objects.none()
+    if role == 'department':
+        dept_user = DepartmentUser.objects.select_related('department').filter(user=user).first()
+        return Complaint.objects.filter(assigned_department=dept_user.department) if dept_user else Complaint.objects.none()
+    return Complaint.objects.filter(user=user)
+
+
+def _role_scoped_departments(user):
+    role = _get_user_role(user)
+    if role == 'superadmin':
+        return Department.objects.all()
+    if role == 'city_admin':
+        city_admin = CityAdmin.objects.filter(user=user, is_active=True).first()
+        return _city_admin_departments(city_admin) if city_admin else Department.objects.none()
+    if role == 'department':
+        dept_user = DepartmentUser.objects.select_related('department').filter(user=user).first()
+        return Department.objects.filter(id=dept_user.department_id) if dept_user else Department.objects.none()
+    return Department.objects.none()
+
+
+def _role_scoped_citizens(user):
+    role = _get_user_role(user)
+    if role == 'superadmin':
+        return CitizenProfile.objects.select_related('user').all()
+    if role == 'city_admin':
+        city_admin = CityAdmin.objects.filter(user=user, is_active=True).first()
+        if not city_admin:
+            return CitizenProfile.objects.none()
+        return CitizenProfile.objects.select_related('user').filter(
+            Q(city__iexact=city_admin.city_name) | Q(district__iexact=city_admin.city_name),
+            state__iexact=city_admin.state,
+        )
+    if role == 'department':
+        complaints = _role_scoped_complaints(user)
+        user_ids = complaints.exclude(user__isnull=True).values_list('user_id', flat=True).distinct()
+        return CitizenProfile.objects.select_related('user').filter(user_id__in=user_ids)
+    return CitizenProfile.objects.none()
+
+
+def _clean_department_type_display(value):
+    return _department_type_label(value)
+
+
+def _generate_mobile_department_code():
+    for _ in range(24):
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        if not Department.objects.filter(unique_id=code).exists():
+            return code
+    return ''.join(secrets.choice(string.digits) for _ in range(8))
+
+
+def _generate_mobile_password(length=12):
+    length = max(10, int(length))
+    chars = string.ascii_letters + string.digits + '!@#$'
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+
+def _as_bool(value, default=True):
+    if value is None:
+        return default
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on', 'active'}
+
+
+def _serialize_admin_citizen(profile):
+    user = profile.user
+    return {
+        'id': profile.id,
+        'user_id': user.id,
+        'name': user.get_full_name() or user.username,
+        'email': user.email,
+        'mobile_no': profile.mobile_no or '',
+        'state': profile.state or '',
+        'city': profile.city or profile.district or '',
+        'district': profile.district or '',
+        'address': profile.address or '',
+    }
+
+
+def _serialize_city_admin(admin):
+    return {
+        'id': admin.id,
+        'user_id': admin.user_id,
+        'name': admin.user.get_full_name() or admin.user.username,
+        'email': admin.user.email,
+        'city': admin.city_name,
+        'state': admin.state,
+        'pincode': admin.pincode,
+        'contact_address': admin.contact_address,
+        'is_active': admin.is_active,
+    }
+
+
+def _serialize_category(category):
+    return {
+        'id': category.id,
+        'key': category.key,
+        'name': category.name,
+        'is_active': category.is_active,
+        'display_order': category.display_order,
+        'subcategory_count': category.subcategories.count(),
+    }
+
+
+def _serialize_state(state_obj):
+    return {
+        'id': state_obj.id,
+        'code': state_obj.code,
+        'name': state_obj.name,
+        'city_count': state_obj.cities.count(),
+    }
+
+
+def _serialize_city(city_obj):
+    return {
+        'id': city_obj.id,
+        'code': city_obj.code,
+        'name': city_obj.name,
+        'state': city_obj.state.name,
+        'state_id': city_obj.state_id,
+    }
+
+
+def _validate_email_value(email):
+    try:
+        validate_email(email)
+        return None
+    except ValidationError:
+        return 'Enter a valid email address.'
 
 
 # Authentication Views
@@ -161,6 +462,7 @@ def register_user(request):
                 'refresh': str(refresh),
                 'token': str(refresh.access_token), # Backward compatibility
                 'user': UserSerializer(user).data,
+                'role': 'citizen',
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -295,13 +597,7 @@ def verify_otp(request):
             # Generate JWT Token
             refresh = RefreshToken.for_user(user)
             
-            role = 'citizen'
-            if user.is_superuser:
-                role = 'superadmin'
-            elif CityAdmin.objects.filter(user=user).exists():
-                role = 'city_admin'
-            elif DepartmentUser.objects.filter(user=user).exists():
-                role = 'department'
+            role = _get_user_role(user)
 
             return Response({
                 'success': True,
@@ -350,13 +646,7 @@ def login_with_password(request):
     if not user:
         return Response({'success': False, 'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    role = 'citizen'
-    if user.is_superuser:
-        role = 'superadmin'
-    elif CityAdmin.objects.filter(user=user).exists():
-        role = 'city_admin'
-    elif DepartmentUser.objects.filter(user=user).exists():
-        role = 'department'
+    role = _get_user_role(user)
 
     # Generate JWT Token
     refresh = RefreshToken.for_user(user)
@@ -400,6 +690,15 @@ def user_profile(request):
         if text.lower() in {'not provided', 'not specified', 'none', 'null'}:
             return fallback
         return text
+
+    user_role = _get_user_role(request.user)
+    if user_role != 'citizen' and request.method == 'GET':
+        user_data = dict(UserSerializer(request.user).data)
+        user_data['role'] = user_role
+        return Response({
+            'success': True,
+            'profile': user_data,
+        })
 
     try:
         profile = request.user.citizenprofile
@@ -504,6 +803,1337 @@ def dashboard_stats(request):
     })
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def super_admin_app_overview(request):
+    """Mobile dashboard payload for the main platform admin."""
+    if not request.user.is_superuser:
+        return _admin_forbidden('Only the main admin can open this dashboard.')
+
+    complaints = Complaint.objects.all()
+    departments = Department.objects.all()
+    city_admins = CityAdmin.objects.all()
+    citizens = CitizenProfile.objects.count()
+
+    sections = [
+        _admin_section(
+            'City Admins',
+            'Manage city-level accounts',
+            city_admins.count(),
+            'admin_panel_settings',
+            'city_admins',
+            'blue',
+        ),
+        _admin_section(
+            'Departments',
+            'All department desks',
+            departments.count(),
+            'account_balance',
+            'departments',
+            'purple',
+        ),
+        _admin_section(
+            'Citizens',
+            'Registered citizen profiles',
+            citizens,
+            'groups',
+            'citizens',
+            'green',
+        ),
+        _admin_section(
+            'Open Problems',
+            'Complaints needing action',
+            complaints.filter(work_status__in=ACTIVE_WORK_STATUSES).count(),
+            'warning',
+            'problems',
+            'orange',
+        ),
+        _admin_section(
+            'Categories',
+            'Complaint category setup',
+            ComplaintCategory.objects.count(),
+            'category',
+            'categories',
+            'teal',
+        ),
+        _admin_section(
+            'States',
+            'Managed state list',
+            ManagedState.objects.count(),
+            'map',
+            'states',
+            'blue',
+        ),
+        _admin_section(
+            'Cities',
+            'Managed city list',
+            ManagedCity.objects.count(),
+            'location_city',
+            'cities',
+            'purple',
+        ),
+        _admin_section(
+            'Analytics',
+            'Status and category breakdown',
+            complaints.count(),
+            'analytics',
+            'analytics',
+            'green',
+        ),
+    ]
+
+    return Response(_admin_overview_payload(
+        request,
+        role='superadmin',
+        title='Main Admin',
+        scope='All cities and departments',
+        complaints=complaints,
+        departments=departments,
+        citizen_count=citizens,
+        sections=sections,
+        city_admins=city_admins,
+    ))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def city_admin_app_overview(request):
+    """Mobile dashboard payload for a city admin."""
+    city_admin = CityAdmin.objects.filter(user=request.user, is_active=True).first()
+    if not city_admin:
+        return _admin_forbidden('This account is not linked to an active city admin profile.')
+
+    complaints = _city_admin_complaints(city_admin)
+    departments = _city_admin_departments(city_admin)
+    citizens = CitizenProfile.objects.filter(
+        Q(city__iexact=city_admin.city_name) | Q(district__iexact=city_admin.city_name),
+        state__iexact=city_admin.state,
+    ).count()
+
+    sections = [
+        _admin_section(
+            'City Complaints',
+            'All complaints in this city',
+            complaints.count(),
+            'assignment',
+            'complaints',
+            'blue',
+        ),
+        _admin_section(
+            'Departments',
+            'Departments under this city',
+            departments.count(),
+            'account_balance',
+            'departments',
+            'purple',
+        ),
+        _admin_section(
+            'Citizens',
+            'Citizen profiles in scope',
+            citizens,
+            'groups',
+            'citizens',
+            'green',
+        ),
+        _admin_section(
+            'Solved',
+            'Resolved city complaints',
+            complaints.filter(work_status='solved').count(),
+            'task_alt',
+            'solved',
+            'teal',
+        ),
+        _admin_section(
+            'Analytics',
+            'City performance breakdown',
+            complaints.count(),
+            'analytics',
+            'analytics',
+            'green',
+        ),
+    ]
+
+    return Response(_admin_overview_payload(
+        request,
+        role='city_admin',
+        title='City Admin',
+        scope=f"{city_admin.city_name}, {city_admin.state}",
+        complaints=complaints,
+        departments=departments,
+        citizen_count=citizens,
+        sections=sections,
+    ))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def department_admin_app_overview(request):
+    """Mobile dashboard payload for a department admin/officer."""
+    dept_user = DepartmentUser.objects.select_related('department').filter(user=request.user).first()
+    if not dept_user or not dept_user.department:
+        return _admin_forbidden('This account is not linked to a department.')
+
+    department = dept_user.department
+    complaints = Complaint.objects.filter(assigned_department=department)
+    departments = Department.objects.filter(id=department.id)
+    citizens = complaints.exclude(user__isnull=True).values('user_id').distinct().count()
+
+    sections = [
+        _admin_section(
+            'Assigned',
+            'Complaints assigned to you',
+            complaints.count(),
+            'assignment_ind',
+            'complaints',
+            'blue',
+        ),
+        _admin_section(
+            'Pending',
+            'Waiting for first action',
+            complaints.filter(work_status='pending').count(),
+            'pending',
+            'pending',
+            'orange',
+        ),
+        _admin_section(
+            'In progress',
+            'Confirmed or processing',
+            complaints.filter(work_status__in=['confirmed', 'process']).count(),
+            'sync',
+            'progress',
+            'purple',
+        ),
+        _admin_section(
+            'Solved',
+            'Resolved by department',
+            complaints.filter(work_status='solved').count(),
+            'task_alt',
+            'solved',
+            'green',
+        ),
+        _admin_section(
+            'Analytics',
+            'Department performance',
+            complaints.count(),
+            'analytics',
+            'analytics',
+            'teal',
+        ),
+    ]
+
+    scope_parts = [department.name]
+    if department.city:
+        scope_parts.append(department.city)
+    if department.state:
+        scope_parts.append(department.state)
+
+    return Response(_admin_overview_payload(
+        request,
+        role='department',
+        title='Department Admin',
+        scope=' - '.join(scope_parts),
+        complaints=complaints,
+        departments=departments,
+        citizen_count=citizens,
+        sections=sections,
+    ))
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_app_resource(request, resource):
+    """Role-scoped mobile admin resource lists and creates."""
+    resource = (resource or '').strip().lower()
+    if request.method == 'POST':
+        return _create_admin_resource(request, resource)
+
+    response = _build_admin_resource_payload(request, resource)
+    if isinstance(response, Response):
+        return response
+    return Response(response)
+
+
+@api_view(['PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_app_resource_detail(request, resource, object_id):
+    """Role-scoped mobile admin resource update/delete."""
+    resource = (resource or '').strip().lower()
+    if request.method == 'DELETE':
+        return _delete_admin_resource(request, resource, object_id)
+    return _update_admin_resource(request, resource, object_id)
+
+
+@api_view(['POST', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def admin_app_complaint_status(request, complaint_id):
+    """Role-scoped mobile status update for admin complaint detail screens."""
+    complaint = (
+        _role_scoped_complaints(request.user)
+        .select_related('assigned_department', 'user')
+        .filter(id=complaint_id)
+        .first()
+    )
+    if not complaint:
+        return Response(
+            {'success': False, 'message': 'Complaint not found in this admin scope.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    normalize_status = {
+        'in_progress': 'process',
+        'resolved': 'solved',
+    }
+    new_status = normalize_status.get(
+        str(request.data.get('work_status') or request.data.get('status') or '').strip().lower(),
+        str(request.data.get('work_status') or request.data.get('status') or '').strip().lower(),
+    )
+    notes = str(request.data.get('notes') or '').strip()
+
+    allowed_transitions = {
+        'pending': {'pending', 'confirmed', 'rejected'},
+        'reopened': {'reopened', 'confirmed', 'rejected'},
+        'confirmed': {'confirmed', 'process'},
+        'process': {'process', 'solved'},
+        'solved': {'solved'},
+        'rejected': {'rejected'},
+    }
+    current_status = normalize_status.get(complaint.work_status, complaint.work_status)
+    valid_next = allowed_transitions.get(current_status, {current_status})
+
+    if new_status not in valid_next:
+        return Response(
+            {
+                'success': False,
+                'message': f'Invalid status change from {current_status} to {new_status}.',
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if new_status == 'solved' and not notes and not complaint.resolution_notes:
+        return Response(
+            {'success': False, 'message': 'Resolution notes are required before marking solved.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    complaint.work_status = new_status
+    if new_status == 'rejected':
+        complaint.status = 'rejected'
+    elif new_status in {'confirmed', 'process', 'solved'}:
+        complaint.status = 'approved'
+    if new_status in {'confirmed', 'process'} and not complaint.assigned_at:
+        complaint.assigned_at = timezone.now()
+    if notes:
+        complaint.resolution_notes = notes
+    if new_status == 'solved':
+        complaint.resolved_at = timezone.now()
+
+    complaint.save()
+    return Response({
+        'success': True,
+        'message': f'Complaint status updated to {complaint.get_work_status_display()}.',
+        'complaint': ComplaintDetailSerializer(complaint, context={'request': request}).data,
+    })
+
+
+def _admin_status_counts(complaints):
+    return {
+        'total': complaints.count(),
+        'pending': complaints.filter(work_status='pending').count(),
+        'in_progress': complaints.filter(work_status__in=['confirmed', 'process']).count(),
+        'solved': complaints.filter(work_status='solved').count(),
+        'reopened': complaints.filter(work_status='reopened').count(),
+        'rejected': complaints.filter(work_status='rejected').count(),
+    }
+
+
+def _admin_stats_from_counts(counts):
+    return [
+        _admin_stat('Total', counts.get('total', 0), 'assignment', 'blue'),
+        _admin_stat('Pending', counts.get('pending', 0), 'pending', 'orange'),
+        _admin_stat('In progress', counts.get('in_progress', 0), 'sync', 'purple'),
+        _admin_stat('Solved', counts.get('solved', 0), 'check', 'green'),
+        _admin_stat('Reopened', counts.get('reopened', 0), 'restart', 'red'),
+        _admin_stat('Rejected', counts.get('rejected', 0), 'block', 'red'),
+    ]
+
+
+def _safe_float(value, fallback=None):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _serialize_complaint_point(complaint):
+    lat = _safe_float(complaint.latitude)
+    lng = _safe_float(complaint.longitude)
+    if lat is None or lng is None:
+        return None
+    return {
+        'id': complaint.id,
+        'kind': 'complaint',
+        'complaint_id': complaint.id,
+        'complaint_number': complaint.complaint_number,
+        'title': complaint.title,
+        'subtitle': f"{complaint.city or 'Unknown city'} • {complaint.get_work_status_display()}",
+        'latitude': lat,
+        'longitude': lng,
+        'status': complaint.work_status,
+        'status_display': complaint.get_work_status_display(),
+        'category': complaint.complaint_type,
+        'category_display': complaint.get_complaint_type_display(),
+        'created_at': complaint.created_at,
+    }
+
+
+def _serialize_department_point(department, active_count=0):
+    lat = _safe_float(department.latitude)
+    lng = _safe_float(department.longitude)
+    if lat is None or lng is None:
+        return None
+    return {
+        'id': department.id,
+        'kind': 'department',
+        'department_id': department.id,
+        'title': department.name,
+        'subtitle': _department_type_label(department.department_type),
+        'latitude': lat,
+        'longitude': lng,
+        'status': 'active' if department.is_active else 'inactive',
+        'active_cases': int(active_count or 0),
+        'city': department.city,
+        'state': department.state,
+    }
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_app_department_detail(request, department_id):
+    """Role-scoped mobile department detail, matching the web admin detail pages."""
+    department = (
+        _role_scoped_departments(request.user)
+        .select_related('city_admin', 'city_admin__user')
+        .filter(id=department_id)
+        .first()
+    )
+    if not department:
+        return Response(
+            {'success': False, 'message': 'Department not found in this admin scope.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    complaints = (
+        _role_scoped_complaints(request.user)
+        .filter(assigned_department=department)
+        .select_related('assigned_department', 'user')
+        .prefetch_related('media')
+    )
+    counts = _admin_status_counts(complaints)
+    officer = DepartmentUser.objects.select_related('user').filter(department=department).first()
+    city_admin = department.city_admin
+
+    department_data = dict(DepartmentSerializer(department, context={'request': request}).data)
+    department_data['department_type_display'] = _department_type_label(department.department_type)
+    department_data['city_admin_id'] = department.city_admin_id
+
+    complaint_points = [
+        point for point in (_serialize_complaint_point(item) for item in complaints.order_by('-created_at')[:80])
+        if point
+    ]
+    department_point = _serialize_department_point(department, counts.get('total', 0))
+
+    return Response({
+        'success': True,
+        'department': department_data,
+        'stats': _admin_stats_from_counts(counts),
+        'summary': counts,
+        'officer': {
+            'id': officer.user_id,
+            'name': officer.user.get_full_name() or officer.user.username,
+            'email': officer.user.email,
+            'role': officer.role,
+        } if officer else None,
+        'city_admin': {
+            'id': city_admin.id,
+            'name': city_admin.user.get_full_name() or city_admin.user.email,
+            'email': city_admin.user.email,
+            'city': city_admin.city_name,
+            'state': city_admin.state,
+        } if city_admin else None,
+        'complaints': ComplaintListSerializer(
+            complaints.order_by('-created_at')[:40],
+            many=True,
+            context={'request': request},
+        ).data,
+        'map': {
+            'department': department_point,
+            'complaints': complaint_points,
+        },
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_app_citizen_detail(request, profile_id):
+    """Role-scoped mobile citizen detail for super/city/department admins."""
+    profile = _role_scoped_citizens(request.user).filter(id=profile_id).first()
+    if not profile:
+        return Response(
+            {'success': False, 'message': 'Citizen not found in this admin scope.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    complaints = (
+        _role_scoped_complaints(request.user)
+        .filter(user=profile.user)
+        .select_related('assigned_department', 'user')
+        .prefetch_related('media')
+    )
+    counts = _admin_status_counts(complaints)
+    points = [
+        point for point in (_serialize_complaint_point(item) for item in complaints.order_by('-created_at')[:80])
+        if point
+    ]
+
+    return Response({
+        'success': True,
+        'citizen': _serialize_admin_citizen(profile),
+        'stats': _admin_stats_from_counts(counts),
+        'summary': counts,
+        'complaints': ComplaintListSerializer(
+            complaints.order_by('-created_at')[:50],
+            many=True,
+            context={'request': request},
+        ).data,
+        'map': {
+            'complaints': points,
+            'home': {
+                'latitude': _safe_float(profile.latitude),
+                'longitude': _safe_float(profile.longitude),
+                'title': profile.user.get_full_name() or profile.user.username,
+                'subtitle': profile.address or profile.city,
+            },
+        },
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_app_heatmap(request):
+    """Role-scoped mobile map payload for complaints and departments."""
+    complaints = _role_scoped_complaints(request.user).select_related('assigned_department', 'user')
+    departments = _role_scoped_departments(request.user)
+
+    status_filter = (request.query_params.get('work_status') or '').strip()
+    category_filter = (request.query_params.get('category') or '').strip()
+    department_id = request.query_params.get('department_id')
+
+    if status_filter:
+        complaints = complaints.filter(work_status=status_filter)
+    if category_filter:
+        complaints = complaints.filter(complaint_type=category_filter)
+    if department_id:
+        complaints = complaints.filter(assigned_department_id=department_id)
+        departments = departments.filter(id=department_id)
+
+    department_workload = {
+        row['assigned_department_id']: row['total']
+        for row in complaints.exclude(assigned_department__isnull=True)
+        .values('assigned_department_id')
+        .annotate(total=Count('id'))
+    }
+
+    complaint_points = [
+        point for point in (
+            _serialize_complaint_point(complaint)
+            for complaint in complaints.order_by('-created_at')[:250]
+        )
+        if point
+    ]
+    department_points = [
+        point for point in (
+            _serialize_department_point(department, department_workload.get(department.id, 0))
+            for department in departments.order_by('name')[:120]
+        )
+        if point
+    ]
+
+    all_points = complaint_points + department_points
+    if all_points:
+        center_lat = sum(point['latitude'] for point in all_points) / len(all_points)
+        center_lng = sum(point['longitude'] for point in all_points) / len(all_points)
+    else:
+        center_lat, center_lng = 20.5937, 78.9629
+
+    counts = _admin_status_counts(complaints)
+    return Response({
+        'success': True,
+        'title': 'Admin Heatmap',
+        'stats': _admin_stats_from_counts(counts),
+        'summary': {
+            **counts,
+            'department_points': len(department_points),
+            'complaint_points': len(complaint_points),
+            'total_points': len(all_points),
+        },
+        'center': {
+            'latitude': center_lat,
+            'longitude': center_lng,
+        },
+        'complaints': complaint_points,
+        'departments': department_points,
+        'filters': {
+            'work_status': status_filter,
+            'category': category_filter,
+            'department_id': department_id,
+        },
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_app_change_password(request):
+    """Mobile admin password change using the current password."""
+    role = _get_user_role(request.user)
+    if role == 'citizen':
+        return _admin_forbidden('Only admin accounts can use this password screen.')
+
+    current_password = str(request.data.get('current_password') or '').strip()
+    new_password = str(request.data.get('new_password') or '').strip()
+    confirm_password = str(request.data.get('confirm_password') or '').strip()
+
+    if not current_password or not new_password or not confirm_password:
+        return Response(
+            {'success': False, 'message': 'Current password, new password, and confirmation are required.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if new_password != confirm_password:
+        return Response(
+            {'success': False, 'message': 'New password and confirmation do not match.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if not request.user.check_password(current_password):
+        return Response(
+            {'success': False, 'message': 'Current password is incorrect.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        validate_password(new_password, request.user)
+    except ValidationError as exc:
+        return Response(
+            {'success': False, 'message': ' '.join(exc.messages)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    request.user.set_password(new_password)
+    request.user.save(update_fields=['password'])
+    return Response({'success': True, 'message': 'Password updated successfully.'})
+
+
+def _build_admin_resource_payload(request, resource):
+    user = request.user
+    role = _get_user_role(user)
+    query = (request.query_params.get('search') or '').strip()
+
+    if resource in {'complaints', 'problems', 'solved', 'review', 'total'}:
+        complaints = _role_scoped_complaints(user).select_related('assigned_department', 'user')
+        if resource == 'problems':
+            complaints = complaints.filter(work_status__in=ACTIVE_WORK_STATUSES)
+        elif resource in {'solved', 'review'}:
+            complaints = complaints.filter(work_status='solved')
+
+        work_status = request.query_params.get('work_status')
+        if work_status:
+            complaints = complaints.filter(work_status=work_status)
+        if query:
+            complaints = complaints.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(complaint_number__icontains=query) |
+                Q(city__icontains=query)
+            )
+
+        return {
+            'success': True,
+            'resource': resource,
+            'title': _resource_title(resource),
+            'role': role,
+            'items': ComplaintListSerializer(
+                complaints.order_by('-created_at')[:100],
+                many=True,
+                context={'request': request},
+            ).data,
+            'count': complaints.count(),
+            'can_create': False,
+            'fields': [],
+        }
+
+    if resource in {'analytics', 'heatmap'}:
+        complaints = _role_scoped_complaints(user)
+        departments = _role_scoped_departments(user)
+        status_rows = [
+            {
+                'id': index + 1,
+                'name': row['work_status'].replace('_', ' ').title(),
+                'subtitle': 'Complaint status',
+                'count': row['total'],
+                'color': row['work_status'],
+            }
+            for index, row in enumerate(
+                complaints.values('work_status').annotate(total=Count('id')).order_by('-total')
+            )
+        ]
+        category_rows = [
+            {
+                'id': 1000 + index,
+                'name': _department_type_label(row['complaint_type']),
+                'subtitle': 'Complaint category',
+                'count': row['total'],
+                'color': 'category',
+            }
+            for index, row in enumerate(
+                complaints.values('complaint_type').annotate(total=Count('id')).order_by('-total')[:12]
+            )
+        ]
+        department_rows = [
+            {
+                'id': 2000 + index,
+                'name': row['assigned_department__name'] or 'Unassigned',
+                'subtitle': 'Department workload',
+                'count': row['total'],
+                'color': 'department',
+            }
+            for index, row in enumerate(
+                complaints.values('assigned_department__name').annotate(total=Count('id')).order_by('-total')[:12]
+            )
+        ]
+        summary_rows = [
+            {'id': 3001, 'name': 'Total Complaints', 'subtitle': 'In this admin scope', 'count': complaints.count(), 'color': 'blue'},
+            {'id': 3002, 'name': 'Active Departments', 'subtitle': 'Available departments', 'count': departments.filter(is_active=True).count(), 'color': 'green'},
+            {'id': 3003, 'name': 'Solved Complaints', 'subtitle': 'Resolution output', 'count': complaints.filter(work_status='solved').count(), 'color': 'solved'},
+            {'id': 3004, 'name': 'Open Problems', 'subtitle': 'Needs action', 'count': complaints.filter(work_status__in=ACTIVE_WORK_STATUSES).count(), 'color': 'pending'},
+        ]
+        items = summary_rows + status_rows + category_rows + department_rows
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'Analytics',
+            'role': role,
+            'items': items,
+            'count': len(items),
+            'can_create': False,
+            'fields': [],
+        }
+
+    if resource == 'departments':
+        departments = _role_scoped_departments(user).select_related('city_admin', 'city_admin__user')
+        if query:
+            departments = departments.filter(
+                Q(name__icontains=query) |
+                Q(email__icontains=query) |
+                Q(phone__icontains=query) |
+                Q(city__icontains=query) |
+                Q(state__icontains=query)
+            )
+
+        data = _serialize_departments(request, departments, limit=100)
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'Departments',
+            'role': role,
+            'items': data,
+            'count': departments.count(),
+            'can_create': role in {'superadmin', 'city_admin'},
+            'fields': _department_form_fields(request),
+        }
+
+    if resource == 'citizens':
+        if role == 'department':
+            complaints = _role_scoped_complaints(user)
+            user_ids = complaints.exclude(user__isnull=True).values_list('user_id', flat=True).distinct()
+            citizens = CitizenProfile.objects.select_related('user').filter(user_id__in=user_ids)
+        elif role == 'city_admin':
+            city_admin = CityAdmin.objects.filter(user=user, is_active=True).first()
+            if not city_admin:
+                citizens = CitizenProfile.objects.none()
+            else:
+                citizens = CitizenProfile.objects.select_related('user').filter(
+                    Q(city__iexact=city_admin.city_name) | Q(district__iexact=city_admin.city_name),
+                    state__iexact=city_admin.state,
+                )
+        elif role == 'superadmin':
+            citizens = CitizenProfile.objects.select_related('user').all()
+        else:
+            return _admin_forbidden()
+
+        if query:
+            citizens = citizens.filter(
+                Q(user__first_name__icontains=query) |
+                Q(user__last_name__icontains=query) |
+                Q(user__email__icontains=query) |
+                Q(mobile_no__icontains=query) |
+                Q(city__icontains=query)
+            )
+
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'Citizens',
+            'role': role,
+            'items': [_serialize_admin_citizen(profile) for profile in citizens.order_by('user__first_name')[:100]],
+            'count': citizens.count(),
+            'can_create': False,
+            'fields': [],
+        }
+
+    if resource == 'city-admins':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can manage city admins.')
+        admins = CityAdmin.objects.select_related('user').all()
+        if query:
+            admins = admins.filter(
+                Q(user__first_name__icontains=query) |
+                Q(user__last_name__icontains=query) |
+                Q(user__email__icontains=query) |
+                Q(city_name__icontains=query) |
+                Q(state__icontains=query)
+            )
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'City Admins',
+            'role': role,
+            'items': [_serialize_city_admin(admin) for admin in admins.order_by('city_name', 'user__first_name')[:100]],
+            'count': admins.count(),
+            'can_create': True,
+            'fields': _city_admin_form_fields(),
+        }
+
+    if resource == 'categories':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can manage categories.')
+        categories = ComplaintCategory.objects.prefetch_related('subcategories').all()
+        if query:
+            categories = categories.filter(Q(name__icontains=query) | Q(key__icontains=query))
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'Categories',
+            'role': role,
+            'items': [_serialize_category(category) for category in categories.order_by('display_order', 'name')[:100]],
+            'count': categories.count(),
+            'can_create': True,
+            'fields': _category_form_fields(),
+        }
+
+    if resource == 'states':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can manage states.')
+        states = ManagedState.objects.prefetch_related('cities').all()
+        if query:
+            states = states.filter(Q(name__icontains=query) | Q(code__icontains=query))
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'States',
+            'role': role,
+            'items': [_serialize_state(state_obj) for state_obj in states.order_by('name')[:100]],
+            'count': states.count(),
+            'can_create': True,
+            'fields': _state_form_fields(),
+        }
+
+    if resource == 'cities':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can manage cities.')
+        cities = ManagedCity.objects.select_related('state').all()
+        if query:
+            cities = cities.filter(Q(name__icontains=query) | Q(code__icontains=query) | Q(state__name__icontains=query))
+        return {
+            'success': True,
+            'resource': resource,
+            'title': 'Cities',
+            'role': role,
+            'items': [_serialize_city(city) for city in cities.order_by('state__name', 'name')[:100]],
+            'count': cities.count(),
+            'can_create': True,
+            'fields': _city_form_fields(),
+        }
+
+    return Response(
+        {'success': False, 'message': f'Unknown admin resource: {resource}'},
+        status=status.HTTP_404_NOT_FOUND,
+    )
+
+
+def _resource_title(resource):
+    return {
+        'complaints': 'Complaints',
+        'problems': 'Open Problems',
+        'solved': 'Solved Complaints',
+        'review': 'Review Queue',
+        'total': 'All Complaints',
+    }.get(resource, resource.title())
+
+
+def _department_form_fields(request):
+    role = _get_user_role(request.user)
+    city_admins = []
+    if role == 'superadmin':
+        city_admins = [
+            {
+                'id': admin.id,
+                'label': f"{admin.user.get_full_name() or admin.user.email} - {admin.city_name}, {admin.state}",
+                'city': admin.city_name,
+                'state': admin.state,
+            }
+            for admin in CityAdmin.objects.filter(is_active=True).select_related('user').order_by('city_name')
+        ]
+
+    return [
+        {'key': 'name', 'label': 'Department name', 'type': 'text', 'required': True},
+        {
+            'key': 'department_type',
+            'label': 'Department type',
+            'type': 'select',
+            'required': True,
+            'options': [
+                {'value': value, 'label': _clean_department_type_display(value)}
+                for value, _label in Department.DEPARTMENT_TYPES
+            ],
+        },
+        {'key': 'email', 'label': 'Login email', 'type': 'email', 'required': True},
+        {'key': 'phone', 'label': 'Phone', 'type': 'phone', 'required': True},
+        {'key': 'address', 'label': 'Address', 'type': 'textarea', 'required': True},
+        {'key': 'unique_id', 'label': 'Department code', 'type': 'text', 'required': False},
+        {'key': 'sla_hours', 'label': 'SLA hours', 'type': 'number', 'required': True, 'default': '72'},
+        {'key': 'latitude', 'label': 'Latitude', 'type': 'number', 'required': False},
+        {'key': 'longitude', 'label': 'Longitude', 'type': 'number', 'required': False},
+        {'key': 'city_admin_id', 'label': 'City admin', 'type': 'select', 'required': role == 'superadmin', 'options': city_admins},
+        {'key': 'password', 'label': 'Login password', 'type': 'password', 'required': False},
+        {'key': 'is_active', 'label': 'Active', 'type': 'bool', 'required': False, 'default': True},
+    ]
+
+
+def _city_admin_form_fields():
+    return [
+        {'key': 'full_name', 'label': 'Full name', 'type': 'text', 'required': True},
+        {'key': 'email', 'label': 'Login email', 'type': 'email', 'required': True},
+        {'key': 'state', 'label': 'State', 'type': 'text', 'required': True},
+        {'key': 'city', 'label': 'City', 'type': 'text', 'required': True},
+        {'key': 'pincode', 'label': 'Pincode', 'type': 'text', 'required': False},
+        {'key': 'contact_address', 'label': 'Office address', 'type': 'textarea', 'required': True},
+        {'key': 'password', 'label': 'Login password', 'type': 'password', 'required': False},
+        {'key': 'is_active', 'label': 'Active', 'type': 'bool', 'required': False, 'default': True},
+    ]
+
+
+def _category_form_fields():
+    return [
+        {'key': 'name', 'label': 'Category name', 'type': 'text', 'required': True},
+        {'key': 'key', 'label': 'Category key', 'type': 'text', 'required': False},
+        {'key': 'display_order', 'label': 'Display order', 'type': 'number', 'required': False},
+        {'key': 'is_active', 'label': 'Active', 'type': 'bool', 'required': False, 'default': True},
+    ]
+
+
+def _state_form_fields():
+    return [
+        {'key': 'name', 'label': 'State name', 'type': 'text', 'required': True},
+        {'key': 'code', 'label': 'State code', 'type': 'text', 'required': False},
+    ]
+
+
+def _city_form_fields():
+    return [
+        {'key': 'name', 'label': 'City name', 'type': 'text', 'required': True},
+        {'key': 'code', 'label': 'City code', 'type': 'text', 'required': False},
+        {
+            'key': 'state_id',
+            'label': 'State',
+            'type': 'select',
+            'required': True,
+            'options': [
+                {'value': state_obj.id, 'label': state_obj.name}
+                for state_obj in ManagedState.objects.order_by('name')
+            ],
+        },
+    ]
+
+
+def _create_admin_resource(request, resource):
+    role = _get_user_role(request.user)
+    if resource == 'departments':
+        if role not in {'superadmin', 'city_admin'}:
+            return _admin_forbidden('This account cannot create departments.')
+        return _save_department_resource(request, None)
+    if resource == 'city-admins':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can create city admins.')
+        return _save_city_admin_resource(request, None)
+    if resource == 'categories':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can create categories.')
+        return _save_category_resource(request, None)
+    if resource == 'states':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can create states.')
+        return _save_state_resource(request, None)
+    if resource == 'cities':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can create cities.')
+        return _save_city_resource(request, None)
+    return Response({'success': False, 'message': 'This resource cannot be created from mobile.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _update_admin_resource(request, resource, object_id):
+    role = _get_user_role(request.user)
+    if resource == 'departments':
+        department = _role_scoped_departments(request.user).filter(id=object_id).first()
+        if not department or role not in {'superadmin', 'city_admin'}:
+            return _admin_forbidden('This account cannot update this department.')
+        return _save_department_resource(request, department)
+    if resource == 'city-admins':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can update city admins.')
+        city_admin = CityAdmin.objects.select_related('user').filter(id=object_id).first()
+        if not city_admin:
+            return Response({'success': False, 'message': 'City admin not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return _save_city_admin_resource(request, city_admin)
+    if resource == 'categories':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can update categories.')
+        category = ComplaintCategory.objects.filter(id=object_id).first()
+        if not category:
+            return Response({'success': False, 'message': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return _save_category_resource(request, category)
+    if resource == 'states':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can update states.')
+        state_obj = ManagedState.objects.filter(id=object_id).first()
+        if not state_obj:
+            return Response({'success': False, 'message': 'State not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return _save_state_resource(request, state_obj)
+    if resource == 'cities':
+        if role != 'superadmin':
+            return _admin_forbidden('Only the main admin can update cities.')
+        city = ManagedCity.objects.select_related('state').filter(id=object_id).first()
+        if not city:
+            return Response({'success': False, 'message': 'City not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return _save_city_resource(request, city)
+    return Response({'success': False, 'message': 'This resource cannot be updated from mobile.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _delete_admin_resource(request, resource, object_id):
+    role = _get_user_role(request.user)
+    if role != 'superadmin' and resource not in {'departments'}:
+        return _admin_forbidden('Only the main admin can delete this resource.')
+
+    if resource == 'departments':
+        department = _role_scoped_departments(request.user).filter(id=object_id).first()
+        if not department or role not in {'superadmin', 'city_admin'}:
+            return _admin_forbidden('This account cannot delete this department.')
+        if Complaint.objects.filter(assigned_department=department).exists():
+            department.is_active = False
+            department.save(update_fields=['is_active'])
+            return Response({'success': True, 'message': 'Department has complaints, so it was marked inactive.'})
+        DepartmentUser.objects.filter(department=department).delete()
+        department.delete()
+        return Response({'success': True, 'message': 'Department deleted.'})
+
+    if resource == 'city-admins':
+        city_admin = CityAdmin.objects.filter(id=object_id).first()
+        if not city_admin:
+            return Response({'success': False, 'message': 'City admin not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if Department.objects.filter(city_admin=city_admin).exists():
+            city_admin.is_active = False
+            city_admin.save(update_fields=['is_active'])
+            return Response({'success': True, 'message': 'City admin has departments, so it was marked inactive.'})
+        user_obj = city_admin.user
+        city_admin.delete()
+        user_obj.delete()
+        return Response({'success': True, 'message': 'City admin deleted.'})
+
+    if resource == 'categories':
+        category = ComplaintCategory.objects.filter(id=object_id).first()
+        if not category:
+            return Response({'success': False, 'message': 'Category not found.'}, status=status.HTTP_404_NOT_FOUND)
+        category.is_active = False
+        category.save(update_fields=['is_active'])
+        return Response({'success': True, 'message': 'Category marked inactive.'})
+
+    if resource == 'states':
+        state_obj = ManagedState.objects.filter(id=object_id).first()
+        if not state_obj:
+            return Response({'success': False, 'message': 'State not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if state_obj.cities.exists():
+            return Response({'success': False, 'message': 'Delete cities under this state first.'}, status=status.HTTP_400_BAD_REQUEST)
+        state_obj.delete()
+        return Response({'success': True, 'message': 'State deleted.'})
+
+    if resource == 'cities':
+        city = ManagedCity.objects.filter(id=object_id).first()
+        if not city:
+            return Response({'success': False, 'message': 'City not found.'}, status=status.HTTP_404_NOT_FOUND)
+        city.delete()
+        return Response({'success': True, 'message': 'City deleted.'})
+
+    return Response({'success': False, 'message': 'This resource cannot be deleted from mobile.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def _save_department_resource(request, department):
+    data = request.data
+    role = _get_user_role(request.user)
+
+    name = str(data.get('name', department.name if department else '')).strip()
+    department_type = str(data.get('department_type', department.department_type if department else '')).strip()
+    email = str(data.get('email', department.email if department else '')).strip().lower()
+    phone = str(data.get('phone', department.phone if department else '')).strip()
+    address = str(data.get('address', department.address if department else '')).strip()
+    unique_id = str(data.get('unique_id', department.unique_id if department else '')).strip() or _generate_mobile_department_code()
+    sla_hours = data.get('sla_hours', department.sla_hours if department else 72)
+    latitude = data.get('latitude', department.latitude if department else 20.5937)
+    longitude = data.get('longitude', department.longitude if department else 78.9629)
+    password = str(data.get('password', '')).strip() or _generate_mobile_password()
+
+    if not name:
+        return Response({'success': False, 'message': 'Department name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if department_type not in {value for value, _label in Department.DEPARTMENT_TYPES}:
+        return Response({'success': False, 'message': 'Valid department type is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not email:
+        return Response({'success': False, 'message': 'Department email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    email_error = _validate_email_value(email)
+    if email_error:
+        return Response({'success': False, 'message': email_error}, status=status.HTTP_400_BAD_REQUEST)
+    if not phone:
+        return Response({'success': False, 'message': 'Department phone is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not address:
+        return Response({'success': False, 'message': 'Department address is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        sla_hours = int(sla_hours)
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except (TypeError, ValueError):
+        return Response({'success': False, 'message': 'SLA and coordinates must be valid numbers.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if department is None and User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
+        return Response({'success': False, 'message': 'A user with this department email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if Department.objects.exclude(id=department.id if department else None).filter(unique_id=unique_id).exists():
+        unique_id = _generate_mobile_department_code()
+
+    if role == 'superadmin':
+        city_admin_id = data.get('city_admin_id') or data.get('city_admin')
+        city_admin = CityAdmin.objects.filter(id=city_admin_id, is_active=True).first()
+        if not city_admin:
+            return Response({'success': False, 'message': 'Select a valid city admin.'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        city_admin = CityAdmin.objects.filter(user=request.user, is_active=True).first()
+        if not city_admin:
+            return _admin_forbidden('This account is not linked to a city admin.')
+
+    try:
+        with transaction.atomic():
+            if department is None:
+                user_obj = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    first_name=name[:30],
+                    last_name='Department',
+                )
+                department = Department.objects.create(
+                    city_admin=city_admin,
+                    name=name,
+                    department_type=department_type,
+                    unique_id=unique_id,
+                    email=email,
+                    phone=phone,
+                    address=address,
+                    latitude=latitude,
+                    longitude=longitude,
+                    sla_hours=sla_hours,
+                    state=city_admin.state,
+                    city=city_admin.city_name,
+                    location_name=city_admin.city_name,
+                    is_active=_as_bool(data.get('is_active'), True),
+                )
+                DepartmentUser.objects.create(user=user_obj, department=department, role='Officer')
+            else:
+                department.city_admin = city_admin
+                department.name = name
+                department.department_type = department_type
+                department.unique_id = unique_id
+                department.email = email
+                department.phone = phone
+                department.address = address
+                department.latitude = latitude
+                department.longitude = longitude
+                department.sla_hours = sla_hours
+                department.state = city_admin.state
+                department.city = city_admin.city_name
+                department.location_name = department.location_name or city_admin.city_name
+                department.is_active = _as_bool(data.get('is_active'), department.is_active)
+                department.save()
+
+                dept_user = DepartmentUser.objects.filter(department=department).select_related('user').first()
+                if dept_user:
+                    if User.objects.exclude(id=dept_user.user_id).filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
+                        return Response({'success': False, 'message': 'A user with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+                    dept_user.user.email = email
+                    dept_user.user.username = email
+                    if data.get('password'):
+                        dept_user.user.set_password(str(data.get('password')).strip())
+                    dept_user.user.save()
+    except IntegrityError:
+        return Response({'success': False, 'message': 'Department email/code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'success': True,
+        'message': 'Department saved.',
+        'item': dict(_serialize_departments(request, Department.objects.filter(id=department.id))[0]),
+    })
+
+
+def _save_city_admin_resource(request, city_admin):
+    data = request.data
+    full_name = str(data.get('full_name', '') or data.get('name', '')).strip()
+    if city_admin and not full_name:
+        full_name = city_admin.user.get_full_name() or city_admin.user.username
+    email = str(data.get('email', city_admin.user.email if city_admin else '')).strip().lower()
+    city = str(data.get('city', city_admin.city_name if city_admin else '')).strip()
+    state_name = str(data.get('state', city_admin.state if city_admin else '')).strip()
+    pincode = str(data.get('pincode', city_admin.pincode if city_admin else '')).strip()
+    contact_address = str(data.get('contact_address', city_admin.contact_address if city_admin else '')).strip()
+    password = str(data.get('password', '')).strip() or _generate_mobile_password()
+
+    if not all([full_name, email, city, state_name, contact_address]):
+        return Response({'success': False, 'message': 'Name, email, state, city, and office address are required.'}, status=status.HTTP_400_BAD_REQUEST)
+    email_error = _validate_email_value(email)
+    if email_error:
+        return Response({'success': False, 'message': email_error}, status=status.HTTP_400_BAD_REQUEST)
+    if User.objects.exclude(id=city_admin.user_id if city_admin else None).filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
+        return Response({'success': False, 'message': 'A user with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    first_name = full_name.split(' ')[0]
+    last_name = ' '.join(full_name.split(' ')[1:]) if ' ' in full_name else ''
+    try:
+        with transaction.atomic():
+            if city_admin is None:
+                user_obj = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+                city_admin = CityAdmin.objects.create(
+                    user=user_obj,
+                    city_name=city,
+                    state=state_name,
+                    pincode=pincode,
+                    contact_address=contact_address,
+                    is_active=_as_bool(data.get('is_active'), True),
+                )
+            else:
+                city_admin.user.username = email
+                city_admin.user.email = email
+                city_admin.user.first_name = first_name
+                city_admin.user.last_name = last_name
+                if data.get('password'):
+                    city_admin.user.set_password(str(data.get('password')).strip())
+                city_admin.user.save()
+                city_admin.city_name = city
+                city_admin.state = state_name
+                city_admin.pincode = pincode
+                city_admin.contact_address = contact_address
+                city_admin.is_active = _as_bool(data.get('is_active'), city_admin.is_active)
+                city_admin.save()
+    except IntegrityError:
+        return Response({'success': False, 'message': 'City admin email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({'success': True, 'message': 'City admin saved.', 'item': _serialize_city_admin(city_admin)})
+
+
+def _save_category_resource(request, category):
+    data = request.data
+    name = str(data.get('name', category.name if category else '')).strip()
+    key = str(data.get('key', category.key if category else '')).strip().lower().replace(' ', '-')
+    if not key and name:
+        key = ''.join(ch if ch.isalnum() else '-' for ch in name.lower()).strip('-')[:20]
+    if not name:
+        return Response({'success': False, 'message': 'Category name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not key:
+        return Response({'success': False, 'message': 'Category key is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if ComplaintCategory.objects.exclude(id=category.id if category else None).filter(key=key).exists():
+        return Response({'success': False, 'message': 'Category key already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        display_order = int(data.get('display_order', category.display_order if category else 0) or 0)
+    except (TypeError, ValueError):
+        display_order = 0
+    if category is None:
+        category = ComplaintCategory.objects.create(
+            key=key,
+            name=name,
+            display_order=display_order,
+            is_active=_as_bool(data.get('is_active'), True),
+        )
+    else:
+        category.key = key
+        category.name = name
+        category.display_order = display_order
+        category.is_active = _as_bool(data.get('is_active'), category.is_active)
+        category.save()
+    return Response({'success': True, 'message': 'Category saved.', 'item': _serialize_category(category)})
+
+
+def _save_state_resource(request, state_obj):
+    data = request.data
+    name = str(data.get('name', state_obj.name if state_obj else '')).strip()
+    code = str(data.get('code', state_obj.code if state_obj else '')).strip().upper()
+    if not name:
+        return Response({'success': False, 'message': 'State name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not code:
+        code = ''.join(part[:2].upper() for part in name.split() if part)[:20] or name[:3].upper()
+    if ManagedState.objects.exclude(id=state_obj.id if state_obj else None).filter(Q(name__iexact=name) | Q(code__iexact=code)).exists():
+        return Response({'success': False, 'message': 'State name/code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if state_obj is None:
+        state_obj = ManagedState.objects.create(name=name, code=code)
+    else:
+        state_obj.name = name
+        state_obj.code = code
+        state_obj.save()
+    return Response({'success': True, 'message': 'State saved.', 'item': _serialize_state(state_obj)})
+
+
+def _save_city_resource(request, city):
+    data = request.data
+    name = str(data.get('name', city.name if city else '')).strip()
+    code = str(data.get('code', city.code if city else '')).strip().upper()
+    state_id = data.get('state_id') or (city.state_id if city else None)
+    state_obj = ManagedState.objects.filter(id=state_id).first()
+    if not name:
+        return Response({'success': False, 'message': 'City name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not state_obj:
+        return Response({'success': False, 'message': 'Select a valid state.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not code:
+        code = f"{state_obj.code}-{''.join(part[:2].upper() for part in name.split() if part)[:12] or name[:3].upper()}"
+    if ManagedCity.objects.exclude(id=city.id if city else None).filter(code__iexact=code).exists():
+        return Response({'success': False, 'message': 'City code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    if ManagedCity.objects.exclude(id=city.id if city else None).filter(name__iexact=name, state=state_obj).exists():
+        return Response({'success': False, 'message': 'City already exists under this state.'}, status=status.HTTP_400_BAD_REQUEST)
+    if city is None:
+        city = ManagedCity.objects.create(name=name, code=code, state=state_obj)
+    else:
+        city.name = name
+        city.code = code
+        city.state = state_obj
+        city.save()
+    return Response({'success': True, 'message': 'City saved.', 'item': _serialize_city(city)})
+
+
 # Complaint Views
 class ComplaintViewSet(viewsets.ModelViewSet):
     def _get_uploaded_media_files(self, request):
@@ -584,7 +2214,20 @@ class ComplaintViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        queryset = Complaint.objects.filter(user=user).order_by('-created_at')
+        role = _get_user_role(user)
+
+        if role == 'superadmin':
+            queryset = Complaint.objects.all()
+        elif role == 'city_admin':
+            city_admin = CityAdmin.objects.filter(user=user, is_active=True).first()
+            queryset = _city_admin_complaints(city_admin) if city_admin else Complaint.objects.none()
+        elif role == 'department':
+            dept_user = DepartmentUser.objects.select_related('department').filter(user=user).first()
+            queryset = Complaint.objects.filter(assigned_department=dept_user.department) if dept_user else Complaint.objects.none()
+        else:
+            queryset = Complaint.objects.filter(user=user)
+
+        queryset = queryset.order_by('-created_at')
         
         # Filter by status
         work_status = self.request.query_params.get('work_status')
@@ -605,7 +2248,11 @@ class ComplaintViewSet(viewsets.ModelViewSet):
                 Q(complaint_number__icontains=search)
             )
         
-        return queryset.prefetch_related('media', 'resolution_proofs', 'assigned_department')
+        return queryset.select_related('assigned_department', 'user').prefetch_related(
+            'media',
+            'resolution_proofs',
+            'reopen_proofs',
+        )
     
     @action(detail=False, methods=['post'], url_path='verify-proof')
     def verify_proof(self, request):

@@ -7,6 +7,7 @@ import '../../providers/complaint_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/complaint.dart';
 import '../../l10n/app_strings.dart';
+import '../../config/routes.dart';
 import 'complaint_detail_screen.dart';
 import '../../widgets/app_bottom_nav.dart';
 
@@ -16,10 +17,14 @@ class UserTrackScreen extends StatefulWidget {
   State<UserTrackScreen> createState() => _UserTrackScreenState();
 }
 
-class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderStateMixin {
-  static const _accent = Color(0xFFFF6B35);
-  static const _dark = Color(0xFF1A1A1A);
-  static const _bg = Color(0xFFF8F9FA);
+class _UserTrackScreenState extends State<UserTrackScreen>
+    with TickerProviderStateMixin {
+  static const _accent = Color(0xFF2F80ED);
+  static const _dark = Color(0xFF0B1020);
+  static const _bg = Color(0xFFF7F8FA);
+  static const _text = Color(0xFF101828);
+  static const _muted = Color(0xFF5B6B86);
+  static const _line = Color(0xFFEEF2F6);
 
   String _selectedFilter = 'all';
   String _searchQuery = '';
@@ -27,10 +32,30 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   final List<Map<String, dynamic>> _filterTabs = [
     {'key': 'all', 'label': 'All', 'icon': Icons.list_alt, 'color': _accent},
-    {'key': 'pending', 'label': 'Pending', 'icon': Icons.pending, 'color': Color(0xFFEAB308)},
-    {'key': 'solved', 'label': 'Solved', 'icon': Icons.verified, 'color': Color(0xFF22C55E)},
-    {'key': 'reopened', 'label': 'Reopened', 'icon': Icons.refresh, 'color': Color(0xFFEF4444)},
-    {'key': 'rejected', 'label': 'Rejected', 'icon': Icons.cancel, 'color': Color(0xFF991B1B)},
+    {
+      'key': 'pending',
+      'label': 'Pending',
+      'icon': Icons.pending,
+      'color': const Color(0xFFEAB308)
+    },
+    {
+      'key': 'solved',
+      'label': 'Solved',
+      'icon': Icons.verified,
+      'color': const Color(0xFF22C55E)
+    },
+    {
+      'key': 'reopened',
+      'label': 'Reopened',
+      'icon': Icons.refresh,
+      'color': const Color(0xFFEF4444)
+    },
+    {
+      'key': 'rejected',
+      'label': 'Rejected',
+      'icon': Icons.cancel,
+      'color': const Color(0xFF991B1B)
+    },
   ];
 
   @override
@@ -65,10 +90,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
               child: _buildHeaderCard(user),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             _buildSearchAndFilters(),
             Expanded(child: _buildComplaintsList()),
           ],
@@ -79,59 +104,69 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   }
 
   Widget _buildHeaderCard(dynamic user) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3E3E3E), Color(0xFF5A5A5A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/images/logo.png',
+            width: 126,
+            fit: BoxFit.contain,
+          ),
+          const Spacer(),
+          _iconButton(
+            icon: Icons.home_rounded,
+            onTap: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.modernHome,
+              (route) => false,
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+            child: Container(
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _dark,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                _getUserInitials(user),
+                style: _labelStyle(
+                  size: 13,
+                  weight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.track_changes_rounded, color: Colors.white, size: 22),
+    );
+  }
+
+  Widget _iconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Ink(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: _line),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.t(context, 'Track Complaints'),
-                  style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.w700, color: Colors.white),
-                ),
-                Text(
-                  AppStrings.t(context, 'Monitor your complaint status'),
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withValues(alpha: 0.82)),
-                ),
-              ],
-            ),
-          ),
-          CircleAvatar(
-            radius: 17,
-            backgroundColor: _accent,
-            child: Text(
-              _getUserInitials(user),
-              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
-            ),
-          ),
-        ],
+          child: Center(child: Icon(icon, color: _dark, size: 21)),
+        ),
       ),
     );
   }
@@ -149,22 +184,14 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
     return Container(
       color: _bg,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
       child: Column(
         children: [
-          // Search bar
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFEEEEEE)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _line),
             ),
             child: TextField(
               controller: _searchController,
@@ -172,14 +199,23 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 setState(() => _searchQuery = value);
                 _filterComplaints();
               },
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0f172a)),
+              style: _labelStyle(
+                size: 14,
+                weight: FontWeight.w600,
+                color: _text,
+              ),
               decoration: InputDecoration(
-                hintText: AppStrings.t(context, 'Search by complaint ID, type, or location...'),
-                hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748b)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF64748b), size: 20),
+                hintText: AppStrings.t(
+                    context, 'Search by complaint ID, type, or location...'),
+                hintStyle: _labelStyle(
+                  size: 13,
+                  weight: FontWeight.w500,
+                  color: _muted,
+                ),
+                prefixIcon: const Icon(Icons.search, color: _muted, size: 20),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Color(0xFF64748b), size: 20),
+                        icon: const Icon(Icons.clear, color: _muted, size: 20),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -188,16 +224,16 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
             ),
           ),
           const SizedBox(height: 16),
-          // Modern quick stats row
           _buildQuickStats(),
           const SizedBox(height: 12),
           SizedBox(
-            height: 40,
+            height: 42,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _filterTabs.length,
@@ -214,12 +250,13 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
                     decoration: BoxDecoration(
                       color: selected ? _dark : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: selected ? _dark : const Color(0xFFEAEAEA),
+                        color: selected ? _dark : _line,
                         width: 1.2,
                       ),
                     ),
@@ -229,30 +266,33 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         Icon(
                           tab['icon'] as IconData,
                           size: 15,
-                          color: selected ? Colors.white : const Color(0xFF555555),
+                          color: selected ? Colors.white : _text,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           AppStrings.t(context, tab['label'] as String),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: selected ? Colors.white : const Color(0xFF333333),
+                          style: _labelStyle(
+                            size: 12,
+                            weight: FontWeight.w800,
+                            color: selected ? Colors.white : _text,
                           ),
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
-                            color: selected ? _accent : const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(8),
+                            color: selected
+                                ? Colors.white
+                                : const Color(0xFFF1F3F7),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '$count',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: selected ? Colors.white : const Color(0xFF5B5B5B),
+                            style: _labelStyle(
+                              size: 10,
+                              weight: FontWeight.w800,
+                              color: selected ? _dark : _muted,
                             ),
                           ),
                         ),
@@ -294,20 +334,25 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         ];
 
         return SizedBox(
-          height: 72,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: stats.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
+          height: 64,
+          child: Row(
+            children: List.generate(stats.length, (index) {
               final item = stats[index];
-              return _buildStatCard(
-                label: item['label'] as String,
-                count: item['count'] as int,
-                icon: item['icon'] as IconData,
-                color: item['color'] as Color,
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: index == 0 ? 0 : 4,
+                    right: index == stats.length - 1 ? 0 : 4,
+                  ),
+                  child: _buildStatCard(
+                    label: item['label'] as String,
+                    count: item['count'] as int,
+                    icon: item['icon'] as IconData,
+                    color: item['color'] as Color,
+                  ),
+                ),
               );
-            },
+            }),
           ),
         );
       },
@@ -321,44 +366,46 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     required Color color,
   }) {
     return Container(
-      width: 120,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEDEDED)),
+        color: color.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Row(
         children: [
           Container(
             width: 28,
             height: 28,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 16, color: color),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 7),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$count',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: _dark,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$count',
+                    style: _displayStyle(size: 16, height: 1),
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   label,
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _labelStyle(
+                    size: 9,
+                    weight: FontWeight.w800,
+                    color: _text,
                   ),
                 ),
               ],
@@ -373,24 +420,27 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     return Consumer<ComplaintProvider>(
       builder: (context, provider, _) {
         final allComplaints = provider.complaints;
-        final isInitialLoad = allComplaints.isEmpty && !provider.isLoading && provider.error == null;
-        
+        final isInitialLoad = allComplaints.isEmpty &&
+            !provider.isLoading &&
+            provider.error == null;
+
         // Show loading indicator while fetching data OR on initial load
         if (provider.isLoading || isInitialLoad) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(
+                const CircularProgressIndicator(
                   color: _accent,
                   strokeWidth: 3,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   AppStrings.t(context, 'Loading your complaints...'),
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF64748b),
+                  style: _labelStyle(
+                    size: 14,
+                    weight: FontWeight.w600,
+                    color: _muted,
                   ),
                 ),
               ],
@@ -404,23 +454,25 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: Color(0xFFEF4444)),
+                const Icon(Icons.error_outline,
+                    size: 64, color: Color(0xFFEF4444)),
                 const SizedBox(height: 16),
                 Text(
                   AppStrings.t(context, 'Error loading complaints'),
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0f172a),
+                    color: _text,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   provider.error!,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF64748b),
+                  style: _labelStyle(
+                    size: 14,
+                    weight: FontWeight.w500,
+                    color: _muted,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -428,14 +480,16 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   onPressed: _loadUserComplaints,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _dark,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
                   ),
                   child: Text(
                     AppStrings.t(context, 'Retry'),
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                    style: _labelStyle(
+                      size: 14,
+                      weight: FontWeight.w800,
                       color: Colors.white,
                     ),
                   ),
@@ -456,7 +510,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           color: _accent,
           onRefresh: _loadUserComplaints,
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(24, 4, 24, 18),
             itemCount: filteredComplaints.length,
             itemBuilder: (context, index) {
               return _buildComplaintCard(filteredComplaints[index]);
@@ -469,35 +523,29 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   Widget _buildComplaintCard(Complaint complaint) {
     final statusColor = _getStatusColor(complaint.workStatus);
-    final statusText = AppStrings.t(context, _getStatusText(complaint.workStatus));
+    final statusText =
+        AppStrings.t(context, _getStatusText(complaint.workStatus));
     final priorityColor = _getPriorityColor(complaint.priority);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _line),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(22),
           onTap: () async {
             // Show loading dialog
             showDialog(
               context: context,
               barrierDismissible: false,
               builder: (BuildContext dialogContext) {
-                return WillPopScope(
-                  onWillPop: () async => false,
+                return PopScope(
+                  canPop: false,
                   child: Dialog(
                     backgroundColor: Colors.transparent,
                     elevation: 0,
@@ -505,22 +553,23 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                          const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(_accent),
                             strokeWidth: 3,
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            AppStrings.t(context, 'Loading complaint details...'),
+                            AppStrings.t(
+                                context, 'Loading complaint details...'),
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF374151),
+                              color: _text,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -534,6 +583,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
             // Small delay to ensure dialog is shown
             await Future.delayed(const Duration(milliseconds: 100));
+            if (!mounted) return;
 
             // Navigate to detail screen
             await Navigator.push(
@@ -548,13 +598,13 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             // Close loading dialog when returning from detail screen
             if (mounted) {
               Navigator.of(context).pop();
-              
+
               // Refresh complaints list when returning
               await _loadUserComplaints();
             }
           },
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -562,51 +612,56 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F8F8),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: const Color(0xFFE7E7E7)),
+                        color: const Color(0xFFF1F3F7),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _line),
                       ),
                       child: Text(
                         '#${complaint.complaintNumber}',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                        style: _labelStyle(
+                          size: 11,
+                          weight: FontWeight.w800,
                           color: _dark,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         statusText,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                        style: _labelStyle(
+                          size: 11,
+                          weight: FontWeight.w800,
                           color: statusColor,
                         ),
                       ),
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
                         color: priorityColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: priorityColor.withValues(alpha: 0.35)),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: priorityColor.withValues(alpha: 0.35)),
                       ),
                       child: Text(
                         complaint.priority.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
+                        style: _labelStyle(
+                          size: 10,
+                          weight: FontWeight.w800,
                           color: priorityColor,
                         ),
                       ),
@@ -614,23 +669,25 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   ],
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Main title block
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFAFAFA),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFECECEC)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _getCategoryEmoji(complaint.complaintType),
-                          style: const TextStyle(fontSize: 21),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        _categoryAssetFor(complaint.complaintType),
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFFEFF7FF),
+                          child: const Icon(
+                            Icons.category_rounded,
+                            color: _accent,
+                          ),
                         ),
                       ),
                     ),
@@ -641,19 +698,19 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         children: [
                           Text(
                             complaint.title,
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0f172a),
-                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: _titleStyle(size: 15),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             _localizedComplaintType(complaint),
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF64748b),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _labelStyle(
+                              size: 12,
+                              weight: FontWeight.w600,
+                              color: _muted,
                             ),
                           ),
                         ],
@@ -661,7 +718,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     ),
                   ],
                 ),
-                
+
                 // Subcategory if available
                 if (complaint.subcategory != null) ...[
                   const SizedBox(height: 10),
@@ -670,22 +727,25 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     runSpacing: 8,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: _accent.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: _accent.withValues(alpha: 0.35)),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                              color: _accent.withValues(alpha: 0.35)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.category, size: 14, color: _accent),
+                            const Icon(Icons.category,
+                                size: 14, color: _accent),
                             const SizedBox(width: 6),
                             Text(
                               _localizedSubcategory(complaint.subcategory),
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
+                              style: _labelStyle(
+                                size: 11.5,
+                                weight: FontWeight.w700,
                                 color: _accent,
                               ),
                             ),
@@ -697,7 +757,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 ],
 
                 const SizedBox(height: 10),
-                
+
                 // Description
                 Text(
                   complaint.description,
@@ -705,42 +765,45 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     fontSize: 12.5,
-                    color: const Color(0xFF64748b),
+                    color: _muted,
                     height: 1.4,
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Location and Time info strip
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFAFAFA),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFEDEDED)),
+                    color: const Color(0xFFF7F8FA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _line),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Color(0xFF64748b)),
+                      const Icon(Icons.location_on, size: 14, color: _muted),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           '${complaint.city}, ${complaint.pincode ?? complaint.state}',
                           style: GoogleFonts.inter(
                             fontSize: 11.5,
-                            color: const Color(0xFF64748b),
+                            color: _muted,
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF64748b)),
+                      const Icon(Icons.schedule_rounded,
+                          size: 14, color: _muted),
                       const SizedBox(width: 4),
                       Text(
-                        AppStrings.t(context, _formatDate(complaint.createdAt.toIso8601String())),
+                        AppStrings.t(context,
+                            _formatDate(complaint.createdAt.toIso8601String())),
                         style: GoogleFonts.inter(
                           fontSize: 11.5,
-                          color: const Color(0xFF64748b),
+                          color: _muted,
                         ),
                       ),
                     ],
@@ -753,9 +816,9 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFCFCFC),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFEEEEEE)),
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _line),
                     ),
                     child: Row(
                       children: [
@@ -763,9 +826,10 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: _accent.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.business, size: 18, color: _accent),
+                          child: const Icon(Icons.business,
+                              size: 18, color: _accent),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -776,7 +840,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                                 AppStrings.t(context, 'Assigned Department'),
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
-                                  color: const Color(0xFF64748b),
+                                  color: _muted,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -796,39 +860,44 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: _accent,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.location_on, size: 14, color: Colors.white),
+                          child: const Icon(Icons.location_on,
+                              size: 14, color: Colors.white),
                         ),
                       ],
                     ),
                   ),
                 ],
-                
+
                 // Rating and Reopen Section
-                if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved') ...[
+                if (complaint.workStatus == 'solved' ||
+                    complaint.workStatus == 'resolved') ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       // Rating Display
                       if (complaint.citizenRating != null) ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
+                            color:
+                                const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: const Color(0xFFF59E0B)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.star, size: 12, color: Color(0xFFF59E0B)),
+                              const Icon(Icons.star,
+                                  size: 12, color: Color(0xFFF59E0B)),
                               const SizedBox(width: 4),
                               Text(
                                 '${complaint.citizenRating}/5',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
+                                style: _labelStyle(
+                                  size: 10,
+                                  weight: FontWeight.w800,
                                   color: const Color(0xFFF59E0B),
                                 ),
                               ),
@@ -838,26 +907,31 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         const SizedBox(width: 8),
                       ],
                       // Reopen Button
-                      if (complaint.workStatus == 'solved' || complaint.workStatus == 'resolved') ...[
+                      if (complaint.workStatus == 'solved' ||
+                          complaint.workStatus == 'resolved') ...[
                         GestureDetector(
                           onTap: () => _showReopenDialog(context, complaint),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFEF4444)),
+                              color: const Color(0xFFEF4444)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border:
+                                  Border.all(color: const Color(0xFFEF4444)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.refresh, size: 12, color: Color(0xFFEF4444)),
+                                const Icon(Icons.refresh,
+                                    size: 12, color: Color(0xFFEF4444)),
                                 const SizedBox(width: 4),
                                 Text(
                                   AppStrings.t(context, 'Reopen'),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                                  style: _labelStyle(
+                                    size: 10,
+                                    weight: FontWeight.w800,
                                     color: const Color(0xFFEF4444),
                                   ),
                                 ),
@@ -878,14 +952,24 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.search_off,
-            size: 64,
-            color: Color(0xFFCBD5E1),
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: _line),
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              size: 34,
+              color: _accent,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -895,7 +979,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0f172a),
+              color: _text,
             ),
           ),
           const SizedBox(height: 8),
@@ -903,30 +987,50 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             _searchQuery.isNotEmpty
                 ? AppStrings.t(context, 'Try adjusting your search terms')
                 : _selectedFilter == 'all'
-                    ? AppStrings.t(context, "You haven't submitted any complaints yet")
+                    ? AppStrings.t(
+                        context, "You haven't submitted any complaints yet")
                     : '${AppStrings.t(context, 'No complaints with status')} ${AppStrings.t(context, _getStatusText(_selectedFilter))}',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF64748b),
+            style: _labelStyle(
+              size: 14,
+              weight: FontWeight.w500,
+              color: _muted,
+              height: 1.35,
             ),
           ),
           if (_selectedFilter == 'all' && _searchQuery.isEmpty) ...[
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pushNamed(
+                context,
+                AppRoutes.categorySelection,
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _dark,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 48),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
               ),
-              child: Text(
-                AppStrings.t(context, 'Submit Your First Complaint'),
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      AppStrings.t(context, 'Submit Your First Complaint'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _labelStyle(
+                        size: 13,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -940,18 +1044,21 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
     // Filter by status
     if (_selectedFilter != 'all') {
-      filtered = filtered.where((c) => c.workStatus == _selectedFilter).toList();
+      filtered =
+          filtered.where((c) => c.workStatus == _selectedFilter).toList();
     }
 
     // Filter by search query
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((c) =>
-          c.complaintNumber.toLowerCase().contains(query) ||
-          c.complaintType.toLowerCase().contains(query) ||
-          c.description.toLowerCase().contains(query) ||
-          c.city.toLowerCase().contains(query) ||
-          (c.subcategory?.toLowerCase().contains(query) ?? false)).toList();
+      filtered = filtered
+          .where((c) =>
+              c.complaintNumber.toLowerCase().contains(query) ||
+              c.complaintType.toLowerCase().contains(query) ||
+              c.description.toLowerCase().contains(query) ||
+              c.city.toLowerCase().contains(query) ||
+              (c.subcategory?.toLowerCase().contains(query) ?? false))
+          .toList();
     }
 
     // Sort by creation date (newest first)
@@ -966,10 +1073,47 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     setState(() {});
   }
 
+  TextStyle _displayStyle({
+    required double size,
+    double height = 0.98,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: size,
+      height: height,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+      color: _text,
+    );
+  }
+
+  TextStyle _titleStyle({required double size}) {
+    return GoogleFonts.inter(
+      fontSize: size,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0,
+      color: _text,
+    );
+  }
+
+  static TextStyle _labelStyle({
+    required double size,
+    required FontWeight weight,
+    required Color color,
+    double? height,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: size,
+      fontWeight: weight,
+      letterSpacing: 0,
+      height: height,
+      color: color,
+    );
+  }
+
   String _getUserInitials(user) {
     if (user == null) return 'U';
-    final firstName = user.firstName?.trim() ?? '';
-    final lastName = user.lastName?.trim() ?? '';
+    final firstName = user.firstName?.toString().trim() ?? '';
+    final lastName = user.lastName?.toString().trim() ?? '';
     String initials = '';
     if (firstName.isNotEmpty) initials += firstName[0].toUpperCase();
     if (lastName.isNotEmpty) initials += lastName[0].toUpperCase();
@@ -978,36 +1122,56 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending': return const Color(0xFFEAB308);
-      case 'confirmed': return const Color(0xFFF97316);
-      case 'process': return _accent;
-      case 'in_progress': return _accent;
-      case 'solved': return const Color(0xFF22C55E);
-      case 'reopened': return const Color(0xFFEF4444);
-      case 'rejected': return const Color(0xFF991B1B);
-      default: return const Color(0xFF94A3B8);
+      case 'pending':
+        return const Color(0xFFEAB308);
+      case 'confirmed':
+        return const Color(0xFFF97316);
+      case 'process':
+        return _accent;
+      case 'in_progress':
+        return _accent;
+      case 'solved':
+        return const Color(0xFF22C55E);
+      case 'reopened':
+        return const Color(0xFFEF4444);
+      case 'rejected':
+        return const Color(0xFF991B1B);
+      default:
+        return const Color(0xFF94A3B8);
     }
   }
 
   String _getStatusText(String status) {
     switch (status.toLowerCase()) {
-      case 'pending': return 'Pending';
-      case 'confirmed': return 'Confirmed';
-      case 'process': return 'In Progress';
-      case 'in_progress': return 'In Progress';
-      case 'solved': return 'Solved';
-      case 'reopened': return 'Reopened';
-      case 'rejected': return 'Rejected';
-      default: return 'Unknown';
+      case 'pending':
+        return 'Pending';
+      case 'confirmed':
+        return 'Confirmed';
+      case 'process':
+        return 'In Progress';
+      case 'in_progress':
+        return 'In Progress';
+      case 'solved':
+        return 'Solved';
+      case 'reopened':
+        return 'Reopened';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return 'Unknown';
     }
   }
 
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
-      case 'high': return const Color(0xFFEF4444);
-      case 'medium': return const Color(0xFFEAB308);
-      case 'low': return const Color(0xFF22C55E);
-      default: return const Color(0xFF64748b);
+      case 'high':
+        return const Color(0xFFEF4444);
+      case 'medium':
+        return const Color(0xFFEAB308);
+      case 'low':
+        return const Color(0xFF22C55E);
+      default:
+        return const Color(0xFF64748b);
     }
   }
 
@@ -1061,20 +1225,36 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     }
   }
 
-  String _getCategoryEmoji(String category) {
+  String _categoryAssetFor(String category) {
     switch (category.toLowerCase()) {
-      case 'police': return '🚓';
-      case 'traffic': return '🚦';
-      case 'construction': return '🏗️';
-      case 'water': case 'water supply': return '🚰';
-      case 'electricity': return '💡';
-      case 'garbage': return '🗑️';
-      case 'road': case 'pothole': return '🛣️';
-      case 'drainage': return '🌊';
-      case 'illegal': case 'illegal activity': return '⚠️';
-      case 'transportation': return '🚌';
-      case 'cyber': case 'cyber crime': return '🛡️';
-      default: return '📋';
+      case 'police':
+        return 'assets/images/cat_police.png';
+      case 'traffic':
+        return 'assets/images/cat_traffic.png';
+      case 'construction':
+        return 'assets/images/cat_construction.png';
+      case 'water':
+      case 'water supply':
+        return 'assets/images/cat_waste_overflow.png';
+      case 'electricity':
+        return 'assets/images/cat_electric.png';
+      case 'garbage':
+        return 'assets/images/cat_garbage.png';
+      case 'road':
+      case 'pothole':
+        return 'assets/images/cat_roads.png';
+      case 'drainage':
+        return 'assets/images/cat_drainage.png';
+      case 'illegal':
+      case 'illegal activity':
+        return 'assets/images/cat_illegal.png';
+      case 'transportation':
+        return 'assets/images/cat_transportation.png';
+      case 'cyber':
+      case 'cyber crime':
+        return 'assets/images/cat_cyber.png';
+      default:
+        return 'assets/images/cat_other.png';
     }
   }
 
@@ -1083,7 +1263,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       final date = DateTime.parse(dateStr);
       final now = DateTime.now();
       final diff = now.difference(date);
-      
+
       if (diff.inDays > 0) return '${diff.inDays}d ago';
       if (diff.inHours > 0) return '${diff.inHours}h ago';
       if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
@@ -1096,7 +1276,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
   void _showReopenDialog(BuildContext context, Complaint complaint) {
     final reasonController = TextEditingController();
     String? proofPath;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1106,7 +1286,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
           height: MediaQuery.of(ctx).size.height * 0.78,
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
           ),
           child: Padding(
             padding: EdgeInsets.only(
@@ -1118,38 +1298,46 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE4E7EC),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       AppStrings.t(context, 'Reopen Complaint'),
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1F2937),
-                      ),
+                      style: _titleStyle(size: 20),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(bottomSheetContext),
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Icons.close_rounded, color: _dark),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${AppStrings.t(context, 'Complaint ID')} #${complaint.complaintNumber}',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF6B7280),
+                  style: _labelStyle(
+                    size: 14,
+                    weight: FontWeight.w600,
+                    color: _muted,
                   ),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   '${AppStrings.t(context, 'Reason for reopening:')} *',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2937),
+                  style: _labelStyle(
+                    size: 16,
+                    weight: FontWeight.w800,
+                    color: _text,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1158,18 +1346,26 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                   maxLines: 4,
                   onChanged: (_) => setDlg(() {}),
                   decoration: InputDecoration(
-                    hintText: AppStrings.t(context, 'Please explain why you want to reopen this complaint...'),
-                    hintStyle: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: const Color(0xFF9CA3AF),
+                    hintText: AppStrings.t(context,
+                        'Please explain why you want to reopen this complaint...'),
+                    hintStyle: _labelStyle(
+                      size: 14,
+                      weight: FontWeight.w500,
+                      color: _muted,
                     ),
+                    filled: true,
+                    fillColor: const Color(0xFFF7F8FA),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: _line),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: _line),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF2B6CF6)),
+                      borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: _accent),
                     ),
                     contentPadding: const EdgeInsets.all(16),
                   ),
@@ -1177,31 +1373,32 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                 const SizedBox(height: 16),
                 Text(
                   '${AppStrings.t(context, 'Upload Proof Image')} *',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2937),
+                  style: _labelStyle(
+                    size: 16,
+                    weight: FontWeight.w800,
+                    color: _text,
                   ),
                 ),
                 const SizedBox(height: 10),
                 GestureDetector(
                   onTap: () async {
-                    final img = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    final img = await ImagePicker()
+                        .pickImage(source: ImageSource.gallery);
                     if (img != null) setDlg(() => proofPath = img.path);
                   },
                   child: Container(
                     height: 130,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
-                      borderRadius: BorderRadius.circular(12),
-                      color: const Color(0xFFF9FAFB),
+                      border: Border.all(color: _line, width: 1.4),
+                      borderRadius: BorderRadius.circular(20),
+                      color: const Color(0xFFF7F8FA),
                     ),
                     child: proofPath != null
                         ? Stack(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(18),
                                 child: Image.file(
                                   File(proofPath!),
                                   fit: BoxFit.cover,
@@ -1220,7 +1417,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                                       color: Colors.red,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.close, color: Colors.white, size: 14),
+                                    child: const Icon(Icons.close,
+                                        color: Colors.white, size: 14),
                                   ),
                                 ),
                               ),
@@ -1229,11 +1427,16 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.add_photo_alternate, size: 36, color: Color(0xFF9CA3AF)),
+                              const Icon(Icons.add_photo_alternate_rounded,
+                                  size: 36, color: _muted),
                               const SizedBox(height: 6),
                               Text(
                                 AppStrings.t(context, 'Tap to add proof image'),
-                                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)),
+                                style: _labelStyle(
+                                  size: 12,
+                                  weight: FontWeight.w600,
+                                  color: _muted,
+                                ),
                               ),
                             ],
                           ),
@@ -1246,18 +1449,19 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(bottomSheetContext),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF6B7280),
-                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          foregroundColor: _text,
+                          side: const BorderSide(color: _line),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                         ),
                         child: Text(
                           AppStrings.t(context, 'Cancel'),
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                          style: _labelStyle(
+                            size: 15,
+                            weight: FontWeight.w800,
+                            color: _text,
                           ),
                         ),
                       ),
@@ -1265,22 +1469,28 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: reasonController.text.trim().isNotEmpty && proofPath != null
-                            ? () => _submitReopenRequest(bottomSheetContext, complaint, reasonController.text.trim(), proofPath!)
+                        onPressed: reasonController.text.trim().isNotEmpty &&
+                                proofPath != null
+                            ? () => _submitReopenRequest(
+                                bottomSheetContext,
+                                complaint,
+                                reasonController.text.trim(),
+                                proofPath!)
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFEF4444),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                         ),
                         child: Text(
                           AppStrings.t(context, 'Submit'),
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          style: _labelStyle(
+                            size: 15,
+                            weight: FontWeight.w800,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -1302,7 +1512,7 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
     String proofPath,
   ) async {
     Navigator.pop(bottomSheetContext); // Close dialog
-    
+
     // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1327,14 +1537,15 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         duration: const Duration(seconds: 2),
       ),
     );
-    
+
     try {
-      final ok = await Provider.of<ComplaintProvider>(context, listen: false).reopenComplaint(
+      final ok = await Provider.of<ComplaintProvider>(context, listen: false)
+          .reopenComplaint(
         complaint.id,
         reason,
         File(proofPath),
       );
-      
+
       if (!mounted) return;
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1351,7 +1562,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppStrings.t(context, 'Failed to submit reopen request. Please try again.'),
+              AppStrings.t(context,
+                  'Failed to submit reopen request. Please try again.'),
               style: GoogleFonts.inter(color: Colors.white),
             ),
             backgroundColor: const Color(0xFFEF4444),
@@ -1363,7 +1575,8 @@ class _UserTrackScreenState extends State<UserTrackScreen> with TickerProviderSt
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppStrings.t(context, 'Failed to submit reopen request. Please try again.'),
+            AppStrings.t(
+                context, 'Failed to submit reopen request. Please try again.'),
             style: GoogleFonts.inter(color: Colors.white),
           ),
           backgroundColor: const Color(0xFFEF4444),

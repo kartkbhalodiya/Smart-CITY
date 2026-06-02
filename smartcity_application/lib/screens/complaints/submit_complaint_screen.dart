@@ -16,18 +16,26 @@ import './map_selection_screen.dart';
 class SubmitComplaintScreen extends StatefulWidget {
   final String? categoryKey;
   final String? categoryName;
-  const SubmitComplaintScreen({super.key, this.categoryKey, this.categoryName});
+  final bool? isGuest;
+
+  const SubmitComplaintScreen({
+    super.key,
+    this.categoryKey,
+    this.categoryName,
+    this.isGuest,
+  });
 
   @override
   State<SubmitComplaintScreen> createState() => _SubmitComplaintScreenState();
 }
 
 class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
-  static const _primary = Color(0xFFFF6B35);
-  static const _primaryDark = Color(0xFF1A1A1A);
-  static const _textDark = Color(0xFF1A1A1A);
-  static const _textMuted = Color(0xFF64748b);
-  static const _borderColor = Color(0xFFE8E8E8);
+  static const _bg = Color(0xFFF7F8FA);
+  static const _primary = Color(0xFF2F80ED);
+  static const _primaryDark = Color(0xFF0B1020);
+  static const _textDark = Color(0xFF101828);
+  static const _textMuted = Color(0xFF5B6B86);
+  static const _borderColor = Color(0xFFEEF2F6);
 
   final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
@@ -74,11 +82,24 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     'Finalizing your submission...',
   ];
 
-  static const _emojiMap = {
-    'police': '🚓', 'traffic': '🚦', 'construction': '🏗️',
-    'water': '🚰', 'electricity': '💡', 'garbage': '🗑️',
-    'road': '🛣️', 'drainage': '🌊', 'illegal': '⚠️',
-    'transportation': '🚌', 'cyber': '🛡️', 'other': '📋',
+  static const _categoryAssetMap = {
+    'police': 'assets/images/cat_police.png',
+    'traffic': 'assets/images/cat_traffic.png',
+    'construction': 'assets/images/cat_construction.png',
+    'water': 'assets/images/cat_waste_overflow.png',
+    'electric': 'assets/images/cat_electric.png',
+    'electricity': 'assets/images/cat_electric.png',
+    'garbage': 'assets/images/cat_garbage.png',
+    'waste': 'assets/images/cat_waste_overflow.png',
+    'waste_overflow': 'assets/images/cat_waste_overflow.png',
+    'road': 'assets/images/cat_roads.png',
+    'roads': 'assets/images/cat_roads.png',
+    'drainage': 'assets/images/cat_drainage.png',
+    'illegal': 'assets/images/cat_illegal.png',
+    'transport': 'assets/images/cat_transportation.png',
+    'transportation': 'assets/images/cat_transportation.png',
+    'cyber': 'assets/images/cat_cyber.png',
+    'other': 'assets/images/cat_other.png',
   };
 
   @override
@@ -110,11 +131,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (mounted) setState(() => _loadingMeta = false);
       return;
     }
-    
+
     setState(() => _loadingMeta = true);
     try {
       final provider = Provider.of<ComplaintProvider>(context, listen: false);
-      
+
       // Load both meta and states/cities in parallel
       final results = await Future.wait([
         provider.getSubcategories(widget.categoryKey!),
@@ -122,19 +143,22 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       ]);
 
       final res = results[0] as Map<String, dynamic>;
-      
+
       if (res['success'] == true) {
         final rawSubs = res['subcategories'] as List? ?? [];
         final subs = rawSubs.map((e) {
           final sub = Map<String, dynamic>.from(e as Map);
           final fields = sub['dynamic_fields'] as List? ?? [];
-          sub['dynamic_fields'] = fields.map((f) => Map<String, dynamic>.from(f as Map)).toList();
+          sub['dynamic_fields'] =
+              fields.map((f) => Map<String, dynamic>.from(f as Map)).toList();
           return sub;
         }).toList();
-        
+
         final rawCatFields = res['category_fields'] as List? ?? [];
-        final catFields = rawCatFields.map((f) => Map<String, dynamic>.from(f as Map)).toList();
-        
+        final catFields = rawCatFields
+            .map((f) => Map<String, dynamic>.from(f as Map))
+            .toList();
+
         // Initialize controllers for category fields
         for (final f in catFields) {
           final id = f['id'] as int;
@@ -152,11 +176,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         if (subs.isNotEmpty) {
           firstSub = subs.first;
           // Init controllers for first subcategory
-          final fields = firstSub['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
+          final fields =
+              firstSub['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
           for (final f in fields) {
             final id = f['id'] as int;
             final type = f['field_type'] as String;
-            if (_dynCtrl.containsKey(id) || _dynDropdown.containsKey(id) || _dynDate.containsKey(id)) continue;
+            if (_dynCtrl.containsKey(id) ||
+                _dynDropdown.containsKey(id) ||
+                _dynDate.containsKey(id)) continue;
             if (type == 'select') {
               _dynDropdown[id] = null;
             } else if (type == 'date' || type == 'datetime-local') {
@@ -188,7 +215,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   void _selectSub(Map<String, dynamic> sub) {
     // Keep category fields, but clear old subcategory fields
-    final oldSubFields = _selectedSub != null ? (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? []) : [];
+    final oldSubFields = _selectedSub != null
+        ? (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])
+        : [];
     for (final f in oldSubFields) {
       final id = f['id'] as int;
       // Only remove if it's NOT a category field
@@ -206,7 +235,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       final type = f['field_type'] as String;
 
       // Don't re-init if already exists (from category fields)
-      if (_dynCtrl.containsKey(id) || _dynDropdown.containsKey(id) || _dynDate.containsKey(id)) continue;
+      if (_dynCtrl.containsKey(id) ||
+          _dynDropdown.containsKey(id) ||
+          _dynDate.containsKey(id)) continue;
 
       if (type == 'select') {
         _dynDropdown[id] = null;
@@ -245,10 +276,17 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   List<String> _extractOptionsFromAny(dynamic raw) {
     if (raw is List) {
-      return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      return raw
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     if (raw is String && raw.trim().isNotEmpty) {
-      return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      return raw
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     return [];
   }
@@ -261,7 +299,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     return _extractOptionsFromAny(field['options_list']);
   }
 
-  String _localizedOption(Map<String, dynamic> field, int optionIndex, String fallback) {
+  String _localizedOption(
+      Map<String, dynamic> field, int optionIndex, String fallback) {
     final lang = Localizations.localeOf(context).languageCode;
     dynamic localizedRaw;
 
@@ -295,8 +334,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     if (pos != null && mounted) {
       _lat = pos.latitude;
       _lng = pos.longitude;
-      _geoCtrl.text = '${_lat!.toStringAsFixed(6)}, ${_lng!.toStringAsFixed(6)}';
-      final addr = await LocationService.getAddressFromCoordinates(pos.latitude, pos.longitude);
+      _geoCtrl.text =
+          '${_lat!.toStringAsFixed(6)}, ${_lng!.toStringAsFixed(6)}';
+      final addr = await LocationService.getAddressFromCoordinates(
+          pos.latitude, pos.longitude);
       if (mounted) {
         if ((addr['address'] ?? '').isNotEmpty) {
           _addressCtrl.text = addr['address']!;
@@ -328,8 +369,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final picked = await ImagePicker().pickImage(source: source, imageQuality: 80);
-    if (picked != null && mounted) setState(() => _images.add(File(picked.path)));
+    final picked =
+        await ImagePicker().pickImage(source: source, imageQuality: 80);
+    if (picked != null && mounted)
+      setState(() => _images.add(File(picked.path)));
   }
 
   void _updateGeoFromText(String v) {
@@ -360,10 +403,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     if (result != null && mounted) {
       _lat = result.latitude;
       _lng = result.longitude;
-      _geoCtrl.text = '${_lat!.toStringAsFixed(6)}, ${_lng!.toStringAsFixed(6)}';
-      
+      _geoCtrl.text =
+          '${_lat!.toStringAsFixed(6)}, ${_lng!.toStringAsFixed(6)}';
+
       // Update address automatically from coordinates
-      final addr = await LocationService.getAddressFromCoordinates(_lat!, _lng!);
+      final addr =
+          await LocationService.getAddressFromCoordinates(_lat!, _lng!);
       if (mounted) {
         if ((addr['address'] ?? '').isNotEmpty) {
           _addressCtrl.text = addr['address']!;
@@ -408,9 +453,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     );
     if (date == null || !mounted) return;
     if (withTime) {
-      final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+      final time =
+          await showTimePicker(context: context, initialTime: TimeOfDay.now());
       if (time != null) {
-        final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+        final dt =
+            DateTime(date.year, date.month, date.day, time.hour, time.minute);
         setState(() => _dynDate[fieldId] =
             '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}');
         return;
@@ -424,7 +471,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     if (!_isPreviewing) {
       if (_selectedSub == null && _subcategories.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppStrings.t(context, 'Please select a subcategory')), backgroundColor: Colors.orange),
+          SnackBar(
+              content:
+                  Text(AppStrings.t(context, 'Please select a subcategory')),
+              backgroundColor: const Color(0xFF2F80ED)),
         );
         return;
       }
@@ -432,23 +482,30 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
       // Validate date fields
       if (_selectedSub != null) {
-        for (final f in (_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [])) {
+        for (final f in (_selectedSub!['dynamic_fields']
+                as List<Map<String, dynamic>>? ??
+            [])) {
           final id = f['id'] as int;
           final type = f['field_type'] as String;
           final required = f['is_required'] == true;
-          if ((type == 'date' || type == 'datetime-local') && required && (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
+          if ((type == 'date' || type == 'datetime-local') &&
+              required &&
+              (_dynDate[id] == null || _dynDate[id]!.isEmpty)) {
             final label = _localizedFieldLabel(f);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$label ${AppStrings.t(context, 'is required')}'), backgroundColor: Colors.orange),
+              SnackBar(
+                  content:
+                      Text('$label ${AppStrings.t(context, 'is required')}'),
+                  backgroundColor: const Color(0xFF2F80ED)),
             );
             return;
           }
         }
       }
-      
+
       // AI Proof Verification before Preview
       setState(() => _submitting = true);
-      
+
       // Show loading dialog
       _loadingMessageIndex = 0;
       Timer? timer;
@@ -460,14 +517,16 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             timer ??= Timer.periodic(const Duration(seconds: 2), (t) {
               if (mounted && _submitting) {
                 setDialogState(() {
-                  _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
+                  _loadingMessageIndex =
+                      (_loadingMessageIndex + 1) % _loadingMessages.length;
                 });
               } else {
                 t.cancel();
               }
             });
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -476,13 +535,18 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                     const CircularProgressIndicator(color: _primary),
                     const SizedBox(height: 24),
                     Text(
-                      AppStrings.t(context, _loadingMessages[_loadingMessageIndex]),
+                      AppStrings.t(
+                          context, _loadingMessages[_loadingMessageIndex]),
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: _textDark),
+                      style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: _textDark),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      AppStrings.t(context, 'Please be patient, we are analyzing your complaint...'),
+                      AppStrings.t(context,
+                          'Please be patient, we are analyzing your complaint...'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(fontSize: 13, color: _textMuted),
                     ),
@@ -498,12 +562,18 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (_images.isNotEmpty) {
         final provider = Provider.of<ComplaintProvider>(context, listen: false);
         verifyRes = await provider.verifyProof(
-          widget.categoryKey ?? 'other',
-          _images,
-          uploadedOnly: true,
-          subcategory: _selectedSub != null ? (_selectedSub!['name'] as String?) : null,
-          description: _descCtrl.text.trim(),
-        ) ?? {'success': false, 'message': AppStrings.t(context, 'Proof verification failed')};
+              widget.categoryKey ?? 'other',
+              _images,
+              uploadedOnly: true,
+              subcategory: _selectedSub != null
+                  ? (_selectedSub!['name'] as String?)
+                  : null,
+              description: _descCtrl.text.trim(),
+            ) ??
+            {
+              'success': false,
+              'message': AppStrings.t(context, 'Proof verification failed')
+            };
       } else {
         verifyRes = const {'success': true};
       }
@@ -514,7 +584,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       if (verifyRes['success'] == true) {
         setState(() => _isPreviewing = true);
       } else {
-        final errorMsg = verifyRes['message'] ?? AppStrings.t(context, 'Invalid proof detected');
+        final errorMsg = verifyRes['message'] ??
+            AppStrings.t(context, 'Invalid proof detected');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
@@ -537,15 +608,17 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           submitTimer ??= Timer.periodic(const Duration(seconds: 2), (t) {
             if (mounted && _submitting) {
               setDialogState(() {
-                _loadingMessageIndex = (_loadingMessageIndex + 1) % _loadingMessages.length;
+                _loadingMessageIndex =
+                    (_loadingMessageIndex + 1) % _loadingMessages.length;
               });
             } else {
               t.cancel();
             }
           });
-          
+
           return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -554,13 +627,18 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                   const CircularProgressIndicator(color: _primary),
                   const SizedBox(height: 24),
                   Text(
-                    AppStrings.t(context, _loadingMessages[_loadingMessageIndex]),
+                    AppStrings.t(
+                        context, _loadingMessages[_loadingMessageIndex]),
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: _textDark),
+                    style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _textDark),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    AppStrings.t(context, 'Please be patient, we are processing your request'),
+                    AppStrings.t(context,
+                        'Please be patient, we are processing your request'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(fontSize: 13, color: _textMuted),
                   ),
@@ -595,7 +673,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     // Collect dynamic fields from both category and subcategory
     final allFields = [..._categoryFields];
     if (_selectedSub != null) {
-      allFields.addAll(_selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? []);
+      allFields.addAll(
+          _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? []);
     }
 
     for (final f in allFields) {
@@ -616,10 +695,10 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     final provider = Provider.of<ComplaintProvider>(context, listen: false);
     final res = await provider.createComplaint(data, _images);
-    
+
     // Dismiss loading dialog
     if (mounted) Navigator.pop(context);
-    
+
     setState(() => _submitting = false);
 
     if (!mounted) return;
@@ -630,14 +709,15 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       }
 
       await provider.refresh();
-      
+
       final complaint = res['complaint'];
-      final complaintId = complaint?['complaint_number'] ?? AppStrings.t(context, 'N/A');
+      final complaintId =
+          complaint?['complaint_number'] ?? AppStrings.t(context, 'N/A');
       final title = complaint?['title'] ?? _titleCtrl.text;
       final desc = complaint?['description'] ?? _descCtrl.text;
 
       Navigator.pushReplacementNamed(
-        context, 
+        context,
         AppRoutes.complaintSuccess,
         arguments: {
           'complaintId': complaintId,
@@ -647,14 +727,17 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.error ?? AppStrings.t(context, 'Failed to submit')), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text(
+                provider.error ?? AppStrings.t(context, 'Failed to submit')),
+            backgroundColor: Colors.red),
       );
     }
   }
 
   void _showDuplicateDialog(String ticketId) {
-    String maskedId = ticketId.length > 3 
-        ? '${ticketId.substring(0, 3)}XXXXXX' 
+    String maskedId = ticketId.length > 3
+        ? '${ticketId.substring(0, 3)}XXXXXX'
         : '${ticketId}XXXX';
 
     showDialog(
@@ -668,36 +751,56 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 70, height: 70,
-                decoration: const BoxDecoration(color: Color(0xFFF0FDF4), shape: BoxShape.circle),
-                child: const Center(child: Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 40)),
+                width: 70,
+                height: 70,
+                decoration: const BoxDecoration(
+                    color: Color(0xFFF0FDF4), shape: BoxShape.circle),
+                child: const Center(
+                    child: Icon(Icons.check_circle_rounded,
+                        color: Color(0xFF10B981), size: 40)),
               ),
               const SizedBox(height: 24),
               Text(
                 AppStrings.t(context, 'Thank You for Applied Complaint!'),
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: _textDark),
+                style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _textDark),
               ),
               const SizedBox(height: 12),
               Text(
-                AppStrings.t(context, 'This issue has already been reported by another citizen in this area. Our team is already working on it.'),
+                AppStrings.t(context,
+                    'This issue has already been reported by another citizen in this area. Our team is already working on it.'),
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 14, color: _textMuted, height: 1.5),
+                style: GoogleFonts.inter(
+                    fontSize: 14, color: _textMuted, height: 1.5),
               ),
               const SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
                     Text(
                       AppStrings.t(context, 'EXISTING TICKET ID'),
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF9CA3AF), letterSpacing: 1),
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF9CA3AF),
+                          letterSpacing: 1),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       maskedId,
-                      style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF374151), letterSpacing: 2),
+                      style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF374151),
+                          letterSpacing: 2),
                     ),
                   ],
                 ),
@@ -705,25 +808,39 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 58,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx); // Close dialog
-                    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+                    final isGuest =
+                        !context.read<AuthProvider>().isAuthenticated;
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      isGuest
+                          ? AppRoutes.guestDashboard
+                          : AppRoutes.userDashboard,
+                      (route) => false,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
+                    elevation: 8,
+                    shadowColor:
+                        const Color(0xFF10B981).withValues(alpha: 0.24),
+                    surfaceTintColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22)),
                   ),
-                  child: Text(AppStrings.t(context, 'Thank You'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+                  child: Text(AppStrings.t(context, 'Thank You'),
+                      style: GoogleFonts.poppins(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 56,
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.pop(ctx); // Close dialog
@@ -731,11 +848,15 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                   },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFD1D5DB)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
                   ),
                   child: Text(
                     AppStrings.t(context, 'No, my issue is different'),
-                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF4B5563)),
+                    style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF4B5563)),
                   ),
                 ),
               ),
@@ -746,85 +867,116 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     );
   }
 
-  Widget _previewSection(String emoji, String name) {
+  Widget _previewSection(String categoryAsset, String name) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _buildHeaderCard(emoji, name),
+        _buildHeaderCard(categoryAsset, name),
         const SizedBox(height: 16),
         Text(AppStrings.t(context, 'Preview Your Complaint'),
-            style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
+            style: GoogleFonts.poppins(
+                fontSize: 20, fontWeight: FontWeight.w700, color: _textDark)),
         const SizedBox(height: 4),
-        Text(AppStrings.t(context, 'Please verify your details before confirming'),
+        Text(
+            AppStrings.t(
+                context, 'Please verify your details before confirming'),
             style: GoogleFonts.inter(fontSize: 14, color: _textMuted)),
         const SizedBox(height: 24),
-        
         _previewCard(AppStrings.t(context, 'Issue Details'), [
           (AppStrings.t(context, 'Title'), _titleCtrl.text),
-          (AppStrings.t(context, 'Date of Occurrence'), _dateOfOccurrenceCtrl.text),
-          (AppStrings.t(context, 'Category'), widget.categoryName ?? AppStrings.t(context, 'Other')),
-          if (_selectedSub != null) (AppStrings.t(context, 'Subcategory'), _localizedSubcategoryName(_selectedSub!)),
+          (
+            AppStrings.t(context, 'Date of Occurrence'),
+            _dateOfOccurrenceCtrl.text
+          ),
+          (
+            AppStrings.t(context, 'Category'),
+            widget.categoryName ?? AppStrings.t(context, 'Other')
+          ),
+          if (_selectedSub != null)
+            (
+              AppStrings.t(context, 'Subcategory'),
+              _localizedSubcategoryName(_selectedSub!)
+            ),
           (AppStrings.t(context, 'Priority'), _priority.toUpperCase()),
           (AppStrings.t(context, 'Description'), _descCtrl.text),
         ]),
         const SizedBox(height: 16),
-        
         _previewCard(AppStrings.t(context, 'Location'), [
           (AppStrings.t(context, 'Address'), _addressCtrl.text),
-          (AppStrings.t(context, 'City'), _selectedCity ?? AppStrings.t(context, 'Not Selected')),
-          (AppStrings.t(context, 'State'), _selectedState ?? AppStrings.t(context, 'Not Selected')),
+          (
+            AppStrings.t(context, 'City'),
+            _selectedCity ?? AppStrings.t(context, 'Not Selected')
+          ),
+          (
+            AppStrings.t(context, 'State'),
+            _selectedState ?? AppStrings.t(context, 'Not Selected')
+          ),
           (AppStrings.t(context, 'Pincode'), _pincodeCtrl.text),
         ]),
         const SizedBox(height: 16),
-        
         _previewCard(AppStrings.t(context, 'Personal Info'), [
           (AppStrings.t(context, 'Name'), _nameCtrl.text),
           (AppStrings.t(context, 'Mobile'), _mobileCtrl.text),
-          if (_emailCtrl.text.isNotEmpty) (AppStrings.t(context, 'Email'), _emailCtrl.text),
+          if (_emailCtrl.text.isNotEmpty)
+            (AppStrings.t(context, 'Email'), _emailCtrl.text),
         ]),
         const SizedBox(height: 32),
-        
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 58,
           child: ElevatedButton(
             onPressed: _submitting ? null : _submit,
             style: ElevatedButton.styleFrom(
               backgroundColor: _primaryDark,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 8,
+              shadowColor: _primaryDark.withValues(alpha: 0.20),
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22)),
             ),
             child: _submitting
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                : Text(AppStrings.t(context, 'Confirm & Submit'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2.5))
+                : Text(AppStrings.t(context, 'Confirm & Submit'),
+                    style: GoogleFonts.poppins(
+                        fontSize: 15, fontWeight: FontWeight.w700)),
           ),
         ),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 56,
           child: OutlinedButton(
             onPressed: () => setState(() => _isPreviewing = false),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: _primaryDark),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              side: const BorderSide(color: _primaryDark, width: 1.3),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
             ),
-            child: Text(AppStrings.t(context, 'Edit Details'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _primaryDark)),
+            child: Text(AppStrings.t(context, 'Edit Details'),
+                style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: _primaryDark)),
           ),
         ),
       ]),
     );
   }
 
-  Widget _formSection(String emoji, String name) {
+  Widget _formSection(String categoryAsset, String name) {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeaderCard(emoji, name),
+            _buildHeaderCard(categoryAsset, name),
             const SizedBox(height: 16),
             ..._buildFormSections(),
           ],
@@ -839,108 +991,148 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F1F1), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _borderColor, width: 1),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _primaryDark)),
+        Text(title,
+            style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _primaryDark)),
         const Divider(height: 24),
-        ...items.map((it) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(it.$1, style: GoogleFonts.inter(fontSize: 12, color: _textMuted, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text(it.$2, style: GoogleFonts.inter(fontSize: 14, color: _textDark, fontWeight: FontWeight.w600)),
-          ]),
-        )).toList(),
+        ...items
+            .map((it) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(it.$1,
+                            style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: _textMuted,
+                                fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 2),
+                        Text(it.$2,
+                            style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: _textDark,
+                                fontWeight: FontWeight.w600)),
+                      ]),
+                ))
+            .toList(),
       ]),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = !context.watch<AuthProvider>().isAuthenticated;
+    final isGuest =
+        widget.isGuest ?? !context.watch<AuthProvider>().isAuthenticated;
     final key = widget.categoryKey ?? 'other';
-    final emoji = _emojiMap[key] ?? '📋';
+    final categoryAsset = _categoryAssetMap[key] ?? _categoryAssetMap['other']!;
     final name = widget.categoryName ?? AppStrings.t(context, 'Complaint');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: _bg,
+      extendBody: isGuest,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: _loadingMeta
-                  ? const Center(child: CircularProgressIndicator(color: _primary))
-                  : _isPreviewing 
-                    ? _previewSection(emoji, name)
-                    : _formSection(emoji, name),
+                  ? const Center(
+                      child: CircularProgressIndicator(color: _primary))
+                  : _isPreviewing
+                      ? _previewSection(categoryAsset, name)
+                      : _formSection(categoryAsset, name),
             ),
           ],
         ),
       ),
       bottomNavigationBar: isGuest
-          ? _guestBottomNav()
+          ? _complaintBottomNav(isGuest: true)
           : const AppBottomNav(currentIndex: 1),
     );
   }
 
-  Widget _buildHeaderCard(String emoji, String name) {
+  Widget _buildHeaderCard(String categoryAsset, String name) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3D3D3D), Color(0xFF595959)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _borderColor),
       ),
       child: Row(
         children: [
           InkWell(
             onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(15),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                color: _bg,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: _borderColor),
               ),
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 21),
+              child: const Icon(Icons.arrow_back_rounded,
+                  color: _primaryDark, size: 22),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.all(9),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(11),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: _borderColor),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 24)),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              categoryAsset,
+              width: 44,
+              height: 44,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.assignment_rounded,
+                color: _primary,
+                size: 24,
               ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.t(context, 'Complaint Details'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _textMuted,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -948,78 +1140,149 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     );
   }
 
-  Widget _guestBottomNav() {
-    final items = [
-      {'icon': Icons.home_rounded, 'label': AppStrings.t(context, 'Home')},
-      {'icon': Icons.add_circle_rounded, 'label': AppStrings.t(context, 'Submit')},
-      {'icon': Icons.search_rounded, 'label': AppStrings.t(context, 'Track')},
-      {'icon': Icons.person_outline_rounded, 'label': AppStrings.t(context, 'Login')},
-    ];
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF0F0F0), width: 1)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-        top: 12,
-        left: 16,
-        right: 16,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (i) {
-          final active = i == 1;
-          return GestureDetector(
-            onTap: () {
-              if (i == 0) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.guestDashboard,
-                  (_) => false,
-                );
-              } else if (i == 2) {
-                Navigator.pushNamed(context, AppRoutes.guestTrack);
-              } else if (i == 3) {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
-              }
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: active
-                    ? const Color(0xFFFF6B35).withValues(alpha: 0.12)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    items[i]['icon'] as IconData,
-                    color: active
-                        ? const Color(0xFFFF6B35)
-                        : const Color(0xFFBDBDBD),
-                    size: 24,
+  Widget _complaintBottomNav({required bool isGuest}) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: SizedBox(
+          height: 92,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.topCenter,
+            children: [
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    items[i]['label'] as String,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: active
-                          ? const Color(0xFFFF6B35)
-                          : const Color(0xFF64748b),
+                  child: Row(
+                    children: [
+                      _guestDockItem(
+                        icon: Icons.home_rounded,
+                        label: AppStrings.t(context, 'Home'),
+                        active: false,
+                        onTap: () => Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          isGuest
+                              ? AppRoutes.guestDashboard
+                              : AppRoutes.modernHome,
+                          (_) => false,
+                        ),
+                      ),
+                      _guestDockItem(
+                        icon: Icons.add_circle_outline_rounded,
+                        label: AppStrings.t(context, 'Submit'),
+                        active: true,
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 72),
+                      _guestDockItem(
+                        icon: Icons.search_rounded,
+                        label: AppStrings.t(context, 'Track'),
+                        active: false,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          isGuest ? AppRoutes.guestTrack : AppRoutes.userTrack,
+                        ),
+                      ),
+                      _guestDockItem(
+                        icon: Icons.person_outline_rounded,
+                        label: AppStrings.t(context, 'Profile'),
+                        active: false,
+                        onTap: () => Navigator.pushReplacementNamed(
+                          context,
+                          isGuest ? AppRoutes.login : AppRoutes.profile,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                child: Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF5BC7FF),
+                        Color(0xFF2BC4B6),
+                        Color(0xFF4D8DFF),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      width: 5,
                     ),
                   ),
-                ],
+                  child: const Icon(
+                    Icons.add_rounded,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _guestDockItem({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: 60,
+            height: 48,
+            decoration: BoxDecoration(
+              color: active ? const Color(0xFFF3F5F8) : Colors.transparent,
+              borderRadius: BorderRadius.circular(18),
             ),
-          );
-        }),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 23,
+                  color: active ? _primaryDark : const Color(0xFF667085),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: active ? _primaryDark : const Color(0xFF667085),
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1029,15 +1292,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     int step = 1;
 
     // ── Step 1: Basic details ─────────────────────
-    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Basic Details')));
+    sections.add(_sectionTitle(
+        (step++).toString(), AppStrings.t(context, 'Basic Details')));
     sections.add(const SizedBox(height: 12));
-    sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    sections.add(_card(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _label(AppStrings.t(context, 'Title')),
       const SizedBox(height: 6),
       _textField(
         controller: _titleCtrl,
         hint: AppStrings.t(context, 'Brief title of your complaint'),
-        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Title is required') : null,
+        validator: (v) => (v ?? '').trim().isEmpty
+            ? AppStrings.t(context, 'Title is required')
+            : null,
       ),
       const SizedBox(height: 16),
       _label(AppStrings.t(context, 'Description')),
@@ -1046,7 +1313,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         controller: _descCtrl,
         hint: AppStrings.t(context, 'Describe the issue in detail...'),
         maxLines: 4,
-        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Description is required') : null,
+        validator: (v) => (v ?? '').trim().isEmpty
+            ? AppStrings.t(context, 'Description is required')
+            : null,
       ),
       const SizedBox(height: 16),
       _label(AppStrings.t(context, 'Date of Occurrence')),
@@ -1062,7 +1331,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           );
           if (date != null && mounted) {
             setState(() {
-              _dateOfOccurrenceCtrl.text = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+              _dateOfOccurrenceCtrl.text =
+                  "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
             });
           }
         },
@@ -1071,7 +1341,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             controller: _dateOfOccurrenceCtrl,
             hint: AppStrings.t(context, 'Select date'),
             suffix: const Icon(Icons.calendar_today, size: 20, color: _primary),
-            validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Date is required') : null,
+            validator: (v) => (v ?? '').trim().isEmpty
+                ? AppStrings.t(context, 'Date is required')
+                : null,
           ),
         ),
       ),
@@ -1097,14 +1369,16 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     sections.add(const SizedBox(height: 24));
 
     // ── Step 2: Evidence Photos ────────────────────────────────
-    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Evidence Photos')));
+    sections.add(_sectionTitle(
+        (step++).toString(), AppStrings.t(context, 'Evidence Photos')));
     sections.add(const SizedBox(height: 12));
     sections.add(_card(child: _photoSection()));
     sections.add(const SizedBox(height: 24));
 
     // ── Step 3: Subcategory selection ─────────────────
     if (_subcategories.isNotEmpty) {
-      sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Select Subcategory')));
+      sections.add(_sectionTitle(
+          (step++).toString(), AppStrings.t(context, 'Select Subcategory')));
       sections.add(const SizedBox(height: 12));
       sections.add(_subcategoryGrid());
       sections.add(const SizedBox(height: 24));
@@ -1112,9 +1386,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     // ── Category-level fields ──────────────────────────
     if (_categoryFields.isNotEmpty) {
-      sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Additional Information')));
+      sections.add(_sectionTitle((step++).toString(),
+          AppStrings.t(context, 'Additional Information')));
       sections.add(const SizedBox(height: 12));
-      sections.add(_card(child: Column(
+      sections.add(_card(
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: _buildDynamicFields(_categoryFields),
       )));
@@ -1123,11 +1399,14 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
     // ── Step 2: Dynamic fields for selected subcategory
     if (_selectedSub != null) {
-      final subFields = _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
+      final subFields =
+          _selectedSub!['dynamic_fields'] as List<Map<String, dynamic>>? ?? [];
       if (subFields.isNotEmpty) {
-        sections.add(_sectionTitle((step++).toString(), _localizedSubcategoryName(_selectedSub!)));
+        sections.add(_sectionTitle(
+            (step++).toString(), _localizedSubcategoryName(_selectedSub!)));
         sections.add(const SizedBox(height: 12));
-        sections.add(_card(child: Column(
+        sections.add(_card(
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _buildDynamicFields(subFields),
         )));
@@ -1136,15 +1415,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     }
 
     // ── Step 3: Contact Information ──────────────────
-    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Contact Information')));
+    sections.add(_sectionTitle(
+        (step++).toString(), AppStrings.t(context, 'Contact Information')));
     sections.add(const SizedBox(height: 12));
-    sections.add(_card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    sections.add(_card(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _label(AppStrings.t(context, 'Full Name')),
       const SizedBox(height: 6),
       _textField(
         controller: _nameCtrl,
         hint: AppStrings.t(context, 'Your full name'),
-        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Name is required') : null,
+        validator: (v) => (v ?? '').trim().isEmpty
+            ? AppStrings.t(context, 'Name is required')
+            : null,
       ),
       const SizedBox(height: 16),
       _label(AppStrings.t(context, 'Mobile Number')),
@@ -1153,7 +1436,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         controller: _mobileCtrl,
         hint: AppStrings.t(context, 'Your contact number'),
         keyboard: TextInputType.phone,
-        validator: (v) => (v ?? '').trim().isEmpty ? AppStrings.t(context, 'Mobile number is required') : null,
+        validator: (v) => (v ?? '').trim().isEmpty
+            ? AppStrings.t(context, 'Mobile number is required')
+            : null,
       ),
       const SizedBox(height: 16),
       _label(AppStrings.t(context, 'Email Address')),
@@ -1169,7 +1454,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       _dropdownField(
         hint: AppStrings.t(context, 'Select State'),
         value: _selectedState,
-        items: _allStates.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+        items: _allStates
+            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+            .toList(),
         onChanged: (v) => setState(() {
           _selectedState = v;
           _selectedCity = null;
@@ -1177,28 +1464,38 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       ),
       const SizedBox(height: 16),
       Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _label(AppStrings.t(context, 'City')),
           const SizedBox(height: 6),
           _dropdownField(
             hint: AppStrings.t(context, 'Select City'),
             value: _selectedCity,
-            items: (_citiesByState[_selectedState] ?? []).map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: (_citiesByState[_selectedState] ?? [])
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (v) => setState(() => _selectedCity = v),
           ),
         ])),
         const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _label(AppStrings.t(context, 'Pincode')),
           const SizedBox(height: 6),
-          _textField(controller: _pincodeCtrl, hint: AppStrings.t(context, 'Pincode'), keyboard: TextInputType.number),
+          _textField(
+              controller: _pincodeCtrl,
+              hint: AppStrings.t(context, 'Pincode'),
+              keyboard: TextInputType.number),
         ])),
       ]),
     ])));
     sections.add(const SizedBox(height: 24));
 
     // ── Step 4: Priority & Severity ───────────────────
-    sections.add(_sectionTitle((step++).toString(), AppStrings.t(context, 'Set Priority')));
+    sections.add(_sectionTitle(
+        (step++).toString(), AppStrings.t(context, 'Set Priority')));
     sections.add(const SizedBox(height: 12));
     sections.add(_prioritySelector());
     sections.add(const SizedBox(height: 24));
@@ -1206,20 +1503,30 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     // ── Submit ────────────────────────────────────────
     sections.add(SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 58,
       child: ElevatedButton(
         onPressed: _submitting ? null : _submit,
         style: ElevatedButton.styleFrom(
           backgroundColor: _primaryDark,
           foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 8,
+          shadowColor: _primaryDark.withValues(alpha: 0.20),
+          surfaceTintColor: Colors.transparent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         ),
         child: _submitting
-            ? const SizedBox(width: 22, height: 22,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-            : Text(_isPreviewing ? AppStrings.t(context, 'Confirm & Submit') : AppStrings.t(context, 'Preview Complaint'),
-                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700)),
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2.5))
+            : Text(
+                _isPreviewing
+                    ? AppStrings.t(context, 'Confirm & Submit')
+                    : AppStrings.t(context, 'Preview Complaint'),
+                style: GoogleFonts.poppins(
+                    fontSize: 15, fontWeight: FontWeight.w700)),
       ),
     ));
 
@@ -1230,21 +1537,31 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   Widget _sectionTitle(String step, String title) {
     return Row(children: [
       Container(
-        width: 26, height: 26,
-        decoration: const BoxDecoration(color: _primaryDark, shape: BoxShape.circle),
-        child: Center(child: Text(step,
-            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white))),
+        width: 26,
+        height: 26,
+        decoration:
+            const BoxDecoration(color: _primaryDark, shape: BoxShape.circle),
+        child: Center(
+            child: Text(step,
+                style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white))),
       ),
       const SizedBox(width: 10),
-      Flexible(child: Text(title,
-          style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700, color: _textDark))),
+      Flexible(
+          child: Text(title,
+              style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: _textDark))),
     ]);
   }
 
   // ── Subcategory grid ──────────────────────────────────────────────────────
   Widget _subcategoryGrid() {
     if (_subcategories.isEmpty) return const SizedBox.shrink();
-    
+
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -1257,21 +1574,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFFFFF1EB) : Colors.white,
+              color: selected ? _primary.withValues(alpha: 0.10) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: selected ? _primary : _borderColor,
                 width: selected ? 2 : 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: selected
-                      ? _primary.withValues(alpha: 0.2)
-                      : Colors.black.withValues(alpha: 0.04),
-                  blurRadius: selected ? 10 : 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
             child: Text(subName,
                 style: GoogleFonts.inter(
@@ -1286,10 +1594,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   // ── Dynamic fields ────────────────────────────────────────────────────────
   List<Widget> _buildDynamicFields(List<Map<String, dynamic>> fields) {
-    if (fields.isEmpty) return [
-      Text(AppStrings.t(context, 'No additional fields required.'),
-          style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
-    ];
+    if (fields.isEmpty)
+      return [
+        Text(AppStrings.t(context, 'No additional fields required.'),
+            style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
+      ];
 
     final widgets = <Widget>[];
     for (int i = 0; i < fields.length; i++) {
@@ -1319,11 +1628,16 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             final displayOption = _localizedOption(f, index, rawOption);
             return DropdownMenuItem(
               value: rawOption,
-              child: Text(displayOption, style: GoogleFonts.inter(fontSize: 14, color: _textDark)),
+              child: Text(displayOption,
+                  style: GoogleFonts.inter(fontSize: 14, color: _textDark)),
             );
           }),
           onChanged: (v) => setState(() => _dynDropdown[id] = v),
-          validator: required ? (v) => (v == null || v.isEmpty) ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
+          validator: required
+              ? (v) => (v == null || v.isEmpty)
+                  ? '$label ${AppStrings.t(context, 'is required')}'
+                  : null
+              : null,
         ));
       } else if (type == 'date' || type == 'datetime-local') {
         widgets.add(_dateField(
@@ -1337,17 +1651,28 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           controller: _dynCtrl[id]!,
           hint: '${AppStrings.t(context, 'Enter')} $label',
           maxLines: 3,
-          validator: required ? (v) => (v ?? '').trim().isEmpty ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
+          validator: required
+              ? (v) => (v ?? '').trim().isEmpty
+                  ? '$label ${AppStrings.t(context, 'is required')}'
+                  : null
+              : null,
         ));
       } else {
         widgets.add(_textField(
           controller: _dynCtrl[id]!,
           hint: '${AppStrings.t(context, 'Enter')} $label',
-          keyboard: type == 'number' ? TextInputType.number
-              : type == 'email' ? TextInputType.emailAddress
-              : type == 'tel' ? TextInputType.phone
-              : TextInputType.text,
-          validator: required ? (v) => (v ?? '').trim().isEmpty ? '$label ${AppStrings.t(context, 'is required')}' : null : null,
+          keyboard: type == 'number'
+              ? TextInputType.number
+              : type == 'email'
+                  ? TextInputType.emailAddress
+                  : type == 'tel'
+                      ? TextInputType.phone
+                      : TextInputType.text,
+          validator: required
+              ? (v) => (v ?? '').trim().isEmpty
+                  ? '$label ${AppStrings.t(context, 'is required')}'
+                  : null
+              : null,
         ));
       }
     }
@@ -1355,27 +1680,48 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   }
 
   // ── Date field ────────────────────────────────────────────────────────────
-  Widget _dateField({required int id, required String label, required bool withTime, required bool required}) {
+  Widget _dateField(
+      {required int id,
+      required String label,
+      required bool withTime,
+      required bool required}) {
     final value = _dynDate[id];
     return GestureDetector(
       onTap: () => _pickDate(id, withTime),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _borderColor, width: 1.5),
+          color: const Color(0xFFFCFCFD),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _borderColor, width: 1.35),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.035),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Row(children: [
-          Icon(withTime ? Icons.access_time_rounded : Icons.calendar_today_rounded,
-              size: 18, color: value != null ? _primary : _textMuted),
+          Icon(
+              withTime
+                  ? Icons.access_time_rounded
+                  : Icons.calendar_today_rounded,
+              size: 18,
+              color: value != null ? _primary : _textMuted),
           const SizedBox(width: 10),
-          Expanded(child: Text(
-            value ?? (withTime ? AppStrings.t(context, 'Select date & time') : AppStrings.t(context, 'Select date')),
+          Expanded(
+              child: Text(
+            value ??
+                (withTime
+                    ? AppStrings.t(context, 'Select date & time')
+                    : AppStrings.t(context, 'Select date')),
             style: GoogleFonts.inter(
-                fontSize: 14,
-                color: value != null ? _textDark : _textMuted),
+              fontSize: 15,
+              fontWeight: value != null ? FontWeight.w600 : FontWeight.w500,
+              color: value != null ? _textDark : _textMuted,
+            ),
           )),
           const Icon(Icons.arrow_drop_down, color: _textMuted),
         ]),
@@ -1394,21 +1740,27 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
             itemCount: _images.length,
             itemBuilder: (_, i) => Stack(children: [
               Container(
-                width: 90, height: 90,
+                width: 90,
+                height: 90,
                 margin: const EdgeInsets.only(right: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(image: FileImage(_images[i]), fit: BoxFit.cover),
+                  image: DecorationImage(
+                      image: FileImage(_images[i]), fit: BoxFit.cover),
                 ),
               ),
               Positioned(
-                top: 4, right: 14,
+                top: 4,
+                right: 14,
                 child: GestureDetector(
                   onTap: () => setState(() => _images.removeAt(i)),
                   child: Container(
-                    width: 22, height: 22,
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    child: const Icon(Icons.close, color: Colors.white, size: 14),
+                    width: 22,
+                    height: 22,
+                    decoration: const BoxDecoration(
+                        color: Colors.red, shape: BoxShape.circle),
+                    child:
+                        const Icon(Icons.close, color: Colors.white, size: 14),
                   ),
                 ),
               ),
@@ -1418,9 +1770,11 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         const SizedBox(height: 12),
       ],
       Row(children: [
-        _photoBtn(Icons.camera_alt_rounded, AppStrings.t(context, 'Camera'), () => _pickImage(ImageSource.camera)),
+        _photoBtn(Icons.camera_alt_rounded, AppStrings.t(context, 'Camera'),
+            () => _pickImage(ImageSource.camera)),
         const SizedBox(width: 10),
-        _photoBtn(Icons.photo_library_rounded, AppStrings.t(context, 'Gallery'), () => _pickImage(ImageSource.gallery)),
+        _photoBtn(Icons.photo_library_rounded, AppStrings.t(context, 'Gallery'),
+            () => _pickImage(ImageSource.gallery)),
       ]),
       const SizedBox(height: 4),
       Text(AppStrings.t(context, 'Add photos as evidence (optional)'),
@@ -1432,16 +1786,18 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _borderColor, width: 1.5),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _borderColor, width: 1.35),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 18, color: _primary),
           const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
+          Text(label,
+              style: GoogleFonts.inter(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
         ]),
       ),
     );
@@ -1454,9 +1810,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F1F1), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _borderColor, width: 1),
       ),
       child: child,
     );
@@ -1464,9 +1819,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
 
   Widget _label(String text, {bool required = true}) {
     return Row(children: [
-      Text(text, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
-      if (required) const Text(' *', style: TextStyle(color: Colors.red, fontSize: 13)),
+      Text(text,
+          style: GoogleFonts.inter(
+              fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
+      if (required)
+        const Text(' *', style: TextStyle(color: Colors.red, fontSize: 13)),
     ]);
+  }
+
+  OutlineInputBorder _inputBorder(Color color, {double width = 1.35}) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(20),
+      borderSide: BorderSide(color: color, width: width),
+    );
   }
 
   Widget _textField({
@@ -1478,36 +1843,61 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     String? Function(String?)? validator,
     void Function(String)? onChanged,
   }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboard,
-      validator: validator,
-      onChanged: onChanged,
-      style: GoogleFonts.inter(fontSize: 14, color: _textDark),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: const Color(0xFFFCFCFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _primary, width: 2)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        keyboardType: keyboard,
+        validator: validator,
+        onChanged: onChanged,
+        cursorColor: _primaryDark,
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: _textDark,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: _textMuted,
+          ),
+          suffixIcon: suffix,
+          filled: true,
+          fillColor: const Color(0xFFFCFCFD),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+          border: _inputBorder(_borderColor),
+          enabledBorder: _inputBorder(_borderColor),
+          focusedBorder: _inputBorder(_primaryDark, width: 1.7),
+          errorBorder: _inputBorder(Colors.red, width: 1.35),
+          focusedErrorBorder: _inputBorder(Colors.red, width: 1.7),
+        ),
       ),
     );
   }
 
   Widget _prioritySelector() {
     return Row(children: [
-      _priorityBtn('high', AppStrings.t(context, 'High'), const Color(0xFFE34D4D), const Color(0xFFFFF3F3)),
+      _priorityBtn('high', AppStrings.t(context, 'High'),
+          const Color(0xFFE34D4D), const Color(0xFFFFF3F3)),
       const SizedBox(width: 10),
-      _priorityBtn('medium', AppStrings.t(context, 'Medium'), _primary, const Color(0xFFFFF4EE)),
+      _priorityBtn('medium', AppStrings.t(context, 'Medium'), _primary,
+          const Color(0xFFEFF7FF)),
       const SizedBox(width: 10),
-      _priorityBtn('normal', AppStrings.t(context, 'Normal'), const Color(0xFF2F9E6D), const Color(0xFFF2FBF6)),
+      _priorityBtn('normal', AppStrings.t(context, 'Normal'),
+          const Color(0xFF2F9E6D), const Color(0xFFF2FBF6)),
     ]);
   }
 
@@ -1521,8 +1911,9 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
           decoration: BoxDecoration(
             color: selected ? color : bg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? color : color.withValues(alpha: 0.2), width: 1.5),
-            boxShadow: selected ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))] : [],
+            border: Border.all(
+                color: selected ? color : color.withValues(alpha: 0.2),
+                width: 1.5),
           ),
           child: Center(
             child: Text(label,
@@ -1539,11 +1930,13 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   Widget _locationButtons() {
     return Row(children: [
       Expanded(
-        child: _smallBtn(Icons.my_location_rounded, AppStrings.t(context, 'Detect Location'), _detectLocation),
+        child: _smallBtn(Icons.my_location_rounded,
+            AppStrings.t(context, 'Detect Location'), _detectLocation),
       ),
       const SizedBox(width: 10),
       Expanded(
-        child: _smallBtn(Icons.map_outlined, AppStrings.t(context, 'Select on Map'), _selectOnMap),
+        child: _smallBtn(Icons.map_outlined,
+            AppStrings.t(context, 'Select on Map'), _selectOnMap),
       ),
     ]);
   }
@@ -1552,22 +1945,29 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF2F2F2F),
-          borderRadius: BorderRadius.circular(12),
+          color: _primaryDark,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: _primaryDark.withValues(alpha: 0.16),
+              blurRadius: 12,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, size: 18, color: Colors.white),
           const SizedBox(width: 8),
-          Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+          Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white)),
         ]),
       ),
     );
@@ -1580,25 +1980,48 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     required void Function(String?) onChanged,
     String? Function(String?)? validator,
   }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      items: items,
-      onChanged: onChanged,
-      validator: validator,
-      style: GoogleFonts.inter(fontSize: 14, color: _textDark),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.inter(fontSize: 13, color: _textMuted),
-        filled: true,
-        fillColor: const Color(0xFFFCFCFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _borderColor, width: 1.5)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _primary, width: 2)),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      dropdownColor: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      isExpanded: true,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        validator: validator,
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: _textDark,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: _textMuted,
+          ),
+          filled: true,
+          fillColor: const Color(0xFFFCFCFD),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+          border: _inputBorder(_borderColor),
+          enabledBorder: _inputBorder(_borderColor),
+          focusedBorder: _inputBorder(_primaryDark, width: 1.7),
+          errorBorder: _inputBorder(Colors.red, width: 1.35),
+          focusedErrorBorder: _inputBorder(Colors.red, width: 1.7),
+        ),
+        dropdownColor: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        isExpanded: true,
+      ),
     );
   }
 }

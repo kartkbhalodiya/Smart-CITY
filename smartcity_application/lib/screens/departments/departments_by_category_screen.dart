@@ -10,6 +10,7 @@ class DepartmentsByCategoryScreen extends StatefulWidget {
   final String categoryName;
   final String categoryEmoji;
   final Color categoryBg;
+  final String? categoryAsset;
 
   const DepartmentsByCategoryScreen({
     super.key,
@@ -17,17 +18,48 @@ class DepartmentsByCategoryScreen extends StatefulWidget {
     required this.categoryName,
     required this.categoryEmoji,
     required this.categoryBg,
+    this.categoryAsset,
   });
 
   @override
-  State<DepartmentsByCategoryScreen> createState() => _DepartmentsByCategoryScreenState();
+  State<DepartmentsByCategoryScreen> createState() =>
+      _DepartmentsByCategoryScreenState();
 }
 
-class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScreen> {
-  static const _accent = Color(0xFFFF6B35);
-  static const _dark = Color(0xFF1A1A1A);
+class _DepartmentsByCategoryScreenState
+    extends State<DepartmentsByCategoryScreen> {
+  static const _bg = Color(0xFFF7F8FA);
+  static const _primary = Color(0xFF2F80ED);
+  static const _ink = Color(0xFF0B1020);
+  static const _text = Color(0xFF101828);
+  static const _muted = Color(0xFF5B6B86);
+  static const _line = Color(0xFFEEF2F6);
+
+  static const _categoryAssetMap = {
+    'police': 'assets/images/cat_police.png',
+    'traffic': 'assets/images/cat_traffic.png',
+    'construction': 'assets/images/cat_construction.png',
+    'water': 'assets/images/cat_waste_overflow.png',
+    'electric': 'assets/images/cat_electric.png',
+    'electricity': 'assets/images/cat_electric.png',
+    'garbage': 'assets/images/cat_garbage.png',
+    'road': 'assets/images/cat_roads.png',
+    'roads': 'assets/images/cat_roads.png',
+    'drainage': 'assets/images/cat_drainage.png',
+    'illegal': 'assets/images/cat_illegal.png',
+    'transport': 'assets/images/cat_transportation.png',
+    'transportation': 'assets/images/cat_transportation.png',
+    'cyber': 'assets/images/cat_cyber.png',
+    'other': 'assets/images/cat_other.png',
+  };
+
   List<Map<String, dynamic>> _departments = [];
   bool _loading = true;
+
+  String get _categoryAsset =>
+      widget.categoryAsset ??
+      _categoryAssetMap[widget.categoryKey] ??
+      _categoryAssetMap['other']!;
 
   @override
   void initState() {
@@ -38,67 +70,123 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final res = await ApiService.get(ApiConfig.departments, includeAuth: false);
+      final res =
+          await ApiService.get(ApiConfig.departments, includeAuth: false);
       if (mounted && res['success'] == true) {
         final all = (res['departments'] as List? ?? [])
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
         // Filter by category key
-        final filtered = all.where((d) =>
-            (d['department_type'] ?? '').toString() == widget.categoryKey).toList();
-        setState(() { _departments = filtered; _loading = false; });
+        final filtered = all
+            .where((d) =>
+                (d['department_type'] ?? '').toString() == widget.categoryKey)
+            .toList();
+        setState(() {
+          _departments = filtered;
+          _loading = false;
+        });
         return;
       }
     } catch (_) {}
-    if (mounted) setState(() { _departments = []; _loading = false; });
+    if (mounted) {
+      setState(() {
+        _departments = [];
+        _loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: Column(children: [
-        _topNav(),
-        Expanded(child: _body()),
-      ]),
+      backgroundColor: _bg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+            child: _topNav(),
+          ),
+          Expanded(child: _body()),
+        ]),
+      ),
     );
   }
 
   Widget _topNav() {
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top,
-          left: 8, right: 16, bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+      decoration: _cardDecoration(radius: 24),
       child: Row(children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: _dark),
-          onPressed: () => Navigator.pop(context),
-        ),
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(
-            color: widget.categoryBg,
-            borderRadius: BorderRadius.circular(12),
+        InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _bg,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: _line),
+            ),
+            child: const Icon(Icons.arrow_back_rounded, color: _ink, size: 22),
           ),
-          child: Center(child: Text(widget.categoryEmoji, style: const TextStyle(fontSize: 22))),
         ),
-        const SizedBox(width: 10),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(AppStrings.t(context, widget.categoryName),
-              style: GoogleFonts.poppins(
-                  fontSize: 16, fontWeight: FontWeight.w700,
-                  color: _dark)),
-          Text(_loading ? AppStrings.t(context, 'Loading...') : '${_departments.length} ${AppStrings.t(context, _departments.length == 1 ? 'department' : 'departments')}',
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748b))),
-        ]),
+        const SizedBox(width: 12),
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: _line),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Image.asset(
+            _categoryAsset,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.corporate_fare_rounded,
+              color: _primary,
+              size: 24,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              AppStrings.t(context, widget.categoryName),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: _text,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              _loading
+                  ? AppStrings.t(context, 'Loading...')
+                  : '${_departments.length} ${AppStrings.t(context, _departments.length == 1 ? 'department' : 'departments')}',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _muted,
+              ),
+            ),
+          ]),
+        ),
       ]),
     );
   }
 
   Widget _body() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: _accent));
+      return const Center(child: CircularProgressIndicator(color: _primary));
     }
 
     if (_departments.isEmpty) {
@@ -106,10 +194,10 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
     }
 
     return RefreshIndicator(
-      color: _accent,
+      color: _primary,
       onRefresh: _load,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
         itemCount: _departments.length,
         itemBuilder: (_, i) => _deptCard(_departments[i]),
       ),
@@ -120,47 +208,56 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.fromLTRB(32, 46, 32, 32),
         child: Column(children: [
-          const SizedBox(height: 60),
           Container(
-            width: 110, height: 110,
-            decoration: BoxDecoration(color: widget.categoryBg, shape: BoxShape.circle),
-            child: Center(child: Text(widget.categoryEmoji, style: const TextStyle(fontSize: 54))),
-          ),
-          Container(
-            width: 55, height: 5,
-            margin: const EdgeInsets.only(top: 8),
+            width: 124,
+            height: 124,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(4),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: _line),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              _categoryAsset,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.corporate_fare_rounded,
+                color: _primary,
+                size: 52,
+              ),
             ),
           ),
           const SizedBox(height: 28),
           Text(AppStrings.t(context, 'No Departments Found'),
-              style: GoogleFonts.poppins(
-                  fontSize: 20, fontWeight: FontWeight.w700, color: _dark)),
-          const SizedBox(height: 8),
-          Text('${AppStrings.t(context, 'No')} ${widget.categoryName} ${AppStrings.t(context, 'departments')}\n${AppStrings.t(context, 'have been added by the admin yet.')}',
-              textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                  fontSize: 14, color: const Color(0xFF64748b), height: 1.5)),
+                  fontSize: 22, fontWeight: FontWeight.w800, color: _text)),
+          const SizedBox(height: 8),
+          Text(
+              '${AppStrings.t(context, 'No')} ${widget.categoryName} ${AppStrings.t(context, 'departments')}\n${AppStrings.t(context, 'have been added by the admin yet.')}',
+              textAlign: TextAlign.center,
+              style:
+                  GoogleFonts.inter(fontSize: 14, color: _muted, height: 1.45)),
           const SizedBox(height: 28),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF1EB),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFFD9CC)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _line),
             ),
             child: Row(children: [
-              const Text('ℹ️', style: TextStyle(fontSize: 20)),
+              const Icon(Icons.info_outline_rounded, color: _primary, size: 20),
               const SizedBox(width: 12),
-              Expanded(child: Text(
-                  AppStrings.t(context, 'Once the admin adds departments for this category, they will appear here.'),
-                  style: GoogleFonts.inter(
-                      fontSize: 12, color: _accent, height: 1.5))),
+              Expanded(
+                  child: Text(
+                      AppStrings.t(context,
+                          'Once the admin adds departments for this category, they will appear here.'),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: _muted, height: 1.45))),
             ]),
           ),
         ]),
@@ -179,106 +276,148 @@ class _DepartmentsByCategoryScreenState extends State<DepartmentsByCategoryScree
     final location = [city, state].where((s) => s.isNotEmpty).join(', ');
 
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.departmentDetail, arguments: d),
+      onTap: () => Navigator.pushNamed(
+        context,
+        AppRoutes.departmentDetail,
+        arguments: {
+          ...d,
+          'category_asset': _categoryAsset,
+          'category_name': widget.categoryName,
+        },
+      ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 3))],
-        ),
+        decoration: _cardDecoration(radius: 22),
         child: Row(children: [
-          // Left pastel emoji panel
-          Container(
-            width: 80,
-            height: 100,
-            decoration: BoxDecoration(
-              color: widget.categoryBg,
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+          ClipRRect(
+            borderRadius: const BorderRadius.horizontal(
+              left: Radius.circular(22),
             ),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(widget.categoryEmoji, style: const TextStyle(fontSize: 36)),
-              const SizedBox(height: 4),
-              Container(
-                width: 28, height: 3,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              width: 86,
+              height: 116,
+              child: Image.asset(
+                _categoryAsset,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => Container(
+                  color: _primary.withValues(alpha: 0.09),
+                  child: const Icon(
+                    Icons.corporate_fare_rounded,
+                    color: _primary,
+                    size: 32,
+                  ),
                 ),
               ),
-            ]),
+            ),
           ),
 
           // Right content
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name,
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, fontWeight: FontWeight.w700,
-                        color: _dark)),
-                if (assignedAdmin.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    const Icon(Icons.person_outline_rounded, size: 13, color: Color(0xFF64748b)),
-                    const SizedBox(width: 4),
-                    Flexible(child: Text(assignedAdmin,
-                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b)))),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: _text)),
+                    if (assignedAdmin.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(children: [
+                        const Icon(Icons.person_outline_rounded,
+                            size: 13, color: _muted),
+                        const SizedBox(width: 4),
+                        Flexible(
+                            child: Text(assignedAdmin,
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: _muted))),
+                      ]),
+                    ],
+                    if (location.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Row(children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 13, color: _muted),
+                        const SizedBox(width: 4),
+                        Flexible(
+                            child: Text(location,
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: _muted))),
+                      ]),
+                    ],
+                    if (address.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.home_outlined,
+                                size: 13, color: _muted),
+                            const SizedBox(width: 4),
+                            Flexible(
+                                child: Text(address,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                        fontSize: 11, color: _muted))),
+                          ]),
+                    ],
+                    const SizedBox(height: 8),
+                    // Contact chips
+                    Row(children: [
+                      if (phone.isNotEmpty)
+                        _chip(Icons.phone_rounded, phone,
+                            const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
+                      if (phone.isNotEmpty && email.isNotEmpty)
+                        const SizedBox(width: 6),
+                      if (email.isNotEmpty)
+                        Flexible(
+                            child: _chip(Icons.email_outlined, email, _primary,
+                                const Color(0xFFEFF7FF))),
+                    ]),
                   ]),
-                ],
-                if (location.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Row(children: [
-                    const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF64748b)),
-                    const SizedBox(width: 4),
-                    Flexible(child: Text(location,
-                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748b)))),
-                  ]),
-                ],
-                if (address.isNotEmpty) ...[
-                  const SizedBox(height: 3),
-                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Icon(Icons.home_outlined, size: 13, color: Color(0xFF64748b)),
-                    const SizedBox(width: 4),
-                    Flexible(child: Text(address,
-                        maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8)))),
-                  ]),
-                ],
-                const SizedBox(height: 8),
-                // Contact chips
-                Row(children: [
-                  if (phone.isNotEmpty)
-                    _chip(Icons.phone_rounded, phone, const Color(0xFF22C55E), const Color(0xFFDCFCE7)),
-                  if (phone.isNotEmpty && email.isNotEmpty) const SizedBox(width: 6),
-                  if (email.isNotEmpty)
-                    Flexible(child: _chip(Icons.email_outlined, email, _accent, const Color(0xFFFFF1EB))),
-                ]),
-              ]),
             ),
           ),
 
           // Arrow
           const Padding(
             padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF94A3B8)),
+            child: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: _muted,
+            ),
           ),
         ]),
       ),
     );
   }
 
+  BoxDecoration _cardDecoration({required double radius}) {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: _line),
+    );
+  }
+
   Widget _chip(IconData icon, String label, Color color, Color bg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 11, color: color),
         const SizedBox(width: 4),
-        Flexible(child: Text(label,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: color))),
+        Flexible(
+            child: Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                    fontSize: 10, fontWeight: FontWeight.w600, color: color))),
       ]),
     );
   }

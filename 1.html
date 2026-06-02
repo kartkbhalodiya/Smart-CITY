@@ -1,0 +1,167 @@
+
+<!doctype html><html ng-app="PDListing"><head><meta name="robots" content="noindex, nofollow"/><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><script src="https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.0-dev.4/quill.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script><script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/><style>@font-face {
+                font-family: "appicon";
+                src: url("/docs/assets/fonts/appicon.eot?1779881733");
+                src: url("/docs/assets/fonts/appicon.eot?1779881733#iefix") format("embedded-opentype"), url("/docs/assets/fonts/appicon.ttf?1779881733") format("truetype"), url("/docs/assets/fonts/appicon.woff?1779881733") format("woff");
+                font-weight: normal;
+                font-style: normal;
+            }
+            .mLoader {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                position: relative;
+                animation: rotate 1.5s linear infinite;
+            }
+
+            .mLoader::before,
+            .mLoader::after {
+                content: "";
+                box-sizing: border-box;
+                position: absolute;
+                inset: 0px;
+                border-radius: 50%;
+                border: 4px solid #e0e0e0;
+                animation: clipAnimation 2s linear infinite;
+            }
+
+            .mLoader::after {
+                transform: rotate3d(90, 90, 0, 180deg);
+                border-color: #0055ED;
+            }
+
+            @keyframes rotate {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @keyframes clipAnimation {
+                0% {
+                    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%);
+                }
+
+                100% {
+                    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%);
+                }
+            }</style><script src="/docs/lib/bowser.js"></script><script>var staticUrl = "https://cdn.presentations.ai";
+                     var serverUrl = "https://app.presentations.ai";
+                     var appBaseURL = "https://app.presentations.ai" + "/docs/";
+                     var appStaticURL = "https://cdn.presentations.ai/docs/htmlAssets/assets/resources/";
+                     var user = "[object Object]";
+                     var userId = "29837800";
+                     var userMail = "kartikbhalodiya1@gmail.com";
+                     var username = "Kartik";
+                     var lastName = "";
+                     var userName = username + " " + lastName;
+                     var product = "Presentations.AI";
+                     var corporateId = parseInt("203426");
+                     var endDate = "March 31, 2027";
+                     var userType = parseInt("1");
+                     var unixtime = "2026-05-28T00:00:00.000Z";
+                     var userImg = "";
+                     var subType = "Trial";
+                     var userPaymentType = "1";
+                     var corpPaymentType = "203426";
+                     var packageId = "20";
+                     var jsonList = null;
+                     var S3_Base_Url = "https://qcstatic.s3.amazonaws.com";
+                     var meetingUrl = "";
+                     var docList, sharedDocList;
+                     var corporateAdminId;
+                     var stripeKey = "pk_live_fz3KK9qLupE5lBqD68r2mEyd";
+                     var razorPayKey = "rzp_live_lbqmT3YHgd7DwL";
+                     var exportUrl = "";
+                     var blockedFeatures = "analytics,exporttoppt,exporttopdf,exporttoimage,customfont,customtheme";
+                     var widgetUrl = "https://app.presentations.ai/view/";
+                     var primaryUrl = "https://cdn.presentations.ai";
+                     var planInitialAmount = 499;
+                     var phoneNo = "";
+                     var twitter = "";
+                     var facebook = "";
+                     var linkedIn = "";
+                     var isFirstLogin = "true" === "true" ? true : false;
+                     var helpTopics = "" != "" ? decodeURIComponent("") : null;
+                     var funding = "";
+                     var salesId = "";
+                     var analyticsUrl = "https://reports.presentations.ai/docs";
+                     var paymentDetails;
+                     var ispdk = userMail.indexOf("deck.in") == -1 ? (userMail.indexOf("dqa") == 0 ? true : userMail.indexOf("pitchdeck.io") == -1 ? false : true) : true;
+                     var icomid;
+                     var isApp = false;
+                     var loginType = "google";
+                     var importUrl = "";
+                     var isHeadlessSource = "msteam" === "" ? true : false;
+                     var isHeadlessShowshare = "true" === "" ? true : false;
+                     var nextUrl = decodeURIComponent("");
+                     var uid = ""; //pass uid in get workspace // data is not empty and uid is not null-- no create
+                     var name = "";
+                     var source = "";
+                     var socket = null;
+
+                     var userImg = "";
+                     var jsonList = null;
+                     var S3_Base_Url = "https://qcstatic.s3.amazonaws.com";
+                     var docList, sharedDocList;
+                     var corporateAdminId;
+                     var planInitialAmount = 499;
+                     var helpTopics = "" != "" ? decodeURIComponent("") : null;
+                     var funding = "";
+                     var salesId = "";
+                     var paymentDetails;
+                     var ispdk = userMail.indexOf("deck.in") == -1 ? (userMail.indexOf("dqa") == 0 ? true : userMail.indexOf("pitchdeck.io") == -1 ? false : true) : true;
+                     var icomid;
+                     var isApp = false;
+                     var isHeadlessSource = "msteam" === "" ? true : false;
+                     var isHeadlessShowshare = "true" === "" ? true : false;
+                     var isWebApp = true;
+                     var isWidget = false;
+                     var embed = false;
+                     var docId = "";
+
+                     var stt = new Date().getTime();
+                     var url = window.location.href;
+                     var ssid = "ggJDhq33ssEDYYTXfdHMpuYO4EcR2kc1";
+                     var packageId = "";
+                     var unixtime = "";
+                     var meetingid = 0;
+                     var isMeeting = false;
+                     var meetingRole = "";
+                     var ath = false;
+                     var isDemo = false;
+                     var demoDocID = 0;
+                     var userName = "";
+                     var autoGenerate = "true" === "" ? true : false;
+                     var ispptexport = "true" === "" ? true : false;
+                     var isTesting = "true" === "" ? true : false;
+                     var template = false;
+                     var GLOBAL_NEW_DOC = "" === "false" ? false : true;
+                     var GLOBAL_IS_ADD_NEW_PD_SECTION = "";
+                     var widgetAutoPlay = "true" === "" ? true : false;
+                     var widgetAutoLoop = "true" === "" ? true : false;
+                     var widgetAnimation = "true" === "" ? true : false;
+                     var presentMode;
+                     var appcode = "PAI";
+                     var GLOBAL_DOC_NAME = "My Presentation";
+                     var IS_API_SERVER = "" === "true";
+
+                     var splashUrl = "";
+                     var splashForm = "";
+
+</script><script defer="defer" src="https://cdn.presentations.ai/docs/brand/pai/pai.js?4b4d3f35e4f44cb44cec"></script><script defer="defer" src="https://cdn.presentations.ai/docs/libv2/js-apputils.js?4b4d3f35e4f44cb44cec"></script><script defer="defer" src="https://cdn.presentations.ai/docs/libv2/js-chart-new.js?4b4d3f35e4f44cb44cec"></script><script defer="defer" src="https://cdn.presentations.ai/docs/libv2/lodash.min.js?4b4d3f35e4f44cb44cec"></script><script defer="defer" src="https://cdn.presentations.ai/docs/libv2/lottie.js?4b4d3f35e4f44cb44cec"></script><script defer="defer" src="https://cdn.presentations.ai/docs/bundle.1d2853b0720b1aacddd0.js"></script><link href="https://cdn.presentations.ai/docs/brand/pai/pai.ico" rel="icon" type="image/x-icon"><link href="https://cdn.presentations.ai/docs/brand/pai/pai.css?4b4d3f35e4f44cb44cec" rel="stylesheet"><link href="https://cdn.presentations.ai/docs/libv2/chartnew.css?4b4d3f35e4f44cb44cec" rel="stylesheet"><link href="https://cdn.presentations.ai/docs/libv2/fontListCss.css?4b4d3f35e4f44cb44cec" rel="stylesheet"><link href="https://cdn.presentations.ai/docs/main.4b4d3f35e4f44cb44cec.css" rel="stylesheet"></head><body><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=" +tagmanagerid height="0" width="0" style="display: none; visibility: hidden"></iframe></noscript><div id="root"></div><div id="rootmodel" class="z-50 absolute top-0 left-0"></div><div id="pdloader"></div><div id="bundleLoader" style="position: absolute; left: 0; top: 0; background: #ffffff; width: 100vw; height: 100vh; max-height: 100svh; position: absolute; top: 0px; left: 0px; overflow: hidden; display: flex; justify-content: center; align-items: center; z-index: 999999"><div style="background: #ffffff; display: flex; justify-content: center; align-items: center; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; max-height: 100svh"><div id="bundleLoaderProgressBar" class="mLoader"></div></div><img id="appBaseLogo" style="width: auto; height: 32px; position: fixed; bottom: 40px; left: 0;right:0;margin:auto"/></div><div id="nudge-root"></div><script>document.getElementById("appBaseLogo").src = "/docs/assets/images/brandicons/applogo.png?v=applogo_v2";
+            if (window.isMobileApp) {
+                document.getElementById("bundleLoaderProgressBar").style.display = "none";
+            }</script><script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script><script>var socket = io.connect("https://app.presentations.ai", {
+                transports: ["polling", "websocket"],
+                closeOnBeforeunload: false,
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: Infinity,
+            });
+            socket.emit("loggedin", { email: userMail });</script><noscript><style>body {
+                    background-color: white;
+                }</style><div style="background-color: white; position: absolute; left: 50%; top: 50%; -webkit-transform: translate(-50%, -50%); -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%)"><div style="text-align: center;object-fit: contain; display:iflex;max-width:100vh;height:60px;background-image:url(/docs/noscript);background-repeat: no-repeat;"></div><p>It seems like scripting is disabled on your browser. Click here to see how to &nbsp;<a href="https://www.enable-javascript.com">Enable Javascript on your browser</a></p></div></noscript></body></html>

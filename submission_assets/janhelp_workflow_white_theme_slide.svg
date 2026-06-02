@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">JanHelp smart city complaint workflow diagram</title>
+  <desc id="desc">A white-theme slide diagram showing JanHelp complaint intake, AI verification, duplicate check, nearest department assignment, tracking, resolution, and reopen workflow.</desc>
+
+  <defs>
+    <linearGradient id="orangeGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff7a3d"/>
+      <stop offset="100%" stop-color="#f04f23"/>
+    </linearGradient>
+    <linearGradient id="blueGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2f80ed"/>
+      <stop offset="100%" stop-color="#1559c7"/>
+    </linearGradient>
+    <linearGradient id="greenGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#20c997"/>
+      <stop offset="100%" stop-color="#0d8f6f"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.13"/>
+    </filter>
+    <filter id="smallShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="9" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.11"/>
+    </filter>
+    <marker id="arrowOrange" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L12,7 L2,12 Z" fill="#f15a24"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L12,7 L2,12 Z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #e5e7eb; stroke-width: 2; filter: url(#softShadow); }
+      .card { fill: #ffffff; stroke: #e5e7eb; stroke-width: 2; filter: url(#smallShadow); }
+      .muted-card { fill: #f8fafc; stroke: #e2e8f0; stroke-width: 2; }
+      .title { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 58px; font-weight: 800; fill: #0f172a; letter-spacing: 0; }
+      .subtitle { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 26px; font-weight: 500; fill: #475569; letter-spacing: 0; }
+      .section { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 28px; font-weight: 800; fill: #0f172a; letter-spacing: 0; }
+      .step-title { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 25px; font-weight: 800; fill: #111827; letter-spacing: 0; }
+      .step-copy { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 18px; font-weight: 500; fill: #64748b; letter-spacing: 0; }
+      .tiny { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #64748b; letter-spacing: 0; }
+      .label { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 18px; font-weight: 800; fill: #ffffff; letter-spacing: 0; }
+      .metric { font-family: Inter, Segoe UI, Arial, sans-serif; font-size: 24px; font-weight: 800; fill: #0f172a; letter-spacing: 0; }
+      .line-orange { fill: none; stroke: #f15a24; stroke-width: 5; stroke-linecap: round; marker-end: url(#arrowOrange); }
+      .line-blue { fill: none; stroke: #2563eb; stroke-width: 4; stroke-linecap: round; marker-end: url(#arrowBlue); }
+      .thin { fill: none; stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 8 8; }
+      .icon-stroke { fill: none; stroke: #ffffff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-dark { fill: none; stroke: #0f172a; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1920" height="1080"/>
+  <circle cx="1680" cy="150" r="180" fill="#fff3ec"/>
+  <circle cx="1820" cy="875" r="230" fill="#eef6ff"/>
+  <circle cx="180" cy="960" r="190" fill="#effcf7"/>
+
+  <rect class="panel" x="78" y="58" width="1764" height="964" rx="34"/>
+
+  <g transform="translate(128 96)">
+    <rect x="0" y="0" width="102" height="102" rx="24" fill="url(#orangeGradient)"/>
+    <path class="icon-stroke" d="M30 67 L30 41 L51 26 L72 41 L72 67"/>
+    <path class="icon-stroke" d="M39 67 L39 51 L63 51 L63 67"/>
+  </g>
+  <text class="title" x="252" y="133">JanHelp Real Civic Workflow</text>
+  <text class="subtitle" x="255" y="177">From citizen complaint to verified department action, tracking, resolution, and reopen.</text>
+
+  <g transform="translate(1328 92)">
+    <rect x="0" y="0" width="442" height="112" rx="26" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/>
+    <text class="tiny" x="28" y="38">CURRENT PRODUCT CORE</text>
+    <text class="metric" x="28" y="72">Verify -> Assign -> Track</text>
+    <text class="metric" x="28" y="99">Resolve -> Reopen</text>
+  </g>
+
+  <text class="section" x="128" y="272">Citizen Intake</text>
+  <text class="section" x="690" y="272">Trust Engine</text>
+  <text class="section" x="1248" y="272">City Operations</text>
+
+  <g transform="translate(126 310)">
+    <rect class="card" width="342" height="148" rx="24"/>
+    <circle cx="55" cy="56" r="33" fill="url(#orangeGradient)"/>
+    <path class="icon-stroke" d="M42 51 h26 M42 63 h18 M42 39 h26"/>
+    <text class="step-title" x="105" y="50">Manual Form</text>
+    <text class="step-copy" x="105" y="82">Category, location,</text>
+    <text class="step-copy" x="105" y="108">proof and contact.</text>
+    <rect x="24" y="112" width="118" height="24" rx="12" fill="#fff0e8"/>
+    <text class="tiny" x="42" y="130" fill="#f15a24">Fast path</text>
+  </g>
+
+  <g transform="translate(126 488)">
+    <rect class="card" width="342" height="148" rx="24"/>
+    <circle cx="55" cy="56" r="33" fill="url(#blueGradient)"/>
+    <path class="icon-stroke" d="M37 44 h36 v24 h-21 l-13 12 v-12 h-2 z"/>
+    <text class="step-title" x="105" y="50">AI Chat</text>
+    <text class="step-copy" x="105" y="82">Natural language</text>
+    <text class="step-copy" x="105" y="108">to structured data.</text>
+    <rect x="24" y="112" width="142" height="24" rx="12" fill="#eef6ff"/>
+    <text class="tiny" x="42" y="130" fill="#2563eb">Guided intake</text>
+  </g>
+
+  <g transform="translate(126 666)">
+    <rect class="card" width="342" height="148" rx="24"/>
+    <circle cx="55" cy="56" r="33" fill="url(#greenGradient)"/>
+    <path class="icon-stroke" d="M55 34 v38 M43 48 c0 21 24 21 24 0 M38 72 c9 16 25 16 34 0"/>
+    <text class="step-title" x="105" y="50">Voice / Call</text>
+    <text class="step-copy" x="105" y="82">Accessible intake</text>
+    <text class="step-copy" x="105" y="108">with 112 guidance.</text>
+    <rect x="24" y="112" width="162" height="24" rx="12" fill="#e9fbf5"/>
+    <text class="tiny" x="42" y="130" fill="#0d8f6f">Emergency aware</text>
+  </g>
+
+  <path class="line-orange" d="M492 386 C548 386 564 430 622 430"/>
+  <path class="line-orange" d="M492 562 C548 562 564 430 622 430"/>
+  <path class="line-orange" d="M492 742 C548 742 564 430 622 430"/>
+
+  <g transform="translate(622 326)">
+    <rect class="card" width="360" height="176" rx="26"/>
+    <circle cx="55" cy="58" r="34" fill="#fff0e8" stroke="#fdba74" stroke-width="2"/>
+    <path class="icon-dark" d="M39 58 l11 12 l24 -29"/>
+    <text class="step-title" x="108" y="52">AI Proof Verify</text>
+    <text class="step-copy" x="108" y="84">Image quality check plus</text>
+    <text class="step-copy" x="108" y="110">Gemini proof matching.</text>
+    <rect x="30" y="126" width="300" height="28" rx="14" fill="#f8fafc"/>
+    <rect x="30" y="126" width="214" height="28" rx="14" fill="#fed7aa"/>
+    <text class="tiny" x="46" y="146">Blocks fake or weak evidence</text>
+  </g>
+
+  <path class="line-blue" d="M982 414 C1038 414 1055 414 1110 414"/>
+
+  <g transform="translate(1110 326)">
+    <rect class="card" width="360" height="176" rx="26"/>
+    <circle cx="55" cy="58" r="34" fill="#eef6ff" stroke="#93c5fd" stroke-width="2"/>
+    <path class="icon-dark" d="M42 46 h26 v26 h-26 z M53 35 h26 v26 h-26 z"/>
+    <text class="step-title" x="108" y="52">Duplicate Check</text>
+    <text class="step-copy" x="108" y="84">Radius and category logic</text>
+    <text class="step-copy" x="108" y="110">prevents repeated tickets.</text>
+    <g transform="translate(30 130)">
+      <rect width="88" height="28" rx="14" fill="#dbeafe"/>
+      <text class="tiny" x="22" y="20" fill="#2563eb">50m</text>
+      <rect x="102" width="88" height="28" rx="14" fill="#ecfdf5"/>
+      <text class="tiny" x="127" y="20" fill="#0d8f6f">5m</text>
+      <rect x="204" width="124" height="28" rx="14" fill="#f8fafc"/>
+      <text class="tiny" x="220" y="20">Masked ID</text>
+    </g>
+  </g>
+
+  <path class="line-orange" d="M1470 414 C1523 414 1537 414 1590 414"/>
+
+  <g transform="translate(1590 326)">
+    <rect class="card" width="220" height="176" rx="26"/>
+    <circle cx="50" cy="58" r="34" fill="#e9fbf5" stroke="#86efac" stroke-width="2"/>
+    <path class="icon-dark" d="M50 32 c-14 0 -25 11 -25 25 c0 21 25 47 25 47 s25 -26 25 -47 c0 -14 -11 -25 -25 -25 z M50 50 h1"/>
+    <text class="step-title" x="92" y="54">Nearest</text>
+    <text class="step-title" x="92" y="84">Dept</text>
+    <text class="step-copy" x="30" y="124">City -> state -></text>
+    <text class="step-copy" x="30" y="150">global fallback.</text>
+  </g>
+
+  <path class="thin" d="M1148 535 H1750"/>
+
+  <g transform="translate(590 590)">
+    <rect class="muted-card" width="298" height="190" rx="24"/>
+    <text class="step-title" x="30" y="45">User / Guest</text>
+    <text class="step-copy" x="30" y="78">Complaint ID tracking</text>
+    <text class="step-copy" x="30" y="106">department phone, email,</text>
+    <text class="step-copy" x="30" y="134">map and timestamps.</text>
+    <rect x="30" y="152" width="142" height="26" rx="13" fill="#fff0e8"/>
+    <text class="tiny" x="48" y="171" fill="#f15a24">Live status</text>
+  </g>
+
+  <g transform="translate(928 590)">
+    <rect class="muted-card" width="298" height="190" rx="24"/>
+    <text class="step-title" x="30" y="45">Department</text>
+    <text class="step-copy" x="30" y="78">Queue, field action,</text>
+    <text class="step-copy" x="30" y="106">status update and</text>
+    <text class="step-copy" x="30" y="134">resolution proof.</text>
+    <rect x="30" y="152" width="154" height="26" rx="13" fill="#dbeafe"/>
+    <text class="tiny" x="48" y="171" fill="#2563eb">SLA visible</text>
+  </g>
+
+  <g transform="translate(1266 590)">
+    <rect class="muted-card" width="298" height="190" rx="24"/>
+    <text class="step-title" x="30" y="45">City Admin</text>
+    <text class="step-copy" x="30" y="78">Dashboards, heatmaps,</text>
+    <text class="step-copy" x="30" y="106">department workload</text>
+    <text class="step-copy" x="30" y="134">and civic hotspots.</text>
+    <rect x="30" y="152" width="178" height="26" rx="13" fill="#ecfdf5"/>
+    <text class="tiny" x="48" y="171" fill="#0d8f6f">Planning layer</text>
+  </g>
+
+  <g transform="translate(1604 590)">
+    <rect class="muted-card" width="206" height="190" rx="24"/>
+    <text class="step-title" x="28" y="45">Reopen</text>
+    <text class="step-copy" x="28" y="78">If solved but</text>
+    <text class="step-copy" x="28" y="106">not fixed.</text>
+    <text class="step-copy" x="28" y="134">7 days + proof.</text>
+    <rect x="28" y="152" width="128" height="26" rx="13" fill="#fee2e2"/>
+    <text class="tiny" x="46" y="171" fill="#dc2626">Accountable</text>
+  </g>
+
+  <path class="line-blue" d="M888 686 H928"/>
+  <path class="line-blue" d="M1226 686 H1266"/>
+  <path class="line-blue" d="M1564 686 H1604"/>
+
+  <g transform="translate(126 874)">
+    <rect x="0" y="0" width="1684" height="96" rx="26" fill="#0f172a"/>
+    <text class="label" x="34" y="38">JanHelp 2.0 missing advanced scope</text>
+    <text class="step-copy" x="34" y="70" fill="#cbd5e1">WhatsApp bot, IVR, official emergency handoff, field officer app, SLA escalation, fraud checks, predictive maintenance, public transparency.</text>
+    <g transform="translate(1320 22)">
+      <rect x="0" y="0" width="314" height="52" rx="18" fill="url(#orangeGradient)"/>
+      <text class="label" x="28" y="34">Civic response network</text>
+    </g>
+  </g>
+</svg>

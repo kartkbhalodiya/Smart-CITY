@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -16,7 +15,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   static const _accent = Color(0xFFFF6B35);
 
   late final AnimationController _bgController;
@@ -25,11 +25,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   late final AnimationController _pulseController;
   late final AnimationController _quoteController;
 
-  late final Animation<double> _logoScale;
-  late final Animation<double> _logoFade;
-  late final Animation<double> _titleFade;
-  late final Animation<Offset> _titleSlide;
-  late final Animation<double> _pulseScale;
   late final Animation<double> _quoteOpacity;
 
   int _quoteIndex = 0;
@@ -71,26 +66,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       duration: const Duration(milliseconds: 550),
     );
 
-    _logoScale = Tween<double>(begin: 0.74, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
-    );
-
-    _logoFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeOut),
-    );
-
-    _titleFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeIn),
-    );
-
-    _titleSlide = Tween<Offset>(begin: const Offset(0, .18), end: Offset.zero).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
-    );
-
-    _pulseScale = Tween<double>(begin: .96, end: 1.04).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     _quoteOpacity = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _quoteController, curve: Curves.easeInOut),
     );
@@ -124,15 +99,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     if (!allGranted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => PermissionScreen(
+        AppRoutes.smoothRoute(
+          const RouteSettings(name: 'permission'),
+          (_) => PermissionScreen(
             onDone: (BuildContext permContext) async {
-              final authProvider = Provider.of<AuthProvider>(permContext, listen: false);
+              final authProvider =
+                  Provider.of<AuthProvider>(permContext, listen: false);
               await authProvider.loadUser();
               if (!permContext.mounted) return;
+              final nextRoute = authProvider.isAuthenticated
+                  ? AppRoutes.dashboardForRole(authProvider.user?.role)
+                  : AppRoutes.login;
               Navigator.pushReplacementNamed(
                 permContext,
-                authProvider.isAuthenticated ? AppRoutes.userDashboard : AppRoutes.login,
+                nextRoute,
               );
             },
           ),
@@ -141,7 +121,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       return;
     }
 
-    Navigator.pushReplacementNamed(context, isAuth ? AppRoutes.userDashboard : AppRoutes.login);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    Navigator.pushReplacementNamed(
+      context,
+      isAuth
+          ? AppRoutes.dashboardForRole(authProvider.user?.role)
+          : AppRoutes.login,
+    );
   }
 
   Future<bool> _checkPermissions() async {
@@ -150,7 +136,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       final cam = await Permission.camera.status;
       final notif = await Permission.notification.status;
       final photos = await Permission.photos.status;
-      return loc.isGranted && cam.isGranted && notif.isGranted && photos.isGranted;
+      return loc.isGranted &&
+          cam.isGranted &&
+          notif.isGranted &&
+          photos.isGranted;
     } catch (_) {
       return false;
     }

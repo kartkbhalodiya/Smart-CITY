@@ -95,6 +95,25 @@ flutter:
 
   assets:
     - assets/images/logo.png
+    - assets/images/login_hero_illustration.png
+    - assets/images/forgot_password_bg.png
+    - assets/images/otp_verify_bg.png
+    - assets/images/track_status_121826_bg.png
+    - assets/images/register_122842_bg.png
+    - assets/images/guest_dash_hero.png
+    - assets/images/guest_dash_history.png
+    - assets/images/cat_police.png
+    - assets/images/cat_traffic.png
+    - assets/images/cat_construction.png
+    - assets/images/cat_electric.png
+    - assets/images/cat_garbage.png
+    - assets/images/cat_roads.png
+    - assets/images/cat_drainage.png
+    - assets/images/cat_illegal.png
+    - assets/images/cat_transportation.png
+    - assets/images/cat_cyber.png
+    - assets/images/cat_other.png
+    - assets/images/cat_waste_overflow.png
     - assets/images/login_bg.jpg
     - assets/images/janhelp_icon.png
     - web/favicon.png

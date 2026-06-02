@@ -7,6 +7,7 @@ class User {
   final String? token;
   final String? mobileNo;
   final String? aadhaarNumber;
+  final String role;
 
   User({
     required this.id,
@@ -17,6 +18,7 @@ class User {
     this.token,
     this.mobileNo,
     this.aadhaarNumber,
+    this.role = 'citizen',
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -26,8 +28,14 @@ class User {
       // Inject profile fields into the user part for persistence
       userPart['mobile_no'] = json['mobile_no'];
       userPart['aadhaar_number'] = json['aadhaar_number'];
+      userPart['role'] = json['role'] ?? userPart['role'];
       return User.fromJson(userPart);
     }
+
+    final rawRole = (json['role'] ?? json['user_role'] ?? 'citizen')
+        .toString()
+        .trim()
+        .toLowerCase();
 
     return User(
       id: json['id'] ?? 0,
@@ -38,6 +46,7 @@ class User {
       token: json['token'],
       mobileNo: json['mobile_no'],
       aadhaarNumber: json['aadhaar_number'],
+      role: rawRole.isEmpty ? 'citizen' : rawRole,
     );
   }
 
@@ -51,10 +60,15 @@ class User {
       'token': token,
       'mobile_no': mobileNo,
       'aadhaar_number': aadhaarNumber,
+      'role': role,
     };
   }
 
   String get fullName => '$firstName $lastName'.trim();
+  bool get isSuperAdmin => role == 'superadmin';
+  bool get isCityAdmin => role == 'city_admin';
+  bool get isDepartmentAdmin => role == 'department';
+  bool get isAdmin => isSuperAdmin || isCityAdmin || isDepartmentAdmin;
 }
 
 class UserProfile {

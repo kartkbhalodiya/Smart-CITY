@@ -21,6 +21,22 @@ class ApiConfig {
 
   // Dashboard Endpoints
   static const String dashboardStats = '$baseUrl/dashboard/stats/';
+  static const String superAdminOverview = '$baseUrl/admin/super/overview/';
+  static const String cityAdminOverview = '$baseUrl/admin/city/overview/';
+  static const String departmentAdminOverview =
+      '$baseUrl/admin/department/overview/';
+  static String adminResource(String resource) =>
+      '$baseUrl/admin/mobile/$resource/';
+  static String adminResourceDetail(String resource, int id) =>
+      '$baseUrl/admin/mobile/$resource/$id/';
+  static String adminComplaintStatus(int id) =>
+      '$baseUrl/admin/mobile/complaints/$id/status/';
+  static String adminDepartmentDetail(int id) =>
+      '$baseUrl/admin/mobile/departments/$id/detail/';
+  static String adminCitizenDetail(int id) =>
+      '$baseUrl/admin/mobile/citizens/$id/detail/';
+  static const String adminHeatmap = '$baseUrl/admin/mobile/heatmap/';
+  static const String adminChangePassword = '$baseUrl/admin/mobile/password/';
 
   // Complaint Endpoints
   static const String complaints = '$baseUrl/complaints/';

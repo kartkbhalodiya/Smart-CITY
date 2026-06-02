@@ -13,6 +13,16 @@ class AuthProvider with ChangeNotifier {
   String? get error => _error;
   bool get isAuthenticated => _isAuthenticated;
 
+  User? _parseResponseUser(Map<String, dynamic> response) {
+    final userData = response['user'];
+    if (userData is! Map) {
+      return null;
+    }
+    final normalized = Map<String, dynamic>.from(userData);
+    normalized['role'] = response['role'] ?? normalized['role'] ?? 'citizen';
+    return User.fromJson(normalized);
+  }
+
   Future<void> loadUser() async {
     _user = await AuthService.restoreSession();
     _isAuthenticated = await AuthService.isAuthenticated();
@@ -37,7 +47,8 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> loginWithPassword(String identifier, String password) async {
+  Future<Map<String, dynamic>> loginWithPassword(
+      String identifier, String password) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -46,7 +57,7 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     if (response['success'] == true) {
-      if (response['user'] != null) _user = User.fromJson(response['user']);
+      _user = _parseResponseUser(response) ?? _user;
       _isAuthenticated = true;
       notifyListeners();
     } else {
@@ -66,7 +77,7 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     if (response['success'] == true) {
-      _user = User.fromJson(response['user']);
+      _user = _parseResponseUser(response) ?? _user;
       _isAuthenticated = true;
       notifyListeners();
     } else {
@@ -86,9 +97,7 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     if (response['success'] == true) {
-      if (response['user'] != null) {
-        _user = User.fromJson(response['user']);
-      }
+      _user = _parseResponseUser(response) ?? _user;
       _isAuthenticated = true;
       notifyListeners();
       return true;
