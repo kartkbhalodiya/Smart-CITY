@@ -907,8 +907,7 @@ class _UserTrackScreenState extends State<UserTrackScreen>
                         const SizedBox(width: 8),
                       ],
                       // Reopen Button
-                      if (complaint.workStatus == 'solved' ||
-                          complaint.workStatus == 'resolved') ...[
+                      if (complaint.canReopen == true) ...[
                         GestureDetector(
                           onTap: () => _showReopenDialog(context, complaint),
                           child: Container(

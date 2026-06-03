@@ -1,6 +1,10 @@
 class ApiConfig {
-  // Base URL - Production API
-  static const String baseUrl = 'https://janhelps.in/api';
+  // Base URL - defaults to production. Override locally with:
+  // flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://janhelps.in/api',
+  );
 
   // For local testing, uncomment the line below and comment the production URL above:
   // static const String baseUrl = 'http://10.0.2.2:8000/api';
@@ -44,6 +48,7 @@ class ApiConfig {
   static String rateComplaint(int id) => '$baseUrl/complaints/$id/rate/';
   static String reopenComplaint(int id) => '$baseUrl/complaints/$id/reopen/';
   static const String verifyProof = '$baseUrl/complaints/verify-proof/';
+  static const String analyzeMedia = '$baseUrl/complaints/analyze-media/';
 
   // Category Endpoints
   static const String categories = '$baseUrl/categories/';

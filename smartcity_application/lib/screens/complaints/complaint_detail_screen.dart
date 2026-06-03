@@ -1,12 +1,10 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
 import '../../providers/complaint_provider.dart';
 import '../../models/complaint.dart';
@@ -189,6 +187,15 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                               _departmentProofMedia(complaint),
                             ),
                           ),
+                        if (complaint.reopenProofs != null &&
+                            complaint.reopenProofs!.isNotEmpty)
+                          _accordionSection(
+                            title: AppStrings.t(context, 'Reopen Proof'),
+                            icon: Icons.restart_alt_rounded,
+                            child: _buildReopenProofSection(
+                              complaint.reopenProofs!,
+                            ),
+                          ),
                         if (complaint.citizenRating != null)
                           _accordionSection(
                             title: AppStrings.t(context, 'Your Rating'),
@@ -204,8 +211,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                             child: _buildRatingForm(complaint),
                             initiallyExpanded: true,
                           ),
-                        if (_canReopenComplaint(complaint) ||
-                            complaint.canReopen == true)
+                        if (complaint.canReopen == true)
                           _accordionSection(
                             title: AppStrings.t(context, 'Need Reopen?'),
                             icon: Icons.refresh_rounded,
@@ -1783,6 +1789,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   }
 
   List<ComplaintMedia> _departmentProofMedia(Complaint complaint) {
+    if (complaint.resolutionProofs != null &&
+        complaint.resolutionProofs!.isNotEmpty) {
+      return complaint.resolutionProofs!;
+    }
     if (complaint.workProof != null && complaint.workProof!.isNotEmpty) {
       return complaint.workProof!;
     }
@@ -1795,6 +1805,113 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
           type.contains('completion') ||
           type.contains('resolved');
     }).toList();
+  }
+
+  String _resolveReopenProofUrl(ComplaintReopenProof proof) {
+    final proofUrl = proof.proofUrl.trim();
+    if (proofUrl.isNotEmpty) return proofUrl;
+
+    final file = proof.proof.trim();
+    if (file.isEmpty) return file;
+    if (file.startsWith('http://') || file.startsWith('https://')) {
+      return file;
+    }
+    if (file.startsWith('/')) {
+      final base = ApiConfig.baseUrl.replaceAll('/api', '');
+      return '$base$file';
+    }
+    return file;
+  }
+
+  Widget _buildReopenProofSection(List<ComplaintReopenProof> proofs) {
+    return Column(
+      children: [
+        for (int i = 0; i < proofs.length; i++) ...[
+          _reopenProofCard(proofs[i]),
+          if (i != proofs.length - 1) const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+
+  Widget _reopenProofCard(ComplaintReopenProof proof) {
+    final proofUrl = _resolveReopenProofUrl(proof);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFCD34D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.restart_alt_rounded,
+                  color: Color(0xFFB45309), size: 19),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  proof.requestedByName.isEmpty
+                      ? AppStrings.t(context, 'Reopen Request')
+                      : proof.requestedByName,
+                  style: _labelStyle(
+                    size: 13.5,
+                    weight: FontWeight.w900,
+                    color: const Color(0xFF92400E),
+                  ),
+                ),
+              ),
+              if (proof.createdAt != null)
+                Text(
+                  proof.createdAt!.toString().split(' ')[0],
+                  style: _labelStyle(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: const Color(0xFFB45309),
+                  ),
+                ),
+            ],
+          ),
+          if (proof.reason.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              proof.reason.trim(),
+              style: _labelStyle(
+                size: 13,
+                weight: FontWeight.w600,
+                color: const Color(0xFF78350F),
+                height: 1.35,
+              ),
+            ),
+          ],
+          if (proofUrl.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => _viewReopenProof(proof),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.network(
+                    proofUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: const Color(0xFFF7F8FA),
+                        child: const Icon(Icons.broken_image,
+                            color: _muted, size: 34),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildMediaSection(String title, List<ComplaintMedia> media) {
@@ -1996,6 +2113,59 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
+  void _viewReopenProof(ComplaintReopenProof proof) {
+    final proofUrl = _resolveReopenProofUrl(proof);
+    if (proofUrl.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(10),
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Center(
+                  child: Image.network(
+                    proofUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Text(
+                          AppStrings.t(context, 'Failed to load image'),
+                          style: GoogleFonts.inter(color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    padding: const EdgeInsets.all(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildExistingRating(Complaint complaint) {
     final r = complaint.citizenRating!;
     return Container(
@@ -2140,17 +2310,6 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
     );
   }
 
-  bool _canReopenComplaint(Complaint complaint) {
-    if (!(complaint.workStatus == 'solved' ||
-        complaint.workStatus == 'resolved')) {
-      return false;
-    }
-    if (complaint.canReopen == true) return true;
-    final daysSinceSolved =
-        DateTime.now().difference(complaint.updatedAt).inDays;
-    return daysSinceSolved <= 7;
-  }
-
   void _showReopenDialog(Complaint complaint) {
     // Clear form before showing dialog
     _reopenReasonCtrl.clear();
@@ -2225,7 +2384,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(AppStrings.t(context, 'Attach Photo Proof (Optional):'),
+                Text('${AppStrings.t(context, 'Attach Photo Proof')} *',
                     style: _labelStyle(
                         size: 13, weight: FontWeight.w800, color: _text)),
                 const SizedBox(height: 8),
@@ -2356,6 +2515,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _reopenReasonCtrl.text.trim().isNotEmpty &&
+                            _reopenProofPath != null &&
                             !_isSubmittingReopen
                         ? () => _submitReopen(ctx, complaint)
                         : null,
@@ -2390,6 +2550,15 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   Future<void> _submitReopen(
       BuildContext dialogCtx, Complaint complaint) async {
     if (_isSubmittingReopen) return;
+    if (_reopenProofPath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.t(context, 'Photo proof is required')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Show loading dialog
     showDialog(
@@ -2426,39 +2595,12 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
 
     setState(() => _isSubmittingReopen = true);
     try {
-      final uri = Uri.parse(ApiConfig.reopenComplaint(complaint.id));
-      final request = http.MultipartRequest('POST', uri);
-
-      // Add authorization header
-      final token = await ApiService.getToken();
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-
-      // Add reason field
-      request.fields['reason'] = _reopenReasonCtrl.text.trim();
-
-      // Add proof image file if provided
-      if (_reopenProofPath != null) {
-        final file = File(_reopenProofPath!);
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'proof',
-            file.path,
-            filename: 'reopen_proof.jpg',
-          ),
-        );
-      }
-
-      debugPrint(
-          'Submitting reopen request with reason: ${request.fields['reason']}');
-      debugPrint('Has proof file: ${_reopenProofPath != null}');
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-      final res = json.decode(response.body);
-
-      debugPrint('Reopen response: $res');
+      final provider = Provider.of<ComplaintProvider>(context, listen: false);
+      final ok = await provider.reopenComplaint(
+        complaint.id,
+        _reopenReasonCtrl.text.trim(),
+        File(_reopenProofPath!),
+      );
 
       setState(() => _isSubmittingReopen = false);
 
@@ -2467,7 +2609,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
 
       if (!mounted) return;
 
-      if (res['success'] == true) {
+      if (ok) {
         // Close reopen dialog
         if (dialogCtx.mounted) {
           Navigator.pop(dialogCtx);
@@ -2478,8 +2620,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         setState(() => _reopenProofPath = null);
 
         // Reload complaint details
-        await Provider.of<ComplaintProvider>(context, listen: false)
-            .loadComplaintDetail(complaint.id);
+        await provider.loadComplaintDetail(complaint.id);
 
         // Show success message
         if (mounted) {
@@ -2494,11 +2635,8 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
         }
       } else {
         // Show error message
-        String errorMsg = res['message'] ??
+        final errorMsg = provider.error ??
             AppStrings.t(context, 'Failed to submit reopen request');
-        if (res['errors'] != null) {
-          errorMsg += '\n${res['errors']}';
-        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

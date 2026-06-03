@@ -588,6 +588,7 @@ class _GuestTrackScreenState extends State<GuestTrackScreen>
         ),
         const SizedBox(height: 12),
         _timeline(status, complaint),
+        _proofSection(complaint),
         _mapSection(complaint),
       ],
     );
@@ -685,6 +686,21 @@ class _GuestTrackScreenState extends State<GuestTrackScreen>
         AppStrings.t(context, 'Date Submitted'),
         (complaint['created_at'] ?? '').toString(),
       ),
+      if ((complaint['resolved_at'] ?? '').toString().trim().isNotEmpty)
+        (
+          AppStrings.t(context, 'Resolved At'),
+          (complaint['resolved_at'] ?? '').toString(),
+        ),
+      if ((complaint['resolution_notes'] ?? '').toString().trim().isNotEmpty)
+        (
+          AppStrings.t(context, 'Resolution Notes'),
+          (complaint['resolution_notes'] ?? '').toString(),
+        ),
+      if ((complaint['citizen_rating'] ?? '').toString().trim().isNotEmpty)
+        (
+          AppStrings.t(context, 'Rating'),
+          '${complaint['citizen_rating']}/5',
+        ),
       (
         AppStrings.t(context, 'Contact Person'),
         (complaint['contact_name'] ?? '').toString(),
@@ -735,6 +751,269 @@ class _GuestTrackScreenState extends State<GuestTrackScreen>
             ),
           )
           .toList(),
+    );
+  }
+
+  Widget _proofSection(Map<String, dynamic> complaint) {
+    final resolutionProofs = _listFrom(complaint, 'resolution_proofs');
+    final reopenProofs = _listFrom(complaint, 'reopen_proofs');
+    if (resolutionProofs.isEmpty && reopenProofs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 18),
+        _sectionTitle(
+          AppStrings.t(context, 'Proof Details'),
+          Icons.verified_outlined,
+        ),
+        const SizedBox(height: 12),
+        if (resolutionProofs.isNotEmpty) ...[
+          _proofGrid(
+            proofs: resolutionProofs,
+            title: AppStrings.t(context, 'Completion Proof'),
+          ),
+        ],
+        if (reopenProofs.isNotEmpty) ...[
+          if (resolutionProofs.isNotEmpty) const SizedBox(height: 12),
+          _reopenProofList(reopenProofs),
+        ],
+      ],
+    );
+  }
+
+  Widget _proofGrid({
+    required List<Map<String, dynamic>> proofs,
+    required String title,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFD6DEE9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: _ink,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: proofs.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: proofs.length == 1 ? 1 : 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: proofs.length == 1 ? 1.75 : 1.05,
+            ),
+            itemBuilder: (context, index) => _proofTile(proofs[index]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _proofTile(Map<String, dynamic> proof) {
+    final url = _proofUrl(proof);
+    final fileType = (proof['file_type'] ?? '').toString().toLowerCase();
+    final isVideo = fileType == 'video' ||
+        url.toLowerCase().endsWith('.mp4') ||
+        url.toLowerCase().endsWith('.mov') ||
+        url.toLowerCase().endsWith('.webm');
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(17),
+        onTap: url.isEmpty || isVideo ? null : () => _openProofViewer(url),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (url.isNotEmpty && !isVideo)
+                  Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _proofFallback(isVideo),
+                  )
+                else
+                  _proofFallback(isVideo),
+                Positioned(
+                  left: 9,
+                  right: 9,
+                  bottom: 9,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.62),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _formatProofDate(proof['uploaded_at']).isEmpty
+                          ? AppStrings.t(context, 'Proof')
+                          : _formatProofDate(proof['uploaded_at']),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _reopenProofList(List<Map<String, dynamic>> proofs) {
+    return Column(
+      children: proofs
+          .map(
+            (proof) => Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFD6DEE9)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.t(context, 'Reopen Proof'),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: _ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    (proof['reason'] ?? '').toString().trim().isEmpty
+                        ? AppStrings.t(context, 'No reason provided')
+                        : proof['reason'].toString(),
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w700,
+                      color: _muted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _miniPill(
+                        (proof['requested_by_name'] ?? '').toString().isEmpty
+                            ? AppStrings.t(context, 'Citizen')
+                            : proof['requested_by_name'].toString(),
+                        _ink,
+                      ),
+                      if (_formatProofDate(proof['created_at']).isNotEmpty)
+                        _miniPill(
+                          _formatProofDate(proof['created_at']),
+                          _statusColor('confirmed'),
+                        ),
+                    ],
+                  ),
+                  if (_proofUrl(proof).isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _proofViewButton(_proofUrl(proof)),
+                  ],
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _miniPill(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _proofViewButton(String url) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _openProofViewer(url),
+        child: Ink(
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFD6DEE9)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.image_outlined, color: _ink, size: 17),
+              const SizedBox(width: 7),
+              Text(
+                AppStrings.t(context, 'View Proof'),
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                  color: _ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _proofFallback(bool isVideo) {
+    return Container(
+      color: const Color(0xFFEFF4FA),
+      child: Icon(
+        isVideo ? Icons.play_circle_outline_rounded : Icons.image_outlined,
+        color: _muted,
+        size: 32,
+      ),
     );
   }
 
@@ -1013,6 +1292,77 @@ class _GuestTrackScreenState extends State<GuestTrackScreen>
   double _toDouble(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse('$value') ?? 0.0;
+  }
+
+  List<Map<String, dynamic>> _listFrom(
+    Map<String, dynamic> complaint,
+    String key,
+  ) {
+    final raw = complaint[key];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  String _proofUrl(Map<String, dynamic> proof) {
+    final raw = (proof['file_url'] ??
+            proof['proof_url'] ??
+            proof['file'] ??
+            proof['proof'] ??
+            '')
+        .toString()
+        .trim();
+    if (raw.isEmpty || raw.startsWith('http')) return raw;
+    final apiRoot = ApiConfig.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    return raw.startsWith('/') ? '$apiRoot$raw' : raw;
+  }
+
+  String _formatProofDate(dynamic value) {
+    final raw = value?.toString().trim();
+    if (raw == null || raw.isEmpty || raw == 'null') return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    final day = parsed.day.toString().padLeft(2, '0');
+    final month = parsed.month.toString().padLeft(2, '0');
+    final hour = parsed.hour.toString().padLeft(2, '0');
+    final minute = parsed.minute.toString().padLeft(2, '0');
+    return '$day/$month/${parsed.year} $hour:$minute';
+  }
+
+  void _openProofViewer(String url) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(18),
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: InteractiveViewer(
+            minScale: 0.7,
+            maxScale: 4,
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Container(
+                height: 220,
+                color: Colors.white,
+                alignment: Alignment.center,
+                child: Text(
+                  AppStrings.t(context, 'Unable to load proof'),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: _muted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

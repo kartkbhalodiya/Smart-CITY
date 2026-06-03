@@ -116,7 +116,9 @@ def _detect_mime_type(image_path_or_file, image_data=None):
 
     file_name = getattr(image_path_or_file, "name", None) or str(image_path_or_file)
     guessed_type, _ = mimetypes.guess_type(file_name)
-    if guessed_type and guessed_type.startswith("image/"):
+    if guessed_type and (
+        guessed_type.startswith("image/") or guessed_type.startswith("video/")
+    ):
         return guessed_type
 
     if image_data:
@@ -181,6 +183,25 @@ def _parse_verification_result(raw_text):
     return False, normalized or "Proof does not match the selected complaint."
 
 
+def _parse_media_analysis_result(raw_text):
+    payload = _extract_json_payload(raw_text)
+    if not payload:
+        return {
+            "success": False,
+            "message": "Gemini did not return a readable media analysis.",
+        }
+
+    return {
+        "success": True,
+        "category_key": str(payload.get("category_key") or "").strip().lower(),
+        "subcategory": str(payload.get("subcategory") or "").strip(),
+        "description": str(payload.get("description") or "").strip(),
+        "detected_issue": str(payload.get("detected_issue") or "").strip(),
+        "confidence": payload.get("confidence") or 0,
+        "reason": str(payload.get("reason") or "").strip(),
+    }
+
+
 def _run_basic_image_quality_checks(image_data):
     """
     Reject obviously invalid proof images before spending a Gemini request.
@@ -220,6 +241,93 @@ def _run_basic_image_quality_checks(image_data):
         print(f"Basic image quality check warning: {str(exc)}")
 
     return None
+
+
+def analyze_complaint_media(media_path_or_file, category_options):
+    """
+    Analyze uploaded complaint media before the user has selected category.
+    Returns best category/subcategory/description candidates for chatbot intake.
+    """
+    try:
+        if hasattr(media_path_or_file, "read"):
+            media_data = media_path_or_file.read()
+            if hasattr(media_path_or_file, "seek"):
+                media_path_or_file.seek(0)
+        else:
+            from django.core.files.storage import default_storage
+
+            with default_storage.open(media_path_or_file, "rb") as media_file:
+                media_data = media_file.read()
+
+        mime_type = _detect_mime_type(media_path_or_file, image_data=media_data)
+        if mime_type.startswith("image/"):
+            quality_issue = _run_basic_image_quality_checks(media_data)
+            if quality_issue:
+                return {
+                    "success": False,
+                    "message": quality_issue,
+                }
+
+        api_key = getattr(settings, "GEMINI_API_KEY", "")
+        if not api_key:
+            return {
+                "success": False,
+                "message": "Gemini API key is not configured on the server.",
+            }
+
+        model_name = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
+        category_lines = []
+        for category in category_options:
+            subcategories = category.get("subcategories") or []
+            subcategory_text = ", ".join(subcategories[:30]) or "Other"
+            category_lines.append(
+                f"- {category['key']}: {category['name']} | subcategories: {subcategory_text}"
+            )
+
+        prompt = f"""
+You are a municipal complaint intake analyst.
+
+Analyze the uploaded citizen media and infer the most likely Smart City complaint.
+Use ONLY one category_key from the available categories below. Use ONLY one listed
+subcategory for that category when a good match exists. If the media is unclear,
+choose category_key "other" and subcategory "Other".
+
+Available categories and subcategories:
+{chr(10).join(category_lines)}
+
+Return ONLY valid JSON in this exact format:
+{{
+  "category_key": "one category key",
+  "subcategory": "one subcategory",
+  "description": "one concise complaint sentence suitable for filing",
+  "detected_issue": "short visible issue label",
+  "confidence": 0.0,
+  "reason": "short reason for the match"
+}}
+""".strip()
+
+        result_text, used_model = _generate_with_model_fallback(
+            api_key=api_key,
+            preferred_model=model_name,
+            prompt=prompt,
+            image_data=media_data,
+            mime_type=mime_type,
+        )
+        parsed = _parse_media_analysis_result(result_text)
+        parsed["model"] = used_model
+        parsed["mime_type"] = mime_type
+        return parsed
+    except Exception as exc:
+        print(f"AI media analysis error: {str(exc)}")
+        if _is_retryable_service_error(exc):
+            return {
+                "success": False,
+                "message": "Gemini media analysis is temporarily busy. Please try again in a moment.",
+            }
+        return {
+            "success": False,
+            "message": f"Gemini media analysis failed: {str(exc)}",
+        }
 
 
 def _category_specific_evidence_guidance(category_key, category_label, subcategory):
@@ -324,7 +432,7 @@ def verify_complaint_proof(
         prompt = f"""
 You are a municipal complaint proof verifier.
 
-Your task is to decide whether the uploaded image is valid proof for the selected complaint.
+Your task is to decide whether the uploaded image or video is valid proof for the selected complaint.
 
 Selected complaint:
 - Category: {category_label}
@@ -333,18 +441,18 @@ Selected complaint:
 - Citizen description: {complaint_description}
 
 General validation rules:
-1. Accept if the image is direct proof OR category-appropriate supporting proof for the selected complaint.
-2. Reject if the image is clearly unrelated to the category, subcategory, or citizen description.
+1. Accept if the media is direct proof OR category-appropriate supporting proof for the selected complaint.
+2. Reject if the media is clearly unrelated to the category, subcategory, or citizen description.
 3. Reject if the proof is too dark, too blurry, blank, or unreadable.
 4. For screenshots, bills, receipts, or documents, read the visible text/UI clues and accept them when they reasonably support the selected complaint.
-5. For infrastructure complaints like potholes, garbage, drainage, road damage, construction, broken streetlights, or water leakage, the image should usually show the real-world issue itself.
+5. For infrastructure complaints like potholes, garbage, drainage, road damage, construction, broken streetlights, or water leakage, the media should usually show the real-world issue itself.
 6. For police, cyber, or other complaints, supporting evidence does NOT need to show the exact incident itself; related bills, screenshots, damaged-scene photos, location photos, CCTV stills, or product/ownership proof may be valid.
 7. Be practical, not over-strict. If the proof is reasonably connected to the selected complaint, accept it. Reject only when it is clearly unrelated or too weak to support the complaint.
 
 {evidence_guidance}
 
 Return ONLY valid JSON in this exact format:
-{{"match":"YES" or "NO","reason":"short reason","detected_issue":"what the image most likely shows"}}
+{{"match":"YES" or "NO","reason":"short reason","detected_issue":"what the media most likely shows"}}
 """.strip()
 
         result_text, used_model = _generate_with_model_fallback(

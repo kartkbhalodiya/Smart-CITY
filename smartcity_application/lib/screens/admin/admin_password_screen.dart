@@ -22,10 +22,14 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final _currentController = TextEditingController();
+  final _otpController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
 
   bool _saving = false;
+  bool _sendingOtp = false;
+  bool _useOtp = false;
+  bool _otpSent = false;
   bool _hideCurrent = true;
   bool _hideNew = true;
   bool _hideConfirm = true;
@@ -33,15 +37,17 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
   @override
   void dispose() {
     _currentController.dispose();
+    _otpController.dispose();
     _newController.dispose();
     _confirmController.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
+  Future<void> _saveWithCurrentPassword() async {
     if (_formKey.currentState?.validate() != true) return;
     setState(() => _saving = true);
     final response = await ApiService.post(ApiConfig.adminChangePassword, {
+      'method': 'old_password',
       'current_password': _currentController.text.trim(),
       'new_password': _newController.text.trim(),
       'confirm_password': _confirmController.text.trim(),
@@ -51,22 +57,86 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
 
     if (response['success'] == true) {
       HapticFeedback.selectionClick();
-      _currentController.clear();
-      _newController.clear();
-      _confirmController.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response['message']?.toString() ??
-              'Password updated successfully.'),
-        ),
+      _clearForm();
+      _showMessage(
+        response['message']?.toString() ?? 'Password updated successfully.',
       );
       return;
     }
 
+    _showMessage(response['message']?.toString() ?? 'Password failed.');
+  }
+
+  Future<void> _sendOtp() async {
+    setState(() => _sendingOtp = true);
+    final response = await ApiService.post(ApiConfig.adminChangePassword, {
+      'method': 'send_otp',
+    });
+    if (!mounted) return;
+    setState(() {
+      _sendingOtp = false;
+      _otpSent = response['success'] == true || _otpSent;
+    });
+
+    if (response['success'] == true) {
+      HapticFeedback.selectionClick();
+      _showMessage(response['message']?.toString() ?? 'OTP sent.');
+      return;
+    }
+
+    _showMessage(response['message']?.toString() ?? 'Unable to send OTP.');
+  }
+
+  Future<void> _saveWithOtp() async {
+    if (!_otpSent) {
+      _showMessage('Send OTP first.');
+      return;
+    }
+    if (_formKey.currentState?.validate() != true) return;
+    setState(() => _saving = true);
+    final response = await ApiService.post(ApiConfig.adminChangePassword, {
+      'method': 'otp_verify',
+      'otp': _otpController.text.trim(),
+      'new_password': _newController.text.trim(),
+      'confirm_password': _confirmController.text.trim(),
+    });
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (response['success'] == true) {
+      HapticFeedback.selectionClick();
+      _clearForm();
+      setState(() => _otpSent = false);
+      _showMessage(
+        response['message']?.toString() ?? 'Password updated successfully.',
+      );
+      return;
+    }
+
+    _showMessage(response['message']?.toString() ?? 'Password failed.');
+  }
+
+  void _clearForm() {
+    _currentController.clear();
+    _otpController.clear();
+    _newController.clear();
+    _confirmController.clear();
+    _formKey.currentState?.reset();
+  }
+
+  void _switchMode(bool useOtp) {
+    if (_useOtp == useOtp) return;
+    setState(() {
+      _useOtp = useOtp;
+      _saving = false;
+      _sendingOtp = false;
+    });
+    _clearForm();
+  }
+
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(response['message']?.toString() ?? 'Password failed.'),
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -168,13 +238,12 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
         key: _formKey,
         child: Column(
           children: [
-            _passwordField(
-              controller: _currentController,
-              label: 'Current password',
-              hidden: _hideCurrent,
-              onToggle: () => setState(() => _hideCurrent = !_hideCurrent),
-            ),
-            const SizedBox(height: 12),
+            _modeSwitch(),
+            const SizedBox(height: 16),
+            if (_useOtp)
+              ..._otpPasswordFields()
+            else
+              ..._currentPasswordFields(),
             _passwordField(
               controller: _newController,
               label: 'New password',
@@ -199,12 +268,179 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
             ),
             const SizedBox(height: 18),
             _blackButton(
-              label: _saving ? 'Saving...' : 'Save Password',
+              label: _saving
+                  ? 'Saving...'
+                  : _useOtp
+                      ? 'Save with OTP'
+                      : 'Save Password',
               icon: Icons.check_rounded,
-              onTap: _saving ? null : _save,
+              onTap: _saving
+                  ? null
+                  : _useOtp
+                      ? _saveWithOtp
+                      : _saveWithCurrentPassword,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  List<Widget> _currentPasswordFields() {
+    return [
+      _passwordField(
+        controller: _currentController,
+        label: 'Current password',
+        hidden: _hideCurrent,
+        onToggle: () => setState(() => _hideCurrent = !_hideCurrent),
+      ),
+      const SizedBox(height: 12),
+    ];
+  }
+
+  List<Widget> _otpPasswordFields() {
+    return [
+      _infoStrip(
+        icon: Icons.mark_email_read_outlined,
+        text: 'The OTP is sent to the email on this admin account.',
+      ),
+      const SizedBox(height: 12),
+      _outlineButton(
+        label: _sendingOtp
+            ? 'Sending...'
+            : _otpSent
+                ? 'Send OTP Again'
+                : 'Send OTP',
+        icon: Icons.mail_outline_rounded,
+        onTap: _sendingOtp ? null : _sendOtp,
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _otpController,
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.next,
+        style: _labelStyle(size: 15, weight: FontWeight.w800, color: _text),
+        validator: (value) {
+          if (!_useOtp) return null;
+          final clean = (value ?? '').trim();
+          if (clean.isEmpty) return 'OTP is required';
+          if (clean.length != 6) return 'Enter the 6 digit OTP';
+          return null;
+        },
+        decoration: _inputDecoration('Email OTP'),
+      ),
+      const SizedBox(height: 12),
+    ];
+  }
+
+  Widget _modeSwitch() {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _line),
+      ),
+      child: Row(
+        children: [
+          _modeItem(
+            label: 'Current Password',
+            icon: Icons.password_rounded,
+            selected: !_useOtp,
+            onTap: () => _switchMode(false),
+          ),
+          const SizedBox(width: 6),
+          _modeItem(
+            label: 'Email OTP',
+            icon: Icons.mark_email_unread_outlined,
+            selected: _useOtp,
+            onTap: () => _switchMode(true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeItem({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Ink(
+            height: 44,
+            decoration: BoxDecoration(
+              color: selected ? Colors.white : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 17, color: selected ? _ink : _muted),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _labelStyle(
+                      size: 12,
+                      weight: FontWeight.w900,
+                      color: selected ? _ink : _muted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoStrip({
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: _primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _primary.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: _primary, size: 19),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              style: _labelStyle(
+                size: 12,
+                weight: FontWeight.w700,
+                color: _muted,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -256,6 +492,28 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.white,
+      labelStyle: _labelStyle(size: 13, weight: FontWeight.w700, color: _muted),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: _line),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: _line),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(color: _ink, width: 1.4),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
     );
   }
 
@@ -316,6 +574,43 @@ class _AdminPasswordScreenState extends State<AdminPasswordScreen> {
                   size: 15,
                   weight: FontWeight.w900,
                   color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _outlineButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _ink.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: onTap == null ? _muted : _ink, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: _labelStyle(
+                  size: 13.5,
+                  weight: FontWeight.w900,
+                  color: onTap == null ? _muted : _ink,
                 ),
               ),
             ],

@@ -15,9 +15,16 @@ class ComplaintService {
     String url = ApiConfig.complaints;
     List<String> params = [];
 
-    if (workStatus != null) params.add('work_status=$workStatus');
-    if (complaintType != null) params.add('complaint_type=$complaintType');
-    if (search != null) params.add('search=$search');
+    if (workStatus != null && workStatus.trim().isNotEmpty) {
+      params.add('work_status=${Uri.encodeQueryComponent(workStatus.trim())}');
+    }
+    if (complaintType != null && complaintType.trim().isNotEmpty) {
+      params.add(
+          'complaint_type=${Uri.encodeQueryComponent(complaintType.trim())}');
+    }
+    if (search != null && search.trim().isNotEmpty) {
+      params.add('search=${Uri.encodeQueryComponent(search.trim())}');
+    }
 
     if (params.isNotEmpty) {
       url += '?${params.join('&')}';
@@ -99,11 +106,23 @@ class ComplaintService {
     );
   }
 
+  static Future<Map<String, dynamic>> analyzeMedia(List<File> files) async {
+    return await ApiService.postMultipart(
+      ApiConfig.analyzeMedia,
+      {
+        'media_intake': 'true',
+        'proof_expected': files.isNotEmpty ? 'true' : 'false',
+      },
+      files,
+    );
+  }
+
   static Future<Map<String, dynamic>> getCategories() async {
     return await ApiService.get(ApiConfig.categories);
   }
 
-  static Future<Map<String, dynamic>> getSubcategories(String categoryKey) async {
+  static Future<Map<String, dynamic>> getSubcategories(
+      String categoryKey) async {
     return await ApiService.get(ApiConfig.subcategories(categoryKey));
   }
 

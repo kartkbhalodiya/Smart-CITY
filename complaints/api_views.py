@@ -30,7 +30,8 @@ from .serializers import (
     ComplaintListSerializer, ComplaintDetailSerializer, ComplaintCreateSerializer,
     CitizenProfileSerializer, DepartmentSerializer, ComplaintCategorySerializer,
     ComplaintSubcategorySerializer, ComplaintCategoryFieldSerializer, UserSerializer, RegisterSerializer,
-    OTPSerializer, DashboardStatsSerializer
+    OTPSerializer, DashboardStatsSerializer, ComplaintResolutionProofSerializer,
+    ComplaintReopenProofSerializer
 )
 from .email_utils import (
     send_welcome_email, send_otp_email, send_password_reset_credentials_email
@@ -127,6 +128,7 @@ def _serialize_departments(request, departments, limit=20):
     cleaned = []
     for item, department in zip(data, department_rows):
         row = dict(item)
+        row['unique_id'] = department.unique_id
         row['department_type_display'] = _department_type_label(row.get('department_type'))
         row['city_admin_id'] = department.city_admin_id
         cleaned.append(row)
@@ -291,7 +293,10 @@ def _serialize_admin_citizen(profile):
         'state': profile.state or '',
         'city': profile.city or profile.district or '',
         'district': profile.district or '',
+        'pincode': profile.pincode or '',
         'address': profile.address or '',
+        'latitude': _safe_float(profile.latitude),
+        'longitude': _safe_float(profile.longitude),
     }
 
 
@@ -1088,6 +1093,9 @@ def admin_app_complaint_status(request, complaint_id):
         str(request.data.get('work_status') or request.data.get('status') or '').strip().lower(),
     )
     notes = str(request.data.get('notes') or '').strip()
+    proof_files = []
+    for field_name in ('resolution_proofs', 'media_files', 'proof'):
+        proof_files.extend(request.FILES.getlist(field_name))
 
     allowed_transitions = {
         'pending': {'pending', 'confirmed', 'rejected'},
@@ -1114,6 +1122,12 @@ def admin_app_complaint_status(request, complaint_id):
             {'success': False, 'message': 'Resolution notes are required before marking solved.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    if new_status == 'solved' and current_status != 'solved':
+        if not proof_files and not complaint.resolution_proofs.exists():
+            return Response(
+                {'success': False, 'message': 'Completion proof is required before marking solved.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     complaint.work_status = new_status
     if new_status == 'rejected':
@@ -1124,10 +1138,20 @@ def admin_app_complaint_status(request, complaint_id):
         complaint.assigned_at = timezone.now()
     if notes:
         complaint.resolution_notes = notes
-    if new_status == 'solved':
+    if new_status == 'solved' and (current_status != 'solved' or not complaint.resolved_at):
         complaint.resolved_at = timezone.now()
 
     complaint.save()
+    for proof in proof_files:
+        proof_name = (getattr(proof, 'name', '') or '').lower()
+        file_type = 'video' if proof_name.endswith(('.mp4', '.mov', '.avi', '.mkv', '.webm')) else 'image'
+        ComplaintResolutionProof.objects.create(
+            complaint=complaint,
+            file=proof,
+            file_type=file_type,
+            uploaded_by=request.user if request.user.is_authenticated else None,
+        )
+
     return Response({
         'success': True,
         'message': f'Complaint status updated to {complaint.get_work_status_display()}.',
@@ -1155,6 +1179,19 @@ def _admin_stats_from_counts(counts):
         _admin_stat('Reopened', counts.get('reopened', 0), 'restart', 'red'),
         _admin_stat('Rejected', counts.get('rejected', 0), 'block', 'red'),
     ]
+
+
+def _apply_work_status_filter(complaints, work_status):
+    status_filter = str(work_status or '').strip().lower()
+    if not status_filter:
+        return complaints
+    if status_filter in {'progress', 'in_progress', 'processing'}:
+        return complaints.filter(work_status__in=['confirmed', 'process'])
+    if status_filter in {'active', 'open', 'problems'}:
+        return complaints.filter(work_status__in=ACTIVE_WORK_STATUSES)
+    if status_filter == 'resolved':
+        return complaints.filter(work_status='solved')
+    return complaints.filter(work_status=status_filter)
 
 
 def _safe_float(value, fallback=None):
@@ -1328,8 +1365,7 @@ def admin_app_heatmap(request):
     category_filter = (request.query_params.get('category') or '').strip()
     department_id = request.query_params.get('department_id')
 
-    if status_filter:
-        complaints = complaints.filter(work_status=status_filter)
+    complaints = _apply_work_status_filter(complaints, status_filter)
     if category_filter:
         complaints = complaints.filter(complaint_type=category_filter)
     if department_id:
@@ -1393,18 +1429,52 @@ def admin_app_heatmap(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_app_change_password(request):
-    """Mobile admin password change using the current password."""
+    """Mobile admin password change using current password or email OTP."""
     role = _get_user_role(request.user)
     if role == 'citizen':
         return _admin_forbidden('Only admin accounts can use this password screen.')
+
+    method = str(request.data.get('method') or 'old_password').strip().lower()
+    email = (request.user.email or '').strip().lower()
+
+    if not email:
+        return Response(
+            {'success': False, 'message': 'This admin account does not have an email address.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        validate_email(email)
+    except ValidationError:
+        return Response(
+            {'success': False, 'message': 'This admin account email address is invalid.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if method == 'send_otp':
+        otp_code = ''.join(secrets.choice('0123456789') for _ in range(6))
+        OTP.objects.filter(email=email).delete()
+        OTP.objects.create(email=email, otp=otp_code)
+
+        try:
+            send_otp_email(email, otp_code)
+        except Exception:
+            return Response(
+                {'success': False, 'message': 'Unable to send OTP email right now. Please try again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({
+            'success': True,
+            'message': 'OTP sent to your admin email.',
+        })
 
     current_password = str(request.data.get('current_password') or '').strip()
     new_password = str(request.data.get('new_password') or '').strip()
     confirm_password = str(request.data.get('confirm_password') or '').strip()
 
-    if not current_password or not new_password or not confirm_password:
+    if not new_password or not confirm_password:
         return Response(
-            {'success': False, 'message': 'Current password, new password, and confirmation are required.'},
+            {'success': False, 'message': 'New password and confirmation are required.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
     if new_password != confirm_password:
@@ -1412,9 +1482,43 @@ def admin_app_change_password(request):
             {'success': False, 'message': 'New password and confirmation do not match.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if not request.user.check_password(current_password):
+
+    otp = None
+    if method == 'otp_verify':
+        otp_code = str(request.data.get('otp') or '').strip()
+        if not otp_code:
+            return Response(
+                {'success': False, 'message': 'OTP code is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            otp = OTP.objects.get(email=email, otp=otp_code, is_verified=False)
+        except OTP.DoesNotExist:
+            return Response(
+                {'success': False, 'message': 'Invalid OTP code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if timezone.now() > otp.created_at + timedelta(minutes=10):
+            return Response(
+                {'success': False, 'message': 'OTP expired. Please request a new code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    elif method == 'old_password':
+        if not current_password:
+            return Response(
+                {'success': False, 'message': 'Current password is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not request.user.check_password(current_password):
+            return Response(
+                {'success': False, 'message': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    else:
         return Response(
-            {'success': False, 'message': 'Current password is incorrect.'},
+            {'success': False, 'message': 'Unsupported password change method.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -1425,6 +1529,10 @@ def admin_app_change_password(request):
             {'success': False, 'message': ' '.join(exc.messages)},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    if otp is not None:
+        otp.is_verified = True
+        otp.save(update_fields=['is_verified'])
 
     request.user.set_password(new_password)
     request.user.save(update_fields=['password'])
@@ -1444,8 +1552,7 @@ def _build_admin_resource_payload(request, resource):
             complaints = complaints.filter(work_status='solved')
 
         work_status = request.query_params.get('work_status')
-        if work_status:
-            complaints = complaints.filter(work_status=work_status)
+        complaints = _apply_work_status_filter(complaints, work_status)
         if query:
             complaints = complaints.filter(
                 Q(title__icontains=query) |
@@ -1457,7 +1564,7 @@ def _build_admin_resource_payload(request, resource):
         return {
             'success': True,
             'resource': resource,
-            'title': _resource_title(resource),
+            'title': _resource_title(resource, work_status),
             'role': role,
             'items': ComplaintListSerializer(
                 complaints.order_by('-created_at')[:100],
@@ -1668,7 +1775,16 @@ def _build_admin_resource_payload(request, resource):
     )
 
 
-def _resource_title(resource):
+def _resource_title(resource, work_status=None):
+    status_filter = str(work_status or '').strip().lower()
+    if status_filter == 'pending':
+        return 'Pending Complaints'
+    if status_filter in {'progress', 'in_progress', 'processing'}:
+        return 'In Progress Complaints'
+    if status_filter == 'reopened':
+        return 'Reopened Complaints'
+    if status_filter == 'rejected':
+        return 'Rejected Complaints'
     return {
         'complaints': 'Complaints',
         'problems': 'Open Problems',
@@ -1921,6 +2037,12 @@ def _save_department_resource(request, department):
 
     if department is None and User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
         return Response({'success': False, 'message': 'A user with this department email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+    dept_user = None
+    if department is not None:
+        dept_user = DepartmentUser.objects.filter(department=department).select_related('user').first()
+        excluded_user_id = dept_user.user_id if dept_user else None
+        if User.objects.exclude(id=excluded_user_id).filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
+            return Response({'success': False, 'message': 'A user with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
     if Department.objects.exclude(id=department.id if department else None).filter(unique_id=unique_id).exists():
         unique_id = _generate_mobile_department_code()
 
@@ -1978,15 +2100,21 @@ def _save_department_resource(request, department):
                 department.is_active = _as_bool(data.get('is_active'), department.is_active)
                 department.save()
 
-                dept_user = DepartmentUser.objects.filter(department=department).select_related('user').first()
                 if dept_user:
-                    if User.objects.exclude(id=dept_user.user_id).filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():
-                        return Response({'success': False, 'message': 'A user with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
                     dept_user.user.email = email
                     dept_user.user.username = email
                     if data.get('password'):
                         dept_user.user.set_password(str(data.get('password')).strip())
                     dept_user.user.save()
+                else:
+                    user_obj = User.objects.create_user(
+                        username=email,
+                        email=email,
+                        password=password,
+                        first_name=name[:30],
+                        last_name='Department',
+                    )
+                    DepartmentUser.objects.create(user=user_obj, department=department, role='Officer')
     except IntegrityError:
         return Response({'success': False, 'message': 'Department email/code already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2231,8 +2359,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         
         # Filter by status
         work_status = self.request.query_params.get('work_status')
-        if work_status:
-            queryset = queryset.filter(work_status=work_status)
+        queryset = _apply_work_status_filter(queryset, work_status)
         
         # Filter by complaint type
         complaint_type = self.request.query_params.get('complaint_type')
@@ -2304,6 +2431,88 @@ class ComplaintViewSet(viewsets.ModelViewSet):
             }, status=response_status)
             
         return Response({'success': True, 'message': 'Proof verified'})
+
+    @action(detail=False, methods=['post'], url_path='analyze-media')
+    def analyze_media(self, request):
+        """Analyze uploaded media and infer complaint category/subcategory for chat intake."""
+        media_files = self._get_uploaded_media_files(request)
+        if not media_files:
+            return Response({
+                'success': False,
+                'message': 'No media file reached the server. Please upload an image or video again.',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        categories = []
+        active_categories = (
+            ComplaintCategory.objects
+            .filter(is_active=True)
+            .prefetch_related('subcategories')
+            .order_by('display_order', 'name')
+        )
+        for category in active_categories:
+            subcategories = [
+                sub.name for sub in category.subcategories.all()
+                if sub.is_active
+            ]
+            categories.append({
+                'key': category.key,
+                'name': category.name,
+                'emoji': category.emoji or '',
+                'subcategories': subcategories,
+            })
+
+        if not categories:
+            categories = [
+                {
+                    'key': key,
+                    'name': label,
+                    'emoji': '',
+                    'subcategories': ['Other'],
+                }
+                for key, label in Complaint.COMPLAINT_TYPES
+            ]
+
+        from .ai_utils import analyze_complaint_media
+        analysis = analyze_complaint_media(media_files[0], categories)
+        if not analysis.get('success'):
+            return Response(analysis, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        category_key = str(analysis.get('category_key') or '').strip().lower()
+        matched_category = next(
+            (category for category in categories if category['key'] == category_key),
+            None,
+        )
+        if matched_category is None:
+            matched_category = next(
+                (category for category in categories if category['key'] == 'other'),
+                categories[-1],
+            )
+            category_key = matched_category['key']
+
+        subcategory = str(analysis.get('subcategory') or '').strip()
+        valid_subcategories = matched_category.get('subcategories') or ['Other']
+        if subcategory not in valid_subcategories:
+            normalized = subcategory.lower()
+            subcategory = next(
+                (
+                    option for option in valid_subcategories
+                    if option.lower() == normalized
+                ),
+                valid_subcategories[0],
+            )
+
+        return Response({
+            'success': True,
+            'analysis': {
+                **analysis,
+                'category_key': category_key,
+                'category': matched_category['name'],
+                'category_name': matched_category['name'],
+                'category_emoji': matched_category.get('emoji') or '',
+                'subcategory': subcategory,
+                'available_subcategories': valid_subcategories,
+            },
+        })
 
     def create(self, request, *args, **kwargs):
         try:
@@ -2457,7 +2666,11 @@ class ComplaintViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         reason = request.data.get('reason')
-        proof = request.FILES.get('proof')
+        proof = (
+            request.FILES.get('proof')
+            or request.FILES.get('media_files')
+            or request.FILES.get('resolution_proofs')
+        )
         
         if not reason or not proof:
             return Response({
@@ -2527,12 +2740,17 @@ def track_guest_complaint_api(request):
     if not complaint_number or not phone:
         return Response({'success': False, 'message': 'Complaint ID and mobile number are required'}, status=status.HTTP_400_BAD_REQUEST)
     complaint = None
+    complaint_query = (
+        Complaint.objects
+        .select_related('assigned_department', 'user', 'user__citizenprofile')
+        .prefetch_related('resolution_proofs', 'reopen_proofs')
+    )
     try:
-        complaint = Complaint.objects.select_related('assigned_department').get(complaint_number=complaint_number, guest_phone=phone)
+        complaint = complaint_query.get(complaint_number=complaint_number, guest_phone=phone)
     except Complaint.DoesNotExist:
         pass
     if not complaint:
-        for comp in Complaint.objects.filter(complaint_number=complaint_number, user__isnull=False).select_related('assigned_department', 'user__citizenprofile'):
+        for comp in complaint_query.filter(complaint_number=complaint_number, user__isnull=False):
             if comp.user and hasattr(comp.user, 'citizenprofile') and comp.user.citizenprofile.mobile_no == phone:
                 complaint = comp
                 break
@@ -2543,13 +2761,33 @@ def track_guest_complaint_api(request):
         'complaint_number': complaint.complaint_number,
         'title': complaint.title,
         'complaint_type': complaint.get_complaint_type_display(),
+        'complaint_type_display': complaint.get_complaint_type_display(),
+        'status': complaint.status,
+        'status_display': complaint.get_status_display(),
         'work_status': complaint.work_status,
+        'work_status_display': complaint.get_work_status_display(),
         'description': complaint.description,
         'city': complaint.city or '',
         'state': complaint.state or '',
         'pincode': complaint.pincode or '',
         'created_at': complaint.created_at.strftime('%d %b %Y, %I:%M %p'),
         'updated_at': complaint.updated_at.strftime('%d %b %Y, %I:%M %p') if complaint.updated_at else None,
+        'resolved_at': complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') if complaint.resolved_at else None,
+        'resolution_notes': complaint.resolution_notes or '',
+        'can_reopen': complaint.can_reopen,
+        'reopen_deadline': complaint.reopen_deadline.isoformat() if complaint.reopen_deadline else None,
+        'citizen_rating': complaint.citizen_rating,
+        'citizen_feedback': complaint.citizen_feedback or '',
+        'resolution_proofs': ComplaintResolutionProofSerializer(
+            complaint.resolution_proofs.all(),
+            many=True,
+            context={'request': request},
+        ).data,
+        'reopen_proofs': ComplaintReopenProofSerializer(
+            complaint.reopen_proofs.all(),
+            many=True,
+            context={'request': request},
+        ).data,
         'assigned_department': dept.name if dept else None,
         'assigned_department_phone': dept.phone if dept else None,
         'assigned_department_email': dept.email if dept else None,

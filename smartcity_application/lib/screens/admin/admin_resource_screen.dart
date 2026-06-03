@@ -9,11 +9,13 @@ import '../../services/api_service.dart';
 class AdminResourceScreen extends StatefulWidget {
   final String resource;
   final String title;
+  final String? workStatus;
 
   const AdminResourceScreen({
     super.key,
     required this.resource,
     required this.title,
+    this.workStatus,
   });
 
   @override
@@ -34,19 +36,27 @@ class _AdminResourceScreenState extends State<AdminResourceScreen> {
   bool _saving = false;
   String? _error;
   String _title = '';
+  String _role = '';
   bool _canCreate = false;
   List<Map<String, dynamic>> _items = [];
   List<Map<String, dynamic>> _fields = [];
 
   String get _resource => widget.resource.trim().toLowerCase();
 
-  bool get _canEdit => {
-        'departments',
-        'city-admins',
-        'categories',
-        'states',
-        'cities',
-      }.contains(_resource);
+  bool get _canEdit {
+    if (_resource == 'departments') {
+      return _role == 'superadmin' || _role == 'city_admin';
+    }
+    if ({
+      'city-admins',
+      'categories',
+      'states',
+      'cities',
+    }.contains(_resource)) {
+      return _role == 'superadmin';
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -70,9 +80,16 @@ class _AdminResourceScreenState extends State<AdminResourceScreen> {
     }
 
     final query = _searchController.text.trim();
-    final url = query.isEmpty
-        ? ApiConfig.adminResource(_resource)
-        : '${ApiConfig.adminResource(_resource)}?search=${Uri.encodeQueryComponent(query)}';
+    final params = <String>[];
+    if (query.isNotEmpty) {
+      params.add('search=${Uri.encodeQueryComponent(query)}');
+    }
+    final workStatus = widget.workStatus?.trim();
+    if (workStatus != null && workStatus.isNotEmpty) {
+      params.add('work_status=${Uri.encodeQueryComponent(workStatus)}');
+    }
+    final baseUrl = ApiConfig.adminResource(_resource);
+    final url = params.isEmpty ? baseUrl : '$baseUrl?${params.join('&')}';
     final response = await ApiService.get(url);
     if (!mounted) return;
 
@@ -81,6 +98,7 @@ class _AdminResourceScreenState extends State<AdminResourceScreen> {
       final rawFields = response['fields'];
       setState(() {
         _title = response['title']?.toString() ?? widget.title;
+        _role = response['role']?.toString() ?? '';
         _canCreate = response['can_create'] == true;
         _items = rawItems is List
             ? rawItems
@@ -467,6 +485,7 @@ class _AdminResourceScreenState extends State<AdminResourceScreen> {
         item['state']?.toString() ?? '',
       ].where((text) => text.trim().isNotEmpty).join(' - '),
       badge: item['is_active'] == true ? 'Active' : 'Off',
+      editable: _canEdit,
       onTap: id == null
           ? null
           : () => Navigator.pushNamed(
@@ -489,6 +508,7 @@ class _AdminResourceScreenState extends State<AdminResourceScreen> {
         item['email']?.toString() ?? '',
       ].where((text) => text.trim().isNotEmpty).join(' - '),
       badge: item['is_active'] == true ? 'Active' : 'Off',
+      editable: _canEdit,
     );
   }
 

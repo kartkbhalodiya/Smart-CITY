@@ -143,6 +143,8 @@ class ComplaintListSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     media_count = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
+    can_reopen = serializers.BooleanField(read_only=True)
+    reopen_deadline = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = Complaint
@@ -150,8 +152,9 @@ class ComplaintListSerializer(serializers.ModelSerializer):
                   'complaint_type_display', 'subcategory', 'status', 'status_display',
                   'work_status', 'work_status_display', 'priority', 'priority_display',
                   'language', 'city', 'state', 'latitude', 'longitude', 'address',
-                  'created_at', 'updated_at', 'user_name',
+                  'created_at', 'updated_at', 'resolved_at', 'user_name',
                   'media_count', 'thumbnail', 'citizen_rating']
+        fields += ['can_reopen', 'reopen_deadline']
     
     def get_user_name(self, obj):
         if obj.user:

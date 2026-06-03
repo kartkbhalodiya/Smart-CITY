@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import '../../services/conversational_ai_service.dart';
@@ -17,6 +18,7 @@ import '../../providers/locale_provider.dart';
 import '../../config/routes.dart';
 import 'chat_history_screen.dart';
 import '../../widgets/subcategory_selection_dialog.dart';
+import 'ai_call_screen.dart';
 
 class AIChatScreen extends StatefulWidget {
   const AIChatScreen({Key? key}) : super(key: key);
@@ -31,19 +33,21 @@ class _AIChatScreenState extends State<AIChatScreen> {
   final ConversationalAIService _aiService = ConversationalAIService();
   final ChatHistoryService _historyService = ChatHistoryService();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   final List<ChatMessage> _messages = [];
   int? _selectedMessageIndex;
   bool _isLoading = false;
   bool _showInput = true;
   File? _selectedImage;
+  File? _selectedProofFile;
   String? _selectedLocation;
   LatLng? _selectedLatLng;
   String? _currentSessionId;
   String? _complaintId;
 
   String _mapAiPriorityForBackend(dynamic rawPriority) {
-    final normalized = (rawPriority ?? 'normal').toString().trim().toLowerCase();
+    final normalized =
+        (rawPriority ?? 'normal').toString().trim().toLowerCase();
     switch (normalized) {
       case 'critical':
       case 'urgent':
@@ -66,7 +70,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
   }
 
-  double _readComplaintCoordinate(Map<String, dynamic> complaintData, String key) {
+  double _readComplaintCoordinate(
+      Map<String, dynamic> complaintData, String key) {
     final raw = complaintData[key];
     if (raw is num) {
       return raw.toDouble();
@@ -95,7 +100,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
     Map<String, dynamic> complaintData,
     Map<String, dynamic>? complaintResponse,
   ) {
-    final departmentData = _asStringDynamicMap(complaintResponse?['assigned_department']);
+    final departmentData =
+        _asStringDynamicMap(complaintResponse?['assigned_department']);
 
     return {
       'category': _pickFirstNonEmpty([
@@ -137,7 +143,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
     Map<String, dynamic>? complaintResponse,
     String complaintId,
   ) {
-    final submitted = _extractSubmittedComplaintDetails(complaintData, complaintResponse);
+    final submitted =
+        _extractSubmittedComplaintDetails(complaintData, complaintResponse);
     final phoneLine = submitted['departmentPhone']!.isNotEmpty
         ? 'Contact: ${submitted['departmentPhone']}\n'
         : '';
@@ -162,23 +169,40 @@ Track your complaint in "My Complaints" section.''';
   @override
   void initState() {
     super.initState();
-    
+
     // Set AI language to match app language
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final localeProvider = context.read<LocaleProvider>();
       _aiService.setAppLanguage(localeProvider.locale.languageCode);
-      print('🌐 AI language initialized to: ${localeProvider.locale.languageCode}');
+      print(
+          '🌐 AI language initialized to: ${localeProvider.locale.languageCode}');
     });
-    
-    // Clear any existing session first, then load
-    _initializeChat();
+
+    // Show the welcome message immediately; slow storage/network work is warmed
+    // after first paint so the chat page never opens blank.
+    _startConversation();
+    unawaited(_historyService.clearCurrentSession().then((_) {
+      print('Cleared any existing session on init');
+    }));
+    unawaited(_aiService.warmBackendCategories());
   }
 
-  Future<void> _initializeChat() async {
+  void _openVoiceCallPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AICallScreen()),
+    );
+  }
+
+  // ignore: unused_element
+  void _initializeChat() {
     // Always clear current session on app start to prevent duplicates
-    await _historyService.clearCurrentSession();
+    unawaited(_historyService.clearCurrentSession().then((_) {
+      print('ðŸ§¹ Cleared any existing session on init');
+    }));
+    unawaited(_aiService.warmBackendCategories());
     print('🧹 Cleared any existing session on init');
-    
+
     // Start fresh conversation
     _startConversation();
   }
@@ -186,20 +210,20 @@ Track your complaint in "My Complaints" section.''';
   Future<void> _loadOrStartConversation() async {
     // Try to load current session
     final currentSession = await _historyService.loadCurrentSession();
-    
+
     // Only restore if session exists, has messages, and is incomplete
-    if (currentSession != null && 
-        currentSession.messages.isNotEmpty && 
+    if (currentSession != null &&
+        currentSession.messages.isNotEmpty &&
         !currentSession.isCompleted) {
-      
-      print('📂 Restoring session: ${currentSession.id} with ${currentSession.messages.length} messages');
-      
+      print(
+          '📂 Restoring session: ${currentSession.id} with ${currentSession.messages.length} messages');
+
       // Restore previous incomplete session
       setState(() {
         _currentSessionId = currentSession.id;
         _complaintId = currentSession.complaintId;
         _messages.clear();
-        
+
         for (final msgData in currentSession.messages) {
           _messages.add(ChatMessage(
             text: msgData['text'] ?? '',
@@ -219,41 +243,44 @@ Track your complaint in "My Complaints" section.''';
         print('Clearing completed session');
         await _historyService.clearCurrentSession();
       }
-      
+
       print('🆕 Starting fresh conversation');
       _startConversation();
     }
   }
 
-  void _startConversation() async {
+  void _startConversation() {
     final user = context.read<AuthProvider>().user;
-    
+
     // Reset AI service to ensure clean state
     _aiService.reset();
-    
+
     setState(() {
-      _isLoading = true;
+      _isLoading = false;
       _currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
       _complaintId = null;
+      _selectedImage = null;
+      _selectedProofFile = null;
+      _selectedLocation = null;
+      _selectedLatLng = null;
       _messages.clear(); // Clear any existing messages
     });
-    
+
     print('🚀 Starting new conversation with session: $_currentSessionId');
-    
+
     // Prepare user profile
     final userProfile = {
       'fullName': user?.fullName,
       'mobile': user?.mobileNo,
       'email': user?.email,
     };
-    
-    final response = await _aiService.processInput(
-      'Hello',
+
+    final response = _aiService.startInstantConversation(
       userName: user?.fullName ?? 'User',
       userCity: 'Smart City',
       userProfile: userProfile,
     );
-    
+
     setState(() {
       _messages.add(ChatMessage(
         text: response.message,
@@ -265,9 +292,9 @@ Track your complaint in "My Complaints" section.''';
       _showInput = response.showInput;
       _isLoading = false;
     });
-    
+
     print('✅ Conversation started with ${_messages.length} message(s)');
-    
+
     _scrollToBottom();
     // Don't save immediately - wait for user interaction
   }
@@ -280,7 +307,7 @@ Track your complaint in "My Complaints" section.''';
       _handleCurrentLocation();
       return;
     }
-    
+
     if (text.contains('📝 Enter Full Address')) {
       setState(() {
         _messages.add(ChatMessage(
@@ -292,17 +319,28 @@ Track your complaint in "My Complaints" section.''';
       _sendMessage('Type Address');
       return;
     }
-    
+
     if (text.contains('📷 Take Photo')) {
       _handleTakePhoto();
       return;
     }
-    
-    if (text.contains('🖼️ Gallery') || text.contains('🖼️ Choose from Gallery')) {
+
+    if (text.contains('🖼️ Gallery') ||
+        text.contains('🖼️ Choose from Gallery')) {
       _handleChooseFromGallery();
       return;
     }
-    
+
+    if (text.contains('Upload Video')) {
+      _handleChooseVideoFromGallery();
+      return;
+    }
+
+    if (_aiService.isAwaitingMediaConfirmation) {
+      _handleMediaIntakeConfirmation(text);
+      return;
+    }
+
     if (_isSubmitAction(text)) {
       _handleSubmitComplaint();
       return;
@@ -343,7 +381,7 @@ Track your complaint in "My Complaints" section.''';
     });
 
     _scrollToBottom();
-    
+
     // Save session after user interaction (not on initial greeting)
     if (_messages.length > 1) {
       _saveCurrentSession();
@@ -373,13 +411,15 @@ Track your complaint in "My Complaints" section.''';
 
     // Extract category info
     final categoryEmoji = categoryButton.split(' ').first;
-    final categoryName = categoryButton.substring(categoryButton.indexOf(' ') + 1);
-    
+    final categoryName =
+        categoryButton.substring(categoryButton.indexOf(' ') + 1);
+
     // Check if response has subcategories.
-    final hasSubcategories = response.buttons.isNotEmpty && 
+    final hasSubcategories = response.buttons.isNotEmpty &&
         response.buttons.length >= 3 &&
-        response.buttons.every((btn) => !btn.startsWith(RegExp(r'^[\p{Emoji}\s]+', unicode: true)));
-    
+        response.buttons.every((btn) =>
+            !btn.startsWith(RegExp(r'^[\p{Emoji}\s]+', unicode: true)));
+
     setState(() {
       _isLoading = false;
     });
@@ -412,7 +452,7 @@ Track your complaint in "My Complaints" section.''';
         _showInput = response.showInput;
       });
       _scrollToBottom();
-      
+
       if (_messages.length > 1) {
         _saveCurrentSession();
       }
@@ -423,6 +463,114 @@ Track your complaint in "My Complaints" section.''';
   void _handleSubcategorySelection(String subcategory) {
     // Simply send the subcategory as a normal message
     _sendMessage(subcategory);
+  }
+
+  void _showMediaUploadSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.all(14),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.16),
+                  blurRadius: 34,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                _buildMediaSheetAction(
+                  icon: Icons.photo_camera_rounded,
+                  title: 'Take Photo',
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handleTakePhoto();
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildMediaSheetAction(
+                  icon: Icons.image_rounded,
+                  title: 'Upload Image',
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handleChooseFromGallery();
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildMediaSheetAction(
+                  icon: Icons.video_file_rounded,
+                  title: 'Upload Video',
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _handleChooseVideoFromGallery();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMediaSheetAction({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTapDown: (_) => HapticFeedback.selectionClick(),
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 58),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F7FB),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: Color(0xFF111827),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   bool _isSubmitAction(String text) {
@@ -436,7 +584,7 @@ Track your complaint in "My Complaints" section.''';
   Future<void> _handleCurrentLocation() async {
     try {
       setState(() => _isLoading = true);
-      
+
       // Check permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -467,7 +615,7 @@ Track your complaint in "My Complaints" section.''';
       if (result != null && result is Map<String, dynamic>) {
         _selectedLatLng = result['latlng'];
         _selectedLocation = result['address'];
-        
+
         // Set location coordinates in AI service
         _aiService.setLocationCoordinates(
           _selectedLatLng!.latitude,
@@ -475,7 +623,7 @@ Track your complaint in "My Complaints" section.''';
           city: result['city'],
           state: result['state'],
         );
-        
+
         setState(() {
           _messages.add(ChatMessage(
             text: '📍 Location selected: $_selectedLocation',
@@ -483,11 +631,11 @@ Track your complaint in "My Complaints" section.''';
             timestamp: DateTime.now(),
           ));
         });
-        
+
         // Send location to AI (will trigger duplicate check and department assignment)
         _sendMessage(_selectedLocation!);
       }
-      
+
       setState(() => _isLoading = false);
     } catch (e) {
       _showError('Failed to get location: $e');
@@ -505,19 +653,11 @@ Track your complaint in "My Complaints" section.''';
       );
 
       if (photo != null) {
-        await _handleSelectedProof(File(photo.path), 'Photo captured');
-        return;
-        setState(() {
-          _selectedImage = File(photo.path);
-          _messages.add(ChatMessage(
-            text: '📷 Photo captured',
-            isUser: true,
-            timestamp: DateTime.now(),
-            imageFile: _selectedImage,
-          ));
-        });
-        
-        _sendMessage('Photo added');
+        await _handleSelectedMediaForAI(
+          File(photo.path),
+          'Photo captured',
+          isVideo: false,
+        );
       }
     } catch (e) {
       _showError('Failed to take photo: $e');
@@ -534,23 +674,126 @@ Track your complaint in "My Complaints" section.''';
       );
 
       if (image != null) {
-        await _handleSelectedProof(File(image.path), 'Photo selected from gallery');
-        return;
-        setState(() {
-          _selectedImage = File(image.path);
-          _messages.add(ChatMessage(
-            text: '🖼️ Photo selected from gallery',
-            isUser: true,
-            timestamp: DateTime.now(),
-            imageFile: _selectedImage,
-          ));
-        });
-        
-        _sendMessage('Photo added');
+        await _handleSelectedMediaForAI(
+          File(image.path),
+          'Photo selected from gallery',
+          isVideo: false,
+        );
       }
     } catch (e) {
       _showError('Failed to select photo: $e');
     }
+  }
+
+  Future<void> _handleChooseVideoFromGallery() async {
+    try {
+      final XFile? video = await _imagePicker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(seconds: 30),
+      );
+
+      if (video != null) {
+        await _handleSelectedMediaForAI(
+          File(video.path),
+          'Video selected from gallery',
+          isVideo: true,
+        );
+      }
+    } catch (e) {
+      _showError('Failed to select video: $e');
+    }
+  }
+
+  Future<void> _handleSelectedMediaForAI(
+    File mediaFile,
+    String label, {
+    required bool isVideo,
+  }) async {
+    setState(() {
+      _selectedProofFile = mediaFile;
+      _selectedImage = isVideo ? null : mediaFile;
+      _messages.add(ChatMessage(
+        text: label,
+        isUser: true,
+        timestamp: DateTime.now(),
+        imageFile: isVideo ? null : mediaFile,
+      ));
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    final complaintProvider = context.read<ComplaintProvider>();
+    final result = await complaintProvider.analyzeMedia([mediaFile]);
+
+    if (!mounted) return;
+
+    final analysis = result?['analysis'];
+    if (result == null || result['success'] != true || analysis is! Map) {
+      setState(() {
+        _isLoading = false;
+        _messages.add(ChatMessage(
+          text: result?['message'] ??
+              'I could not analyze this media. Please describe the issue in one line.',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+      });
+      _scrollToBottom();
+      return;
+    }
+
+    final response = _aiService.applyMediaIntakeAnalysis(
+      Map<String, dynamic>.from(analysis),
+      isVideo: isVideo,
+    );
+
+    setState(() {
+      _isLoading = false;
+      _messages.add(ChatMessage(
+        text: response.message,
+        isUser: false,
+        buttons: response.buttons,
+        suggestions: response.suggestions,
+        timestamp: DateTime.now(),
+      ));
+      _showInput = response.showInput;
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _handleMediaIntakeConfirmation(String text) async {
+    setState(() {
+      _messages.add(ChatMessage(
+        text: text,
+        isUser: true,
+        timestamp: DateTime.now(),
+      ));
+      _isLoading = true;
+    });
+    _scrollToBottom();
+
+    final normalized = text.trim().toLowerCase();
+    final shouldContinue = _isSubmitAction(text) ||
+        normalized.contains('yes') ||
+        normalized.contains('continue');
+    final response = shouldContinue
+        ? _aiService.continueMediaIntake()
+        : await _aiService.processInput(text);
+
+    if (!mounted) return;
+    setState(() {
+      _messages.add(ChatMessage(
+        text: response.message,
+        isUser: false,
+        buttons: response.buttons,
+        suggestions: response.suggestions,
+        timestamp: DateTime.now(),
+      ));
+      _showInput = response.showInput;
+      _isLoading = false;
+    });
+    _messageController.clear();
+    _scrollToBottom();
   }
 
   Future<void> _handleSelectedProof(File imageFile, String label) async {
@@ -559,7 +802,9 @@ Track your complaint in "My Complaints" section.''';
     final categoryName = (complaintData['category'] ?? categoryKey).toString();
     final subcategory = (complaintData['subcategory'] ?? '').toString().trim();
     final description =
-        (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString().trim();
+        (complaintData['description'] ?? complaintData['raw_description'] ?? '')
+            .toString()
+            .trim();
 
     setState(() {
       _messages.add(ChatMessage(
@@ -575,6 +820,7 @@ Track your complaint in "My Complaints" section.''';
       setState(() {
         _isLoading = false;
         _selectedImage = null;
+        _selectedProofFile = null;
         _messages.add(ChatMessage(
           text:
               'Please first select the complaint category before uploading proof. Gemini needs the issue type to compare your image correctly.',
@@ -590,6 +836,7 @@ Track your complaint in "My Complaints" section.''';
       setState(() {
         _isLoading = false;
         _selectedImage = null;
+        _selectedProofFile = null;
         _messages.add(ChatMessage(
           text:
               'Please choose the complaint type first. Gemini can verify the photo only after it knows the exact issue.',
@@ -604,7 +851,8 @@ Track your complaint in "My Complaints" section.''';
     setState(() {
       _isLoading = true;
       _messages.add(ChatMessage(
-        text: 'Verifying your uploaded proof with Gemini for **$categoryName**...',
+        text:
+            'Verifying your uploaded proof with Gemini for **$categoryName**...',
         isUser: false,
         timestamp: DateTime.now(),
       ));
@@ -625,9 +873,11 @@ Track your complaint in "My Complaints" section.''';
     if (verifyResult != null && verifyResult['success'] == true) {
       setState(() {
         _selectedImage = imageFile;
+        _selectedProofFile = imageFile;
         _isLoading = false;
         _messages.add(ChatMessage(
-          text: 'Proof verified for **$categoryName**. Continuing with your complaint.',
+          text:
+              'Proof verified for **$categoryName**. Continuing with your complaint.',
           isUser: false,
           timestamp: DateTime.now(),
         ));
@@ -642,6 +892,7 @@ Track your complaint in "My Complaints" section.''';
 
     setState(() {
       _selectedImage = null;
+      _selectedProofFile = null;
       _isLoading = false;
       _messages.add(ChatMessage(
         text: errorMsg,
@@ -667,10 +918,13 @@ Track your complaint in "My Complaints" section.''';
       }
 
       {
-        final chatCategoryKey = (complaintData['category_key'] ?? '').toString();
+        final chatCategoryKey =
+            (complaintData['category_key'] ?? '').toString();
         final chatSubcategory = (complaintData['subcategory'] ?? '').toString();
-        final chatDescription =
-            (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString();
+        final chatDescription = (complaintData['description'] ??
+                complaintData['raw_description'] ??
+                '')
+            .toString();
 
         if (chatCategoryKey.isEmpty) {
           _showError('Category is required');
@@ -691,7 +945,8 @@ Track your complaint in "My Complaints" section.''';
         }
 
         final complaintProvider = context.read<ComplaintProvider>();
-        final selectedFiles = _selectedImage != null ? <File>[_selectedImage!] : <File>[];
+        final selectedFiles =
+            _selectedProofFile != null ? <File>[_selectedProofFile!] : <File>[];
 
         if (selectedFiles.isNotEmpty) {
           final verifyResult = await complaintProvider.verifyProof(
@@ -711,7 +966,11 @@ Track your complaint in "My Complaints" section.''';
                 text: errorMsg,
                 isUser: false,
                 timestamp: DateTime.now(),
-                buttons: const ['📷 Take Photo', '🖼️ Choose from Gallery', '⏭️ Skip'],
+                buttons: const [
+                  '📷 Take Photo',
+                  '🖼️ Choose from Gallery',
+                  '⏭️ Skip'
+                ],
               ));
             });
             _scrollToBottom();
@@ -724,13 +983,19 @@ Track your complaint in "My Complaints" section.''';
           'description': chatDescription,
           'complaint_type': chatCategoryKey,
           'subcategory': chatSubcategory,
-          'address': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
-          'latitude': (_selectedLatLng?.latitude ?? _readComplaintCoordinate(complaintData, 'latitude')).toString(),
-          'longitude': (_selectedLatLng?.longitude ?? _readComplaintCoordinate(complaintData, 'longitude')).toString(),
+          'address':
+              (_selectedLocation ?? complaintData['location'] ?? '').toString(),
+          'latitude': (_selectedLatLng?.latitude ??
+                  _readComplaintCoordinate(complaintData, 'latitude'))
+              .toString(),
+          'longitude': (_selectedLatLng?.longitude ??
+                  _readComplaintCoordinate(complaintData, 'longitude'))
+              .toString(),
           'priority': _mapAiPriorityForBackend(complaintData['priority']),
           'uploaded_only_verification': 'true',
         };
-        _addIfNotEmpty(submitData, 'date_of_occurrence', complaintData['date_noticed']);
+        _addIfNotEmpty(
+            submitData, 'date_of_occurrence', complaintData['date_noticed']);
 
         if (complaintData.containsKey('contact_name') &&
             complaintData['contact_name'].toString().isNotEmpty) {
@@ -755,25 +1020,30 @@ Track your complaint in "My Complaints" section.''';
 
         print('Submitting AI chat complaint with data: $submitData');
 
-        final result = await complaintProvider.createComplaint(submitData, selectedFiles);
+        final result =
+            await complaintProvider.createComplaint(submitData, selectedFiles);
 
         if (result != null && result['success'] == true) {
           await complaintProvider.loadComplaints();
           final complaintResponse = _asStringDynamicMap(result['complaint']);
-          final complaintId =
-              complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';
-          final submittedDetails =
-              _extractSubmittedComplaintDetails(complaintData, complaintResponse);
+          final complaintId = complaintResponse?['complaint_number'] ??
+              result['complaint_id'] ??
+              'Unknown';
+          final submittedDetails = _extractSubmittedComplaintDetails(
+              complaintData, complaintResponse);
 
           complaintData['complaint_id'] = complaintId;
           complaintData['status'] = 'submitted';
           complaintData['category'] = submittedDetails['category'];
-          complaintData['subcategory_display'] = submittedDetails['subcategory'];
+          complaintData['subcategory_display'] =
+              submittedDetails['subcategory'];
           complaintData['subcategory'] = submittedDetails['subcategory'];
           complaintData['assigned_department'] = submittedDetails['department'];
           complaintData['department'] = submittedDetails['department'];
-          complaintData['department_phone'] = submittedDetails['departmentPhone'];
-          complaintData['department_email'] = submittedDetails['departmentEmail'];
+          complaintData['department_phone'] =
+              submittedDetails['departmentPhone'];
+          complaintData['department_email'] =
+              submittedDetails['departmentEmail'];
 
           setState(() {
             _messages.add(ChatMessage(
@@ -800,8 +1070,9 @@ Track your complaint in "My Complaints" section.''';
           return;
         }
 
-        final errorMsg =
-            result?['message'] ?? complaintProvider.error ?? 'Failed to submit complaint';
+        final errorMsg = result?['message'] ??
+            complaintProvider.error ??
+            'Failed to submit complaint';
         print('AI chat submission failed: $errorMsg');
         _showError(errorMsg);
         setState(() => _isLoading = false);
@@ -843,7 +1114,7 @@ Track your complaint in "My Complaints" section.''';
               ],
             ),
           );
-          
+
           if (shouldContinue == null) {
             // User chose to retry - function will be called again
             return;
@@ -859,63 +1130,75 @@ Track your complaint in "My Complaints" section.''';
       // Prepare complaint data with contact details
       final categoryKey = (complaintData['category_key'] ?? '').toString();
       final subcategory = (complaintData['subcategory'] ?? '').toString();
-      
+
       // Validate required fields
       if (categoryKey.isEmpty) {
         _showError('Category is required');
         setState(() => _isLoading = false);
         return;
       }
-      
+
       if (subcategory.isEmpty) {
         _showError('Subcategory is required');
         setState(() => _isLoading = false);
         return;
       }
-      
-      final description = (complaintData['description'] ?? complaintData['raw_description'] ?? '').toString();
+
+      final description = (complaintData['description'] ??
+              complaintData['raw_description'] ??
+              '')
+          .toString();
       if (description.isEmpty) {
         _showError('Description is required');
         setState(() => _isLoading = false);
         return;
       }
-      
+
       final submitData = <String, String>{
         'title': '$subcategory - ${complaintData['category']}',
         'description': description,
         'complaint_type': categoryKey, // Use complaint_type to match backend
         'subcategory': subcategory,
-        'address': (_selectedLocation ?? complaintData['location'] ?? '').toString(),
-        'latitude': (_selectedLatLng?.latitude ?? _readComplaintCoordinate(complaintData, 'latitude')).toString(),
-        'longitude': (_selectedLatLng?.longitude ?? _readComplaintCoordinate(complaintData, 'longitude')).toString(),
+        'address':
+            (_selectedLocation ?? complaintData['location'] ?? '').toString(),
+        'latitude': (_selectedLatLng?.latitude ??
+                _readComplaintCoordinate(complaintData, 'latitude'))
+            .toString(),
+        'longitude': (_selectedLatLng?.longitude ??
+                _readComplaintCoordinate(complaintData, 'longitude'))
+            .toString(),
         'priority': _mapAiPriorityForBackend(complaintData['priority']),
       };
-      _addIfNotEmpty(submitData, 'date_of_occurrence', complaintData['date_noticed']);
-      
+      _addIfNotEmpty(
+          submitData, 'date_of_occurrence', complaintData['date_noticed']);
+
       // Add contact details if available
-      if (complaintData.containsKey('contact_name') && complaintData['contact_name'].toString().isNotEmpty) {
+      if (complaintData.containsKey('contact_name') &&
+          complaintData['contact_name'].toString().isNotEmpty) {
         final name = complaintData['contact_name'].toString();
         submitData['guest_name'] = name;
         submitData['name'] = name;
       }
-      if (complaintData.containsKey('contact_mobile') && complaintData['contact_mobile'].toString().isNotEmpty) {
+      if (complaintData.containsKey('contact_mobile') &&
+          complaintData['contact_mobile'].toString().isNotEmpty) {
         final mobile = complaintData['contact_mobile'].toString();
         submitData['guest_phone'] = mobile;
         submitData['mobile_no'] = mobile;
         submitData['preferred_contact_phone'] = 'true';
       }
-      if (complaintData.containsKey('contact_email') && complaintData['contact_email'].toString().isNotEmpty) {
+      if (complaintData.containsKey('contact_email') &&
+          complaintData['contact_email'].toString().isNotEmpty) {
         final email = complaintData['contact_email'].toString();
         submitData['guest_email'] = email;
         submitData['email'] = email;
         submitData['preferred_contact_email'] = 'true';
       }
-      
+
       // Add image URL if uploaded
       if (imageUrl != null) {
         submitData['image_url'] = imageUrl;
       }
-      
+
       print('📤 Submitting complaint with data: $submitData');
 
       // Prepare files list (empty since we already uploaded to Cloudinary)
@@ -929,8 +1212,10 @@ Track your complaint in "My Complaints" section.''';
         await complaintProvider.loadComplaints();
         // Extract real data from backend response
         final complaintResponse = _asStringDynamicMap(result['complaint']);
-        final complaintId = complaintResponse?['complaint_number'] ?? result['complaint_id'] ?? 'Unknown';
-        
+        final complaintId = complaintResponse?['complaint_number'] ??
+            result['complaint_id'] ??
+            'Unknown';
+
         final submittedDetails =
             _extractSubmittedComplaintDetails(complaintData, complaintResponse);
         final matchedCategory = submittedDetails['category'] ?? 'Unknown';
@@ -942,8 +1227,9 @@ Track your complaint in "My Complaints" section.''';
         final departmentPhone = submittedDetails['departmentPhone'] ?? '';
         final departmentEmail = submittedDetails['departmentEmail'] ?? '';
         final priority = submittedDetails['priority'] ?? 'Normal';
-        final estimatedResolution = '${submittedDetails['slaHours'] ?? '48'} hours';
-        
+        final estimatedResolution =
+            '${submittedDetails['slaHours'] ?? '48'} hours';
+
         // Update AI with real complaint ID
         complaintData['complaint_id'] = complaintId;
         complaintData['status'] = 'submitted';
@@ -954,7 +1240,7 @@ Track your complaint in "My Complaints" section.''';
         complaintData['department'] = submittedDetails['department'];
         complaintData['department_phone'] = submittedDetails['departmentPhone'];
         complaintData['department_email'] = submittedDetails['departmentEmail'];
-        
+
         setState(() {
           _messages.add(ChatMessage(
             text: '''🎉 **Complaint Submitted Successfully!**
@@ -973,20 +1259,22 @@ Your complaint has been registered and assigned to the nearest department.
           ));
           _isLoading = false;
         });
-        
+
         _scrollToBottom();
-        
+
         // Save complaint ID to session
         _complaintId = complaintId;
         await _saveCurrentSession(); // Save with isCompleted = true
-        
+
         // Clear current session after a delay so user can see success message
         Future.delayed(const Duration(seconds: 2), () async {
           await _historyService.clearCurrentSession();
           print('🧹 Cleared completed session from current');
         });
       } else {
-        final errorMsg = result?['message'] ?? complaintProvider.error ?? 'Failed to submit complaint';
+        final errorMsg = result?['message'] ??
+            complaintProvider.error ??
+            'Failed to submit complaint';
         print('❌ Submission failed: $errorMsg');
         _showError(errorMsg);
         setState(() => _isLoading = false);
@@ -1011,31 +1299,34 @@ Your complaint has been registered and assigned to the nearest department.
 
       const cloudName = 'dk1q50evg';
       const uploadPreset = 'smartcity_complaints';
-      
-      final url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+
+      final url =
+          Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
       final request = http.MultipartRequest('POST', url);
-      
+
       request.fields['upload_preset'] = uploadPreset;
       request.fields['folder'] = 'complaints';
-      
-      final multipartFile = await http.MultipartFile.fromPath('file', imageFile.path);
+
+      final multipartFile =
+          await http.MultipartFile.fromPath('file', imageFile.path);
       request.files.add(multipartFile);
-      
+
       print('Uploading to Cloudinary: $cloudName with preset: $uploadPreset');
-      
+
       final streamedResponse = await request.send().timeout(
-        const Duration(seconds: 60),
-        onTimeout: () => throw Exception('Upload timeout - check your connection'),
-      );
-      
+            const Duration(seconds: 60),
+            onTimeout: () =>
+                throw Exception('Upload timeout - check your connection'),
+          );
+
       final response = await http.Response.fromStream(streamedResponse);
       print('Upload response: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         final imageUrl = jsonData['secure_url'] as String;
         print('Image uploaded successfully: $imageUrl');
-        
+
         setState(() {
           _messages.add(ChatMessage(
             text: '✅ Image uploaded successfully!',
@@ -1044,7 +1335,7 @@ Your complaint has been registered and assigned to the nearest department.
           ));
         });
         _scrollToBottom();
-        
+
         return imageUrl;
       } else {
         final errorBody = response.body;
@@ -1053,16 +1344,17 @@ Your complaint has been registered and assigned to the nearest department.
       }
     } catch (e) {
       print('Upload error: $e');
-      
+
       setState(() {
         _messages.add(ChatMessage(
-          text: '❌ Upload failed: ${e.toString()}\n\nPlease check your internet connection.',
+          text:
+              '❌ Upload failed: ${e.toString()}\n\nPlease check your internet connection.',
           isUser: false,
           timestamp: DateTime.now(),
         ));
       });
       _scrollToBottom();
-      
+
       return null;
     }
   }
@@ -1107,27 +1399,18 @@ Your complaint has been registered and assigned to the nearest department.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF6F7FB),
       appBar: AppBar(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? Theme.of(context).cardColor,
+        backgroundColor: const Color(0xFFF6F7FB),
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF111827)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.smart_toy, color: Colors.white, size: 24),
-            ),
+            _buildAiAvatar(40),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1137,13 +1420,14 @@ Your complaint has been registered and assigned to the nearest department.
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Theme.of(context).textTheme.titleLarge?.color ?? const Color(0xFF0f172a),
+                    color: const Color(0xFF111827),
                   ),
                 ),
                 Text(
                   'Online',
                   style: GoogleFonts.inter(
                     fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF22C55E),
                   ),
                 ),
@@ -1152,16 +1436,25 @@ Your complaint has been registered and assigned to the nearest department.
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: Color(0xFF64748b)),
+          _buildTopActionButton(
+            icon: Icons.call_rounded,
+            tooltip: 'Start AI call',
+            onTap: _openVoiceCallPage,
+            dark: true,
+          ),
+          const SizedBox(width: 8),
+          _buildTopActionButton(
+            icon: Icons.history_rounded,
             tooltip: 'Chat History',
-            onPressed: () => _showChatHistory(),
+            onTap: () => _showChatHistory(),
           ),
-          IconButton(
-            icon: const Icon(Icons.add_comment, color: Color(0xFF64748b)),
+          const SizedBox(width: 8),
+          _buildTopActionButton(
+            icon: Icons.add_comment_rounded,
             tooltip: 'New Chat',
-            onPressed: () => _startNewChat(),
+            onTap: () => _startNewChat(),
           ),
+          const SizedBox(width: 12),
         ],
       ),
       body: Column(
@@ -1169,7 +1462,7 @@ Your complaint has been registered and assigned to the nearest department.
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 return _buildMessage(_messages[index], index);
@@ -1183,43 +1476,114 @@ Your complaint has been registered and assigned to the nearest department.
     );
   }
 
+  Widget _buildAiAvatar(double size, {bool elevated = false}) {
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * 0.15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A)
+                .withValues(alpha: elevated ? 0.12 : 0.06),
+            blurRadius: elevated ? 32 : 18,
+            offset: Offset(0, elevated ? 16 : 8),
+          ),
+        ],
+      ),
+      child: Image.asset(
+        'assets/images/logo.png',
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => const Icon(
+          Icons.smart_toy_rounded,
+          color: Color(0xFF111827),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    bool dark = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTapDown: (_) => HapticFeedback.selectionClick(),
+        onTap: onTap,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: dark ? null : Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: dark
+                  ? Colors.white.withValues(alpha: 0.14)
+                  : Colors.white.withValues(alpha: 0.95),
+            ),
+            gradient: dark
+                ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF1A1A1A), Color(0xFF050505)],
+                  )
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: dark
+                    ? Colors.black.withValues(alpha: 0.18)
+                    : const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: dark ? 20 : 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            size: 19,
+            color: dark ? Colors.white : const Color(0xFF111827),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessage(ChatMessage message, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final aiBg = isDark ? const Color(0xFF2F80ED).withOpacity(0.16) : const Color(0xFFEFF7FF);
-    final userBg = isDark ? const Color(0xFF2F80ED) : const Color(0xFFDCEBFF);
-    final aiTextColor = isDark ? Colors.white : const Color(0xFF0f172a);
-    final userTextColor = isDark ? Colors.white : Colors.black87;
-    final borderRadius = BorderRadius.circular(16);
+    final aiBg = isDark ? const Color(0xFF1F2937) : Colors.white;
+    final userBg = isDark ? const Color(0xFF050505) : const Color(0xFF111827);
+    final aiTextColor = isDark ? Colors.white : const Color(0xFF111827);
+    const userTextColor = Colors.white;
+    final borderRadius = BorderRadius.circular(20);
     final isSelected = _selectedMessageIndex == index;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment:
             message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: message.isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!message.isUser) ...[ 
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.smart_toy, color: Colors.white, size: 18),
-                ),
+              if (!message.isUser) ...[
+                _buildAiAvatar(34),
                 const SizedBox(width: 8),
               ],
               Flexible(
                 child: Column(
-                  crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: message.isUser
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     Material(
                       color: Colors.transparent,
@@ -1228,23 +1592,36 @@ Your complaint has been registered and assigned to the nearest department.
                             ? null
                             : () async {
                                 setState(() {
-                                  _selectedMessageIndex = _selectedMessageIndex == index ? null : index;
+                                  _selectedMessageIndex =
+                                      _selectedMessageIndex == index
+                                          ? null
+                                          : index;
                                 });
                                 await _copyMessageToClipboard(message.text);
                               },
                         borderRadius: borderRadius,
                         child: Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
                             color: message.isUser ? userBg : aiBg,
                             borderRadius: borderRadius,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
+                                color: const Color(0xFF0F172A)
+                                    .withValues(alpha: 0.06),
+                                blurRadius: 24,
+                                offset: const Offset(0, 10),
                               ),
                             ],
-                            border: isSelected ? Border.all(color: const Color(0xFF2F80ED), width: 1.5) : null,
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF111827)
+                                  : Colors.white.withValues(alpha: 0.95),
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1260,7 +1637,9 @@ Your complaint has been registered and assigned to the nearest department.
                                   'Tap to copy',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
-                                    color: isDark ? Colors.white70 : Colors.black45,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black45,
                                   ),
                                 ),
                               ],
@@ -1272,7 +1651,8 @@ Your complaint has been registered and assigned to the nearest department.
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _getUrgencyColor(message.urgencyLevel!),
+                                    color:
+                                        _getUrgencyColor(message.urgencyLevel!),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
@@ -1291,7 +1671,9 @@ Your complaint has been registered and assigned to the nearest department.
                                   '⏱️ Est. Resolution: ${message.estimatedTime}',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
-                                    color: message.isUser ? Colors.white70 : const Color(0xFF64748b),
+                                    color: message.isUser
+                                        ? Colors.white70
+                                        : const Color(0xFF64748b),
                                   ),
                                 ),
                               ],
@@ -1315,21 +1697,34 @@ Your complaint has been registered and assigned to the nearest department.
                   ],
                 ),
               ),
-              if (message.isUser) ...[ 
+              if (message.isUser) ...[
                 const SizedBox(width: 8),
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
-                    color: userBg,
+                    color: Colors.white,
                     shape: BoxShape.circle,
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.95)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  child: Icon(Icons.person, color: userTextColor, size: 18),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: Color(0xFF111827),
+                    size: 18,
+                  ),
                 ),
               ],
             ],
           ),
-          if (!message.isUser && message.buttons.isNotEmpty) ...[ 
+          if (!message.isUser && message.buttons.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -1353,7 +1748,7 @@ Your complaint has been registered and assigned to the nearest department.
         child: _buttonContainer(text),
       );
     }
-    
+
     if (text.contains('Home')) {
       return GestureDetector(
         onTap: () => Navigator.pushNamedAndRemoveUntil(
@@ -1364,7 +1759,7 @@ Your complaint has been registered and assigned to the nearest department.
         child: _buttonContainer(text),
       );
     }
-    
+
     if (text.contains('File Another') || text.contains('➕ New Complaint')) {
       return GestureDetector(
         onTap: () {
@@ -1372,6 +1767,7 @@ Your complaint has been registered and assigned to the nearest department.
             _messages.clear();
             _aiService.reset();
             _selectedImage = null;
+            _selectedProofFile = null;
             _selectedLocation = null;
             _selectedLatLng = null;
           });
@@ -1380,13 +1776,7 @@ Your complaint has been registered and assigned to the nearest department.
         child: _buttonContainer(text),
       );
     }
-    
-    // Check if this is a subcategory button (appears after category selection)
-    // Subcategory labels are plain text.
-    final isSubcategory = !text.startsWith(RegExp(r'[\p{Emoji}]', unicode: true)) && 
-                          _messages.isNotEmpty &&
-                          _messages.last.buttons.contains(text);
-    
+
     return GestureDetector(
       onTap: () => _sendMessage(text),
       child: _buttonContainer(text),
@@ -1395,24 +1785,43 @@ Your complaint has been registered and assigned to the nearest department.
 
   Widget _buttonContainer(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.65),
-        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1A1A1A), Color(0xFF050505)],
+        ),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.arrow_forward_rounded,
+            color: Colors.white,
+            size: 16,
+          ),
+        ],
       ),
     );
   }
@@ -1424,23 +1833,21 @@ Your complaint has been registered and assigned to the nearest department.
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade400, Colors.purple.shade400],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.smart_toy, color: Colors.white, size: 18),
-          ),
+          _buildAiAvatar(34),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1469,7 +1876,7 @@ Your complaint has been registered and assigned to the nearest department.
             width: 8,
             height: 8,
             decoration: const BoxDecoration(
-              color: Color(0xFF64748b),
+              color: Color(0xFF111827),
               shape: BoxShape.circle,
             ),
           ),
@@ -1480,60 +1887,125 @@ Your complaint has been registered and assigned to the nearest department.
 
   Widget _buildInputArea() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: const Color(0xFFF6F7FB),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, -8),
           ),
         ],
       ),
       child: SafeArea(
         child: Row(
           children: [
+            GestureDetector(
+              onTapDown: (_) => HapticFeedback.selectionClick(),
+              onTap: _showMediaUploadSheet,
+              child: Container(
+                width: 48,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.add_photo_alternate_rounded,
+                  color: Color(0xFF111827),
+                  size: 23,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Container(
+                constraints: const BoxConstraints(minHeight: 58),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  decoration: InputDecoration(
-                    hintText: 'Type your message...',
-                    hintStyle: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: const Color(0xFF94A3B8),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
                     ),
-                    border: InputBorder.none,
+                  ],
+                ),
+                child: TextSelectionTheme(
+                  data: const TextSelectionThemeData(
+                    cursorColor: Color(0xFF111827),
+                    selectionColor: Color(0x22111827),
+                    selectionHandleColor: Color(0xFF111827),
                   ),
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyLarge?.color ?? const Color(0xFF0f172a),
+                  child: TextField(
+                    controller: _messageController,
+                    cursorColor: const Color(0xFF111827),
+                    decoration: InputDecoration(
+                      isCollapsed: false,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: 'Type your message...',
+                      hintStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: const Color(0xFF94A3B8),
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                    ),
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                    maxLines: null,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: _sendMessage,
                   ),
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: _sendMessage,
                 ),
               ),
             ),
             const SizedBox(width: 12),
             GestureDetector(
+              onTapDown: (_) => HapticFeedback.selectionClick(),
               onTap: () => _sendMessage(_messageController.text),
               child: Container(
-                width: 48,
-                height: 48,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [const Color(0xFF2F80ED), const Color(0xFF5BC7FF)],
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF1A1A1A), Color(0xFF050505)],
                   ),
                   shape: BoxShape.circle,
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.22),
+                      blurRadius: 28,
+                      offset: const Offset(0, 14),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.send, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.arrow_upward_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           ],
@@ -1558,15 +2030,17 @@ Your complaint has been registered and assigned to the nearest department.
   Future<void> _saveCurrentSession() async {
     if (_messages.isEmpty || _currentSessionId == null) return;
 
-    final messagesData = _messages.map((msg) => {
-      'text': msg.text,
-      'isUser': msg.isUser,
-      'timestamp': msg.timestamp.toIso8601String(),
-      'buttons': msg.buttons,
-      'suggestions': msg.suggestions,
-      'urgencyLevel': msg.urgencyLevel,
-      'estimatedTime': msg.estimatedTime,
-    }).toList();
+    final messagesData = _messages
+        .map((msg) => {
+              'text': msg.text,
+              'isUser': msg.isUser,
+              'timestamp': msg.timestamp.toIso8601String(),
+              'buttons': msg.buttons,
+              'suggestions': msg.suggestions,
+              'urgencyLevel': msg.urgencyLevel,
+              'estimatedTime': msg.estimatedTime,
+            })
+        .toList();
 
     final session = ChatSession(
       id: _currentSessionId!,
@@ -1575,7 +2049,8 @@ Your complaint has been registered and assigned to the nearest department.
       lastMessageAt: _messages.last.timestamp,
       messages: messagesData,
       complaintId: _complaintId,
-      isCompleted: _complaintId != null, // Mark as completed if complaint submitted
+      isCompleted:
+          _complaintId != null, // Mark as completed if complaint submitted
     );
 
     await _historyService.saveCurrentSession(session);
@@ -1645,12 +2120,13 @@ Your complaint has been registered and assigned to the nearest department.
     setState(() {
       _messages.clear();
       _selectedImage = null;
+      _selectedProofFile = null;
       _selectedLocation = null;
       _selectedLatLng = null;
       _currentSessionId = null;
       _complaintId = null;
     });
-    
+
     // Reset AI service
     _aiService.reset();
 
@@ -1675,7 +2151,7 @@ Your complaint has been registered and assigned to the nearest department.
         _currentSessionId = selectedSession.id;
         _complaintId = selectedSession.complaintId;
         _messages.clear();
-        
+
         for (final msgData in selectedSession.messages) {
           _messages.add(ChatMessage(
             text: msgData['text'] ?? '',
@@ -1688,7 +2164,7 @@ Your complaint has been registered and assigned to the nearest department.
           ));
         }
       });
-      
+
       // Save as current session
       await _historyService.saveCurrentSession(selectedSession);
       _scrollToBottom();
@@ -1740,7 +2216,7 @@ class LocationPickerScreen extends StatefulWidget {
   final bool isComplaintLocation;
 
   const LocationPickerScreen({
-    Key? key, 
+    Key? key,
     required this.initialPosition,
     this.isComplaintLocation = false,
   }) : super(key: key);
@@ -1764,7 +2240,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.isComplaintLocation ? 'Select Complaint Location' : 'Select Location',
+          widget.isComplaintLocation
+              ? 'Select Complaint Location'
+              : 'Select Location',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(0xFF1E66F5),
@@ -1774,7 +2252,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             onPressed: () {
               Navigator.pop(context, {
                 'latlng': _selectedPosition,
-                'address': 'Lat: ${_selectedPosition.latitude.toStringAsFixed(6)}, Lng: ${_selectedPosition.longitude.toStringAsFixed(6)}',
+                'address':
+                    'Lat: ${_selectedPosition.latitude.toStringAsFixed(6)}, Lng: ${_selectedPosition.longitude.toStringAsFixed(6)}',
               });
             },
           ),
@@ -1828,7 +2307,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: const Color(0xFF2F80ED), size: 24),
+                    const Icon(Icons.warning_amber_rounded,
+                        color: const Color(0xFF2F80ED), size: 24),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

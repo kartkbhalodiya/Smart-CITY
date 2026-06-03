@@ -31,6 +31,8 @@ class Complaint {
   final DateTime? reopenDeadline;
   final DateTime? reopenedAt;
   final List<ComplaintMedia>? workProof;
+  final List<ComplaintMedia>? resolutionProofs;
+  final List<ComplaintReopenProof>? reopenProofs;
   final String? citizenFeedback;
   final List<ComplaintFieldResponse>? fieldResponses;
 
@@ -67,11 +69,16 @@ class Complaint {
     this.reopenDeadline,
     this.reopenedAt,
     this.workProof,
+    this.resolutionProofs,
+    this.reopenProofs,
     this.citizenFeedback,
     this.fieldResponses,
   });
 
   factory Complaint.fromJson(Map<String, dynamic> json) {
+    final rawResolutionProofs = json['resolution_proofs'] ?? json['work_proof'];
+    final resolutionProofs = _mediaListFrom(rawResolutionProofs);
+    final reopenProofs = _reopenProofListFrom(json['reopen_proofs']);
     return Complaint(
       id: json['id'] ?? 0,
       complaintNumber: json['complaint_number'] ?? '',
@@ -89,19 +96,21 @@ class Complaint {
       pincode: json['pincode'],
       address: json['address'] ?? '',
       status: json['status'] ?? 'pending',
-      dateOfOccurrence: json['date_of_occurrence'] != null ? DateTime.parse(json['date_of_occurrence']) : null,
+      dateOfOccurrence: json['date_of_occurrence'] != null
+          ? DateTime.parse(json['date_of_occurrence'])
+          : null,
       statusDisplay: json['status_display'] ?? 'Pending',
       workStatus: json['work_status'] ?? 'pending',
       workStatusDisplay: json['work_status_display'] ?? 'Pending',
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updated_at'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+          json['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updated_at'] ?? DateTime.now().toIso8601String()),
       userName: json['user_name'] ?? 'Anonymous',
       mediaCount: json['media_count'] ?? 0,
       thumbnail: json['thumbnail'],
       citizenRating: json['citizen_rating'],
-      media: json['media'] != null
-          ? (json['media'] as List).map((m) => ComplaintMedia.fromJson(m)).toList()
-          : null,
+      media: _mediaListFrom(json['media']),
       assignedDepartment: json['assigned_department'] != null
           ? Department.fromJson(json['assigned_department'])
           : null,
@@ -112,15 +121,63 @@ class Complaint {
       reopenedAt: json['reopened_at'] != null
           ? DateTime.parse(json['reopened_at'])
           : null,
-      workProof: json['work_proof'] != null
-          ? (json['work_proof'] as List).map((m) => ComplaintMedia.fromJson(m)).toList()
-          : null,
+      workProof: resolutionProofs,
+      resolutionProofs: resolutionProofs,
+      reopenProofs: reopenProofs,
       citizenFeedback: json['citizen_feedback'],
       fieldResponses: json['field_responses'] != null
           ? (json['field_responses'] as List)
               .map((f) => ComplaintFieldResponse.fromJson(f))
               .toList()
           : null,
+    );
+  }
+}
+
+List<ComplaintMedia>? _mediaListFrom(dynamic value) {
+  if (value is! List) return null;
+  return value
+      .whereType<Map>()
+      .map((m) => ComplaintMedia.fromJson(Map<String, dynamic>.from(m)))
+      .toList();
+}
+
+List<ComplaintReopenProof>? _reopenProofListFrom(dynamic value) {
+  if (value is! List) return null;
+  return value
+      .whereType<Map>()
+      .map((m) => ComplaintReopenProof.fromJson(Map<String, dynamic>.from(m)))
+      .toList();
+}
+
+class ComplaintReopenProof {
+  final int id;
+  final String reason;
+  final String proof;
+  final String proofUrl;
+  final String requestedByName;
+  final DateTime? createdAt;
+
+  ComplaintReopenProof({
+    required this.id,
+    required this.reason,
+    required this.proof,
+    required this.proofUrl,
+    required this.requestedByName,
+    this.createdAt,
+  });
+
+  factory ComplaintReopenProof.fromJson(Map<String, dynamic> json) {
+    final created = json['created_at']?.toString();
+    return ComplaintReopenProof(
+      id: json['id'] ?? 0,
+      reason: json['reason']?.toString() ?? '',
+      proof: json['proof']?.toString() ?? '',
+      proofUrl: json['proof_url']?.toString() ?? '',
+      requestedByName: json['requested_by_name']?.toString() ?? '',
+      createdAt: created == null || created.isEmpty
+          ? null
+          : DateTime.tryParse(created),
     );
   }
 }

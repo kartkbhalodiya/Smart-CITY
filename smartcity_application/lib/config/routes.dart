@@ -5,6 +5,7 @@ import '../screens/ai_assistant/ai_chat_screen.dart';
 import '../screens/admin/admin_complaint_detail_screen.dart';
 import '../screens/admin/admin_entity_detail_screen.dart';
 import '../screens/admin/admin_heatmap_screen.dart';
+import '../screens/admin/admin_location_map_screen.dart';
 import '../screens/admin/admin_overview_screen.dart';
 import '../screens/admin/admin_password_screen.dart';
 import '../screens/admin/admin_resource_screen.dart';
@@ -16,7 +17,6 @@ import '../screens/complaints/complaint_detail_screen.dart';
 import '../screens/complaints/complaint_success_screen.dart';
 import '../screens/complaints/guest_track_screen.dart';
 import '../screens/complaints/submit_complaint_screen.dart';
-import '../screens/complaints/track_complaints_screen.dart';
 import '../screens/complaints/user_track.dart';
 import '../screens/dashboard/choose_category_modern_screen.dart';
 import '../screens/dashboard/guest_dashboard_screen.dart';
@@ -44,6 +44,7 @@ class AppRoutes {
   static const String adminDepartmentDetail = '/admin/department-detail';
   static const String adminCitizenDetail = '/admin/citizen-detail';
   static const String adminHeatmap = '/admin/heatmap';
+  static const String adminLocationMap = '/admin/location-map';
   static const String adminPassword = '/admin/password';
   static const String guestDashboard = '/guest-dashboard';
   static const String departmentsList = '/departments-list';
@@ -155,6 +156,7 @@ class AppRoutes {
           (_) => AdminResourceScreen(
             resource: args['resource']?.toString() ?? 'complaints',
             title: args['title']?.toString() ?? 'Admin',
+            workStatus: args['workStatus']?.toString(),
           ),
         );
 
@@ -187,6 +189,19 @@ class AppRoutes {
 
       case adminHeatmap:
         return smoothRoute(settings, (_) => const AdminHeatmapScreen());
+
+      case adminLocationMap:
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final rawId = args['id'];
+        final id =
+            rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '') ?? 0;
+        return smoothRoute(
+          settings,
+          (_) => AdminLocationMapScreen(
+            type: args['type']?.toString() ?? 'complaint',
+            id: id,
+          ),
+        );
 
       case adminPassword:
         return smoothRoute(settings, (_) => const AdminPasswordScreen());
@@ -238,7 +253,7 @@ class AppRoutes {
         return smoothRoute(settings, (_) => const GuestTrackScreen());
 
       case trackComplaints:
-        return smoothRoute(settings, (_) => const TrackComplaintsScreen());
+        return smoothRoute(settings, (_) => const UserTrackScreen());
 
       case userTrack:
         return smoothRoute(settings, (_) => const UserTrackScreen());

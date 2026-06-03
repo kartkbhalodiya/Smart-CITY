@@ -146,6 +146,11 @@ class AIService {
   static final AIService instance = AIService._internal();
   factory AIService() => instance;
 
+  static const String _openRouterApiKey = String.fromEnvironment(
+    'OPENROUTER_API_KEY',
+    defaultValue: '',
+  );
+
   static const int _cacheMaxEntries = 200;
 
   final List<Map<String, String>> _history = [];
@@ -432,7 +437,8 @@ class AIService {
 
     // Generate unique session ID if not exists
     if (_sessionId.isEmpty || _sessionId == 'default') {
-      _sessionId = 'flutter_${DateTime.now().millisecondsSinceEpoch}_${input.hashCode.abs()}';
+      _sessionId =
+          'flutter_${DateTime.now().millisecondsSinceEpoch}_${input.hashCode.abs()}';
       debugPrint('Generated new session ID: $_sessionId');
     }
 
@@ -454,13 +460,15 @@ class AIService {
     }
 
     _history.add({'role': 'user', 'content': input});
-    
+
     // Detect language from user input
     final detectedLanguage = _detectLanguage(input);
-    
+
     // Use detected language ONLY if user typed in specific script/Hinglish
     // Otherwise, use app's selected language for response
-    if (detectedLanguage == 'hinglish' || detectedLanguage == 'hi' || detectedLanguage == 'gu') {
+    if (detectedLanguage == 'hinglish' ||
+        detectedLanguage == 'hi' ||
+        detectedLanguage == 'gu') {
       _currentLanguage = detectedLanguage;
       debugPrint('🗣️ User typed in: $detectedLanguage');
     } else {
@@ -468,19 +476,19 @@ class AIService {
       _currentLanguage = _appLanguage;
       debugPrint('🌐 Using app language: $_appLanguage');
     }
-    
+
     _userMood = _detectMood(input);
 
     // Advanced conversation flow
     AssistantReply reply;
-    
+
     switch (_conversationState) {
       case 'greeting':
       case 'awaiting_problem':
         // User directly stated problem (greeting check already done above)
         reply = await _handleProblemDescription(input);
         break;
-        
+
       case 'category_confirmation':
         // Step 3: Confirm category
         if (_isYesResponse(input)) {
@@ -495,19 +503,23 @@ class AIService {
           reply = await _handleProblemDescription(input);
         }
         break;
-        
+
       case 'location_request':
         // Step 4: Request location
         reply = _handleLocationRequest(input);
         break;
-        
+
       case 'location_confirmation':
         // Step 5: Confirm location or skip
-        if (_isYesResponse(input) || input.toLowerCase().contains('map') || input.toLowerCase().contains('location')) {
+        if (_isYesResponse(input) ||
+            input.toLowerCase().contains('map') ||
+            input.toLowerCase().contains('location')) {
           _locationProvided = true;
           _conversationState = 'photo_request';
           reply = _handleLocationConfirmed();
-        } else if (_isNoResponse(input) || input.toLowerCase().contains('skip') || input.toLowerCase().contains('no location')) {
+        } else if (_isNoResponse(input) ||
+            input.toLowerCase().contains('skip') ||
+            input.toLowerCase().contains('no location')) {
           _locationProvided = false;
           _conversationState = 'photo_request';
           reply = _handleLocationSkipped();
@@ -515,14 +527,18 @@ class AIService {
           reply = _handleLocationRequest(input);
         }
         break;
-        
+
       case 'photo_request':
         // Step 6: Request photo
-        if (_isYesResponse(input) || input.toLowerCase().contains('photo') || input.toLowerCase().contains('upload')) {
+        if (_isYesResponse(input) ||
+            input.toLowerCase().contains('photo') ||
+            input.toLowerCase().contains('upload')) {
           _photoUploaded = true;
           _conversationState = 'date_request';
           reply = _handlePhotoUploaded();
-        } else if (_isNoResponse(input) || input.toLowerCase().contains('skip') || input.toLowerCase().contains('no photo')) {
+        } else if (_isNoResponse(input) ||
+            input.toLowerCase().contains('skip') ||
+            input.toLowerCase().contains('no photo')) {
           _photoUploaded = false;
           _conversationState = 'date_request';
           reply = _handlePhotoSkipped();
@@ -530,27 +546,27 @@ class AIService {
           reply = _requestPhoto();
         }
         break;
-        
+
       case 'date_request':
         // Step 7: Request date of occurrence
         reply = _handleDateInput(input);
         break;
-        
+
       case 'summary_review':
         // Step 8: Show summary with Edit/Confirm buttons
         reply = _showFinalSummary();
         break;
-        
+
       case 'edit_mode':
         // Step 9: Handle edits
         reply = _handleEdit(input);
         break;
-        
+
       case 'submitting':
         // Step 10: Submit to nearest department
         reply = await _handleSubmission();
         break;
-        
+
       default:
         reply = await _handleProblemDescription(input);
     }
@@ -628,11 +644,12 @@ class AIService {
         debugPrint('OpenRouter LLM prediction successful');
         return _buildReplyFromLLM(llmResult, input);
       }
-      debugPrint('OpenRouter LLM returned null, falling back to local analysis');
+      debugPrint(
+          'OpenRouter LLM returned null, falling back to local analysis');
     } catch (e) {
       debugPrint('OpenRouter LLM failed: $e, falling back to local analysis');
     }
-    
+
     // Fallback to local offline analysis
     final analysis = _analyzeOffline(input);
     _mergeDraft(analysis, input);
@@ -641,52 +658,96 @@ class AIService {
 
   bool _isYesResponse(String input) {
     final lower = input.toLowerCase().trim();
-    return ['yes', 'y', 'yeah', 'yep', 'correct', 'right', 'sahi', 'हां', 'हा', 'જી', 'જી હા', 'sach', 'theek'].contains(lower);
+    return [
+      'yes',
+      'y',
+      'yeah',
+      'yep',
+      'correct',
+      'right',
+      'sahi',
+      'हां',
+      'हा',
+      'જી',
+      'જી હા',
+      'sach',
+      'theek'
+    ].contains(lower);
   }
 
   bool _isNoResponse(String input) {
     final lower = input.toLowerCase().trim();
-    return ['no', 'n', 'nope', 'wrong', 'incorrect', 'nahi', 'नहीं', 'ના', 'galat', 'galt'].contains(lower);
+    return [
+      'no',
+      'n',
+      'nope',
+      'wrong',
+      'incorrect',
+      'nahi',
+      'नहीं',
+      'ના',
+      'galat',
+      'galt'
+    ].contains(lower);
   }
 
   bool _isGreetingOnly(String input) {
     final lower = input.toLowerCase().trim();
     final greetings = [
-      'hi', 'hii', 'hiiii', 'hello', 'hey', 'helo', 'hii there',
-      'namaste', 'namaskar', 'good morning', 'good afternoon', 'good evening',
-      'नमस्ते', 'नमस्कार', 'આદાબ', 'સાત સાત',
-      'sat sri akal', 'assalam alaikum', 'vanakkam', 'namaskaram'
+      'hi',
+      'hii',
+      'hiiii',
+      'hello',
+      'hey',
+      'helo',
+      'hii there',
+      'namaste',
+      'namaskar',
+      'good morning',
+      'good afternoon',
+      'good evening',
+      'नमस्ते',
+      'नमस्कार',
+      'આદાબ',
+      'સાત સાત',
+      'sat sri akal',
+      'assalam alaikum',
+      'vanakkam',
+      'namaskaram'
     ];
-    
+
     // Check if input is ONLY a greeting (exact match or very short)
     // If input has more than 3 words, it likely contains a problem description
     final wordCount = lower.split(' ').where((w) => w.isNotEmpty).length;
     if (wordCount > 3) return false;
-    
+
     // Remove punctuation for comparison
     final cleanInput = lower.replaceAll(RegExp(r'[!.,?]'), '').trim();
-    
+
     // Check for exact greeting match
     if (greetings.any((greeting) => cleanInput == greeting)) return true;
-    
+
     // Check for common greeting patterns (hi, hii, hiii, etc.)
-    if (RegExp(r'^h+i+$').hasMatch(cleanInput)) return true; // hi, hii, hiii, hh, hhh
-    if (RegExp(r'^h+e+l+o+$').hasMatch(cleanInput)) return true; // hello, helo, heloo
+    if (RegExp(r'^h+i+$').hasMatch(cleanInput))
+      return true; // hi, hii, hiii, hh, hhh
+    if (RegExp(r'^h+e+l+o+$').hasMatch(cleanInput))
+      return true; // hello, helo, heloo
     if (RegExp(r'^h+e+y+$').hasMatch(cleanInput)) return true; // hey, heyy
-    
+
     return false;
   }
 
   AssistantReply _handleCategoryConfirmed() {
     final category = _complaintData['category'] as String?;
     final emoji = category != null ? _getCategoryEmoji(category) : '📝';
-    
+
     return AssistantReply(
       response: _localized(
         en: '✅ Great! Now I need the exact location where this $category issue is happening.\n\n📍 Please share the area, street name, and nearby landmark.',
         hi: '✅ Badhiya! Ab mujhe exact location chahiye jahan ye $category problem hai.\n\n📍 Kripya area, street name aur nearby landmark bataiye.',
         gu: '✅ Saras! Have mane exact location joiye jya aa $category samasya chhe.\n\n📍 Krupaya area, street name ane najikno landmark kaho.',
-        hinglish: '✅ Great! Ab exact location chahiye jahan ye $category problem hai.\n\n📍 Please area, street name aur nearby landmark batao.',
+        hinglish:
+            '✅ Great! Ab exact location chahiye jahan ye $category problem hai.\n\n📍 Please area, street name aur nearby landmark batao.',
       ),
       language: _currentLanguage,
       mood: 'helpful',
@@ -694,7 +755,10 @@ class AIService {
       category: category,
       subcategory: _complaintData['subcategory'] as String?,
       missingFields: const ['exact_location'],
-      actionChecklist: const ['📍 Share exact location', '🗺️ Use map if needed'],
+      actionChecklist: const [
+        '📍 Share exact location',
+        '🗺️ Use map if needed'
+      ],
       isEmergency: _complaintData['is_emergency'] as bool? ?? false,
       confidence: 0.9,
       complaintDraft: Map<String, dynamic>.from(_complaintData),
@@ -709,7 +773,8 @@ class AIService {
         en: '🤔 No problem! Let me understand better.\n\nPlease describe your issue in more detail so I can identify the correct category.',
         hi: '🤔 Koi baat nahi! Main better samjhata hun.\n\nKripya apni problem detail mein batayiye taki main sahi category identify kar sakun.',
         gu: '🤔 Koi vaat nathi! Hu better samjhu chhu.\n\nKrupaya tamari samasya detail ma kaho ke hu sachi category identify kari shaku.',
-        hinglish: '🤔 No problem! Main better samjhata hun.\n\nPlease apni issue detail mein batao taki main correct category identify kar sakun.',
+        hinglish:
+            '🤔 No problem! Main better samjhata hun.\n\nPlease apni issue detail mein batao taki main correct category identify kar sakun.',
       ),
       language: _currentLanguage,
       mood: 'understanding',
@@ -717,10 +782,15 @@ class AIService {
       category: null,
       subcategory: null,
       missingFields: const ['issue_category', 'issue_description'],
-      actionChecklist: const ['📝 Describe issue in detail', '🎯 Help me understand better'],
+      actionChecklist: const [
+        '📝 Describe issue in detail',
+        '🎯 Help me understand better'
+      ],
       isEmergency: false,
       confidence: 0.7,
-      complaintDraft: Map<String, dynamic>.from(_complaintData)..remove('category')..remove('subcategory'),
+      complaintDraft: Map<String, dynamic>.from(_complaintData)
+        ..remove('category')
+        ..remove('subcategory'),
       nextQuestion: 'Can you explain the problem in more detail?',
       action: 'COLLECT_INFO',
     );
@@ -733,7 +803,8 @@ class AIService {
         en: '👋 Hello! Welcome to JanHelp - Your Smart City Assistant.\n\nI\'m here to help you file complaints quickly and efficiently.\n\n📝 Please tell me what problem you want to report today.',
         hi: '👋 Namaste! JanHelp mein aapka swagat hai - Aapka Smart City Assistant.\n\nMain aapki complaint jaldi aur aasani se file karne mein madad karunga.\n\n📝 Kripya batayiye aaj aap kya problem report karna chahte hain.',
         gu: '👋 Namaste! JanHelp ma tamaru swagat chhe - Tamaro Smart City Assistant.\n\nHu tamari complaint jaldi ane saheli rite file karvama madad karish.\n\n📝 Krupaya kaho aaje tame shu samasya report karva mangho cho.',
-        hinglish: '👋 Hello! JanHelp mein aapka swagat hai - Aapka Smart City Assistant.\n\nMain aapki complaint jaldi file karne mein help karunga.\n\n📝 Please batao aaj kya problem report karni hai.',
+        hinglish:
+            '👋 Hello! JanHelp mein aapka swagat hai - Aapka Smart City Assistant.\n\nMain aapki complaint jaldi file karne mein help karunga.\n\n📝 Please batao aaj kya problem report karni hai.',
       ),
       language: _currentLanguage,
       mood: 'welcoming',
@@ -765,7 +836,7 @@ class AIService {
       _conversationState = 'photo_request';
       return _handleLocationConfirmed();
     }
-    
+
     // Ask for location
     _conversationState = 'location_confirmation';
     return AssistantReply(
@@ -773,7 +844,8 @@ class AIService {
         en: '📍 **Location Required**\n\nPlease share the exact location where this issue is happening.\n\n🗺️ You can:\n• Click "Use Map" to pin the location\n• Type the address manually\n• Skip if location not available yet',
         hi: '📍 **Location Chahiye**\n\nKripya exact location batayiye jahan ye problem hai.\n\n🗺️ Aap:\n• "Map Use Karein" par click karke location pin kar sakte hain\n• Address manually type kar sakte hain\n• Skip kar sakte hain agar location abhi available nahi hai',
         gu: '📍 **Location Joiye**\n\nKrupaya exact location kaho jya aa samasya chhe.\n\n🗺️ Tame:\n• "Map Use Karo" par click karine location pin kari shako\n• Address manually type kari shako\n• Skip kari shako jyare location available nathi',
-        hinglish: '📍 **Location Chahiye**\n\nPlease exact location batao jahan problem hai.\n\n🗺️ Aap:\n• "Use Map" click karke location pin kar sakte ho\n• Address manually type kar sakte ho\n• Skip kar sakte ho agar location nahi hai',
+        hinglish:
+            '📍 **Location Chahiye**\n\nPlease exact location batao jahan problem hai.\n\n🗺️ Aap:\n• "Use Map" click karke location pin kar sakte ho\n• Address manually type kar sakte ho\n• Skip kar sakte ho agar location nahi hai',
       ),
       language: _currentLanguage,
       mood: 'helpful',
@@ -796,7 +868,8 @@ class AIService {
         en: '✅ Location noted!\n\n📷 **Photo Evidence (Optional)**\n\nDo you have a photo of the issue? Photos help departments resolve complaints faster.\n\n• Upload photo\n• Skip for now',
         hi: '✅ Location note kar liya!\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai? Photos se departments complaint jaldi resolve kar sakte hain.\n\n• Photo upload karein\n• Abhi skip karein',
         gu: '✅ Location note karyu!\n\n📷 **Photo Evidence (Optional)**\n\nShu tamari paas issue ni photo chhe? Photos thi departments complaint jaldi resolve kari shake chhe.\n\n• Photo upload karo\n• Abhi skip karo',
-        hinglish: '✅ Location note ho gaya!\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai? Photos se complaint jaldi resolve hoti hai.\n\n• Photo upload karo\n• Skip karo',
+        hinglish:
+            '✅ Location note ho gaya!\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai? Photos se complaint jaldi resolve hoti hai.\n\n• Photo upload karo\n• Skip karo',
       ),
       language: _currentLanguage,
       mood: 'helpful',
@@ -820,7 +893,8 @@ class AIService {
         en: '⏭️ No problem! We\'ll use your current location when you submit.\n\n📷 **Photo Evidence (Optional)**\n\nDo you have a photo of the issue?',
         hi: '⏭️ Koi baat nahi! Submit karte waqt hum aapka current location use karenge.\n\n📷 **Photo Evidence (Optional)**\n\nKya aapke paas issue ki photo hai?',
         gu: '⏭️ Koi vaat nathi! Submit karta samaye ame tamari current location use karishu.\n\n📷 **Photo Evidence (Optional)**\n\nShu tamari paas issue ni photo chhe?',
-        hinglish: '⏭️ No problem! Submit karte time current location use karenge.\n\n📷 **Photo Evidence (Optional)**\n\nKya photo hai?',
+        hinglish:
+            '⏭️ No problem! Submit karte time current location use karenge.\n\n📷 **Photo Evidence (Optional)**\n\nKya photo hai?',
       ),
       language: _currentLanguage,
       mood: 'helpful',
@@ -880,7 +954,8 @@ class AIService {
         en: '📅 **When did this issue occur?**\n\nPlease tell me:\n• Today\n• Yesterday\n• Specific date\n• Ongoing issue',
         hi: '📅 **Ye problem kab hui?**\n\nKripya batayiye:\n• Aaj\n• Kal\n• Specific date\n• Ongoing issue',
         gu: '📅 **Aa samasya kyare thay?**\n\nKrupaya kaho:\n• Aaje\n• Gaye kal\n• Specific date\n• Ongoing issue',
-        hinglish: '📅 **Problem kab hui?**\n\nBatao:\n• Aaj\n• Kal\n• Specific date\n• Ongoing',
+        hinglish:
+            '📅 **Problem kab hui?**\n\nBatao:\n• Aaj\n• Kal\n• Specific date\n• Ongoing',
       ),
       language: _currentLanguage,
       mood: 'helpful',
@@ -909,7 +984,7 @@ class AIService {
   // Step 8: Show final summary
   AssistantReply _showFinalSummary() {
     _finalSummary = Map<String, dynamic>.from(_complaintData);
-    
+
     final summary = '''
 📋 **COMPLAINT SUMMARY**
 
@@ -955,15 +1030,18 @@ class AIService {
   // Step 9: Handle edits
   AssistantReply _handleEdit(String input) {
     final lower = input.toLowerCase();
-    
-    if (lower.contains('confirm') || lower.contains('submit') || _isYesResponse(input)) {
+
+    if (lower.contains('confirm') ||
+        lower.contains('submit') ||
+        _isYesResponse(input)) {
       _conversationState = 'submitting';
       return AssistantReply(
         response: _localized(
           en: '⏳ Submitting your complaint to the nearest department...\n\nPlease wait.',
           hi: '⏳ Aapki complaint nearest department ko bhej rahe hain...\n\nKripya pratiksha karein.',
           gu: '⏳ Tamari complaint najikna department ne moki raha chhe...\n\nKrupaya pratiksha karo.',
-          hinglish: '⏳ Complaint nearest department ko bhej rahe hain...\n\nWait karo.',
+          hinglish:
+              '⏳ Complaint nearest department ko bhej rahe hain...\n\nWait karo.',
         ),
         language: _currentLanguage,
         mood: 'processing',
@@ -979,21 +1057,21 @@ class AIService {
         action: 'SUBMITTING',
       );
     }
-    
+
     // Handle number-based editing
     final editNumber = int.tryParse(input.trim());
     if (editNumber != null && editNumber >= 1 && editNumber <= 8) {
       _conversationState = 'edit_mode';
       return _requestEditForField(editNumber);
     }
-    
+
     return _showFinalSummary();
   }
 
   AssistantReply _requestEditForField(int fieldNumber) {
     String fieldName = '';
     String prompt = '';
-    
+
     switch (fieldNumber) {
       case 1:
         fieldName = 'category';
@@ -1028,13 +1106,14 @@ class AIService {
         prompt = 'Is this an emergency? (Yes/No)';
         break;
     }
-    
+
     return AssistantReply(
       response: _localized(
         en: '✏️ Editing field $fieldNumber: **$fieldName**\n\n$prompt',
         hi: '✏️ Field $fieldNumber edit kar rahe hain: **$fieldName**\n\n$prompt',
         gu: '✏️ Field $fieldNumber edit kari raha chhe: **$fieldName**\n\n$prompt',
-        hinglish: '✏️ Field $fieldNumber edit kar rahe hain: **$fieldName**\n\n$prompt',
+        hinglish:
+            '✏️ Field $fieldNumber edit kar rahe hain: **$fieldName**\n\n$prompt',
       ),
       language: _currentLanguage,
       mood: 'helpful',
@@ -1056,7 +1135,7 @@ class AIService {
     // This will be handled by your backend
     // For now, return success message
     final complaintId = 'CMP${DateTime.now().millisecondsSinceEpoch}';
-    
+
     return AssistantReply(
       response: _localized(
         en: '''✅ **COMPLAINT SUBMITTED SUCCESSFULLY!**
@@ -1129,12 +1208,12 @@ class AIService {
       actionChecklist: const ['✅ Submitted!', '📱 Track in app'],
       isEmergency: false,
       confidence: 1.0,
-      complaintDraft: Map<String, dynamic>.from(_complaintData)..['complaint_id'] = complaintId,
+      complaintDraft: Map<String, dynamic>.from(_complaintData)
+        ..['complaint_id'] = complaintId,
       nextQuestion: '',
       action: 'COMPLETED',
     );
   }
-
 
   AssistantReply _offlineReply(_OfflineAnalysis analysis,
       {String? modelTextFallback}) {
@@ -1180,7 +1259,7 @@ class AIService {
     String action = 'COLLECT_INFO';
     bool showConfirmation = false;
     String? confirmationQuestion;
-    
+
     if (autoDetected && _conversationState == 'category_confirmation') {
       action = 'CONFIRM';
       showConfirmation = true;
@@ -1217,10 +1296,11 @@ class AIService {
         en: '🚨 Your safety comes first! If there is immediate danger, call 112 now.',
         hi: '🚨 Suraksha sabse pehle hai! Turant khatra ho to abhi 112 call karein.',
         gu: '🚨 Suraksha pehla chhe! Turant jokham hoy to 112 par call karo.',
-        hinglish: '🚨 Safety first! Immediate danger ho to abhi 112 call kariye.',
+        hinglish:
+            '🚨 Safety first! Immediate danger ho to abhi 112 call kariye.',
       );
     }
-    
+
     // Auto-detected category with high confidence - show confirmation
     if (analysis.category != null && analysis.confidence > 0.8) {
       final emoji = _getCategoryEmoji(analysis.category!);
@@ -1228,10 +1308,11 @@ class AIService {
         en: '$emoji I detected this as: **${analysis.subcategory ?? analysis.category}**\n\nIs this correct? I can help you file this complaint quickly.',
         hi: '$emoji Maine ise detect kiya: **${analysis.subcategory ?? analysis.category}**\n\nKya ye sahi hai? Main jaldi complaint file kar sakta hun.',
         gu: '$emoji Mane aa detect karyu: **${analysis.subcategory ?? analysis.category}**\n\nAa sachu chhe? Hu jaldi complaint file kari shaku chhu.',
-        hinglish: '$emoji Maine detect kiya: **${analysis.subcategory ?? analysis.category}**\n\nYe correct hai? Main quickly complaint file kar sakta hun.',
+        hinglish:
+            '$emoji Maine detect kiya: **${analysis.subcategory ?? analysis.category}**\n\nYe correct hai? Main quickly complaint file kar sakta hun.',
       );
     }
-    
+
     if (analysis.category == null && analysis.alternatives.isNotEmpty) {
       final options = analysis.alternatives.take(3).join(', ');
       return _localized(
@@ -1241,17 +1322,18 @@ class AIService {
         hinglish: '🔍 Close matches mile: $options. Sahi option confirm karo.',
       );
     }
-    
+
     if (analysis.category != null) {
       final emoji = _getCategoryEmoji(analysis.category!);
       return _localized(
         en: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. I will help you file this correctly.',
         hi: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Main ise sahi tarike se file karunga.',
         gu: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Hu aa ne sachi rite file karish.',
-        hinglish: '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Main proper filing mein help karunga.',
+        hinglish:
+            '$emoji Detected: ${analysis.subcategory ?? analysis.category}. Main proper filing mein help karunga.',
       );
     }
-    
+
     return _localized(
       en: '👋 I am here to help. Tell me the exact issue in one line.',
       hi: '👋 Main madad ke liye yahan hoon. Kripya issue ek line mein batayein.',
@@ -1526,10 +1608,6 @@ class AIService {
     );
   }
 
-
-
-
-
   String _buildCacheKey(String userInput, _OfflineAnalysis analysis) {
     final normalizedInput = _normalize(userInput);
     return '$normalizedInput|${analysis.category ?? 'NA'}|${analysis.subcategory ?? 'NA'}|${analysis.locationHint ?? 'NA'}|${analysis.isEmergency ? '1' : '0'}|${analysis.urgency}';
@@ -1616,7 +1694,8 @@ class AIService {
           en: '📝 What type of issue? (Road, Water, Electricity, Garbage, Traffic, Police, etc.)',
           hi: '📝 Kis type ki problem hai? (Sadak, Pani, Bijli, Kachra, Traffic, Police, etc.)',
           gu: '📝 Kai type ni samasya chhe? (Rasto, Pani, Vijli, Kachro, Traffic, Police, etc.)',
-          hinglish: '📝 Kis type ki problem hai? (Road, Water, Bijli, Kachra, Traffic, Police, etc.)',
+          hinglish:
+              '📝 Kis type ki problem hai? (Road, Water, Bijli, Kachra, Traffic, Police, etc.)',
         );
       case 'exact_location':
         return _localized(
@@ -1659,12 +1738,13 @@ class AIService {
     if (analysis.matchedSignals.isNotEmpty) {
       _complaintData['matched_signals'] = analysis.matchedSignals;
     }
-    
+
     // Advanced: Extract description from user input if it's detailed
-    if (userInput.split(' ').length > 5 && _complaintData['description'] == null) {
+    if (userInput.split(' ').length > 5 &&
+        _complaintData['description'] == null) {
       _complaintData['description'] = userInput;
     }
-    
+
     _complaintData['urgency'] = analysis.urgency;
     _complaintData['is_emergency'] = analysis.isEmergency;
     _complaintData['last_user_message'] = userInput;
@@ -1677,17 +1757,69 @@ class AIService {
     final candidates = <_CategoryCandidate>[];
 
     // Enhanced primary issue detection
-    final crimeKeywords = ['chori', 'theft', 'चोरी', 'લૂંટ', 'steal', 'stolen', 'purse', 'wallet', 'mobile', 'robbery', 'loot', 'चोरी हुआ', 'चोरी हो गया', 'fraud', 'scam', 'dhoka', 'ठगी'];
-    final missingPersonKeywords = ['gum', 'missing', 'गुम', 'ગુમ', 'gum ho gaya', 'गुम हो गया', 'ગુમ થઈ ગયો', 'lost person', 'person missing', 'bhai gum', 'sister missing', 'bachcha gum', 'missing person'];
-    final accidentKeywords = ['accident', 'दुर्घटना', 'અકસ્માત', 'crash', 'hit', 'injured', 'hurt', 'टक्कर', 'ટક્કર'];
-    final emergencyKeywords = ['emergency', 'urgent', 'danger', 'fire', 'आपातकाल', 'તાત્કાલિક', 'jaldi', 'turant'];
-    
+    final crimeKeywords = [
+      'chori',
+      'theft',
+      'चोरी',
+      'લૂંટ',
+      'steal',
+      'stolen',
+      'purse',
+      'wallet',
+      'mobile',
+      'robbery',
+      'loot',
+      'चोरी हुआ',
+      'चोरी हो गया',
+      'fraud',
+      'scam',
+      'dhoka',
+      'ठगी'
+    ];
+    final missingPersonKeywords = [
+      'gum',
+      'missing',
+      'गुम',
+      'ગુમ',
+      'gum ho gaya',
+      'गुम हो गया',
+      'ગુમ થઈ ગયો',
+      'lost person',
+      'person missing',
+      'bhai gum',
+      'sister missing',
+      'bachcha gum',
+      'missing person'
+    ];
+    final accidentKeywords = [
+      'accident',
+      'दुर्घटना',
+      'અકસ્માત',
+      'crash',
+      'hit',
+      'injured',
+      'hurt',
+      'टक्कर',
+      'ટક્કર'
+    ];
+    final emergencyKeywords = [
+      'emergency',
+      'urgent',
+      'danger',
+      'fire',
+      'आपातकाल',
+      'તાત્કાલિક',
+      'jaldi',
+      'turant'
+    ];
+
     // Detect primary concern (what user needs help with most)
     String? primaryConcern = null;
     int maxPriorityScore = 0;
-    
+
     // Missing person has highest priority
-    if (missingPersonKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+    if (missingPersonKeywords
+        .any((kw) => normalized.contains(_normalize(kw)))) {
       primaryConcern = 'Police';
       maxPriorityScore = 120; // Higher than crime
     }
@@ -1697,12 +1829,17 @@ class AIService {
       maxPriorityScore = 100;
     }
     // Emergency situations
-    else if (emergencyKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+    else if (emergencyKeywords
+        .any((kw) => normalized.contains(_normalize(kw)))) {
       // Determine emergency type
-      if (normalized.contains('fire') || normalized.contains('आग') || normalized.contains('આગ')) {
+      if (normalized.contains('fire') ||
+          normalized.contains('आग') ||
+          normalized.contains('આગ')) {
         primaryConcern = 'Fire Emergency';
         maxPriorityScore = 95;
-      } else if (normalized.contains('medical') || normalized.contains('hospital') || normalized.contains('doctor')) {
+      } else if (normalized.contains('medical') ||
+          normalized.contains('hospital') ||
+          normalized.contains('doctor')) {
         primaryConcern = 'Medical Emergency';
         maxPriorityScore = 95;
       } else {
@@ -1711,14 +1848,29 @@ class AIService {
       }
     }
     // Traffic accidents
-    else if (accidentKeywords.any((kw) => normalized.contains(_normalize(kw)))) {
+    else if (accidentKeywords
+        .any((kw) => normalized.contains(_normalize(kw)))) {
       primaryConcern = 'Traffic';
       maxPriorityScore = 85;
     }
-    
+
     // Location-only keywords that should not trigger Road category
-    final locationOnlyKeywords = ['road', 'sadak', 'रोड', 'સડક', 'street', 'gali', 'lane', 'pise', 'paas', 'samne', 'near', 'behind', 'front'];
-    
+    final locationOnlyKeywords = [
+      'road',
+      'sadak',
+      'रोड',
+      'સડક',
+      'street',
+      'gali',
+      'lane',
+      'pise',
+      'paas',
+      'samne',
+      'near',
+      'behind',
+      'front'
+    ];
+
     complaintCategories.forEach((category, subs) {
       if (subs is! Map) return;
       final categoryName = category.toString();
@@ -1733,7 +1885,7 @@ class AIService {
 
         final normalizedCategory = _normalize(categoryName);
         final normalizedSubcategory = _normalize(subcategoryName);
-        
+
         // Apply primary concern boost
         if (primaryConcern != null && categoryName == primaryConcern) {
           score += maxPriorityScore;
@@ -1743,7 +1895,7 @@ class AIService {
         else if (primaryConcern != null && categoryName != primaryConcern) {
           score -= 50;
         }
-        
+
         if (normalized.contains(normalizedCategory)) {
           score += 4;
           signals.add(categoryName);
@@ -1757,13 +1909,15 @@ class AIService {
         for (final alias in aliases) {
           final normalizedAlias = _normalize(alias);
           if (normalizedAlias.isEmpty) continue;
-          
+
           // Skip location-only keywords for Road category if primary concern is detected
-          if (primaryConcern != null && categoryName == 'Road/Pothole' && 
-              locationOnlyKeywords.any((loc) => normalizedAlias.contains(_normalize(loc)))) {
+          if (primaryConcern != null &&
+              categoryName == 'Road/Pothole' &&
+              locationOnlyKeywords
+                  .any((loc) => normalizedAlias.contains(_normalize(loc)))) {
             continue;
           }
-          
+
           if (normalized.contains(normalizedAlias)) {
             score += normalizedAlias.contains(' ') ? 4 : 2;
             signals.add(alias);
@@ -1817,7 +1971,7 @@ class AIService {
           'auto_detected': false,
         };
       }
-      
+
       final rankedCategories = _rankCategoryMatches(input);
       return {
         'category': null,
@@ -1833,12 +1987,12 @@ class AIService {
     candidates.sort((a, b) => b.score.compareTo(a.score));
     final best = candidates.first;
     final second = candidates.length > 1 ? candidates[1].score : 0;
-    
+
     // Higher confidence when primary concern is detected
     final confidence = primaryConcern != null && best.category == primaryConcern
         ? max(0.85, min(0.98, best.score / max(1, best.score + second)))
         : max(0.24, min(0.96, best.score / max(1, best.score + second)));
-    
+
     final alternatives = candidates
         .skip(1)
         .where((candidate) => candidate.score >= max(2, best.score - 3))
@@ -1870,18 +2024,33 @@ class AIService {
     String? currentCategory,
   }) {
     int score = 0;
-    final locationOnlyKeywords = ['road', 'sadak', 'रोड', 'સડક', 'street', 'gali', 'lane', 'pise', 'paas', 'samne', 'near', 'behind', 'front'];
-    
+    final locationOnlyKeywords = [
+      'road',
+      'sadak',
+      'रोड',
+      'સડક',
+      'street',
+      'gali',
+      'lane',
+      'pise',
+      'paas',
+      'samne',
+      'near',
+      'behind',
+      'front'
+    ];
+
     for (final keyword in keywords) {
       final key = _normalize(keyword);
       if (key.isEmpty) continue;
-      
+
       // Skip location keywords for Road category if primary concern detected
-      if (primaryConcern != null && currentCategory == 'Road/Pothole' && 
+      if (primaryConcern != null &&
+          currentCategory == 'Road/Pothole' &&
           locationOnlyKeywords.any((loc) => key.contains(_normalize(loc)))) {
         continue;
       }
-      
+
       if (input.contains(key)) {
         score += key.contains(' ') ? 4 : 2;
         matchedSignals?.add(keyword);
@@ -1905,21 +2074,27 @@ class AIService {
 
   Map<String, dynamic>? _makeBestGuess(String normalized) {
     // Simple pattern matching for common issues
-    if (normalized.contains('khada') || normalized.contains('khado') || normalized.contains('pothole')) {
+    if (normalized.contains('khada') ||
+        normalized.contains('khado') ||
+        normalized.contains('pothole')) {
       return {
         'category': 'Road/Pothole',
         'subcategory': 'Pothole',
         'signals': ['khada', 'pothole']
       };
     }
-    if (normalized.contains('pani') || normalized.contains('water') || normalized.contains('tap')) {
+    if (normalized.contains('pani') ||
+        normalized.contains('water') ||
+        normalized.contains('tap')) {
       return {
         'category': 'Water Supply',
         'subcategory': 'No Water Supply',
         'signals': ['pani', 'water']
       };
     }
-    if (normalized.contains('kachro') || normalized.contains('garbage') || normalized.contains('trash')) {
+    if (normalized.contains('kachro') ||
+        normalized.contains('garbage') ||
+        normalized.contains('trash')) {
       return {
         'category': 'Garbage/Sanitation',
         'subcategory': 'Garbage Not Collected',
@@ -1939,13 +2114,13 @@ class AIService {
   String _detectLanguage(String input) {
     // First check if user is typing in Hinglish (Roman script with Hindi words)
     if (_looksHinglish(input)) return 'hinglish';
-    
+
     // Check for Gujarati script
     if (RegExp(r'[\u0A80-\u0AFF]').hasMatch(input)) return 'gu';
-    
+
     // Check for Hindi/Devanagari script
     if (RegExp(r'[\u0900-\u097F]').hasMatch(input)) return 'hi';
-    
+
     // Default to English
     return 'en';
   }
@@ -1998,13 +2173,18 @@ class AIService {
     // Enhanced location extraction patterns
     final patterns = [
       // "at/near/in location" pattern
-      RegExp(r'\b(?:at|near|in|on|around|beside|opposite|samne|piche|paas|aage)\s+([a-z0-9 ,.-]{3,80})', caseSensitive: false),
+      RegExp(
+          r'\b(?:at|near|in|on|around|beside|opposite|samne|piche|paas|aage)\s+([a-z0-9 ,.-]{3,80})',
+          caseSensitive: false),
       // "location par/mein" pattern (Hinglish/Hindi)
-      RegExp(r'([a-z0-9 ]+)\s+(?:par|mein|me|ma|પર|માં|में)', caseSensitive: false),
+      RegExp(r'([a-z0-9 ]+)\s+(?:par|mein|me|ma|પર|માં|में)',
+          caseSensitive: false),
       // "mere ghar ke paas location" pattern
-      RegExp(r'(?:ghar|घर|ઘર)\s+(?:ke|ka)?\s*(?:paas|samne|piche|aage|પાસે|સામે|પાછળ|आगे|पास|सामने)\s+([a-z0-9 ]+)', caseSensitive: false),
+      RegExp(
+          r'(?:ghar|घर|ઘર)\s+(?:ke|ka)?\s*(?:paas|samne|piche|aage|પાસે|સામે|પાછળ|आगे|पास|सामने)\s+([a-z0-9 ]+)',
+          caseSensitive: false),
     ];
-    
+
     for (final pattern in patterns) {
       final match = pattern.firstMatch(input);
       if (match != null) {
@@ -2014,7 +2194,7 @@ class AIService {
         }
       }
     }
-    
+
     return null;
   }
 
@@ -2096,23 +2276,31 @@ class AIService {
 
   // Call OpenRouter API with Qwen model
   Future<Map<String, dynamic>?> _callOpenRouterLLM(String text) async {
+    if (_openRouterApiKey.trim().isEmpty) {
+      debugPrint('OpenRouter API key is not configured; using local analysis.');
+      return null;
+    }
+
     try {
       debugPrint('Calling OpenRouter API with text: $text');
-      
-      final response = await http.post(
-        Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer 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',
-          'HTTP-Referer': 'https://github.com/smartcity/janhelp', // Optional
-          'X-Title': 'JanHelp Smart City', // Optional
-        },
-        body: jsonEncode({
-          'model': 'openai/gpt-3.5-turbo',
-          'messages': [
-            {
-              'role': 'system',
-              'content': '''You are a complaint classification assistant for a Smart City app. Analyze the user's complaint and return ONLY a JSON object with these fields:
+
+      final response = await http
+          .post(
+            Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $_openRouterApiKey',
+              'HTTP-Referer':
+                  'https://github.com/smartcity/janhelp', // Optional
+              'X-Title': 'JanHelp Smart City', // Optional
+            },
+            body: jsonEncode({
+              'model': 'openai/gpt-3.5-turbo',
+              'messages': [
+                {
+                  'role': 'system',
+                  'content':
+                      '''You are a complaint classification assistant for a Smart City app. Analyze the user's complaint and return ONLY a JSON object with these fields:
 {
   "category": "one of: Road/Pothole, Drainage/Sewage, Garbage/Sanitation, Electricity, Water Supply, Traffic, Cyber Crime, Police, Construction",
   "subcategory": "specific issue type",
@@ -2136,16 +2324,14 @@ Common categories:
 - Construction: illegal construction, debris, noise
 
 Return ONLY valid JSON, no other text.'''
-            },
-            {
-              'role': 'user',
-              'content': text
-            }
-          ],
-          'temperature': 0.3,
-          'max_tokens': 500,
-        }),
-      ).timeout(const Duration(seconds: 15));
+                },
+                {'role': 'user', 'content': text}
+              ],
+              'temperature': 0.3,
+              'max_tokens': 500,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       debugPrint('OpenRouter response status: ${response.statusCode}');
       debugPrint('OpenRouter response body: ${response.body}');
@@ -2157,7 +2343,7 @@ Return ONLY valid JSON, no other text.'''
 
       final data = jsonDecode(response.body);
       final content = data['choices']?[0]?['message']?['content'] as String?;
-      
+
       if (content == null) {
         debugPrint('No content in response');
         return null;
@@ -2174,7 +2360,7 @@ Return ONLY valid JSON, no other text.'''
         } else if (jsonStr.contains('```')) {
           jsonStr = jsonStr.split('```')[1].split('```')[0].trim();
         }
-        
+
         final result = jsonDecode(jsonStr) as Map<String, dynamic>;
         debugPrint('Parsed result: $result');
         return result;
@@ -2190,12 +2376,16 @@ Return ONLY valid JSON, no other text.'''
   }
 
   // Build reply from your LLM prediction
-  AssistantReply _buildReplyFromLLM(Map<String, dynamic> llmResult, String userInput) {
+  AssistantReply _buildReplyFromLLM(
+      Map<String, dynamic> llmResult, String userInput) {
     final category = llmResult['category'] as String?;
     final subcategory = llmResult['subcategory'] as String?;
-    final urgency = _normalizeUrgency((llmResult['urgency'] as String?) ?? 'medium');
-    final emotion = _normalizeMood((llmResult['emotion'] as String?) ?? 'neutral');
-    final language = _normalizeLanguage((llmResult['language'] as String?) ?? _currentLanguage);
+    final urgency =
+        _normalizeUrgency((llmResult['urgency'] as String?) ?? 'medium');
+    final emotion =
+        _normalizeMood((llmResult['emotion'] as String?) ?? 'neutral');
+    final language = _normalizeLanguage(
+        (llmResult['language'] as String?) ?? _currentLanguage);
     final isEmergency = llmResult['is_emergency'] == true;
     final isCritical = llmResult['is_critical'] == true;
     final confidence = (llmResult['confidence'] as num?)?.toDouble() ?? 0.8;
@@ -2219,17 +2409,21 @@ Return ONLY valid JSON, no other text.'''
         en: '🚨 EMERGENCY DETECTED!\n\nThis appears to be a critical situation: **$category**\n\nIf there is immediate danger, please call 112 now.\n\n📍 Share your exact location so we can send help quickly.',
         hi: '🚨 EMERGENCY DETECTED!\n\nYe ek critical situation lagti hai: **$category**\n\nAgar turant khatra hai to abhi 112 call karein.\n\n📍 Apni exact location share karein taki hum jaldi madad bhej sakein.',
         gu: '🚨 EMERGENCY DETECTED!\n\nAa ek critical situation laghe chhe: **$category**\n\nJo turant jokham hoy to abhi 112 call karo.\n\n📍 Tamari exact location share karo ke ame jaldi madad moki shakiye.',
-        hinglish: '🚨 EMERGENCY DETECTED!\n\nYe critical situation hai: **$category**\n\nImmediate danger ho to 112 call karo.\n\n📍 Exact location share karo jaldi help ke liye.',
+        hinglish:
+            '🚨 EMERGENCY DETECTED!\n\nYe critical situation hai: **$category**\n\nImmediate danger ho to 112 call karo.\n\n📍 Exact location share karo jaldi help ke liye.',
       );
       action = 'REQUEST_LOCATION';
-    } else if (category != null && confidence > 0.7 && _conversationState == 'greeting') {
+    } else if (category != null &&
+        confidence > 0.7 &&
+        _conversationState == 'greeting') {
       _conversationState = 'category_confirmation';
       final emoji = _getCategoryEmoji(category);
       response = _localized(
         en: '$emoji I detected this as: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nIs this correct? I can help you file this complaint quickly.',
         hi: '$emoji Maine ise detect kiya: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nKya ye sahi hai? Main jaldi complaint file kar sakta hun.',
         gu: '$emoji Mane aa detect karyu: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nAa sachu chhe? Hu jaldi complaint file kari shaku chhu.',
-        hinglish: '$emoji Maine detect kiya: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nYe correct hai? Main quickly complaint file kar sakta hun.',
+        hinglish:
+            '$emoji Maine detect kiya: **${subcategory ?? category}**\n\nConfidence: ${(confidence * 100).toStringAsFixed(0)}%\n\nYe correct hai? Main quickly complaint file kar sakta hun.',
       );
       action = 'CONFIRM';
       showConfirmation = true;
@@ -2240,7 +2434,8 @@ Return ONLY valid JSON, no other text.'''
         en: '$emoji Detected: **${subcategory ?? category}**\n\nNow I need the exact location where this issue is happening.\n\n📍 Please share area, street name, and nearby landmark.',
         hi: '$emoji Detected: **${subcategory ?? category}**\n\nAb mujhe exact location chahiye jahan ye problem hai.\n\n📍 Kripya area, street name aur nearby landmark bataiye.',
         gu: '$emoji Detected: **${subcategory ?? category}**\n\nHave mane exact location joiye jya aa samasya chhe.\n\n📍 Krupaya area, street name ane najikno landmark kaho.',
-        hinglish: '$emoji Detected: **${subcategory ?? category}**\n\nAb exact location chahiye jahan problem hai.\n\n📍 Please area, street name aur nearby landmark batao.',
+        hinglish:
+            '$emoji Detected: **${subcategory ?? category}**\n\nAb exact location chahiye jahan problem hai.\n\n📍 Please area, street name aur nearby landmark batao.',
       );
       action = 'REQUEST_LOCATION';
     } else {
@@ -2248,7 +2443,8 @@ Return ONLY valid JSON, no other text.'''
         en: '🤔 I need more details to identify the issue correctly.\n\nPlease describe your problem in more detail.',
         hi: '🤔 Mujhe issue identify karne ke liye aur details chahiye.\n\nKripya apni problem detail mein batayiye.',
         gu: '🤔 Mane issue identify karvama hor details joiye.\n\nKrupaya tamari samasya detail ma kaho.',
-        hinglish: '🤔 Issue identify karne ke liye more details chahiye.\n\nPlease problem detail mein batao.',
+        hinglish:
+            '🤔 Issue identify karne ke liye more details chahiye.\n\nPlease problem detail mein batao.',
       );
     }
 
@@ -2268,18 +2464,17 @@ Return ONLY valid JSON, no other text.'''
       isEmergency: isEmergency,
       confidence: confidence,
       complaintDraft: draft,
-      nextQuestion: category == null ? 'What type of issue is it?' : 'Where is this issue located?',
+      nextQuestion: category == null
+          ? 'What type of issue is it?'
+          : 'Where is this issue located?',
       action: action,
       showConfirmation: showConfirmation,
       confirmationQuestion: confirmationQuestion,
     );
   }
 
-
-
-
-  
-  List<String> _generateActionChecklist(String currentStep, String? category, List<String> missing) {
+  List<String> _generateActionChecklist(
+      String currentStep, String? category, List<String> missing) {
     switch (currentStep) {
       case 'greeting':
         return ['📝 Describe your problem', '🎯 I will help you step by step'];
@@ -2304,7 +2499,7 @@ Return ONLY valid JSON, no other text.'''
         return ['📝 Describe your issue', '🎯 I will guide you'];
     }
   }
-  
+
   String _generateNextQuestion(String currentStep, List<String> missing) {
     switch (currentStep) {
       case 'greeting':

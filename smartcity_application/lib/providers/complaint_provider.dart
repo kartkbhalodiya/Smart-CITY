@@ -30,7 +30,7 @@ class ComplaintProvider with ChangeNotifier {
 
   Future<void> loadStatesCities() async {
     if (_states.isNotEmpty) return; // Already loaded
-    
+
     _isStatesLoading = true;
     notifyListeners();
 
@@ -38,8 +38,10 @@ class ComplaintProvider with ChangeNotifier {
       final response = await ComplaintService.getStatesCities();
       if (response['success'] == true) {
         _states = List<String>.from(response['states'] ?? []);
-        final rawCities = response['cities_by_state'] as Map<String, dynamic>? ?? {};
-        _citiesByState = rawCities.map((k, v) => MapEntry(k, List<String>.from(v)));
+        final rawCities =
+            response['cities_by_state'] as Map<String, dynamic>? ?? {};
+        _citiesByState =
+            rawCities.map((k, v) => MapEntry(k, List<String>.from(v)));
       }
     } catch (e) {
       debugPrint('Error loading states/cities: $e');
@@ -92,7 +94,8 @@ class ComplaintProvider with ChangeNotifier {
     notifyListeners();
 
     debugPrint('[ComplaintProvider] Loading complaints...');
-    debugPrint('[ComplaintProvider] Filters - Status: $workStatus, Type: $complaintType, Search: $search');
+    debugPrint(
+        '[ComplaintProvider] Filters - Status: $workStatus, Type: $complaintType, Search: $search');
 
     try {
       final response = await ComplaintService.getComplaints(
@@ -108,17 +111,17 @@ class ComplaintProvider with ChangeNotifier {
       if (response['success'] == true) {
         // Success format
         final results = response['results'] ?? [];
-        _complaints = (results as List)
-            .map((json) => Complaint.fromJson(json))
-            .toList();
-        debugPrint('[ComplaintProvider] Loaded ${_complaints.length} complaints (success format)');
+        _complaints =
+            (results as List).map((json) => Complaint.fromJson(json)).toList();
+        debugPrint(
+            '[ComplaintProvider] Loaded ${_complaints.length} complaints (success format)');
       } else if (response.containsKey('results')) {
         // Direct data format (like your API)
         final results = response['results'] ?? [];
-        _complaints = (results as List)
-            .map((json) => Complaint.fromJson(json))
-            .toList();
-        debugPrint('[ComplaintProvider] Loaded ${_complaints.length} complaints (direct format)');
+        _complaints =
+            (results as List).map((json) => Complaint.fromJson(json)).toList();
+        debugPrint(
+            '[ComplaintProvider] Loaded ${_complaints.length} complaints (direct format)');
       } else if (response['success'] == false) {
         // Error format
         _error = response['message'] ?? 'Failed to load complaints';
@@ -126,16 +129,18 @@ class ComplaintProvider with ChangeNotifier {
       } else {
         // Unknown format
         _error = 'Unexpected API response format';
-        debugPrint('[ComplaintProvider] Unknown format. Full response: $response');
+        debugPrint(
+            '[ComplaintProvider] Unknown format. Full response: $response');
       }
     } catch (e) {
       _error = 'Error loading complaints: $e';
       debugPrint('[ComplaintProvider] Exception: $e');
     }
-    
+
     _isLoading = false;
     notifyListeners();
-    debugPrint('[ComplaintProvider] Load complete. Total complaints: ${_complaints.length}');
+    debugPrint(
+        '[ComplaintProvider] Load complete. Total complaints: ${_complaints.length}');
   }
 
   Future<void> loadComplaintDetail(int id) async {
@@ -148,12 +153,13 @@ class ComplaintProvider with ChangeNotifier {
       final response = await ComplaintService.getComplaintDetail(id);
 
       _isLoading = false;
-      
+
       // Handle different response formats
       if (response['success'] == true && response['complaint'] != null) {
         // Format: {success: true, complaint: {...}}
         _selectedComplaint = Complaint.fromJson(response['complaint']);
-      } else if (response.containsKey('id') && response.containsKey('complaint_number')) {
+      } else if (response.containsKey('id') &&
+          response.containsKey('complaint_number')) {
         // Direct complaint data format
         _selectedComplaint = Complaint.fromJson(response);
       } else if (response['success'] == false) {
@@ -166,7 +172,7 @@ class ComplaintProvider with ChangeNotifier {
       _error = 'Error loading complaint: $e';
       debugPrint('Exception in loadComplaintDetail: $e');
     }
-    
+
     notifyListeners();
   }
 
@@ -187,7 +193,7 @@ class ComplaintProvider with ChangeNotifier {
     } else {
       _error = response['message'] ?? 'Failed to submit complaint';
       notifyListeners();
-      
+
       // If duplicate found, return the response so UI can show the specific dialog
       if (response['duplicate_found'] == true) {
         return response;
@@ -226,6 +232,24 @@ class ComplaintProvider with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>?> analyzeMedia(List<File> files) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await ComplaintService.analyzeMedia(files);
+      _isLoading = false;
+      notifyListeners();
+      return response;
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> rateComplaint(int id, int rating, String feedback) async {
     final response = await ComplaintService.rateComplaint(id, rating, feedback);
     if (response['success'] == true) {
@@ -235,12 +259,16 @@ class ComplaintProvider with ChangeNotifier {
     return false;
   }
 
-  Future<bool> reopenComplaint(int id, String reason, dynamic proofImage) async {
-    final response = await ComplaintService.reopenComplaint(id, reason, proofImage);
+  Future<bool> reopenComplaint(int id, String reason, File proofImage) async {
+    _error = null;
+    final response =
+        await ComplaintService.reopenComplaint(id, reason, proofImage);
     if (response['success'] == true) {
       await loadComplaintDetail(id);
       return true;
     }
+    _error = response['message']?.toString() ?? 'Failed to reopen complaint';
+    notifyListeners();
     return false;
   }
 

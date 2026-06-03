@@ -434,6 +434,7 @@ class _AdminEntityDetailScreenState extends State<_AdminEntityDetailScreen> {
 
     if (markers.isEmpty) return _emptyBox('No map coordinates available.');
     final center = points.first;
+    final entityId = _toInt(_entity['id']);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,6 +456,21 @@ class _AdminEntityDetailScreenState extends State<_AdminEntityDetailScreen> {
               ],
             ),
           ),
+        ),
+        const SizedBox(height: 10),
+        _wideOutlineButton(
+          label: 'Open Full Map',
+          icon: Icons.open_in_full_rounded,
+          onTap: entityId == null
+              ? null
+              : () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.adminLocationMap,
+                    arguments: {
+                      'type': widget.entityKey,
+                      'id': entityId,
+                    },
+                  ),
         ),
       ],
     );
@@ -712,6 +728,43 @@ class _AdminEntityDetailScreenState extends State<_AdminEntityDetailScreen> {
     );
   }
 
+  Widget _wideOutlineButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _ink.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: onTap == null ? _muted : _ink, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: _labelStyle(
+                  size: 13.5,
+                  weight: FontWeight.w900,
+                  color: onTap == null ? _muted : _ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _iconBox(
     IconData icon,
     Color color, {
@@ -777,6 +830,12 @@ class _AdminEntityDetailScreenState extends State<_AdminEntityDetailScreen> {
     if (value == null) return null;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString());
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
   }
 
   IconData _iconFor(String icon) {

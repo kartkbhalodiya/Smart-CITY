@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../config/api_config.dart';
+import '../../config/routes.dart';
 import '../../models/complaint.dart';
 import '../../services/api_service.dart';
 
@@ -71,18 +75,29 @@ class _AdminComplaintDetailScreenState
     });
   }
 
-  Future<void> _updateStatus(String status, String notes) async {
+  Future<void> _updateStatus(
+    String status,
+    String notes, {
+    String? proofPath,
+  }) async {
     final complaint = _complaint;
     if (complaint == null) return;
 
     setState(() => _saving = true);
-    final response = await ApiService.post(
-      ApiConfig.adminComplaintStatus(complaint.id),
-      {
-        'work_status': status,
-        'notes': notes,
-      },
-    );
+    final fields = {
+      'work_status': status,
+      'notes': notes,
+    };
+    final response = proofPath == null
+        ? await ApiService.post(
+            ApiConfig.adminComplaintStatus(complaint.id),
+            fields,
+          )
+        : await ApiService.postMultipart(
+            ApiConfig.adminComplaintStatus(complaint.id),
+            fields,
+            [File(proofPath)],
+          );
     if (!mounted) return;
     setState(() => _saving = false);
 
@@ -158,6 +173,8 @@ class _AdminComplaintDetailScreenState
 
   List<Widget> _detailContent(Complaint complaint) {
     final statusColor = _statusColor(complaint.workStatus);
+    final resolutionProofs = _rawList('resolution_proofs');
+    final reopenProofs = _rawList('reopen_proofs');
     return [
       _headerCard(complaint, statusColor),
       const SizedBox(height: 16),
@@ -191,6 +208,19 @@ class _AdminComplaintDetailScreenState
         _infoRow('Pincode', complaint.pincode ?? ''),
         _infoRow('Address', complaint.address),
       ]),
+      const SizedBox(height: 10),
+      _wideOutlineButton(
+        label: 'Open Map',
+        icon: Icons.map_outlined,
+        onTap: () => Navigator.pushNamed(
+          context,
+          AppRoutes.adminLocationMap,
+          arguments: {
+            'type': 'complaint',
+            'id': complaint.id,
+          },
+        ),
+      ),
       if (complaint.assignedDepartment != null) ...[
         const SizedBox(height: 18),
         _sectionTitle('Assigned Department', Icons.account_balance_outlined),
@@ -211,6 +241,18 @@ class _AdminComplaintDetailScreenState
         _infoRow('Resolved at', _formatRawDate(_raw['resolved_at'])),
         _infoRow('Updated', _formatDateTime(complaint.updatedAt)),
       ]),
+      if (resolutionProofs.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        _sectionTitle('Completion Proof', Icons.verified_outlined),
+        const SizedBox(height: 10),
+        _proofGrid(resolutionProofs),
+      ],
+      if (reopenProofs.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        _sectionTitle('Reopen Proof', Icons.restart_alt_rounded),
+        const SizedBox(height: 10),
+        _reopenProofList(reopenProofs),
+      ],
     ];
   }
 
@@ -359,6 +401,7 @@ class _AdminComplaintDetailScreenState
     );
     final options = _nextStatusOptions(complaint.workStatus);
     String nextStatus = options.first['value']!;
+    String? proofPath;
 
     showModalBottomSheet<void>(
       context: context,
@@ -376,6 +419,11 @@ class _AdminComplaintDetailScreenState
             ),
             child: StatefulBuilder(
               builder: (context, setModalState) {
+                final existingProofs = _rawList('resolution_proofs');
+                final needsProof =
+                    nextStatus == 'solved' && existingProofs.isEmpty;
+                final hasExistingNotes =
+                    _rawValue('resolution_notes').trim().isNotEmpty;
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,8 +466,26 @@ class _AdminComplaintDetailScreenState
                         weight: FontWeight.w700,
                         color: _text,
                       ),
-                      decoration: _inputDecoration('Notes'),
+                      decoration: _inputDecoration(
+                        nextStatus == 'solved' ? 'Resolution notes *' : 'Notes',
+                      ),
                     ),
+                    if (nextStatus == 'solved') ...[
+                      const SizedBox(height: 12),
+                      _proofPicker(
+                        proofPath: proofPath,
+                        proofAlreadyExists: existingProofs.isNotEmpty,
+                        onTap: () async {
+                          final image = await ImagePicker().pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 82,
+                          );
+                          if (image != null) {
+                            setModalState(() => proofPath = image.path);
+                          }
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     _wideBlackButton(
                       label: _saving ? 'Saving...' : 'Save Status',
@@ -427,10 +493,36 @@ class _AdminComplaintDetailScreenState
                       onTap: _saving
                           ? null
                           : () {
+                              if (nextStatus == 'solved' &&
+                                  !hasExistingNotes &&
+                                  notesController.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Resolution notes are required.',
+                                    ),
+                                    backgroundColor: Color(0xFFDC2626),
+                                  ),
+                                );
+                                return;
+                              }
+                              if (needsProof && proofPath == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Completion proof is required.',
+                                    ),
+                                    backgroundColor: Color(0xFFDC2626),
+                                  ),
+                                );
+                                return;
+                              }
                               Navigator.pop(context);
                               _updateStatus(
                                 nextStatus,
                                 notesController.text.trim(),
+                                proofPath:
+                                    nextStatus == 'solved' ? proofPath : null,
                               );
                             },
                     ),
@@ -531,6 +623,227 @@ class _AdminComplaintDetailScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _proofPicker({
+    required String? proofPath,
+    required bool proofAlreadyExists,
+    required VoidCallback onTap,
+  }) {
+    final hasLocalProof = proofPath != null;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: proofAlreadyExists || hasLocalProof
+                  ? const Color(0xFF16A34A).withValues(alpha: 0.45)
+                  : const Color(0xFFDC2626).withValues(alpha: 0.45),
+            ),
+          ),
+          child: hasLocalProof
+              ? Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.file(
+                        File(proofPath),
+                        width: 58,
+                        height: 58,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Completion proof selected',
+                        style: _labelStyle(
+                          size: 13,
+                          weight: FontWeight.w900,
+                          color: _text,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.edit_rounded, color: _ink, size: 18),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Icon(
+                      proofAlreadyExists
+                          ? Icons.verified_rounded
+                          : Icons.add_photo_alternate_outlined,
+                      color: proofAlreadyExists
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFFDC2626),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        proofAlreadyExists
+                            ? 'Existing completion proof is attached. Tap to add another.'
+                            : 'Attach completion photo proof',
+                        style: _labelStyle(
+                          size: 12.5,
+                          weight: FontWeight.w800,
+                          color: proofAlreadyExists ? _text : _muted,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _proofGrid(List<Map<String, dynamic>> proofs) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: proofs.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: proofs.length == 1 ? 1 : 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: proofs.length == 1 ? 1.8 : 1.06,
+      ),
+      itemBuilder: (context, index) => _proofTile(proofs[index]),
+    );
+  }
+
+  Widget _proofTile(Map<String, dynamic> proof) {
+    final url = _proofUrl(proof);
+    final fileType = (proof['file_type'] ?? '').toString().toLowerCase();
+    final isVideo = fileType == 'video' ||
+        url.toLowerCase().endsWith('.mp4') ||
+        url.toLowerCase().endsWith('.mov') ||
+        url.toLowerCase().endsWith('.webm');
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: url.isEmpty || isVideo ? null : () => _openProofViewer(url),
+        child: Ink(
+          decoration: _cardDecoration(radius: 18),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (url.isNotEmpty && !isVideo)
+                  Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _proofFallback(isVideo),
+                  )
+                else
+                  _proofFallback(isVideo),
+                Positioned(
+                  left: 10,
+                  right: 10,
+                  bottom: 10,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.64),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _formatRawDate(proof['uploaded_at']).isEmpty
+                          ? 'Completion proof'
+                          : _formatRawDate(proof['uploaded_at']),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _labelStyle(
+                        size: 11,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _reopenProofList(List<Map<String, dynamic>> proofs) {
+    return Column(
+      children: proofs
+          .map(
+            (proof) => Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: _cardDecoration(radius: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (proof['reason'] ?? '').toString().trim().isEmpty
+                        ? 'No reason provided'
+                        : proof['reason'].toString(),
+                    style: _labelStyle(
+                      size: 13.5,
+                      weight: FontWeight.w900,
+                      color: _text,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _pill(
+                        (proof['requested_by_name'] ?? '').toString().isEmpty
+                            ? 'Citizen'
+                            : proof['requested_by_name'].toString(),
+                        _ink,
+                      ),
+                      if (_formatRawDate(proof['created_at']).isNotEmpty)
+                        _pill(_formatRawDate(proof['created_at']), _primary),
+                    ],
+                  ),
+                  if (_proofUrl(proof).isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _wideOutlineButton(
+                      label: 'View Reopen Proof',
+                      icon: Icons.image_outlined,
+                      onTap: () => _openProofViewer(_proofUrl(proof)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _proofFallback(bool isVideo) {
+    return Container(
+      color: const Color(0xFFF1F5F9),
+      child: Icon(
+        isVideo ? Icons.play_circle_outline_rounded : Icons.broken_image,
+        color: _muted,
+        size: 34,
       ),
     );
   }
@@ -679,6 +992,43 @@ class _AdminComplaintDetailScreenState
     );
   }
 
+  Widget _wideOutlineButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _ink.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: _ink, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: _labelStyle(
+                  size: 13.5,
+                  weight: FontWeight.w900,
+                  color: _ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _pill(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
@@ -758,6 +1108,62 @@ class _AdminComplaintDetailScreenState
     final value = _raw[key];
     if (value == null) return '';
     return value.toString();
+  }
+
+  List<Map<String, dynamic>> _rawList(String key) {
+    final value = _raw[key];
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  String _proofUrl(Map<String, dynamic> proof) {
+    final raw = (proof['file_url'] ??
+            proof['proof_url'] ??
+            proof['file'] ??
+            proof['proof'] ??
+            '')
+        .toString()
+        .trim();
+    if (raw.isEmpty || raw.startsWith('http')) return raw;
+    final apiRoot = ApiConfig.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    return raw.startsWith('/') ? '$apiRoot$raw' : raw;
+  }
+
+  void _openProofViewer(String url) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(18),
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: InteractiveViewer(
+            minScale: 0.7,
+            maxScale: 4,
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Container(
+                height: 220,
+                color: Colors.white,
+                alignment: Alignment.center,
+                child: Text(
+                  'Unable to load proof',
+                  style: _labelStyle(
+                    size: 13,
+                    weight: FontWeight.w800,
+                    color: _muted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   String _formatRawDate(dynamic value) {

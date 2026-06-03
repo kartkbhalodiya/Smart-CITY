@@ -89,6 +89,39 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     }
   }
 
+  String get _roleLabel {
+    switch (widget.role) {
+      case AdminDashboardRole.superAdmin:
+        return 'Super Admin';
+      case AdminDashboardRole.cityAdmin:
+        return 'City Admin';
+      case AdminDashboardRole.department:
+        return 'Department';
+    }
+  }
+
+  Color get _roleAccent {
+    switch (widget.role) {
+      case AdminDashboardRole.superAdmin:
+        return _primary;
+      case AdminDashboardRole.cityAdmin:
+        return const Color(0xFF0F766E);
+      case AdminDashboardRole.department:
+        return const Color(0xFF7C3AED);
+    }
+  }
+
+  IconData get _roleIcon {
+    switch (widget.role) {
+      case AdminDashboardRole.superAdmin:
+        return Icons.admin_panel_settings_outlined;
+      case AdminDashboardRole.cityAdmin:
+        return Icons.location_city_outlined;
+      case AdminDashboardRole.department:
+        return Icons.account_balance_outlined;
+    }
+  }
+
   Future<void> _load() async {
     if (mounted) {
       setState(() {
@@ -181,6 +214,13 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
                         icon: Icons.assignment_outlined,
                         title: 'Recent Complaints',
                         iconColor: const Color(0xFF7EA1D8),
+                        trailing: _viewAllPill(
+                          label: 'View All',
+                          onTap: () => _openResource({
+                            'route': 'complaints',
+                            'title': 'Complaints',
+                          }),
+                        ),
                       ),
                       const SizedBox(height: 14),
                       _complaintsList(),
@@ -189,6 +229,13 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
                         icon: Icons.account_balance_outlined,
                         title: 'Departments',
                         iconColor: const Color(0xFF3478F6),
+                        trailing: _viewAllPill(
+                          label: 'View All',
+                          onTap: () => _openResource({
+                            'route': 'departments',
+                            'title': 'Departments',
+                          }),
+                        ),
                       ),
                       const SizedBox(height: 14),
                       _departmentsList(),
@@ -198,6 +245,13 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
                           icon: Icons.admin_panel_settings_outlined,
                           title: 'City Admins',
                           iconColor: const Color(0xFF14B8A6),
+                          trailing: _viewAllPill(
+                            label: 'Manage',
+                            onTap: () => _openResource({
+                              'route': 'city_admins',
+                              'title': 'City Admins',
+                            }),
+                          ),
                         ),
                         const SizedBox(height: 14),
                         _cityAdminsList(),
@@ -214,36 +268,48 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
   }
 
   Widget _topBar() {
-    return SizedBox(
-      height: 66,
-      child: Row(
-        children: [
-          Image.asset(
-            'assets/images/logo.png',
-            width: 130,
-            fit: BoxFit.contain,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 330;
+        final buttonSize = compact ? 40.0 : 44.0;
+        final gap = compact ? 7.0 : 10.0;
+
+        return SizedBox(
+          height: 66,
+          child: Row(
+            children: [
+              Image.asset(
+                'assets/images/logo.png',
+                width: compact ? 106 : 130,
+                fit: BoxFit.contain,
+              ),
+              const Spacer(),
+              _iconButton(
+                icon: Icons.lock_reset_rounded,
+                tooltip: 'Password',
+                size: buttonSize,
+                onTap: () =>
+                    Navigator.pushNamed(context, AppRoutes.adminPassword),
+              ),
+              SizedBox(width: gap),
+              _iconButton(
+                icon: Icons.refresh_rounded,
+                tooltip: 'Refresh',
+                size: buttonSize,
+                onTap: _load,
+              ),
+              SizedBox(width: gap),
+              _iconButton(
+                icon: Icons.logout_rounded,
+                tooltip: 'Logout',
+                size: buttonSize,
+                onTap: _logout,
+                dark: true,
+              ),
+            ],
           ),
-          const Spacer(),
-          _iconButton(
-            icon: Icons.lock_reset_rounded,
-            tooltip: 'Password',
-            onTap: () => Navigator.pushNamed(context, AppRoutes.adminPassword),
-          ),
-          const SizedBox(width: 10),
-          _iconButton(
-            icon: Icons.refresh_rounded,
-            tooltip: 'Refresh',
-            onTap: _load,
-          ),
-          const SizedBox(width: 10),
-          _iconButton(
-            icon: Icons.logout_rounded,
-            tooltip: 'Logout',
-            onTap: _logout,
-            dark: true,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -251,6 +317,7 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     required IconData icon,
     required String tooltip,
     required VoidCallback onTap,
+    double size = 44,
     bool dark = false,
   }) {
     return Tooltip(
@@ -261,8 +328,8 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Ink(
-            width: 44,
-            height: 44,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               color: dark ? _ink : Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -284,97 +351,214 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     final scope = _payload['scope']?.toString() ?? '';
     final name = _displayName(user);
     final email = (user?.email ?? '').toString();
+    final accent = _roleAccent;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: _cardDecoration(radius: 24),
-      child: Row(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: _line),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.045),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: _ink,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _initials(user),
-              style: _labelStyle(
-                size: 15,
-                weight: FontWeight.w900,
-                color: Colors.white,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(19),
+                ),
+                alignment: Alignment.center,
+                child: Icon(_roleIcon, color: Colors.white, size: 27),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: _displayStyle(size: 25, height: 1.05),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _displayStyle(size: 24, height: 1.05),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _roleChip(accent),
+                      ],
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _labelStyle(
+                        size: 14,
+                        weight: FontWeight.w900,
+                        color: _text,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _roleChip(),
+                    const SizedBox(height: 3),
+                    Text(
+                      email.isEmpty ? scope : email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _labelStyle(
+                        size: 12.2,
+                        weight: FontWeight.w600,
+                        color: _muted,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 7),
+              ),
+            ],
+          ),
+          if (scope.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: accent.withValues(alpha: 0.14)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.location_on_outlined, size: 16, color: accent),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      scope,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _labelStyle(
+                        size: 12,
+                        weight: FontWeight.w800,
+                        color: _text,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          _summaryStrip(),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryStrip() {
+    final summary = _payload['summary'] is Map
+        ? Map<String, dynamic>.from(_payload['summary'] as Map)
+        : const <String, dynamic>{};
+    final items = [
+      _SummaryChipData(
+        'Total',
+        summary['total_complaints'],
+        Icons.assignment_outlined,
+        _primary,
+      ),
+      _SummaryChipData(
+        'Pending',
+        summary['pending_complaints'],
+        Icons.pending_actions_rounded,
+        const Color(0xFFF97316),
+      ),
+      _SummaryChipData(
+        'Progress',
+        summary['in_progress_complaints'],
+        Icons.sync_rounded,
+        const Color(0xFF7C3AED),
+      ),
+      _SummaryChipData(
+        'Solved',
+        summary['resolved_complaints'],
+        Icons.task_alt_rounded,
+        const Color(0xFF16A34A),
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360;
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final item in items)
+              SizedBox(
+                width: compact
+                    ? (constraints.maxWidth - 8) / 2
+                    : (constraints.maxWidth - 24) / 4,
+                child: _summaryChip(item),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _summaryChip(_SummaryChipData item) {
+    return Container(
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: item.color.withValues(alpha: 0.075),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: item.color.withValues(alpha: 0.13)),
+      ),
+      child: Row(
+        children: [
+          Icon(item.icon, size: 18, color: item.color),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  name,
+                  _countText(item.value),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: _labelStyle(
-                    size: 14,
-                    weight: FontWeight.w800,
-                    color: _text,
+                    size: 15,
+                    weight: FontWeight.w900,
+                    color: _ink,
+                    height: 1,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  email.isEmpty ? scope : email,
+                  item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: _labelStyle(
-                    size: 12.2,
-                    weight: FontWeight.w600,
+                    size: 10,
+                    weight: FontWeight.w800,
                     color: _muted,
+                    height: 1,
                   ),
                 ),
-                if (scope.isNotEmpty) ...[
-                  const SizedBox(height: 9),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 15,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          scope,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: _labelStyle(
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: _muted,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),
@@ -383,20 +567,20 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     );
   }
 
-  Widget _roleChip() {
+  Widget _roleChip(Color accent) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
+        color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFD9EAFE)),
+        border: Border.all(color: accent.withValues(alpha: 0.16)),
       ),
       child: Text(
-        'Admin',
+        _roleLabel,
         style: _labelStyle(
           size: 10.5,
           weight: FontWeight.w900,
-          color: const Color(0xFF1D4ED8),
+          color: accent,
         ),
       ),
     );
@@ -489,18 +673,41 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
       return _emptyBox('No control sections available.');
     }
 
-    return Column(
-      children: [
-        for (int i = 0; i < sections.length; i++) ...[
-          _sectionTile(sections[i]),
-          if (i != sections.length - 1) const SizedBox(height: 10),
-        ],
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final twoColumns = constraints.maxWidth >= 560;
+        if (!twoColumns) {
+          return Column(
+            children: [
+              for (int i = 0; i < sections.length; i++) ...[
+                _sectionTile(sections[i], compact: false),
+                if (i != sections.length - 1) const SizedBox(height: 10),
+              ],
+            ],
+          );
+        }
+
+        final cardWidth = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final section in sections)
+              SizedBox(
+                width: cardWidth,
+                child: _sectionTile(section, compact: true),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _sectionTile(Map<String, dynamic> section) {
+  Widget _sectionTile(Map<String, dynamic> section, {required bool compact}) {
     final color = _colorFor(section['color']);
+    final title = section['title']?.toString() ?? 'Section';
+    final subtitle = section['subtitle']?.toString() ?? '';
+    final count = section['count']?.toString() ?? '0';
 
     return Material(
       color: Colors.transparent,
@@ -508,79 +715,119 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
         borderRadius: BorderRadius.circular(20),
         onTap: () => _openResource(section),
         child: Ink(
+          height: compact ? 118 : null,
           padding: const EdgeInsets.all(15),
           decoration: _cardDecoration(radius: 20),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Icon(
-                  _iconFor(section['icon']?.toString()),
-                  color: color,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
+          child: compact
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        _tileIcon(_iconFor(section['icon']?.toString()), color),
+                        const Spacer(),
+                        _countPill(count),
+                      ],
+                    ),
+                    const Spacer(),
                     Text(
-                      section['title']?.toString() ?? 'Section',
+                      title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: _labelStyle(
-                        size: 14.5,
+                        size: 14,
                         weight: FontWeight.w900,
                         color: _text,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      section['subtitle']?.toString() ?? '',
+                      subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: _labelStyle(
-                        size: 11.5,
+                        size: 11,
                         weight: FontWeight.w600,
                         color: _muted,
                       ),
                     ),
                   ],
+                )
+              : Row(
+                  children: [
+                    _tileIcon(_iconFor(section['icon']?.toString()), color),
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _labelStyle(
+                              size: 14.5,
+                              weight: FontWeight.w900,
+                              color: _text,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _labelStyle(
+                              size: 11.5,
+                              weight: FontWeight.w600,
+                              color: _muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _countPill(count),
+                    const SizedBox(width: 5),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF94A3B8),
+                      size: 22,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                constraints: const BoxConstraints(minWidth: 38),
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _line),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  section['count']?.toString() ?? '0',
-                  style: _labelStyle(
-                    size: 13,
-                    weight: FontWeight.w900,
-                    color: _ink,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 5),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xFF94A3B8),
-                size: 22,
-              ),
-            ],
-          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tileIcon(IconData icon, Color color) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Icon(icon, color: color, size: 22),
+    );
+  }
+
+  Widget _countPill(String count) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 38),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _line),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        count,
+        style: _labelStyle(
+          size: 13,
+          weight: FontWeight.w900,
+          color: _ink,
         ),
       ),
     );
@@ -593,18 +840,28 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
       Navigator.pushNamed(context, AppRoutes.adminHeatmap);
       return;
     }
-    final resource = switch (raw) {
-      'city_admins' => 'city-admins',
-      'pending' => 'problems',
-      'progress' => 'problems',
-      _ => raw,
-    };
+    var resource = raw;
+    String? workStatus;
+    switch (raw) {
+      case 'city_admins':
+        resource = 'city-admins';
+        break;
+      case 'pending':
+        resource = 'problems';
+        workStatus = 'pending';
+        break;
+      case 'progress':
+        resource = 'problems';
+        workStatus = 'in_progress';
+        break;
+    }
     Navigator.pushNamed(
       context,
       AppRoutes.adminResource,
       arguments: {
         'resource': resource,
         'title': title,
+        if (workStatus != null) 'workStatus': workStatus,
       },
     );
   }
@@ -819,9 +1076,12 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
                 ),
               ),
               if (phone.isNotEmpty)
-                _tinyPill(
-                  phone,
-                  const Color(0xFF2563EB),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 104),
+                  child: _tinyPill(
+                    phone,
+                    const Color(0xFF2563EB),
+                  ),
                 ),
               const SizedBox(width: 6),
               const Icon(
@@ -902,9 +1162,12 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
               ],
             ),
           ),
-          _tinyPill(
-            active ? 'Active' : 'Off',
-            active ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 78),
+            child: _tinyPill(
+              active ? 'Active' : 'Off',
+              active ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+            ),
           ),
         ],
       ),
@@ -915,6 +1178,7 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     required IconData icon,
     required String title,
     required Color iconColor,
+    Widget? trailing,
   }) {
     return Row(
       children: [
@@ -940,7 +1204,44 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
             ),
           ),
         ),
+        if (trailing != null) trailing,
       ],
+    );
+  }
+
+  Widget _viewAllPill({
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 13),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F3F7),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: _labelStyle(
+                  size: 12,
+                  weight: FontWeight.w900,
+                  color: _text,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.arrow_forward_rounded, size: 15, color: _text),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1194,6 +1495,13 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     }
   }
 
+  String _countText(dynamic value) {
+    if (value == null) return '0';
+    if (value is num) return value.toInt().toString();
+    final parsed = int.tryParse(value.toString());
+    return (parsed ?? 0).toString();
+  }
+
   String _formatDate(dynamic value) {
     final raw = value?.toString();
     if (raw == null || raw.isEmpty) return '';
@@ -1210,18 +1518,6 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
     final username = (user?.username ?? '').toString().trim();
     if (username.isNotEmpty) return username.split('@').first;
     return _fallbackTitle;
-  }
-
-  String _initials(dynamic user) {
-    final name = _displayName(user);
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((part) => part.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return 'A';
-    if (parts.length == 1) return parts.first[0].toUpperCase();
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
   TextStyle _displayStyle({
@@ -1252,4 +1548,18 @@ class _AdminOverviewScreenState extends State<_AdminOverviewScreen> {
       color: color,
     );
   }
+}
+
+class _SummaryChipData {
+  final String label;
+  final dynamic value;
+  final IconData icon;
+  final Color color;
+
+  const _SummaryChipData(
+    this.label,
+    this.value,
+    this.icon,
+    this.color,
+  );
 }

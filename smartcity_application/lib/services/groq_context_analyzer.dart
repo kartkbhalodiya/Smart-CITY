@@ -3,9 +3,14 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class GroqContextAnalyzer {
-  static const String _apiKey = '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';
-  static const String _apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  static const String _apiKey = String.fromEnvironment(
+    'GROQ_API_KEY',
+    defaultValue: '',
+  );
+  static const String _apiUrl =
+      'https://api.groq.com/openai/v1/chat/completions';
   static const String _model = 'llama-3.1-70b-versatile';
+  static bool get _isConfigured => _apiKey.trim().isNotEmpty;
 
   /// Analyze full conversation context to understand user intent
   Future<Map<String, dynamic>> analyzeConversationContext({
@@ -14,13 +19,22 @@ class GroqContextAnalyzer {
     required String currentStep,
     Map<String, dynamic>? complaintData,
   }) async {
+    if (!_isConfigured) {
+      debugPrint('Groq API key is not configured; skipping context analysis.');
+      return {
+        'success': false,
+        'error': 'AI service not configured',
+      };
+    }
+
     try {
       // Build conversation context
       final contextMessages = conversationHistory.map((msg) {
         return '${msg['role'] == 'user' ? 'User' : 'Assistant'}: ${msg['content']}';
       }).join('\n');
 
-      final prompt = '''You are an intelligent assistant analyzing a complaint conversation.
+      final prompt =
+          '''You are an intelligent assistant analyzing a complaint conversation.
 
 **Conversation History:**
 $contextMessages
@@ -72,47 +86,50 @@ Analyze the FULL conversation context and current input to understand:
 
 Return ONLY valid JSON, no other text.''';
 
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'You are an expert conversation analyzer. Always respond with valid JSON only.',
+      final response = await http
+          .post(
+            Uri.parse(_apiUrl),
+            headers: {
+              'Authorization': 'Bearer $_apiKey',
+              'Content-Type': 'application/json',
             },
-            {
-              'role': 'user',
-              'content': prompt,
-            }
-          ],
-          'temperature': 0.3,
-          'max_tokens': 800,
-        }),
-      ).timeout(const Duration(seconds: 15));
+            body: jsonEncode({
+              'model': _model,
+              'messages': [
+                {
+                  'role': 'system',
+                  'content':
+                      'You are an expert conversation analyzer. Always respond with valid JSON only.',
+                },
+                {
+                  'role': 'user',
+                  'content': prompt,
+                }
+              ],
+              'temperature': 0.3,
+              'max_tokens': 800,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'];
-        
+
         // Extract JSON from response
         final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(content);
         if (jsonMatch != null) {
           final jsonStr = jsonMatch.group(0)!;
           final result = jsonDecode(jsonStr);
-          
+
           debugPrint('Groq Context Analysis: ${result['reasoning']}');
-          
+
           return {
             'success': true,
             'analysis': result,
           };
         }
-        
+
         return {
           'success': false,
           'error': 'Could not parse AI response',
@@ -135,8 +152,18 @@ Return ONLY valid JSON, no other text.''';
 
   /// Detect if user is mentioning another issue while current one is incomplete
   Future<Map<String, dynamic>> detectMultipleIssues(String input) async {
+    if (!_isConfigured) {
+      debugPrint(
+          'Groq API key is not configured; skipping multiple issue detection.');
+      return {
+        'success': false,
+        'error': 'AI service not configured',
+      };
+    }
+
     try {
-      final prompt = '''Analyze this user input to detect if they're mentioning multiple different issues:
+      final prompt =
+          '''Analyze this user input to detect if they're mentioning multiple different issues:
 
 User input: "$input"
 
@@ -161,33 +188,36 @@ Response format (JSON only):
 
 Return ONLY valid JSON.''';
 
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'You are an expert at detecting multiple issues in user input. Respond with JSON only.',
+      final response = await http
+          .post(
+            Uri.parse(_apiUrl),
+            headers: {
+              'Authorization': 'Bearer $_apiKey',
+              'Content-Type': 'application/json',
             },
-            {
-              'role': 'user',
-              'content': prompt,
-            }
-          ],
-          'temperature': 0.2,
-          'max_tokens': 400,
-        }),
-      ).timeout(const Duration(seconds: 10));
+            body: jsonEncode({
+              'model': _model,
+              'messages': [
+                {
+                  'role': 'system',
+                  'content':
+                      'You are an expert at detecting multiple issues in user input. Respond with JSON only.',
+                },
+                {
+                  'role': 'user',
+                  'content': prompt,
+                }
+              ],
+              'temperature': 0.2,
+              'max_tokens': 400,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'];
-        
+
         final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(content);
         if (jsonMatch != null) {
           final jsonStr = jsonMatch.group(0)!;
@@ -198,7 +228,7 @@ Return ONLY valid JSON.''';
           };
         }
       }
-      
+
       return {'success': false};
     } catch (e) {
       debugPrint('Multiple issues detection error: $e');
@@ -212,17 +242,23 @@ Return ONLY valid JSON.''';
     required Map<String, dynamic> complaintData,
     required List<Map<String, String>> conversationHistory,
   }) async {
+    if (!_isConfigured) {
+      debugPrint('Groq API key is not configured; using default follow-up.');
+      return 'Could you provide more details?';
+    }
+
     try {
       // Get last 5 messages
       final recentHistory = conversationHistory.length > 5
           ? conversationHistory.sublist(conversationHistory.length - 5)
           : conversationHistory;
-      
+
       final contextMessages = recentHistory.map((msg) {
         return '${msg['role'] == 'user' ? 'User' : 'Assistant'}: ${msg['content']}';
       }).join('\n');
 
-      final prompt = '''Based on this conversation, generate a smart follow-up question:
+      final prompt =
+          '''Based on this conversation, generate a smart follow-up question:
 
 **Recent Conversation:**
 $contextMessages
@@ -238,34 +274,37 @@ Generate a natural, helpful follow-up question that:
 
 Return ONLY the question text, no JSON or extra formatting.''';
 
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'You are a helpful assistant. Generate natural follow-up questions.',
+      final response = await http
+          .post(
+            Uri.parse(_apiUrl),
+            headers: {
+              'Authorization': 'Bearer $_apiKey',
+              'Content-Type': 'application/json',
             },
-            {
-              'role': 'user',
-              'content': prompt,
-            }
-          ],
-          'temperature': 0.7,
-          'max_tokens': 150,
-        }),
-      ).timeout(const Duration(seconds: 10));
+            body: jsonEncode({
+              'model': _model,
+              'messages': [
+                {
+                  'role': 'system',
+                  'content':
+                      'You are a helpful assistant. Generate natural follow-up questions.',
+                },
+                {
+                  'role': 'user',
+                  'content': prompt,
+                }
+              ],
+              'temperature': 0.7,
+              'max_tokens': 150,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'].trim();
       }
-      
+
       return 'Could you provide more details?';
     } catch (e) {
       debugPrint('Smart follow-up generation error: $e');

@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,14 +10,19 @@ import 'package:flutter/foundation.dart';
 /// Features: Multi-language, Context-aware, Smart validation, Sentiment analysis
 class ConversationalAIService {
   ConversationalAIService._internal();
-  static final ConversationalAIService instance = ConversationalAIService._internal();
+  static final ConversationalAIService instance =
+      ConversationalAIService._internal();
   factory ConversationalAIService() => instance;
 
   // Groq API configuration
-  static const String _groqApiKey = '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';
-  static const String _groqUrl = 'https://api.groq.com/openai/v1/chat/completions';
+  static const String _groqApiKey = String.fromEnvironment(
+    'GROQ_API_KEY',
+    defaultValue: '',
+  );
+  static const String _groqUrl =
+      'https://api.groq.com/openai/v1/chat/completions';
   static const String _groqModel = 'llama-3.1-70b-versatile';
-  
+
   // Context analyzer
   final GroqContextAnalyzer _contextAnalyzer = GroqContextAnalyzer();
 
@@ -39,7 +44,7 @@ class ConversationalAIService {
   bool _backendCategoriesLoadAttempted = false;
   List<Map<String, String>> _backendCategories = [];
   final Map<String, List<String>> _backendSubcategories = {};
-  
+
   // Chat persistence keys
   static const String _chatHistoryKey = 'chat_history';
   static const String _activeChatKey = 'active_chat_id';
@@ -53,12 +58,7 @@ class ConversationalAIService {
       'native': 'English',
       'emoji': '🇺🇸'
     },
-    'hi': {
-      'code': 'hi',
-      'name': 'Hindi',
-      'native': 'हिंदी',
-      'emoji': '🇮🇳'
-    },
+    'hi': {'code': 'hi', 'name': 'Hindi', 'native': 'हिंदी', 'emoji': '🇮🇳'},
     'gu': {
       'code': 'gu',
       'name': 'Gujarati',
@@ -761,10 +761,10 @@ class ConversationalAIService {
   Future<void> initializeChatSession({String? userId}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Generate or get chat ID
       _currentChatId = _generateChatId();
-      
+
       // Try to restore active chat
       final activeChatId = prefs.getString(_activeChatKey);
       if (activeChatId != null) {
@@ -774,30 +774,29 @@ class ConversationalAIService {
           return;
         }
       }
-      
+
       // Start fresh session
       await _saveChatSession();
       await prefs.setString(_activeChatKey, _currentChatId!);
-      
     } catch (e) {
       debugPrint('Error initializing chat session: $e');
       // Continue with fresh session
       _currentChatId = _generateChatId();
     }
   }
-  
+
   /// Generate unique chat ID
   String _generateChatId() {
     return 'chat_${DateTime.now().millisecondsSinceEpoch}_${_userName.isNotEmpty ? _userName.hashCode : 'anon'}';
   }
-  
+
   /// Save current chat session
   Future<void> _saveChatSession() async {
     if (_currentChatId == null) return;
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       final chatData = {
         'chatId': _currentChatId,
         'currentStep': _currentStep,
@@ -814,30 +813,30 @@ class ConversationalAIService {
         'lastUpdated': DateTime.now().toIso8601String(),
         'isCompleted': _currentStep == 'submitted',
       };
-      
+
       // Save individual chat data
-      await prefs.setString('$_chatDataKey$_currentChatId', jsonEncode(chatData));
-      
+      await prefs.setString(
+          '$_chatDataKey$_currentChatId', jsonEncode(chatData));
+
       // Update chat history list
       await _updateChatHistoryList();
-      
     } catch (e) {
       debugPrint('Error saving chat session: $e');
     }
   }
-  
+
   /// Update chat history list
   Future<void> _updateChatHistoryList() async {
     if (_currentChatId == null) return;
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final historyJson = prefs.getString(_chatHistoryKey) ?? '[]';
       final List<dynamic> history = jsonDecode(historyJson);
-      
+
       // Remove existing entry if present
       history.removeWhere((chat) => chat['chatId'] == _currentChatId);
-      
+
       // Add current chat to top
       final chatSummary = {
         'chatId': _currentChatId,
@@ -850,40 +849,43 @@ class ConversationalAIService {
         'language': _userLanguage,
         'step': _currentStep,
       };
-      
+
       history.insert(0, chatSummary);
-      
+
       // Keep only last 50 chats
       if (history.length > 50) {
         history.removeRange(50, history.length);
       }
-      
+
       await prefs.setString(_chatHistoryKey, jsonEncode(history));
-      
     } catch (e) {
       debugPrint('Error updating chat history: $e');
     }
   }
-  
+
   /// Get chat title based on current state
   String _getChatTitle() {
     if (_complaintData.containsKey('category')) {
       return '${_complaintData['category_emoji']} ${_complaintData['category']}';
     }
-    
+
     switch (_currentStep) {
       case 'language_selection':
-        return _localize('Language Selection', 'भाषा चयन', 'ભાષા પસંદગી', 'Language Selection');
+        return _localize('Language Selection', 'भाषा चयन', 'ભાષા પસંદગી',
+            'Language Selection');
       case 'greeting':
       case 'category':
-        return _localize('New Complaint', 'नई शिकायत', 'નવી ફરિયાદ', 'Nayi Complaint');
+        return _localize(
+            'New Complaint', 'नई शिकायत', 'નવી ફરિયાદ', 'Nayi Complaint');
       case 'submitted':
-        return _localize('Complaint Submitted', 'शिकायत जमा की गई', 'ફરિયાદ સબમિટ કરી', 'Complaint Submit Ho Gayi');
+        return _localize('Complaint Submitted', 'शिकायत जमा की गई',
+            'ફરિયાદ સબમિટ કરી', 'Complaint Submit Ho Gayi');
       default:
-        return _localize('Complaint in Progress', 'शिकायत प्रगति में', 'ફરિયાદ પ્રગતિમાં', 'Complaint Progress Mein');
+        return _localize('Complaint in Progress', 'शिकायत प्रगति में',
+            'ફરિયાદ પ્રગતિમાં', 'Complaint Progress Mein');
     }
   }
-  
+
   /// Get last message for preview
   String _getLastMessage() {
     if (_conversationHistory.isNotEmpty) {
@@ -891,67 +893,68 @@ class ConversationalAIService {
       final content = lastMsg['content'] ?? '';
       return content.length > 100 ? '${content.substring(0, 100)}...' : content;
     }
-    
-    return _localize('Chat started', 'चैट शुरू हुई', 'ચેટ શરૂ થઈ', 'Chat start hui');
+
+    return _localize(
+        'Chat started', 'चैट शुरू हुई', 'ચેટ શરૂ થઈ', 'Chat start hui');
   }
-  
+
   /// Restore chat session from storage
   Future<bool> _restoreChatSession(String chatId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final chatDataJson = prefs.getString('$_chatDataKey$chatId');
-      
+
       if (chatDataJson == null) return false;
-      
+
       final chatData = jsonDecode(chatDataJson);
-      
+
       // Restore state
       _currentStep = chatData['currentStep'] ?? 'language_selection';
       _complaintData.clear();
-      _complaintData.addAll(Map<String, dynamic>.from(chatData['complaintData'] ?? {}));
-      
+      _complaintData
+          .addAll(Map<String, dynamic>.from(chatData['complaintData'] ?? {}));
+
       _conversationHistory.clear();
       final history = chatData['conversationHistory'] as List? ?? [];
-      _conversationHistory.addAll(history.map((h) => Map<String, String>.from(h)).toList());
-      
+      _conversationHistory
+          .addAll(history.map((h) => Map<String, String>.from(h)).toList());
+
       _userCity = chatData['userCity'] ?? '';
       _userName = chatData['userName'] ?? '';
       _userLanguage = chatData['userLanguage'] ?? 'en';
       _retryCount = chatData['retryCount'] ?? 0;
       _sentiment = chatData['sentiment'] ?? 'neutral';
       _urgencyScore = (chatData['urgencyScore'] ?? 0.5).toDouble();
-      
+
       _aiContext.clear();
       _aiContext.addAll(Map<String, dynamic>.from(chatData['aiContext'] ?? {}));
-      
+
       final startTimeStr = chatData['conversationStartTime'];
       if (startTimeStr != null) {
         _conversationStartTime = DateTime.parse(startTimeStr);
       }
-      
+
       return true;
-      
     } catch (e) {
       debugPrint('Error restoring chat session: $e');
       return false;
     }
   }
-  
+
   /// Get chat history list
   Future<List<Map<String, dynamic>>> getChatHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final historyJson = prefs.getString(_chatHistoryKey) ?? '[]';
       final List<dynamic> history = jsonDecode(historyJson);
-      
+
       return history.map((chat) => Map<String, dynamic>.from(chat)).toList();
-      
     } catch (e) {
       debugPrint('Error getting chat history: $e');
       return [];
     }
   }
-  
+
   /// Load specific chat by ID
   Future<bool> loadChat(String chatId) async {
     final restored = await _restoreChatSession(chatId);
@@ -962,7 +965,7 @@ class ConversationalAIService {
     }
     return restored;
   }
-  
+
   /// Start new chat session
   Future<void> startNewChat() async {
     // Reset all state
@@ -975,68 +978,89 @@ class ConversationalAIService {
     _aiContext.clear();
     _conversationStartTime = DateTime.now();
     _userLanguage = 'en';
-    
+
     // Generate new chat ID
     _currentChatId = _generateChatId();
-    
+
     // Save new session
     await _saveChatSession();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_activeChatKey, _currentChatId!);
   }
-  
+
   /// Delete specific chat
   Future<void> deleteChat(String chatId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Remove chat data
       await prefs.remove('$_chatDataKey$chatId');
-      
+
       // Update history list
       final historyJson = prefs.getString(_chatHistoryKey) ?? '[]';
       final List<dynamic> history = jsonDecode(historyJson);
       history.removeWhere((chat) => chat['chatId'] == chatId);
       await prefs.setString(_chatHistoryKey, jsonEncode(history));
-      
+
       // If this was the active chat, clear it
       final activeChatId = prefs.getString(_activeChatKey);
       if (activeChatId == chatId) {
         await prefs.remove(_activeChatKey);
       }
-      
     } catch (e) {
       debugPrint('Error deleting chat: $e');
     }
   }
-  
+
   /// Clear all chat history
   Future<void> clearAllChats() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Get all chat IDs and remove their data
       final historyJson = prefs.getString(_chatHistoryKey) ?? '[]';
       final List<dynamic> history = jsonDecode(historyJson);
-      
+
       for (final chat in history) {
         final chatId = chat['chatId'];
         if (chatId != null) {
           await prefs.remove('$_chatDataKey$chatId');
         }
       }
-      
+
       // Clear history list and active chat
       await prefs.remove(_chatHistoryKey);
       await prefs.remove(_activeChatKey);
-      
     } catch (e) {
       debugPrint('Error clearing all chats: $e');
     }
   }
-  
+
   /// Get current chat ID
   String? getCurrentChatId() => _currentChatId;
+
+  ConversationResponse startInstantConversation({
+    String? userName,
+    String? userCity,
+    String? language,
+    Map<String, dynamic>? userProfile,
+  }) {
+    if (userName != null) _userName = userName;
+    if (userCity != null) _userCity = userCity;
+    if (language != null) _userLanguage = language;
+    if (userProfile != null) _userProfile = userProfile;
+
+    final response = _handleLanguageSelection('');
+    _conversationHistory.add({
+      'role': 'assistant',
+      'content': response.message,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    return response;
+  }
+
+  Future<void> warmBackendCategories() => _ensureBackendCategoriesLoaded();
+
   List<Map<String, dynamic>> _getCategories() {
     if (_backendCategories.isNotEmpty) {
       return _backendCategories
@@ -1062,7 +1086,7 @@ class ConversationalAIService {
             })
         .toList();
   }
-  
+
   /// Get category name in current language
   String _getCategoryName(String key, {String? fallbackName}) {
     final category = categories[key];
@@ -1071,7 +1095,7 @@ class ConversationalAIService {
           ? fallbackName!.trim()
           : key;
     }
-    
+
     switch (_userLanguage) {
       case 'hi':
         return category['hi'] ?? category['en'] ?? key;
@@ -1147,9 +1171,8 @@ class ConversationalAIService {
       }
 
       final decoded = jsonDecode(response.body);
-      final rawCategories = decoded is Map<String, dynamic>
-          ? decoded['categories']
-          : decoded;
+      final rawCategories =
+          decoded is Map<String, dynamic> ? decoded['categories'] : decoded;
       if (rawCategories is! List) {
         return;
       }
@@ -1197,7 +1220,7 @@ class ConversationalAIService {
       debugPrint('Failed to load backend categories: $e');
     }
   }
-  
+
   /// Get subcategories with multi-language support
   List<String> _getSubcategories(String categoryKey) {
     final backendSubs = _backendSubcategories[categoryKey];
@@ -1207,7 +1230,7 @@ class ConversationalAIService {
 
     final subs = subcategories[categoryKey];
     if (subs == null) return ['Other'];
-    
+
     switch (_userLanguage) {
       case 'hi':
         return subs['hi'] ?? subs['en'] ?? ['अन्य'];
@@ -1306,10 +1329,8 @@ class ConversationalAIService {
     if (normalized.length < 25) {
       return false;
     }
-    final words = normalized
-        .split(' ')
-        .where((word) => word.trim().isNotEmpty)
-        .length;
+    final words =
+        normalized.split(' ').where((word) => word.trim().isNotEmpty).length;
     return words >= 5;
   }
 
@@ -1322,7 +1343,8 @@ class ConversationalAIService {
       return null;
     }
 
-    final directMatch = _matchSubcategoryFromList(availableSubcategories, input);
+    final directMatch =
+        _matchSubcategoryFromList(availableSubcategories, input);
     if (directMatch != null) {
       return directMatch;
     }
@@ -1341,7 +1363,8 @@ class ConversationalAIService {
     }
 
     try {
-      final prompt = '''Pick the single best backend subcategory for this complaint.
+      final prompt =
+          '''Pick the single best backend subcategory for this complaint.
 
 Category key: $categoryKey
 Complaint text: "$input"
@@ -1418,7 +1441,10 @@ Rules:
   }
 
   String _normalizeEmailValue(String input) {
-    return _convertDigitsToAscii(input).trim().toLowerCase().replaceAll(' ', '');
+    return _convertDigitsToAscii(input)
+        .trim()
+        .toLowerCase()
+        .replaceAll(' ', '');
   }
 
   String _normalizeContactNameValue(String input) {
@@ -1538,36 +1564,36 @@ Rules:
     if (language != null) _userLanguage = language;
     if (userProfile != null) _userProfile = userProfile;
 
-    if (!_backendCategoriesLoadAttempted) {
+    final needsBackendCategories =
+        _currentStep != 'language_selection' && _currentStep != 'greeting';
+    if (needsBackendCategories && !_backendCategoriesLoadAttempted) {
       await _ensureBackendCategoriesLoaded();
     }
 
     // IMPORTANT: Don't check for new issues when user is providing details for current complaint
     // Only check when user is in early stages (greeting, category selection)
-    final isProvidingDetails = _currentStep == 'problem' || 
-                                _currentStep == 'subcategory' || 
-                                _currentStep == 'date' || 
-                                _currentStep == 'location' ||
-                                _currentStep == 'photo' ||
-                                _currentStep == 'personal_details' ||
-                                _currentStep == 'summary' ||
-                                _currentStep == 'confirm';
-    
+    final isProvidingDetails = _currentStep == 'problem' ||
+        _currentStep == 'subcategory' ||
+        _currentStep == 'date' ||
+        _currentStep == 'location' ||
+        _currentStep == 'photo' ||
+        _currentStep == 'personal_details' ||
+        _currentStep == 'summary' ||
+        _currentStep == 'confirm';
+
     // Only detect new issues if NOT providing details and category is already selected
-    if (!isProvidingDetails && 
-        _currentStep != 'greeting' && 
-        _currentStep != 'submitted' && 
+    if (!isProvidingDetails &&
+        _currentStep != 'greeting' &&
+        _currentStep != 'submitted' &&
         _currentStep != 'category' &&
         _complaintData.containsKey('category_key')) {
-      
       final newProblemDetected = await _detectCategoryWithAI(userInput);
-      if (newProblemDetected != null && 
+      if (newProblemDetected != null &&
           newProblemDetected['key'] != _complaintData['category_key'] &&
           !_isAffirmativeResponse(userInput) &&
           !_isNegativeResponse(userInput) &&
           !_isSkipResponse(userInput) &&
           userInput.length > 15) {
-        
         // Store the new problem for later
         if (!_aiContext.containsKey('pending_issues')) {
           _aiContext['pending_issues'] = [];
@@ -1578,12 +1604,14 @@ Rules:
           'description': userInput,
           'timestamp': DateTime.now().toIso8601String(),
         });
-        
+
         final currentCategory = _complaintData['category_emoji'] ?? '📝';
-        final currentCategoryName = _complaintData['category'] ?? 'Current issue';
-        
+        final currentCategoryName =
+            _complaintData['category'] ?? 'Current issue';
+
         return ConversationResponse(
-          message: '''👍 **Got it!** I noticed you mentioned another issue: **${newProblemDetected['emoji']} ${newProblemDetected['name']}**
+          message:
+              '''👍 **Got it!** I noticed you mentioned another issue: **${newProblemDetected['emoji']} ${newProblemDetected['name']}**
 
 📝 **Current Progress:**
 $currentCategory $currentCategoryName - ${_getCurrentStepProgress()}
@@ -1592,7 +1620,11 @@ $currentCategory $currentCategoryName - ${_getCurrentStepProgress()}
 Let's complete the current complaint first for faster resolution. I've noted your other issue and we can handle it right after!
 
 🎯 **Continue with current issue?**''',
-          buttons: ['✅ Yes, Continue', '🔄 Switch to New Issue', '📋 See All Issues'],
+          buttons: [
+            '✅ Yes, Continue',
+            '🔄 Switch to New Issue',
+            '📋 See All Issues'
+          ],
           suggestions: [],
           step: _currentStep,
           showInput: false,
@@ -1619,6 +1651,16 @@ Let's complete the current complaint first for faster resolution. I've noted you
         break;
       case 'greeting':
         response = await _handleGreeting(userInput);
+        break;
+      case 'media_confirm':
+        if (_isSubmitLikeResponse(userInput) ||
+            _matchesAnyIntentPhrase(userInput, ['continue', 'yes continue'])) {
+          response = continueMediaIntake();
+        } else {
+          _aiContext['awaiting_media_confirmation'] = false;
+          _currentStep = 'category';
+          response = await _handleCategorySelection(userInput);
+        }
         break;
       case 'category':
         response = await _handleCategorySelection(userInput);
@@ -1672,18 +1714,24 @@ Let's complete the current complaint first for faster resolution. I've noted you
   /// Analyze sentiment and urgency using AI
   Future<void> _analyzeSentimentAndUrgency(String input) async {
     final lower = input.toLowerCase();
-    
-    if (lower.contains('urgent') || lower.contains('emergency') || 
-        lower.contains('immediately') || lower.contains('asap') ||
-        lower.contains('critical') || lower.contains('danger')) {
+
+    if (lower.contains('urgent') ||
+        lower.contains('emergency') ||
+        lower.contains('immediately') ||
+        lower.contains('asap') ||
+        lower.contains('critical') ||
+        lower.contains('danger')) {
       _sentiment = 'urgent';
       _urgencyScore = 0.9;
-    } else if (lower.contains('angry') || lower.contains('frustrated') ||
-               lower.contains('terrible') || lower.contains('worst')) {
+    } else if (lower.contains('angry') ||
+        lower.contains('frustrated') ||
+        lower.contains('terrible') ||
+        lower.contains('worst')) {
       _sentiment = 'negative';
       _urgencyScore = 0.7;
-    } else if (lower.contains('please') || lower.contains('help') ||
-               lower.contains('need')) {
+    } else if (lower.contains('please') ||
+        lower.contains('help') ||
+        lower.contains('need')) {
       _sentiment = 'neutral';
       _urgencyScore = 0.5;
     } else {
@@ -1703,7 +1751,7 @@ Let's complete the current complaint first for faster resolution. I've noted you
   /// Estimate resolution time
   String _estimateResolutionTime() {
     final category = _complaintData['category_key'] as String?;
-    
+
     switch (category) {
       case 'police':
       case 'cyber':
@@ -1728,60 +1776,61 @@ Let's complete the current complaint first for faster resolution. I've noted you
       // Try to detect language from input
       String? selectedLang;
       final input = userInput.toLowerCase();
-      
+
       if (input.contains('english') || input.contains('eng')) {
         selectedLang = 'en';
-      } else if (input.contains('hindi') || input.contains('हिंदी') || input.contains('hin')) {
+      } else if (input.contains('hindi') ||
+          input.contains('हिंदी') ||
+          input.contains('hin')) {
         selectedLang = 'hi';
-      } else if (input.contains('gujarati') || input.contains('ગુજરાતી') || input.contains('guj')) {
+      } else if (input.contains('gujarati') ||
+          input.contains('ગુજરાતી') ||
+          input.contains('guj')) {
         selectedLang = 'gu';
       } else if (input.contains('hinglish')) {
         selectedLang = 'hinglish';
       }
-      
+
       // Check if it's a button selection (emoji + language)
       for (var lang in languageOptions.values) {
-        if (input.contains(lang['native']!.toLowerCase()) || 
+        if (input.contains(lang['native']!.toLowerCase()) ||
             input.contains(lang['name']!.toLowerCase())) {
           selectedLang = lang['code'];
           break;
         }
       }
-      
+
       if (selectedLang != null) {
         _userLanguage = selectedLang;
         _currentStep = 'greeting';
-        
+
         // Show confirmation and proceed to greeting
         final selectedLangInfo = languageOptions[selectedLang]!;
         return ConversationResponse(
-          message: '''${selectedLangInfo['emoji']} ${_localize(
-            'Perfect! I\'ll help you in **${selectedLangInfo['name']}**.',
-            'बहुत बढ़िया! मैं **${selectedLangInfo['native']}** में आपकी मदद करूंगा।',
-            'સારું! હું **${selectedLangInfo['native']}** માં તમારી મદદ કરીશ।',
-            'Perfect! Main **${selectedLangInfo['native']}** mein aapki help karunga.'
-          )}
+          message:
+              '''${selectedLangInfo['emoji']} ${_localize('Perfect! I\'ll help you in **${selectedLangInfo['name']}**.', 'बहुत बढ़िया! मैं **${selectedLangInfo['native']}** में आपकी मदद करूंगा।', 'સારું! હું **${selectedLangInfo['native']}** માં તમારી મદદ કરીશ।', 'Perfect! Main **${selectedLangInfo['native']}** mein aapki help karunga.')}
 
-${_localize(
-            'Let\'s get started with your complaint! 🚀',
-            'आइए आपकी शिकायत के साथ शुरूआत करते हैं! 🚀',
-            'ચાલો તમારી ફરિયાદ સાથે શરૂઆત કરીએ! 🚀',
-            'Chalo aapki complaint ke saath start karte hain! 🚀'
-          )}''',
-          buttons: [_localize('Continue', 'जारी रखें', 'ચાલુ રાખો', 'Continue')],
+${_localize('Let\'s get started with your complaint! 🚀', 'आइए आपकी शिकायत के साथ शुरूआत करते हैं! 🚀', 'ચાલો તમારી ફરિયાદ સાથે શરૂઆત કરીએ! 🚀', 'Chalo aapki complaint ke saath start karte hain! 🚀')}''',
+          buttons: [
+            _localize('Continue', 'जारी रखें', 'ચાલુ રાખો', 'Continue')
+          ],
           suggestions: [],
           step: 'greeting',
           showInput: true,
-          inputPlaceholder: _localize('Tell me your problem...', 'अपनी समस्या बताएं...', 'તમારી સમસ્યા કહો...', 'Apni problem batao...'),
+          inputPlaceholder: _localize(
+              'Tell me your problem...',
+              'अपनी समस्या बताएं...',
+              'તમારી સમસ્યા કહો...',
+              'Apni problem batao...'),
         );
       }
     }
-    
+
     // Show language selection options
     final languageButtons = languageOptions.values
         .map((lang) => '${lang['emoji']} ${lang['native']}')
         .toList();
-    
+
     return ConversationResponse(
       message: '''🌍 **Welcome to JANHELP!**
 👋 Namaste! સ્વાગત! Welcome!
@@ -1801,7 +1850,8 @@ Main kai languages mein help kar sakta hun!''',
       ],
       step: 'language_selection',
       showInput: true,
-      inputPlaceholder: 'Select your language / अपनी भाषा चुनें / તમારી ભાષા પસંદ કરો',
+      inputPlaceholder:
+          'Select your language / अपनी भाषा चुनें / તમારી ભાષા પસંદ કરો',
     );
   }
 
@@ -1809,21 +1859,24 @@ Main kai languages mein help kar sakta hun!''',
   Future<ConversationResponse> _handleGreeting(String userInput) async {
     _currentStep = 'category';
     _conversationStartTime = DateTime.now();
-    
+
     final hour = DateTime.now().hour;
     String timeGreeting;
     String emoji;
     if (hour < 12) {
-      timeGreeting = _localize('Good morning', 'सुप्रभात', 'સુપ્રભાત', 'Good morning');
+      timeGreeting =
+          _localize('Good morning', 'सुप्रभात', 'સુપ્રભાત', 'Good morning');
       emoji = '🌅';
     } else if (hour < 17) {
-      timeGreeting = _localize('Good afternoon', 'शुभ दोपहर', 'શુભ બપોર', 'Good afternoon');
+      timeGreeting = _localize(
+          'Good afternoon', 'शुभ दोपहर', 'શુભ બપોર', 'Good afternoon');
       emoji = '☀️';
     } else {
-      timeGreeting = _localize('Good evening', 'शुभ संध्या', 'શુભ સાંજ', 'Good evening');
+      timeGreeting =
+          _localize('Good evening', 'शुभ संध्या', 'શુભ સાંજ', 'Good evening');
       emoji = '🌆';
     }
-    
+
     final greeting = _userName.isNotEmpty
         ? '$emoji $timeGreeting $_userName!'
         : '$emoji $timeGreeting!';
@@ -1833,96 +1886,95 @@ Main kai languages mein help kar sakta hun!''',
       return await _handleCategorySelection(userInput);
     }
 
-    final categoryButtons = _getCategories().map((c) => '${c['emoji']} ${c['name']}').toList();
-    
+    final categoryButtons =
+        _getCategories().map((c) => '${c['emoji']} ${c['name']}').toList();
+
     debugPrint('📝 Showing ${categoryButtons.length} categories to user');
 
     return ConversationResponse(
       message: '''$greeting
 
-${_localize(
-        'I\'m JANHELP, your friendly AI assistant! 😊 I\'m here to help you report issues in ${_userCity.isNotEmpty ? _userCity : 'your city'} and make sure they get resolved quickly.',
-        'मैं JANHELP हूं, आपका दोस्ताना AI सहायक! 😊 मैं ${_userCity.isNotEmpty ? _userCity : 'आपके शहर'} में समस्याओं की रिपोर्ट करने में आपकी मदद करने के लिए यहां हूं।',
-        'હું JANHELP છું, તમારો મૈત્રીપૂર્ણ AI સહાયક! 😊 હું ${_userCity.isNotEmpty ? _userCity : 'તમારા શહેર'}માં સમસ્યાઓની જાણ કરવામાં તમને મદદ કરવા માટે અહીં છું।',
-        'Main JANHELP hun, aapka friendly AI assistant! 😊 Main ${_userCity.isNotEmpty ? _userCity : 'aapke city'} mein problems report karne mein help karunga.'
-      )}
+${_localize('I\'m JANHELP, your friendly AI assistant! 😊 I\'m here to help you report issues in ${_userCity.isNotEmpty ? _userCity : 'your city'} and make sure they get resolved quickly.', 'मैं JANHELP हूं, आपका दोस्ताना AI सहायक! 😊 मैं ${_userCity.isNotEmpty ? _userCity : 'आपके शहर'} में समस्याओं की रिपोर्ट करने में आपकी मदद करने के लिए यहां हूं।', 'હું JANHELP છું, તમારો મૈત્રીપૂર્ણ AI સહાયક! 😊 હું ${_userCity.isNotEmpty ? _userCity : 'તમારા શહેર'}માં સમસ્યાઓની જાણ કરવામાં તમને મદદ કરવા માટે અહીં છું।', 'Main JANHELP hun, aapka friendly AI assistant! 😊 Main ${_userCity.isNotEmpty ? _userCity : 'aapke city'} mein problems report karne mein help karunga.')}
 
-${_localize(
-        'Don\'t worry, I\'ll guide you through everything step by step. Just tell me what\'s bothering you, and I\'ll take care of the rest! 💪',
-        'चिंता मत करो, मैं आपको हर चीज में कदम दर कदम मार्गदर्शन करूंगा। बस मुझे बताएं कि आपको क्या परेशान कर रहा है! 💪',
-        'ચિંતા કરશો નહીં, હું તમને દરેક વસ્તુમાં પગલું દર પગલું માર્ગદર્શન આપીશ। ફક્ત મને કહો કે તમને શું પરેશાન કરી રહ્યું છે! 💪',
-        'Tension mat lo, main aapko step by step guide karunga. Bas batao kya problem hai! 💪'
-      )}
+${_localize('Don\'t worry, I\'ll guide you through everything step by step. Just tell me what\'s bothering you, and I\'ll take care of the rest! 💪', 'चिंता मत करो, मैं आपको हर चीज में कदम दर कदम मार्गदर्शन करूंगा। बस मुझे बताएं कि आपको क्या परेशान कर रहा है! 💪', 'ચિંતા કરશો નહીં, હું તમને દરેક વસ્તુમાં પગલું દર પગલું માર્ગદર્શન આપીશ। ફક્ત મને કહો કે તમને શું પરેશાન કરી રહ્યું છે! 💪', 'Tension mat lo, main aapko step by step guide karunga. Bas batao kya problem hai! 💪')}
 
-🗣️ ${_localize(
-        'You can describe your problem naturally - I understand! What issue would you like to report?',
-        'आप अपनी समस्या स्वाभाविक रूप से बता सकते हैं - मैं समझता हूं! आप कौन सी समस्या रिपोर्ट करना चाहते हैं?',
-        'તમે તમારી સમસ્યા સ્વાભાવિક રીતે વર્ણવી શકો છો - હું સમજું છું! તમે કઈ સમસ્યાની જાણ કરવા માંગો છો?',
-        'Aap apni problem naturally bata sakte hain - main samajh jaunga! Kya problem report karni hai?'
-      )}''',
+🗣️ ${_localize('You can describe your problem naturally - I understand! What issue would you like to report?', 'आप अपनी समस्या स्वाभाविक रूप से बता सकते हैं - मैं समझता हूं! आप कौन सी समस्या रिपोर्ट करना चाहते हैं?', 'તમે તમારી સમસ્યા સ્વાભાવિક રીતે વર્ણવી શકો છો - હું સમજું છું! તમે કઈ સમસ્યાની જાણ કરવા માંગો છો?', 'Aap apni problem naturally bata sakte hain - main samajh jaunga! Kya problem report karni hai?')}''',
       buttons: categoryButtons,
       suggestions: [
-        _localize('There\'s a big pothole on my street', 'मेरी गली में एक बड़ा गड्ढा है', 'મારી ગલીમાં મોટો ખાડો છે', 'Meri gali mein bada khada hai'),
-        _localize('We haven\'t had water since morning', 'सुबह से पानी नहीं आया', 'સવારથી પાણી આવ્યું નથી', 'Subah se paani nahi aaya'),
-        _localize('Street light is broken - it\'s dark at night', 'स्ट्रीट लाइट टूटी है - रात में अंधेरा है', 'સ્ટ્રીટ લાઇટ તૂટી ગઈ છે - રાત્રે અંધારું છે', 'Street light toot gayi - raat mein andhera hai'),
-        _localize('Garbage hasn\'t been collected for days', 'कई दिनों से कचरा नहीं उठाया गया', 'દિવસોથી કચરો ઉપાડવામાં આવ્યો નથી', 'Kai dino se kachra nahi uthaya'),
+        _localize(
+            'There\'s a big pothole on my street',
+            'मेरी गली में एक बड़ा गड्ढा है',
+            'મારી ગલીમાં મોટો ખાડો છે',
+            'Meri gali mein bada khada hai'),
+        _localize(
+            'We haven\'t had water since morning',
+            'सुबह से पानी नहीं आया',
+            'સવારથી પાણી આવ્યું નથી',
+            'Subah se paani nahi aaya'),
+        _localize(
+            'Street light is broken - it\'s dark at night',
+            'स्ट्रीट लाइट टूटी है - रात में अंधेरा है',
+            'સ્ટ્રીટ લાઇટ તૂટી ગઈ છે - રાત્રે અંધારું છે',
+            'Street light toot gayi - raat mein andhera hai'),
+        _localize(
+            'Garbage hasn\'t been collected for days',
+            'कई दिनों से कचरा नहीं उठाया गया',
+            'દિવસોથી કચરો ઉપાડવામાં આવ્યો નથી',
+            'Kai dino se kachra nahi uthaya'),
       ],
       step: 'category',
       showInput: true,
-      inputPlaceholder: _localize('Tell me what happened...', 'बताएं क्या हुआ...', 'કહો શું થયું...', 'Batao kya hua...'),
+      inputPlaceholder: _localize('Tell me what happened...',
+          'बताएं क्या हुआ...', 'કહો શું થયું...', 'Batao kya hua...'),
     );
   }
 
   /// Step 2: Enhanced category selection with multi-language support
-  Future<ConversationResponse> _handleCategorySelection(String userInput) async {
+  Future<ConversationResponse> _handleCategorySelection(
+      String userInput) async {
     if (_complaintData.containsKey('category_retry')) {
       _retryCount++;
     }
 
     // IMPORTANT: Don't check for multiple issues if user clicked a category button
     // Category buttons have emoji at start
-    final isCategoryButton = userInput.contains(RegExp(r'^[\p{Emoji}]', unicode: true));
-    
+    final isCategoryButton =
+        userInput.contains(RegExp(r'^[\p{Emoji}]', unicode: true));
+
     // Only check for multiple issues if user typed a long description (not a button click)
     if (!isCategoryButton && userInput.length > 30) {
       final multipleIssuesDetected = _detectMultipleIssues(userInput);
       if (multipleIssuesDetected != null && multipleIssuesDetected.length > 1) {
         return ConversationResponse(
-          message: '''${_localize(
-            'I can see you\'re dealing with multiple problems! 😟 That must be really frustrating.',
-            'मैं देख सकता हूं कि आप कई समस्याओं से निपट रहे हैं! 😟 यह वास्तव में निराशाजनक होना चाहिए।',
-            'હું જોઈ શકું છું કે તમે અનેક સમસ્યાઓ સાથે વ્યવહાર કરી રહ્યા છો! 😟 તે ખરેખર નિરાશાજનક હોવું જોઈએ।',
-            'Main dekh sakta hun ki aap kai problems se deal kar rahe hain! 😟 Ye bahut frustrating hoga.'
-          )}
+          message:
+              '''${_localize('I can see you\'re dealing with multiple problems! 😟 That must be really frustrating.', 'मैं देख सकता हूं कि आप कई समस्याओं से निपट रहे हैं! 😟 यह वास्तव में निराशाजनक होना चाहिए।', 'હું જોઈ શકું છું કે તમે અનેક સમસ્યાઓ સાથે વ્યવહાર કરી રહ્યા છો! 😟 તે ખરેખર નિરાશાજનક હોવું જોઈએ।', 'Main dekh sakta hun ki aap kai problems se deal kar rahe hain! 😟 Ye bahut frustrating hoga.')}
 
-${_localize(
-            'You mentioned:',
-            'आपने उल्लेख किया:',
-            'તમે ઉલ્લેખ કર્યો:',
-            'Aapne mention kiya:'
-          )}
+${_localize('You mentioned:', 'आपने उल्लेख किया:', 'તમે ઉલ્લેખ કર્યો:', 'Aapne mention kiya:')}
 ${multipleIssuesDetected.map((issue) => '• ${issue['emoji']} ${issue['name']}').join('\n')}
 
-${_localize(
-            'To help you better, let\'s handle one issue at a time so each gets the attention it deserves. Which one is bothering you the most right now?',
-            'आपकी बेहतर मदद के लिए, आइए एक समय में एक मुद्दे को संभालते हैं ताकि प्रत्येक को वह ध्यान मिले जिसका वह हकदार है। अभी आपको कौन सा सबसे ज्यादा परेशान कर रहा है?',
-            'તમને વધુ સારી રીતે મદદ કરવા માટે, ચાલો એક સમયે એક મુદ્દાને હેન્ડલ કરીએ જેથી દરેકને તે ધ્યાન મળે જેનો તે હકદાર છે। અત્યારે તમને કયો સૌથી વધુ પરેશાન કરી રહ્યો છે?',
-            'Aapki better help ke liye, ek time mein ek issue handle karte hain. Abhi sabse zyada kya pareshan kar raha hai?'
-          )}''',
-          buttons: multipleIssuesDetected.map((issue) => '${issue['emoji']} ${issue['name']}').toList(),
+${_localize('To help you better, let\'s handle one issue at a time so each gets the attention it deserves. Which one is bothering you the most right now?', 'आपकी बेहतर मदद के लिए, आइए एक समय में एक मुद्दे को संभालते हैं ताकि प्रत्येक को वह ध्यान मिले जिसका वह हकदार है। अभी आपको कौन सा सबसे ज्यादा परेशान कर रहा है?', 'તમને વધુ સારી રીતે મદદ કરવા માટે, ચાલો એક સમયે એક મુદ્દાને હેન્ડલ કરીએ જેથી દરેકને તે ધ્યાન મળે જેનો તે હકદાર છે। અત્યારે તમને કયો સૌથી વધુ પરેશાન કરી રહ્યો છે?', 'Aapki better help ke liye, ek time mein ek issue handle karte hain. Abhi sabse zyada kya pareshan kar raha hai?')}''',
+          buttons: multipleIssuesDetected
+              .map((issue) => '${issue['emoji']} ${issue['name']}')
+              .toList(),
           suggestions: [
-            _localize('The most urgent one', 'सबसे जरूरी वाला', 'સૌથી તાત્કાલિક', 'Sabse urgent wala'),
-            _localize('All are equally important', 'सभी समान रूप से महत्वपूर्ण हैं', 'બધા સમાન રીતે મહત્વપૂર્ણ છે', 'Sab equally important hain')
+            _localize('The most urgent one', 'सबसे जरूरी वाला',
+                'સૌથી તાત્કાલિક', 'Sabse urgent wala'),
+            _localize(
+                'All are equally important',
+                'सभी समान रूप से महत्वपूर्ण हैं',
+                'બધા સમાન રીતે મહત્વપૂર્ણ છે',
+                'Sab equally important hain')
           ],
           step: 'category',
           showInput: true,
-          inputPlaceholder: _localize('Which one first?', 'पहले कौन सा?', 'પહેલા કયો?', 'Pehle kaun sa?'),
+          inputPlaceholder: _localize('Which one first?', 'पहले कौन सा?',
+              'પહેલા કયો?', 'Pehle kaun sa?'),
         );
       }
     }
 
     final detectedCategory = await _detectCategoryWithAI(userInput);
-    
+
     if (detectedCategory != null) {
       _complaintData['category'] = detectedCategory['name'];
       _complaintData['category_key'] = detectedCategory['key'];
@@ -1963,86 +2015,73 @@ ${_localize(
           aiInsights: problemResponse.aiInsights,
         );
       }
-      
+
       _currentStep = 'subcategory';
-      
+
       final subs = _getSubcategories(detectedCategory['key']!);
-      
+
       String empathyNote = '';
       if (_urgencyScore > 0.7) {
-        empathyNote = '\n\n${_localize(
-          'I can sense this is urgent. Don\'t worry, I\'ll make sure this gets priority attention! 🚨',
-          'मैं समझ सकता हूं कि यह जरूरी है। चिंता मत करो, मैं यह सुनिश्चित करूंगा कि इसे प्राथमिकता मिले! 🚨',
-          'હું સમજી શકું છું કે આ તાત્કાલિક છે. ચિંતા કરશો નહીં, હું ખાતરી કરીશ કે આને પ્રાથમિકતા મળે! 🚨',
-          'Main samajh sakta hun ki ye urgent hai. Tension mat lo, main priority attention dilwaunga! 🚨'
-        )}';
+        empathyNote =
+            '\n\n${_localize('I can sense this is urgent. Don\'t worry, I\'ll make sure this gets priority attention! 🚨', 'मैं समझ सकता हूं कि यह जरूरी है। चिंता मत करो, मैं यह सुनिश्चित करूंगा कि इसे प्राथमिकता मिले! 🚨', 'હું સમજી શકું છું કે આ તાત્કાલિક છે. ચિંતા કરશો નહીં, હું ખાતરી કરીશ કે આને પ્રાથમિકતા મળે! 🚨', 'Main samajh sakta hun ki ye urgent hai. Tension mat lo, main priority attention dilwaunga! 🚨')}';
       } else {
-        empathyNote = '\n\n${_localize(
-          'I understand, let me help you with this. 🤝',
-          'मैं समझता हूं, मुझे इसमें आपकी मदद करने दें। 🤝',
-          'હું સમજું છું, મને આમાં તમારી મદદ કરવા દો. 🤝',
-          'Main samajh gaya, main aapki help karunga. 🤝'
-        )}';
+        empathyNote =
+            '\n\n${_localize('I understand, let me help you with this. 🤝', 'मैं समझता हूं, मुझे इसमें आपकी मदद करने दें। 🤝', 'હું સમજું છું, મને આમાં તમારી મદદ કરવા દો. 🤝', 'Main samajh gaya, main aapki help karunga. 🤝')}';
       }
-      
+
       return ConversationResponse(
-        message: '${detectedCategory['emoji']} ${_localize(
-          'Got it! So this is about **${detectedCategory['name']}**.$empathyNote\n\nCould you tell me more specifically what\'s happening? This will help the right team address it quickly.',
-          'समझ गया! तो यह **${detectedCategory['name']}** के बारे में है।$empathyNote\n\nक्या आप मुझे और विशेष रूप से बता सकते हैं कि क्या हो रहा है? इससे सही टीम को इसे जल्दी हल करने में मदद मिलेगी।',
-          'સમજાઈ ગયું! તો આ **${detectedCategory['name']}** વિશે છે.$empathyNote\n\nશું તમે મને વધુ ખાસ કરીને કહી શકો કે શું થઈ રહ્યું છે? આ યોગ્ય ટીમને તેને ઝડપથી સંબોધવામાં મદદ કરશે.',
-          'Samajh gaya! To ye **${detectedCategory['name']}** ke baare mein hai.$empathyNote\n\nKya aap mujhe aur detail mein bata sakte hain ki kya ho raha hai? Isse right team ko jaldi solve karne mein help milegi.'
-        )}',
+        message:
+            '${detectedCategory['emoji']} ${_localize('Got it! So this is about **${detectedCategory['name']}**.$empathyNote\n\nCould you tell me more specifically what\'s happening? This will help the right team address it quickly.', 'समझ गया! तो यह **${detectedCategory['name']}** के बारे में है।$empathyNote\n\nक्या आप मुझे और विशेष रूप से बता सकते हैं कि क्या हो रहा है? इससे सही टीम को इसे जल्दी हल करने में मदद मिलेगी।', 'સમજાઈ ગયું! તો આ **${detectedCategory['name']}** વિશે છે.$empathyNote\n\nશું તમે મને વધુ ખાસ કરીને કહી શકો કે શું થઈ રહ્યું છે? આ યોગ્ય ટીમને તેને ઝડપથી સંબોધવામાં મદદ કરશે.', 'Samajh gaya! To ye **${detectedCategory['name']}** ke baare mein hai.$empathyNote\n\nKya aap mujhe aur detail mein bata sakte hain ki kya ho raha hai? Isse right team ko jaldi solve karne mein help milegi.')}',
         buttons: subs,
         suggestions: _getSmartSuggestions(detectedCategory['key']!),
         step: 'subcategory',
         showInput: true,
-        inputPlaceholder: _localize('What exactly is the problem?', 'वास्तव में समस्या क्या है?', 'ખરેખર સમસ્યા શું છે?', 'Exactly kya problem hai?'),
+        inputPlaceholder: _localize(
+            'What exactly is the problem?',
+            'वास्तव में समस्या क्या है?',
+            'ખરેખર સમસ્યા શું છે?',
+            'Exactly kya problem hai?'),
         urgencyLevel: _getUrgencyLevel(),
       );
     } else {
       _complaintData['category_retry'] = true;
-      
+
       if (_retryCount > 2) {
         final allCategories = _getCategories();
         return ConversationResponse(
           message: _localize(
-            'No worries! Let me show you all the categories we handle. Just pick the one that matches your issue best:',
-            'कोई चिंता नहीं! मुझे आपको सभी श्रेणियां दिखाने दें जिन्हें हम संभालते हैं। बस उस एक को चुनें जो आपकी समस्या से सबसे अच्छा मेल खाता है:',
-            'કોઈ ચિંતા નહીં! મને તમને બધી કેટેગરીઓ બતાવવા દો જે અમે હેન્ડલ કરીએ છીએ. ફક્ત તે એક પસંદ કરો જે તમારી સમસ્યા સાથે શ્રેષ્ઠ મેળ ખાય છે:',
-            'Koi tension nahi! Main aapko sab categories dikhata hun jo hum handle karte hain. Bas wo select karo jo aapki problem se match kare:'
-          ),
-          buttons: allCategories.map((c) => '${c['emoji']} ${c['name']}').toList(),
+              'No worries! Let me show you all the categories we handle. Just pick the one that matches your issue best:',
+              'कोई चिंता नहीं! मुझे आपको सभी श्रेणियां दिखाने दें जिन्हें हम संभालते हैं। बस उस एक को चुनें जो आपकी समस्या से सबसे अच्छा मेल खाता है:',
+              'કોઈ ચિંતા નહીં! મને તમને બધી કેટેગરીઓ બતાવવા દો જે અમે હેન્ડલ કરીએ છીએ. ફક્ત તે એક પસંદ કરો જે તમારી સમસ્યા સાથે શ્રેષ્ઠ મેળ ખાય છે:',
+              'Koi tension nahi! Main aapko sab categories dikhata hun jo hum handle karte hain. Bas wo select karo jo aapki problem se match kare:'),
+          buttons:
+              allCategories.map((c) => '${c['emoji']} ${c['name']}').toList(),
           suggestions: [],
           step: 'category',
           showInput: true,
         );
       }
-      
+
       final someCategories = _getCategories().take(6).toList();
       return ConversationResponse(
-        message: '''${_localize(
-          'I want to make sure I understand you correctly! 😊',
-          'मैं यह सुनिश्चित करना चाहता हूं कि मैं आपको सही तरीके से समझूं! 😊',
-          'હું ખાતરી કરવા માંગું છું કે હું તમને યોગ્ય રીતે સમજું! 😊',
-          'Main sure karna chahta hun ki main aapko sahi se samjhun! 😊'
-        )}
+        message:
+            '''${_localize('I want to make sure I understand you correctly! 😊', 'मैं यह सुनिश्चित करना चाहता हूं कि मैं आपको सही तरीके से समझूं! 😊', 'હું ખાતરી કરવા માંગું છું કે હું તમને યોગ્ય રીતે સમજું! 😊', 'Main sure karna chahta hun ki main aapko sahi se samjhun! 😊')}
 
-${_localize(
-          'Could you describe it a bit differently? For example:',
-          'क्या आप इसे थोड़ा अलग तरीके से बता सकते हैं? उदाहरण के लिए:',
-          'શું તમે તેને થોડી અલગ રીતે વર્ણવી શકો છો? ઉદાહરણ તરીકે:',
-          'Kya aap ise thoda alag tarike se bata sakte hain? Example ke liye:'
-        )}
+${_localize('Could you describe it a bit differently? For example:', 'क्या आप इसे थोड़ा अलग तरीके से बता सकते हैं? उदाहरण के लिए:', 'શું તમે તેને થોડી અલગ રીતે વર્ણવી શકો છો? ઉદાહરણ તરીકે:', 'Kya aap ise thoda alag tarike se bata sakte hain? Example ke liye:')}
 • "${_localize('There\'s a big pothole on Main Street', 'मेन स्ट्रीट पर एक बड़ा गड्ढा है', 'મેઈન સ્ટ્રીટ પર મોટો ખાડો છે', 'Main Street pe bada khada hai')}"
 • "${_localize('We haven\'t had water since yesterday', 'कल से पानी नहीं आया', 'ગઈકાલથી પાણી આવ્યું નથી', 'Kal se paani nahi aaya')}"
 • "${_localize('The street light near the park is broken', 'पार्क के पास की स्ट्रीट लाइट टूटी है', 'પાર્ક પાસેની સ્ટ્રીટ લાઇટ તૂટી ગઈ છે', 'Park ke paas ki street light toot gayi')}"
 
 ${_localize('Or just pick from these common issues:', 'या इन सामान्य मुद्दों में से चुनें:', 'અથવા આ સામાન્ય મુદ્દાઓમાંથી પસંદ કરો:', 'Ya in common issues mein se choose karo:')}''',
-        buttons: someCategories.map((c) => '${c['emoji']} ${c['name']}').toList(),
+        buttons:
+            someCategories.map((c) => '${c['emoji']} ${c['name']}').toList(),
         suggestions: [
-          _localize('Road is damaged', 'सड़क खराब है', 'રસ્તો ખરાબ છે', 'Sadak kharab hai'),
-          _localize('Water problem', 'पानी की समस्या', 'પાણીની સમસ્યા', 'Paani ki problem'),
-          _localize('Electricity issue', 'बिजली की समस्या', 'વીજળીની સમસ્યા', 'Bijli ki problem')
+          _localize('Road is damaged', 'सड़क खराब है', 'રસ્તો ખરાબ છે',
+              'Sadak kharab hai'),
+          _localize('Water problem', 'पानी की समस्या', 'પાણીની સમસ્યા',
+              'Paani ki problem'),
+          _localize('Electricity issue', 'बिजली की समस्या', 'વીજળીની સમસ્યા',
+              'Bijli ki problem')
         ],
         step: 'category',
         showInput: true,
@@ -2051,10 +2090,11 @@ ${_localize('Or just pick from these common issues:', 'या इन साम�
   }
 
   /// Step 3: Subcategory selection with multi-language support
-  Future<ConversationResponse> _handleSubcategorySelection(String userInput) async {
+  Future<ConversationResponse> _handleSubcategorySelection(
+      String userInput) async {
     final categoryKey = _complaintData['category_key'] as String?;
     final looksDetailedComplaint = _looksLikeDetailedComplaint(userInput);
-    
+
     String? matchedSub;
     if (categoryKey != null) {
       matchedSub = await _detectSubcategoryForCategory(categoryKey, userInput);
@@ -2089,9 +2129,7 @@ ${_localize('Or just pick from these common issues:', 'या इन साम�
         ? _normalizeSubcategoryToEnglish(categoryKey, chosenSubcategory)
         : chosenSubcategory;
 
-    if (categoryKey != null &&
-        matchedSub != null &&
-        looksDetailedComplaint) {
+    if (categoryKey != null && matchedSub != null && looksDetailedComplaint) {
       _currentStep = 'problem';
       final problemResponse = await _handleProblemDescription(userInput);
       return ConversationResponse(
@@ -2114,63 +2152,46 @@ ${_localize('Or just pick from these common issues:', 'या इन साम�
     }
 
     _currentStep = 'problem';
-    
-    final smartQuestions = _getSmartQuestions(categoryKey ?? '');
-    
-    return ConversationResponse(
-      message: '''${_localize(
-        'Perfect! So it\'s **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}**. I\'ve got that noted down. ✅',
-        'बिल्कुल सही! तो यह **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** है। मैंने इसे नोट कर लिया है। ✅',
-        'પરફેક્ટ! તો તે **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** છે. મેં તે નોંધ્યું છે. ✅',
-        'Perfect! To ye **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** hai. Maine note kar liya hai. ✅'
-      )}
 
-${_localize(
-        'Now, to help the team understand the situation better, could you share some details? Things like:',
-        'अब, टीम को स्थिति को बेहतर ढंग से समझने में मदद करने के लिए, क्या आप कुछ विवरण साझा कर सकते हैं? जैसे कि:',
-        'હવે, ટીમને પરિસ્થિતિને વધુ સારી રીતે સમજવામાં મદદ કરવા માટે, શું તમે કેટલીક વિગતો શેર કરી શકો છો? જેવી કે:',
-        'Ab, team ko situation better samjhane ke liye, kya aap kuch details share kar sakte hain? Jaise ki:'
-      )}
+    final smartQuestions = _getSmartQuestions(categoryKey ?? '');
+
+    return ConversationResponse(
+      message:
+          '''${_localize('Perfect! So it\'s **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}**. I\'ve got that noted down. ✅', 'बिल्कुल सही! तो यह **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** है। मैंने इसे नोट कर लिया है। ✅', 'પરફેક્ટ! તો તે **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** છે. મેં તે નોંધ્યું છે. ✅', 'Perfect! To ye **${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}** hai. Maine note kar liya hai. ✅')}
+
+${_localize('Now, to help the team understand the situation better, could you share some details? Things like:', 'अब, टीम को स्थिति को बेहतर ढंग से समझने में मदद करने के लिए, क्या आप कुछ विवरण साझा कर सकते हैं? जैसे कि:', 'હવે, ટીમને પરિસ્થિતિને વધુ સારી રીતે સમજવામાં મદદ કરવા માટે, શું તમે કેટલીક વિગતો શેર કરી શકો છો? જેવી કે:', 'Ab, team ko situation better samjhane ke liye, kya aap kuch details share kar sakte hain? Jaise ki:')}
 
 $smartQuestions
 
-${_localize(
-        'The more you tell me, the faster they can fix it! 🔧',
-        'आप जितना अधिक बताएंगे, वे उतनी ही तेजी से इसे ठीक कर सकेंगे! 🔧',
-        'તમે જેટલું વધુ કહેશો, તેટલી ઝડપથી તેઓ તેને ઠીક કરી શકશે! 🔧',
-        'Aap jitna zyada batayenge, utni jaldi wo fix kar sakte hain! 🔧'
-      )}''',
+${_localize('The more you tell me, the faster they can fix it! 🔧', 'आप जितना अधिक बताएंगे, वे उतनी ही तेजी से इसे ठीक कर सकेंगे! 🔧', 'તમે જેટલું વધુ કહેશો, તેટલી ઝડપથી તેઓ તેને ઠીક કરી શકશે! 🔧', 'Aap jitna zyada batayenge, utni jaldi wo fix kar sakte hain! 🔧')}''',
       buttons: [],
       suggestions: _getDetailedSuggestions(categoryKey ?? ''),
       step: 'problem',
       showInput: true,
-      inputPlaceholder: _localize('Describe what you see...', 'आप जो देख रहे हैं उसका वर्णन करें...', 'તમે જે જુઓ છો તેનું વર્ણન કરો...', 'Jo dekh rahe hain uska description do...'),
+      inputPlaceholder: _localize(
+          'Describe what you see...',
+          'आप जो देख रहे हैं उसका वर्णन करें...',
+          'તમે જે જુઓ છો તેનું વર્ણન કરો...',
+          'Jo dekh rahe hain uska description do...'),
       urgencyLevel: _getUrgencyLevel(),
     );
   }
 
   /// Step 4: Problem description with validation - Multi-language support
-  Future<ConversationResponse> _handleProblemDescription(String userInput) async {
+  Future<ConversationResponse> _handleProblemDescription(
+      String userInput) async {
     final normalizedInput = userInput.trim().replaceAll(RegExp(r'\s+'), ' ');
     final detailError = _getDescriptionQualityError(normalizedInput);
     if (detailError != null) {
       _aiContext['validation_error'] = detailError;
       return ConversationResponse(
-        message: '''${_localize(
-          'I hear you! Could you tell me a bit more about it? 😊',
-          'मैं सुन रहा हूं! क्या आप इसके बारे में थोड़ा और बता सकते हैं? 😊',
-          'હું સાંભળું છું! શું તમે તેના વિશે થોડું વધુ કહી શકો છો? 😊',
-          'Main sun raha hun! Kya aap iske baare mein thoda aur bata sakte hain? 😊'
-        )}
+        message:
+            '''${_localize('I hear you! Could you tell me a bit more about it? 😊', 'मैं सुन रहा हूं! क्या आप इसके बारे में थोड़ा और बता सकते हैं? 😊', 'હું સાંભળું છું! શું તમે તેના વિશે થોડું વધુ કહી શકો છો? 😊', 'Main sun raha hun! Kya aap iske baare mein thoda aur bata sakte hain? 😊')}
 
-${_localize(
-          'The more details you share, the better I can help get this resolved quickly!',
-          'आप जितनी अधिक जानकारी साझा करेंगे, उतनी ही बेहतर मैं इसे जल्दी हल करने में मदद कर सकूंगा!',
-          'તમે જેટલી વધુ વિગતો શેર કરશો, તેટલી સારી રીતે હું આને ઝડપથી ઉકેલવામાં મદદ કરી શકીશ!',
-          'Aap jitni zyada details share karenge, utna better main ise jaldi solve karne mein help kar sakunga!'
-        )}''',
+${_localize('The more details you share, the better I can help get this resolved quickly!', 'आप जितनी अधिक जानकारी साझा करेंगे, उतनी ही बेहतर मैं इसे जल्दी हल करने में मदद कर सकूंगा!', 'તમે જેટલી વધુ વિગતો શેર કરશો, તેટલી સારી રીતે હું આને ઝડપથી ઉકેલવામાં મદદ કરી શકીશ!', 'Aap jitni zyada details share karenge, utna better main ise jaldi solve karne mein help kar sakunga!')}''',
         buttons: [],
-        suggestions: _getDetailedSuggestions(_complaintData['category_key'] ?? ''),
+        suggestions:
+            _getDetailedSuggestions(_complaintData['category_key'] ?? ''),
         step: 'problem',
         showInput: true,
         inputPlaceholder: _localize(
@@ -2181,7 +2202,7 @@ ${_localize(
         ),
       );
     }
-    
+
     final category = (_complaintData['category'] ?? '').toString();
     final subcategory = (_complaintData['subcategory'] ?? '').toString();
     if (category.isNotEmpty && subcategory.isNotEmpty) {
@@ -2191,7 +2212,8 @@ ${_localize(
         subcategory,
       );
       if (!isValidDescription) {
-        final validationReason = (_aiContext['validation_error'] ?? '').toString().trim();
+        final validationReason =
+            (_aiContext['validation_error'] ?? '').toString().trim();
         return ConversationResponse(
           message: validationReason.isNotEmpty
               ? validationReason
@@ -2202,7 +2224,8 @@ ${_localize(
                   'Please problem ko properly explain karte hue kam se kam ek clear line likho.',
                 ),
           buttons: [],
-          suggestions: _getDetailedSuggestions(_complaintData['category_key'] ?? ''),
+          suggestions:
+              _getDetailedSuggestions(_complaintData['category_key'] ?? ''),
           step: 'problem',
           showInput: true,
           inputPlaceholder: _localize(
@@ -2217,32 +2240,27 @@ ${_localize(
 
     _complaintData['description'] = normalizedInput;
     _currentStep = 'date';
-    
-    return ConversationResponse(
-      message: '''${_localize(
-        'Thank you for those details! That really helps. 👍',
-        'उन विवरणों के लिए धन्यवाद! यह वास्तव में मदद करता है। 👍',
-        'તે વિગતો માટે આભાર! તે ખરેખર મદદ કરે છે. 👍',
-        'Un details ke liye thank you! Ye really help karta hai. 👍'
-      )}
 
-${_localize(
-        'One quick question - when did you first notice this problem?',
-        'एक त्वरित प्रश्न - आपने पहली बार यह समस्या कब देखी?',
-        'એક ઝડપી પ્રશ્ન - તમે આ સમસ્યા પ્રથમ વખત ક્યારે જોઈ?',
-        'Ek quick question - aapne pehli baar ye problem kab dekhi?'
-      )}''',
+    return ConversationResponse(
+      message:
+          '''${_localize('Thank you for those details! That really helps. 👍', 'उन विवरणों के लिए धन्यवाद! यह वास्तव में मदद करता है। 👍', 'તે વિગતો માટે આભાર! તે ખરેખર મદદ કરે છે. 👍', 'Un details ke liye thank you! Ye really help karta hai. 👍')}
+
+${_localize('One quick question - when did you first notice this problem?', 'एक त्वरित प्रश्न - आपने पहली बार यह समस्या कब देखी?', 'એક ઝડપી પ્રશ્ન - તમે આ સમસ્યા પ્રથમ વખત ક્યારે જોઈ?', 'Ek quick question - aapne pehli baar ye problem kab dekhi?')}''',
       buttons: [
         _localize('Today', 'आज', 'આજે', 'Aaj'),
         _localize('Yesterday', 'कल', 'ગઈકાલે', 'Kal'),
-        _localize('2-3 days ago', '2-3 दिन पहले', '2-3 દિવસ પહેલાં', '2-3 din pehle'),
+        _localize(
+            '2-3 days ago', '2-3 दिन पहले', '2-3 દિવસ પહેલાં', '2-3 din pehle'),
         _localize('Last week', 'पिछले सप्ताह', 'ગયા અઠવાડિયે', 'Last week'),
-        _localize('More than a week ago', 'एक सप्ताह से अधिक पहले', 'એક અઠવાડિયાથી વધુ પહેલાં', 'Ek week se zyada pehle')
+        _localize('More than a week ago', 'एक सप्ताह से अधिक पहले',
+            'એક અઠવાડિયાથી વધુ પહેલાં', 'Ek week se zyada pehle')
       ],
       suggestions: [
         _localize('This morning', 'आज सुबह', 'આજે સવારે', 'Aaj subah'),
-        _localize('A few days back', 'कुछ दिन पहले', 'કેટલાક દિવસ પહેલાં', 'Kuch din pehle'),
-        _localize('It\'s been weeks', 'हफ्तों से है', 'અઠવાડિયાઓથી છે', 'Hafto se hai')
+        _localize('A few days back', 'कुछ दिन पहले', 'કેટલાક દિવસ પહેલાં',
+            'Kuch din pehle'),
+        _localize('It\'s been weeks', 'हफ्तों से है', 'અઠવાડિયાઓથી છે',
+            'Hafto se hai')
       ],
       step: 'date',
       showInput: true,
@@ -2254,46 +2272,34 @@ ${_localize(
   Future<ConversationResponse> _handleDateSelection(String userInput) async {
     final normalizedDate = _normalizeDateInput(userInput);
     _complaintData['date_noticed'] = normalizedDate;
-    
+
     final duration = _calculateDuration(normalizedDate);
     if (duration > 7) {
       _urgencyScore = (_urgencyScore + 0.2).clamp(0.0, 1.0);
     }
-    
+
     _currentStep = 'location';
-    
+
     return ConversationResponse(
-      message: '''📍 ${_localize(
-        'Perfect! Where exactly is this issue?',
-        'बिल्कुल सही! यह समस्या वास्तव में कहाँ है?',
-        'પરફેક્ટ! આ સમસ્યા ખરેખર ક્યાં છે?',
-        'Perfect! Ye problem exactly kahan hai?'
-      )}
+      message:
+          '''📍 ${_localize('Perfect! Where exactly is this issue?', 'बिल्कुल सही! यह समस्या वास्तव में कहाँ है?', 'પરફેક્ટ! આ સમસ્યા ખરેખર ક્યાં છે?', 'Perfect! Ye problem exactly kahan hai?')}
 
-⚠️ ${_localize(
-        '**Important:** Provide the complaint/incident location, NOT your personal address',
-        '**महत्वपूर्ण:** शिकायत/घटना का स्थान बताएं, अपना व्यक्तिगत पता नहीं',
-        '**મહત્વપૂર્ણ:** ફરિયાદ/ઘટનાનું સ્થાન આપો, તમારું વ્યક્તિગત સરનામું નહીં',
-        '**Important:** Complaint/incident location batao, apna personal address nahi'
-      )}
+⚠️ ${_localize('**Important:** Provide the complaint/incident location, NOT your personal address', '**महत्वपूर्ण:** शिकायत/घटना का स्थान बताएं, अपना व्यक्तिगत पता नहीं', '**મહત્વપૂર્ણ:** ફરિયાદ/ઘટનાનું સ્થાન આપો, તમારું વ્યક્તિગત સરનામું નહીં', '**Important:** Complaint/incident location batao, apna personal address nahi')}
 
-${_localize(
-        'You can:',
-        'आप कर सकते हैं:',
-        'તમે કરી શકો છો:',
-        'Aap kar sakte hain:'
-      )}
+${_localize('You can:', 'आप कर सकते हैं:', 'તમે કરી શકો છો:', 'Aap kar sakte hain:')}
 • 📍 ${_localize('Share incident location', 'घटना का स्थान साझा करें', 'ઘટનાનું સ્થાન શેર કરો', 'Incident location share karo')}
 • 📝 ${_localize('Type location address', 'स्थान का पता टाइप करें', 'સ્થાનનું સરનામું ટાઇપ કરો', 'Location address type karo')}
 • 🏛️ ${_localize('Describe landmark', 'लैंडमार्क का वर्णन करें', 'લેન્ડમાર્કનું વર્ણન કરો', 'Landmark describe karo')}''',
       buttons: [
         '📍 ${_localize('Use Current Location', 'वर्तमान स्थान का उपयोग करें', 'વર્તમાન સ્થાન વાપરો', 'Current Location Use Karo')}',
-        _localize('Type Address', 'पता टाइप करें', 'સરનામું ટાઇપ કરો', 'Address Type Karo')
+        _localize('Type Address', 'पता टाइप करें', 'સરનામું ટાઇપ કરો',
+            'Address Type Karo')
       ],
       suggestions: [
         '${_localize('Near', 'के पास', 'પાસે', 'Ke paas')} ${_userCity.isNotEmpty ? _userCity : _localize('City', 'शहर', 'શહેર', 'City')} ${_localize('Station', 'स्टेशन', 'સ્ટેશન', 'Station')}',
         _localize('Main Market', 'मुख्य बाजार', 'મુખ્ય બજાર', 'Main Market'),
-        _localize('Behind Hospital', 'अस्पताल के पीछे', 'હોસ્પિટલની પાછળ', 'Hospital ke peeche'),
+        _localize('Behind Hospital', 'अस्पताल के पीछे', 'હોસ્પિટલની પાછળ',
+            'Hospital ke peeche'),
       ],
       step: 'location',
       showInput: true,
@@ -2305,82 +2311,52 @@ ${_localize(
   Future<ConversationResponse> _handleLocationInput(String userInput) async {
     if (userInput.length < 5 && !userInput.contains('location')) {
       return ConversationResponse(
-        message: '''🤔 ${_localize(
-          'More location details?',
-          'और स्थान विवरण?',
-          'વધુ સ્થાન વિગતો?',
-          'Aur location details?'
-        )}
+        message:
+            '''🤔 ${_localize('More location details?', 'और स्थान विवरण?', 'વધુ સ્થાન વિગતો?', 'Aur location details?')}
 
-⚠️ ${_localize(
-          'Remember: Provide complaint/incident location',
-          'याद रखें: शिकायत/घटना का स्थान बताएं',
-          'યાદ રાખો: ફરિયાદ/ઘટનાનું સ્થાન આપો',
-          'Yaad rakho: Complaint/incident location batao'
-        )}
+⚠️ ${_localize('Remember: Provide complaint/incident location', 'याद रखें: शिकायत/घटना का स्थान बताएं', 'યાદ રાખો: ફરિયાદ/ઘટનાનું સ્થાન આપો', 'Yaad rakho: Complaint/incident location batao')}
 
-${_localize(
-          '• Street name\n• Nearby landmarks\n• Area/sector',
-          '• सड़क का नाम\n• आसपास के लैंडमार्क\n• क्षेत्र/सेक्टर',
-          '• શેરીનું નામ\n• નજીકના લેન્ડમાર્ક\n• વિસ્તાર/સેક્ટર',
-          '• Street name\n• Nearby landmarks\n• Area/sector'
-        )}''',
+${_localize('• Street name\n• Nearby landmarks\n• Area/sector', '• सड़क का नाम\n• आसपास के लैंडमार्क\n• क्षेत्र/सेक्टर', '• શેરીનું નામ\n• નજીકના લેન્ડમાર્ક\n• વિસ્તાર/સેક્ટર', '• Street name\n• Nearby landmarks\n• Area/sector')}''',
         buttons: [
           '📍 ${_localize('Use Current Location', 'वर्तमान स्थान का उपयोग करें', 'વર્તમાન સ્થાન વાપરો', 'Current Location Use Karo')}',
           '📝 ${_localize('Enter Full Address', 'पूरा पता दर्ज करें', 'સંપૂર્ણ સરનામું દાખલ કરો', 'Full Address Enter Karo')}'
         ],
         suggestions: [
-          _localize('Main Road, Sector 5', 'मेन रोड, सेक्टर 5', 'મેઈન રોડ, સેક્ટર 5', 'Main Road, Sector 5'),
-          _localize('Near Hospital', 'अस्पताल के पास', 'હોસ્પિટલ પાસે', 'Hospital ke paas')
+          _localize('Main Road, Sector 5', 'मेन रोड, सेक्टर 5',
+              'મેઈન રોડ, સેક્ટર 5', 'Main Road, Sector 5'),
+          _localize('Near Hospital', 'अस्पताल के पास', 'હોસ્પિટલ પાસે',
+              'Hospital ke paas')
         ],
         step: 'location',
         showInput: true,
       );
     }
-    
+
     _complaintData['location'] = userInput;
-    
+
     // Check for duplicate complaints if location coordinates are available
-    if (_complaintData.containsKey('latitude') && _complaintData.containsKey('longitude')) {
+    if (_complaintData.containsKey('latitude') &&
+        _complaintData.containsKey('longitude')) {
       final duplicateInfo = await _checkDuplicateComplaint(
         _complaintData['latitude'],
         _complaintData['longitude'],
       );
-      
+
       if (duplicateInfo != null && duplicateInfo['duplicate_found'] == true) {
         _complaintData['duplicate_found'] = true;
         _complaintData['duplicate_ticket'] = duplicateInfo['masked_ticket'];
-        
+
         return ConversationResponse(
-          message: '''⚠️ ${_localize(
-            '**Duplicate Complaint Found**',
-            '**डुप्लिकेट शिकायत मिली**',
-            '**ડુપ્લિકેટ ફરિયાદ મળી**',
-            '**Duplicate Complaint Mili**'
-          )}
+          message:
+              '''⚠️ ${_localize('**Duplicate Complaint Found**', '**डुप्लिकेट शिकायत मिली**', '**ડુપ્લિકેટ ફરિયાદ મળી**', '**Duplicate Complaint Mili**')}
 
 ${duplicateInfo['message']}
 
-${_localize(
-            '**Existing Ticket:** ${duplicateInfo['masked_ticket']}\n**Status:** ${duplicateInfo['complaint_status']}\n**Reported:** ${duplicateInfo['created_at']}',
-            '**मौजूदा टिकट:** ${duplicateInfo['masked_ticket']}\n**स्थिति:** ${duplicateInfo['complaint_status']}\n**रिपोर्ट किया गया:** ${duplicateInfo['created_at']}',
-            '**હાલની ટિકિટ:** ${duplicateInfo['masked_ticket']}\n**સ્થિતિ:** ${duplicateInfo['complaint_status']}\n**જાણ કરવામાં આવી:** ${duplicateInfo['created_at']}',
-            '**Existing Ticket:** ${duplicateInfo['masked_ticket']}\n**Status:** ${duplicateInfo['complaint_status']}\n**Report kiya gaya:** ${duplicateInfo['created_at']}'
-          )}
+${_localize('**Existing Ticket:** ${duplicateInfo['masked_ticket']}\n**Status:** ${duplicateInfo['complaint_status']}\n**Reported:** ${duplicateInfo['created_at']}', '**मौजूदा टिकट:** ${duplicateInfo['masked_ticket']}\n**स्थिति:** ${duplicateInfo['complaint_status']}\n**रिपोर्ट किया गया:** ${duplicateInfo['created_at']}', '**હાલની ટિકિટ:** ${duplicateInfo['masked_ticket']}\n**સ્થિતિ:** ${duplicateInfo['complaint_status']}\n**જાણ કરવામાં આવી:** ${duplicateInfo['created_at']}', '**Existing Ticket:** ${duplicateInfo['masked_ticket']}\n**Status:** ${duplicateInfo['complaint_status']}\n**Report kiya gaya:** ${duplicateInfo['created_at']}')}
 
-${_localize(
-            'This issue is already being handled by our team. You can track it using the ticket number above.',
-            'यह मुद्दा पहले से ही हमारी टीम द्वारा संभाला जा रहा है। आप ऊपर दिए गए टिकट नंबर का उपयोग करके इसे ट्रैक कर सकते हैं।',
-            'આ મુદ્દો પહેલેથી જ અમારી ટીમ દ્વારા હેન્ડલ કરવામાં આવી રહ્યો છે. તમે ઉપરના ટિકિટ નંબરનો ઉપયોગ કરીને તેને ટ્રેક કરી શકો છો.',
-            'Ye issue already hamari team handle kar rahi hai. Aap upar diye gaye ticket number se track kar sakte hain.'
-          )}
+${_localize('This issue is already being handled by our team. You can track it using the ticket number above.', 'यह मुद्दा पहले से ही हमारी टीम द्वारा संभाला जा रहा है। आप ऊपर दिए गए टिकट नंबर का उपयोग करके इसे ट्रैक कर सकते हैं।', 'આ મુદ્દો પહેલેથી જ અમારી ટીમ દ્વારા હેન્ડલ કરવામાં આવી રહ્યો છે. તમે ઉપરના ટિકિટ નંબરનો ઉપયોગ કરીને તેને ટ્રેક કરી શકો છો.', 'Ye issue already hamari team handle kar rahi hai. Aap upar diye gaye ticket number se track kar sakte hain.')}
 
-🤔 ${_localize(
-            'Would you like to:',
-            'आप क्या करना चाहेंगे:',
-            'તમે શું કરવા માંગો છો:',
-            'Aap kya karna chahenge:'
-          )}
+🤔 ${_localize('Would you like to:', 'आप क्या करना चाहेंगे:', 'તમે શું કરવા માંગો છો:', 'Aap kya karna chahenge:')}
 • ${_localize('Track the existing complaint', 'मौजूदा शिकायत को ट्रैक करें', 'હાલની ફરિયાદને ટ્રેક કરો', 'Existing complaint track karo')}
 • ${_localize('Submit a different complaint', 'एक अलग शिकायत दर्ज करें', 'અલગ ફરિયાદ સબમિટ કરો', 'Alag complaint submit karo')}''',
           buttons: [
@@ -2393,48 +2369,34 @@ ${_localize(
           showInput: false,
         );
       }
-      
+
       // Get nearest department
       final departmentInfo = await _getNearestDepartment(
         _complaintData['latitude'],
         _complaintData['longitude'],
       );
-      
+
       if (departmentInfo != null && departmentInfo['success'] == true) {
         final dept = departmentInfo['department'];
         _complaintData['assigned_department'] = dept['name'];
         _complaintData['department_phone'] = dept['phone'];
         _complaintData['department_email'] = dept['email'];
         _complaintData['sla_hours'] = dept['sla_hours'];
-        
+
         _aiContext['department_assigned'] = true;
       }
     }
-    
+
     // Move to address step
     _currentStep = 'address';
-    
+
     return ConversationResponse(
-      message: '''📍 ${_localize(
-        'Location noted!',
-        'स्थान नोट किया गया!',
-        'સ્થાન નોંધ્યું!',
-        'Location note kar liya!'
-      )}
+      message:
+          '''📍 ${_localize('Location noted!', 'स्थान नोट किया गया!', 'સ્થાન નોંધ્યું!', 'Location note kar liya!')}
 
-📮 ${_localize(
-        'Please provide full address with pincode:',
-        'कृपया पिनकोड के साथ पूरा पता प्रदान करें:',
-        'કૃપા કરીને પિનકોડ સાથે સંપૂર્ણ સરનામું આપો:',
-        'Please pincode ke saath full address provide karo:'
-      )}
+📮 ${_localize('Please provide full address with pincode:', 'कृपया पिनकोड के साथ पूरा पता प्रदान करें:', 'કૃપા કરીને પિનકોડ સાથે સંપૂર્ણ સરનામું આપો:', 'Please pincode ke saath full address provide karo:')}
 
-${_localize(
-        '• House/Building number\n• Street/Area\n• City\n• Pincode',
-        '• घर/भवन संख्या\n• सड़क/क्षेत्र\n• शहर\n• पिनकोड',
-        '• ઘર/બિલ્ડિંગ નંબર\n• શેરી/વિસ્તાર\n• શહેર\n• પિનકોડ',
-        '• House/Building number\n• Street/Area\n• City\n• Pincode'
-      )}''',
+${_localize('• House/Building number\n• Street/Area\n• City\n• Pincode', '• घर/भवन संख्या\n• सड़क/क्षेत्र\n• शहर\n• पिनकोड', '• ઘર/બિલ્ડિંગ નંબર\n• શેરી/વિસ્તાર\n• શહેર\n• પિનકોડ', '• House/Building number\n• Street/Area\n• City\n• Pincode')}''',
       buttons: [
         '⏭️ ${_localize('Skip (Use location only)', 'छोड़ें (केवल स्थान का उपयोग करें)', 'છોડો (ફક્ત સ્થાન વાપરો)', 'Skip (Sirf location use karo)')}'
       ],
@@ -2444,7 +2406,11 @@ ${_localize(
       ],
       step: 'address',
       showInput: true,
-      inputPlaceholder: _localize('Full address with pincode...', 'पिनकोड के साथ पूरा पता...', 'પિનકોડ સાથે સંપૂર્ણ સરનામું...', 'Pincode ke saath full address...'),
+      inputPlaceholder: _localize(
+          'Full address with pincode...',
+          'पिनकोड के साथ पूरा पता...',
+          'પિનકોડ સાથે સંપૂર્ણ સરનામું...',
+          'Pincode ke saath full address...'),
       urgencyLevel: _getUrgencyLevel(),
     );
   }
@@ -2453,7 +2419,7 @@ ${_localize(
   Future<ConversationResponse> _handleAddressInput(String userInput) async {
     if (!userInput.toLowerCase().contains('skip')) {
       _complaintData['full_address'] = userInput;
-      
+
       // Try to extract pincode
       final pincodeRegex = RegExp(r'\b\d{6}\b');
       final match = pincodeRegex.firstMatch(userInput);
@@ -2461,102 +2427,82 @@ ${_localize(
         _complaintData['pincode'] = match.group(0);
       }
     }
-    
-    _currentStep = 'photo';
-    
-    final categoryKey = _complaintData['category_key'] as String?;
-    String photoMessage = '''📸 ${_localize(
-      'Would you like to add a photo?',
-      'क्या आप एक फोटो जोड़ना चाहेंगे?',
-      'શું તમે ફોટો જોડવા માંગો છો?',
-      'Kya aap ek photo add karna chahenge?'
-    )}
 
-✨ ${_localize(
-      'Photos help:',
-      'फोटो मदद करते हैं:',
-      'ફોટો મદદ કરે છે:',
-      'Photos help karte hain:'
-    )}''';
-    
+    _currentStep = 'photo';
+
+    final categoryKey = _complaintData['category_key'] as String?;
+    String photoMessage =
+        '''📸 ${_localize('Would you like to add a photo?', 'क्या आप एक फोटो जोड़ना चाहेंगे?', 'શું તમે ફોટો જોડવા માંગો છો?', 'Kya aap ek photo add karna chahenge?')}
+
+✨ ${_localize('Photos help:', 'फोटो मदद करते हैं:', 'ફોટો મદદ કરે છે:', 'Photos help karte hain:')}''';
+
     // Add department info if assigned
     if (_complaintData.containsKey('assigned_department')) {
-      photoMessage = '''✅ ${_localize(
-        '**Location Confirmed**',
-        '**स्थान पुष्टि की गई**',
-        '**સ્થાન કન્ફર્મ કર્યું**',
-        '**Location Confirm Ho Gaya**'
-      )}
+      photoMessage =
+          '''✅ ${_localize('**Location Confirmed**', '**स्थान पुष्टि की गई**', '**સ્થાન કન્ફર્મ કર્યું**', '**Location Confirm Ho Gaya**')}
 
-📍 ${_localize(
-        'Your complaint will be assigned to:',
-        'आपकी शिकायत इसे सौंपी जाएगी:',
-        'તમારી ફરિયાદ આને અસાઇન કરવામાં આવશે:',
-        'Aapki complaint ise assign hogi:'
-      )}
+📍 ${_localize('Your complaint will be assigned to:', 'आपकी शिकायत इसे सौंपी जाएगी:', 'તમારી ફરિયાદ આને અસાઇન કરવામાં આવશે:', 'Aapki complaint ise assign hogi:')}
 🏛️ **${_complaintData['assigned_department']}**
 📞 ${_localize('Contact', 'संपर्क', 'સંપર્ક', 'Contact')}: ${_complaintData['department_phone']}
 ⏱️ ${_localize('Expected resolution', 'अपेक्षित समाधान', 'અપેક્ષિત સमाधाન', 'Expected resolution')}: ${_complaintData['sla_hours']} ${_localize('hours', 'घंटे', 'કલાક', 'hours')}
 
 ---
 
-📸 ${_localize(
-        'Would you like to add a photo?',
-        'क्या आप एक फोटो जोड़ना चाहेंगे?',
-        'શું તમે ફોટો જોડવા માંગો છો?',
-        'Kya aap ek photo add karna chahenge?'
-      )}
+📸 ${_localize('Would you like to add a photo?', 'क्या आप एक फोटो जोड़ना चाहेंगे?', 'શું તમે ફોટો જોડવા માંગો છો?', 'Kya aap ek photo add karna chahenge?')}
 
-✨ ${_localize(
-        'Photos help:',
-        'फोटो मदद करते हैं:',
-        'ફોટો મદદ કરે છે:',
-        'Photos help karte hain:'
-      )}''';
+✨ ${_localize('Photos help:', 'फोटो मदद करते हैं:', 'ફોટો મદદ કરે છે:', 'Photos help karte hain:')}''';
     }
-    
+
     switch (categoryKey) {
       case 'police':
-        photoMessage += '''\nâ€¢ ${_localize('Item bill or ownership proof', 'वस्तु का बिल या स्वामित्व प्रमाण', 'વસ્તુનું બિલ અથવા માલિકીનો પુરાવો', 'Item bill ya ownership proof')}
+        photoMessage +=
+            '''\nâ€¢ ${_localize('Item bill or ownership proof', 'वस्तु का बिल या स्वामित्व प्रमाण', 'વસ્તુનું બિલ અથવા માલિકીનો પુરાવો', 'Item bill ya ownership proof')}
 â€¢ ${_localize('Theft location or damaged lock photo', 'चोरी की जगह या टूटे ताले की फोटो', 'ચોરીની જગ્યા અથવા તૂટેલા તાળાની ફોટો', 'Theft location ya toote tale ki photo')}
 â€¢ ${_localize('Chat screenshot, CCTV still, or suspect photo', 'चैट स्क्रीनशॉट, CCTV स्टिल, या संदिग्ध की फोटो', 'ચેટ સ્ક્રીનશોટ, CCTV સ્ટિલ, અથવા શંકાસ્પદની ફોટો', 'Chat screenshot, CCTV still, ya suspect photo')}''';
         break;
       case 'cyber':
-        photoMessage += '''\nâ€¢ ${_localize('Fraud chat, email, or website screenshot', 'फ्रॉड चैट, ईमेल, या वेबसाइट का स्क्रीनशॉट', 'ફ્રોડ ચેટ, ઇમેઇલ, અથવા વેબસાઇટનો સ્ક્રીનશોટ', 'Fraud chat, email, ya website screenshot')}
+        photoMessage +=
+            '''\nâ€¢ ${_localize('Fraud chat, email, or website screenshot', 'फ्रॉड चैट, ईमेल, या वेबसाइट का स्क्रीनशॉट', 'ફ્રોડ ચેટ, ઇમેઇલ, અથવા વેબસાઇટનો સ્ક્રીનશોટ', 'Fraud chat, email, ya website screenshot')}
 â€¢ ${_localize('Payment, UPI, or order screenshot', 'पेमेंट, UPI, या ऑर्डर का स्क्रीनशॉट', 'પેમેન્ટ, UPI, અથવા ઓર્ડરનો સ્ક્રીનશોટ', 'Payment, UPI, ya order screenshot')}
 â€¢ ${_localize('Complaint reference or account proof', 'शिकायत रेफरेंस या अकाउंट प्रूफ', 'ફરિયાદ રેફરન્સ અથવા અકાઉન્ટ પ્રૂફ', 'Complaint reference ya account proof')}''';
         break;
       case 'other':
-        photoMessage += '''\nâ€¢ ${_localize('Relevant screenshot or notice', 'संबंधित स्क्रीनशॉट या नोटिस', 'સંબંધિત સ્ક્રીનશોટ અથવા નોટિસ', 'Relevant screenshot ya notice')}
+        photoMessage +=
+            '''\nâ€¢ ${_localize('Relevant screenshot or notice', 'संबंधित स्क्रीनशॉट या नोटिस', 'સંબંધિત સ્ક્રીનશોટ અથવા નોટિસ', 'Relevant screenshot ya notice')}
 â€¢ ${_localize('Bill, receipt, or product photo', 'बिल, रसीद, या प्रोडक्ट फोटो', 'બિલ, રસીદ, અથવા પ્રોડક્ટ ફોટો', 'Bill, receipt, ya product photo')}
 â€¢ ${_localize('Location photo or damaged item', 'लोकेशन फोटो या खराब वस्तु', 'લોકેશન ફોટો અથવા નુકસાન થયેલી વસ્તુ', 'Location photo ya damaged item')}''';
         break;
       case 'water':
-        photoMessage += '''\nâ€¢ ${_localize('Leakage or dirty water photo', 'लीकेज या गंदे पानी की फोटो', 'લીકેજ અથવા ગંદા પાણીની ફોટો', 'Leakage ya gande paani ki photo')}
+        photoMessage +=
+            '''\nâ€¢ ${_localize('Leakage or dirty water photo', 'लीकेज या गंदे पानी की फोटो', 'લીકેજ અથવા ગંદા પાણીની ફોટો', 'Leakage ya gande paani ki photo')}
 â€¢ ${_localize('Pipe, tanker, or affected area photo', 'पाइप, टैंकर, या प्रभावित क्षेत्र की फोटो', 'પાઇપ, ટેન્કર, અથવા અસરગ્રસ્ત વિસ્તારની ફોટો', 'Pipe, tanker, ya affected area photo')}
 â€¢ ${_localize('Meter or bill photo if relevant', 'जरूरत हो तो मीटर या बिल की फोटो', 'જરૂર હોય તો મીટર અથવા બિલની ફોટો', 'Meter ya bill ki photo agar relevant ho')}''';
         break;
       case 'electricity':
-        photoMessage += '''\nâ€¢ ${_localize('Pole, wire, transformer, or dark streetlight photo', 'पोल, वायर, ट्रांसफॉर्मर, या बंद स्ट्रीट लाइट की फोटो', 'પોલ, વાયર, ટ્રાન્સફોર્મર, અથવા બંધ સ્ટ્રીટ લાઇટની ફોટો', 'Pole, wire, transformer, ya dark street light photo')}
+        photoMessage +=
+            '''\nâ€¢ ${_localize('Pole, wire, transformer, or dark streetlight photo', 'पोल, वायर, ट्रांसफॉर्मर, या बंद स्ट्रीट लाइट की फोटो', 'પોલ, વાયર, ટ્રાન્સફોર્મર, અથવા બંધ સ્ટ્રીટ લાઇટની ફોટો', 'Pole, wire, transformer, ya dark street light photo')}
 â€¢ ${_localize('Meter or bill photo if relevant', 'जरूरत हो तो मीटर या बिल की फोटो', 'જરૂર હોય તો મીટર અથવા બિલની ફોટો', 'Meter ya bill ki photo agar relevant ho')}
 â€¢ ${_localize('Any visible safety hazard', 'कोई भी दिखाई देने वाला सुरक्षा खतरा', 'કોઈપણ દેખાતો સુરક્ષા ખતરો', 'Koi bhi visible safety hazard')}''';
         break;
       case 'road':
-        photoMessage += '''\n• ${_localize('See exact damage', 'सटीक नुकसान देखें', 'સટીક નુકસાન જુઓ', 'Exact damage dekho')}
+        photoMessage +=
+            '''\n• ${_localize('See exact damage', 'सटीक नुकसान देखें', 'સટીક નુકસાન જુઓ', 'Exact damage dekho')}
 • ${_localize('Assess severity', 'गंभीरता का आकलन करें', 'ગંભીરતાનું મૂલ્યાંકન કરો', 'Severity assess karo')}
 • ${_localize('Plan repairs', 'मरम्मत की योजना बनाएं', 'રિપેયરની યોજના બનાવો', 'Repair plan banao')}''';
         break;
       case 'garbage':
-        photoMessage += '''\n• ${_localize('Verify situation', 'स्थिति की पुष्टि करें', 'પરિસ્થિતિની ખાતરી કરો', 'Situation verify karo')}
+        photoMessage +=
+            '''\n• ${_localize('Verify situation', 'स्थिति की पुष्टि करें', 'પરિસ્થિતિની ખાતરી કરો', 'Situation verify karo')}
 • ${_localize('Take action', 'कार्रवाई करें', 'કાર્રવાઈ કરો', 'Action lo')}
 • ${_localize('Prevent hazards', 'खतरों से बचाव', 'ખતરાઓથી બચાવ', 'Hazards se bachao')}''';
         break;
       default:
-        photoMessage += '''\n• ${_localize('Understand issue', 'समस्या को समझें', 'સમસ્યાને સમજો', 'Issue samjho')}
+        photoMessage +=
+            '''\n• ${_localize('Understand issue', 'समस्या को समझें', 'સમસ્યાને સમજો', 'Issue samjho')}
 • ${_localize('Respond faster', 'तेजी से जवाब दें', 'ઝડપથી જવાબ આપો', 'Jaldi response do')}
 • ${_localize('Resolve better', 'बेहतर समाधान', 'વધુ સારું સमाधाન', 'Better resolve karo')}''';
     }
-    
+
     return ConversationResponse(
       message: photoMessage,
       buttons: [
@@ -2582,38 +2528,32 @@ ${_localize(
   /// Step 9: Personal details confirmation - fetch from profile first - Multi-language support
   ConversationResponse _showPersonalDetailsConfirmation() {
     _currentStep = 'personal_details';
-    
+
     // Extract profile data
     String? name = _userProfile?['fullName'] ?? _userName;
     String? mobile = _userProfile?['mobile'];
     String? email = _userProfile?['email'];
-    
+
     // Check what's missing
     final missingFields = <String>[];
-    if (name == null || name.isEmpty) missingFields.add(_localize('Name', 'नाम', 'નામ', 'Name'));
-    if (mobile == null || mobile.isEmpty) missingFields.add(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile'));
-    if (email == null || email.isEmpty) missingFields.add(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email'));
-    
+    if (name == null || name.isEmpty)
+      missingFields.add(_localize('Name', 'नाम', 'નામ', 'Name'));
+    if (mobile == null || mobile.isEmpty)
+      missingFields.add(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile'));
+    if (email == null || email.isEmpty)
+      missingFields.add(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email'));
+
     // If all details available, auto-fill and confirm
     if (missingFields.isEmpty) {
       _complaintData['contact_name'] = name!;
       _complaintData['contact_mobile'] = mobile!;
       _complaintData['contact_email'] = email!;
-      
-      return ConversationResponse(
-        message: '''👤 ${_localize(
-          '**Personal Details Confirmation**',
-          '**व्यक्तिगत विवरण पुष्टि**',
-          '**વ્યક્તિગત વિગતોની પુષ્ટિ**',
-          '**Personal Details Confirmation**'
-        )}
 
-${_localize(
-          'I\'ve fetched your details from profile:',
-          'मैंने आपकी प्रोफाइल से विवरण प्राप्त किए हैं:',
-          'મેં તમારી પ્રોફાઇલમાંથી વિગતો મેળવી છે:',
-          'Maine aapki profile se details fetch ki hain:'
-        )}
+      return ConversationResponse(
+        message:
+            '''👤 ${_localize('**Personal Details Confirmation**', '**व्यक्तिगत विवरण पुष्टि**', '**વ્યક્તિગત વિગતોની પુષ્ટિ**', '**Personal Details Confirmation**')}
+
+${_localize('I\'ve fetched your details from profile:', 'मैंने आपकी प्रोफाइल से विवरण प्राप्त किए हैं:', 'મેં તમારી પ્રોફાઇલમાંથી વિગતો મેળવી છે:', 'Maine aapki profile se details fetch ki hain:')}
 
 📛 ${_localize('**Name:**', '**नाम:**', '**નામ:**', '**Name:**')} $name
 📱 ${_localize('**Mobile:**', '**मोबाइल:**', '**મોબાઇલ:**', '**Mobile:**')} $mobile
@@ -2621,12 +2561,7 @@ ${_localize(
 
 ---
 
-${_localize(
-          'These details will be used to contact you regarding this complaint.',
-          'इन विवरणों का उपयोग इस शिकायत के संबंध में आपसे संपर्क करने के लिए किया जाएगा।',
-          'આ વિગતોનો ઉપયોગ આ ફરિયાદ અંગે તમારો સંપર્ક કરવા માટે કરવામાં આવશે.',
-          'Ye details is complaint ke liye aapse contact karne ke liye use hongi.'
-        )}''',
+${_localize('These details will be used to contact you regarding this complaint.', 'इन विवरणों का उपयोग इस शिकायत के संबंध में आपसे संपर्क करने के लिए किया जाएगा।', 'આ વિગતોનો ઉપયોગ આ ફરિયાદ અંગે તમારો સંપર્ક કરવા માટે કરવામાં આવશે.', 'Ye details is complaint ke liye aapse contact karne ke liye use hongi.')}''',
         buttons: [
           '✅ ${_localize('Confirm Details', 'विवरण पुष्टि करें', 'વિગતોની પુષ્ટિ કરો', 'Details Confirm Karo')}',
           '✏️ ${_localize('Edit Details', 'विवरण संपादित करें', 'વિગતો સંપાદિત કરો', 'Details Edit Karo')}'
@@ -2636,60 +2571,39 @@ ${_localize(
         showInput: false,
       );
     }
-    
+
     // If some details available, show them and ask for missing ones
     if (missingFields.length < 3) {
       String availableInfo = '';
       if (name != null && name.isNotEmpty) {
-        availableInfo += '📛 ${_localize('**Name:**', '**नाम:**', '**નામ:**', '**Name:**')} $name\n';
+        availableInfo +=
+            '📛 ${_localize('**Name:**', '**नाम:**', '**નામ:**', '**Name:**')} $name\n';
         _complaintData['contact_name'] = name;
       }
       if (mobile != null && mobile.isNotEmpty) {
-        availableInfo += '📱 ${_localize('**Mobile:**', '**मोबाइल:**', '**મોબાઇલ:**', '**Mobile:**')} $mobile\n';
+        availableInfo +=
+            '📱 ${_localize('**Mobile:**', '**मोबाइल:**', '**મોબાઇલ:**', '**Mobile:**')} $mobile\n';
         _complaintData['contact_mobile'] = mobile;
       }
       if (email != null && email.isNotEmpty) {
-        availableInfo += '📧 ${_localize('**Email:**', '**ईमेल:**', '**ઈમેઇલ:**', '**Email:**')} $email\n';
+        availableInfo +=
+            '📧 ${_localize('**Email:**', '**ईमेल:**', '**ઈમેઇલ:**', '**Email:**')} $email\n';
         _complaintData['contact_email'] = email;
       }
-      
-      return ConversationResponse(
-        message: '''👤 ${_localize(
-          '**Personal Details**',
-          '**व्यक्तिगत विवरण**',
-          '**વ્યક્તિગત વિગતો**',
-          '**Personal Details**'
-        )}
 
-${_localize(
-          'From your profile:',
-          'आपकी प्रोफाइल से:',
-          'તમારી પ્રોફાઇલમાંથી:',
-          'Aapki profile se:'
-        )}
+      return ConversationResponse(
+        message:
+            '''👤 ${_localize('**Personal Details**', '**व्यक्तिगत विवरण**', '**વ્યક્તિગત વિગતો**', '**Personal Details**')}
+
+${_localize('From your profile:', 'आपकी प्रोफाइल से:', 'તમારી પ્રોફાઇલમાંથી:', 'Aapki profile se:')}
 $availableInfo
 ---
 
-📝 ${_localize(
-          'Please provide missing details:',
-          'कृपया गुम विवरण प्रदान करें:',
-          'કૃપા કરીને ગુમ વિગતો પ્રદાન કરો:',
-          'Please missing details provide karo:'
-        )}
+📝 ${_localize('Please provide missing details:', 'कृपया गुम विवरण प्रदान करें:', 'કૃપા કરીને ગુમ વિગતો પ્રદાન કરો:', 'Please missing details provide karo:')}
 ${missingFields.map((f) => '• $f').join('\n')}
 
-${_localize(
-          'Format: ${missingFields.join(', ')}',
-          'प्रारूप: ${missingFields.join(', ')}',
-          'ફોર્મેટ: ${missingFields.join(', ')}',
-          'Format: ${missingFields.join(', ')}'
-        )}
-${_localize(
-          'Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('John Doe', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}',
-          'उदाहरण: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('जॉन डो', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}',
-          'ઉદાહરણ: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('જોન ડો', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}',
-          'Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? 'John Doe' : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}'
-        )}''',
+${_localize('Format: ${missingFields.join(', ')}', 'प्रारूप: ${missingFields.join(', ')}', 'ફોર્મેટ: ${missingFields.join(', ')}', 'Format: ${missingFields.join(', ')}')}
+${_localize('Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('John Doe', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}', 'उदाहरण: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('जॉन डो', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}', 'ઉદાહરણ: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('જોન ડો', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}', 'Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? 'John Doe' : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}')}''',
         buttons: [],
         suggestions: [],
         step: 'personal_details',
@@ -2697,51 +2611,28 @@ ${_localize(
         inputPlaceholder: missingFields.join(', '),
       );
     }
-    
+
     // If no details available, ask for all
     return ConversationResponse(
-      message: '''👤 ${_localize(
-        '**Personal Details Required**',
-        '**व्यक्तिगत विवरण आवश्यक**',
-        '**વ્યક્તિગત વિગતો જરૂરી**',
-        '**Personal Details Required**'
-      )}
+      message:
+          '''👤 ${_localize('**Personal Details Required**', '**व्यक्तिगत विवरण आवश्यक**', '**વ્યક્તિગત વિગતો જરૂરી**', '**Personal Details Required**')}
 
-${_localize(
-        'To process your complaint, we need your contact information.',
-        'आपकी शिकायत को प्रोसेस करने के लिए, हमें आपकी संपर्क जानकारी चाहिए।',
-        'તમારી ફરિયાદ પર કાર્યવાહી કરવા માટે, અમને તમારી સંપર્ક માહિતીની જરૂર છે.',
-        'Aapki complaint process karne ke liye, humein aapki contact information chahiye.'
-      )}
+${_localize('To process your complaint, we need your contact information.', 'आपकी शिकायत को प्रोसेस करने के लिए, हमें आपकी संपर्क जानकारी चाहिए।', 'તમારી ફરિયાદ પર કાર્યવાહી કરવા માટે, અમને તમારી સંપર્ક માહિતીની જરૂર છે.', 'Aapki complaint process karne ke liye, humein aapki contact information chahiye.')}
 
-📝 ${_localize(
-        'Please provide:',
-        'कृपया प्रदान करें:',
-        'કૃપા કરીને પ્રદાન કરો:',
-        'Please provide karo:'
-      )}
+📝 ${_localize('Please provide:', 'कृपया प्रदान करें:', 'કૃપા કરીને પ્રદાન કરો:', 'Please provide karo:')}
 
 1️⃣ ${_localize('Your full name', 'आपका पूरा नाम', 'તમારું પૂરું નામ', 'Aapka full name')}
 2️⃣ ${_localize('Mobile number', 'मोबाइल नंबर', 'મોબાઇલ નંબર', 'Mobile number')}
 3️⃣ ${_localize('Email address', 'ईमेल पता', 'ઈમેઇલ સરનામું', 'Email address')}
 
-${_localize(
-        'Format: Name, Mobile, Email',
-        'प्रारूप: नाम, मोबाइल, ईमेल',
-        'ફોર્મેટ: નામ, મોબાઇલ, ઈમેઇલ',
-        'Format: Name, Mobile, Email'
-      )}
-${_localize(
-        'Example: John Doe, 9876543210, john@email.com',
-        'उदाहरण: जॉन डो, 9876543210, john@email.com',
-        'ઉદાહરણ: જોન ડો, 9876543210, john@email.com',
-        'Example: John Doe, 9876543210, john@email.com'
-      )}''',
+${_localize('Format: Name, Mobile, Email', 'प्रारूप: नाम, मोबाइल, ईमेल', 'ફોર્મેટ: નામ, મોબાઇલ, ઈમેઇલ', 'Format: Name, Mobile, Email')}
+${_localize('Example: John Doe, 9876543210, john@email.com', 'उदाहरण: जॉन डो, 9876543210, john@email.com', 'ઉદાહરણ: જોન ડો, 9876543210, john@email.com', 'Example: John Doe, 9876543210, john@email.com')}''',
       buttons: [],
       suggestions: [],
       step: 'personal_details',
       showInput: true,
-      inputPlaceholder: _localize('Name, Mobile, Email', 'नाम, मोबाइल, ईमेल', 'નામ, મોબાઇલ, ઈમેઇલ', 'Name, Mobile, Email'),
+      inputPlaceholder: _localize('Name, Mobile, Email', 'नाम, मोबाइल, ईमेल',
+          'નામ, મોબાઇલ, ઈમેઇલ', 'Name, Mobile, Email'),
     );
   }
 
@@ -2756,105 +2647,71 @@ ${_localize(
     final hasAllDetails = hasName && hasMobile && hasEmail;
 
     if (hasAllDetails &&
-        (_matchesAnyIntentPhrase(userInput, ['confirm details', 'details confirm']) ||
+        (_matchesAnyIntentPhrase(
+                userInput, ['confirm details', 'details confirm']) ||
             _isAffirmativeResponse(userInput))) {
       _currentStep = 'summary';
       return _showEnhancedFinalSummary();
     } else if (hasAllDetails &&
         (_isEditResponse(userInput) || _isNegativeResponse(userInput))) {
       return ConversationResponse(
-        message: '''✏️ ${_localize(
-          '**Update Personal Details**',
-          '**व्यक्तिगत विवरण अपडेट करें**',
-          '**વ્યક્તિગત વિગતો અપડેટ કરો**',
-          '**Personal Details Update Karo**'
-        )}
+        message:
+            '''✏️ ${_localize('**Update Personal Details**', '**व्यक्तिगत विवरण अपडेट करें**', '**વ્યક્તિગત વિગતો અપડેટ કરો**', '**Personal Details Update Karo**')}
 
-${_localize(
-          'Please provide your updated information:',
-          'कृपया अपनी अपडेटेड जानकारी प्रदान करें:',
-          'કૃપા કરીને તમારી અપડેટ કરેલી માહિતી પ્રદાન કરો:',
-          'Please apni updated information provide karo:'
-        )}
+${_localize('Please provide your updated information:', 'कृपया अपनी अपडेटेड जानकारी प्रदान करें:', 'કૃપા કરીને તમારી અપડેટ કરેલી માહિતી પ્રદાન કરો:', 'Please apni updated information provide karo:')}
 
-${_localize(
-          'Format: Name, Mobile, Email',
-          'प्रारूप: नाम, मोबाइल, ईमेल',
-          'ફોર્મેટ: નામ, મોબાઇલ, ઈમેઇલ',
-          'Format: Name, Mobile, Email'
-        )}
-${_localize(
-          'Example: John Doe, 9876543210, john@email.com',
-          'उदाहरण: जॉन डो, 9876543210, john@email.com',
-          'ઉદાહરણ: જોન ડો, 9876543210, john@email.com',
-          'Example: John Doe, 9876543210, john@email.com'
-        )}''',
+${_localize('Format: Name, Mobile, Email', 'प्रारूप: नाम, मोबाइल, ईमेल', 'ફોર્મેટ: નામ, મોબાઇલ, ઈમેઇલ', 'Format: Name, Mobile, Email')}
+${_localize('Example: John Doe, 9876543210, john@email.com', 'उदाहरण: जॉन डो, 9876543210, john@email.com', 'ઉદાહરણ: જોન ડો, 9876543210, john@email.com', 'Example: John Doe, 9876543210, john@email.com')}''',
         buttons: [],
         suggestions: [],
         step: 'personal_details',
         showInput: true,
-        inputPlaceholder: _localize('Name, Mobile, Email', 'नाम, मोबाइल, ईमेल', 'નામ, મોબાઇલ, ઈમેઇલ', 'Name, Mobile, Email'),
+        inputPlaceholder: _localize('Name, Mobile, Email', 'नाम, मोबाइल, ईमेल',
+            'નામ, મોબાઇલ, ઈમેઇલ', 'Name, Mobile, Email'),
       );
     } else {
       // Parse input based on what's missing
       final parts = userInput.split(',').map((e) => e.trim()).toList();
 
-      final missingCount = [hasName, hasMobile, hasEmail].where((has) => !has).length;
-      
+      final missingCount =
+          [hasName, hasMobile, hasEmail].where((has) => !has).length;
+
       if (parts.length >= missingCount) {
         int partIndex = 0;
-        
+
         if (!hasName && partIndex < parts.length) {
-          _complaintData['contact_name'] = _normalizeContactNameValue(parts[partIndex++]);
+          _complaintData['contact_name'] =
+              _normalizeContactNameValue(parts[partIndex++]);
         }
         if (!hasMobile && partIndex < parts.length) {
-          _complaintData['contact_mobile'] = _normalizePhoneValue(parts[partIndex++]);
+          _complaintData['contact_mobile'] =
+              _normalizePhoneValue(parts[partIndex++]);
         }
         if (!hasEmail && partIndex < parts.length) {
-          _complaintData['contact_email'] = _normalizeEmailValue(parts[partIndex++]);
+          _complaintData['contact_email'] =
+              _normalizeEmailValue(parts[partIndex++]);
         }
-        
+
         _currentStep = 'summary';
         return _showEnhancedFinalSummary();
       } else {
         final missingFields = <String>[];
-        if (!hasName) missingFields.add(_localize('Name', 'नाम', 'નામ', 'Name'));
-        if (!hasMobile) missingFields.add(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile'));
-        if (!hasEmail) missingFields.add(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email'));
-        
+        if (!hasName)
+          missingFields.add(_localize('Name', 'नाम', 'નામ', 'Name'));
+        if (!hasMobile)
+          missingFields.add(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile'));
+        if (!hasEmail)
+          missingFields.add(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email'));
+
         return ConversationResponse(
-          message: '''❌ ${_localize(
-            '**Invalid Format**',
-            '**गलत प्रारूप**',
-            '**ગલત ફોર્મેટ**',
-            '**Invalid Format**'
-          )}
+          message:
+              '''❌ ${_localize('**Invalid Format**', '**गलत प्रारूप**', '**ગલત ફોર્મેટ**', '**Invalid Format**')}
 
-${_localize(
-            'Please provide all missing details separated by commas:',
-            'कृपया कॉमा से अलग किए गए सभी गुम विवरण प्रदान करें:',
-            'કૃપા કરીને કોમાથી અલગ કરેલી બધી ગુમ વિગતો પ્રદાન કરો:',
-            'Please comma se separate karke sab missing details provide karo:'
-          )}
+${_localize('Please provide all missing details separated by commas:', 'कृपया कॉमा से अलग किए गए सभी गुम विवरण प्रदान करें:', 'કૃપા કરીને કોમાથી અલગ કરેલી બધી ગુમ વિગતો પ્રદાન કરો:', 'Please comma se separate karke sab missing details provide karo:')}
 
-${_localize(
-            'Missing: ${missingFields.join(', ')}',
-            'गुम: ${missingFields.join(', ')}',
-            'ગુમ: ${missingFields.join(', ')}',
-            'Missing: ${missingFields.join(', ')}'
-          )}
-${_localize(
-            'Format: ${missingFields.join(', ')}',
-            'प्रारूप: ${missingFields.join(', ')}',
-            'ફોર્મેટ: ${missingFields.join(', ')}',
-            'Format: ${missingFields.join(', ')}'
-          )}
-${_localize(
-            'Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('John Doe', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}',
-            'उदाहरण: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('जॉन डो', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}',
-            'ઉદાહરણ: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('જોન ડો', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}',
-            'Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? 'John Doe' : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}'
-          )}''',
+${_localize('Missing: ${missingFields.join(', ')}', 'गुम: ${missingFields.join(', ')}', 'ગુમ: ${missingFields.join(', ')}', 'Missing: ${missingFields.join(', ')}')}
+${_localize('Format: ${missingFields.join(', ')}', 'प्रारूप: ${missingFields.join(', ')}', 'ફોર્મેટ: ${missingFields.join(', ')}', 'Format: ${missingFields.join(', ')}')}
+${_localize('Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('John Doe', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}', 'उदाहरण: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('जॉन डो', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}', 'ઉદાહરણ: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? _localize('જોન ડો', 'जॉन डो', 'જોન ડો', 'John Doe') : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}', 'Example: ${missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? 'John Doe' : ''}${missingFields.contains(_localize('Mobile', 'मोबाइल', 'મોબાઇલ', 'Mobile')) ? (missingFields.contains(_localize('Name', 'नाम', 'નામ', 'Name')) ? ', ' : '') + '9876543210' : ''}${missingFields.contains(_localize('Email', 'ईमेल', 'ઈમેઇલ', 'Email')) ? (missingFields.length > 1 ? ', ' : '') + 'john@email.com' : ''}')}''',
           buttons: [],
           suggestions: [],
           step: 'personal_details',
@@ -2868,22 +2725,20 @@ ${_localize(
   /// Step 11: Enhanced summary - Multi-language support
   ConversationResponse _showEnhancedFinalSummary() {
     _currentStep = 'confirm';
-    
+
     final priority = _calculatePriority();
     _complaintData['priority'] = priority;
-    
+
     final resolutionTime = _estimateResolutionTime();
     final department = _getAssignedDepartment();
     _complaintData['department'] = department;
-    
-    final urgencyIndicator = _urgencyScore > 0.7 ? '⚠️ ${_localize('**URGENT**', '**तात्कालिक**', '**તાત્કાલિક**', '**URGENT**')} ' : '';
-    
-    final summary = '''$urgencyIndicator✅ ${_localize(
-      '**Complaint Summary**',
-      '**शिकायत सारांश**',
-      '**ફરિયાદ સારાંશ**',
-      '**Complaint Summary**'
-    )}
+
+    final urgencyIndicator = _urgencyScore > 0.7
+        ? '⚠️ ${_localize('**URGENT**', '**तात्कालिक**', '**તાત્કાલિક**', '**URGENT**')} '
+        : '';
+
+    final summary =
+        '''$urgencyIndicator✅ ${_localize('**Complaint Summary**', '**शिकायत सारांश**', '**ફરિયાદ સારાંશ**', '**Complaint Summary**')}
 
 ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रेणी:**', '**કેટેગરી:**', '**Category:**')} ${_complaintData['category']}
 📋 ${_localize('**Issue:**', '**समस्या:**', '**સમસ્યા:**', '**Issue:**')} ${_complaintData['subcategory_display'] ?? _complaintData['subcategory']}
@@ -2903,13 +2758,8 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
 
 ---
 
-🤔 ${_localize(
-      'Everything correct?',
-      'क्या सब कुछ सही है?',
-      'શું બધું સારું છે?',
-      'Sab kuch sahi hai?'
-    )}''';
-    
+🤔 ${_localize('Everything correct?', 'क्या सब कुछ सही है?', 'શું બધું સારું છે?', 'Sab kuch sahi hai?')}''';
+
     return ConversationResponse(
       message: summary,
       buttons: [
@@ -2939,11 +2789,10 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
     if (isSubmit) {
       return ConversationResponse(
         message: _localize(
-          'Please tap the **Submit** button below so I can save this complaint in the backend and generate a real complaint ID.',
-          'कृपया नीचे दिए गए **सबमिट** बटन पर टैप करें, ताकि मैं शिकायत को बैकएंड में सेव कर सकूं और असली शिकायत आईडी बना सकूं।',
-          'કૃપા કરીને નીચેના **સબમિટ** બટન પર ટેપ કરો, જેથી હું ફરિયાદને બેકએન્ડમાં સેવ કરી શકું અને સાચી ફરિયાદ આઈડી બનાવી શકું.',
-          'Please neeche wale **Submit** button pe tap karo, tabhi backend me real complaint save hogi aur asli complaint ID milegi.'
-        ),
+            'Please tap the **Submit** button below so I can save this complaint in the backend and generate a real complaint ID.',
+            'कृपया नीचे दिए गए **सबमिट** बटन पर टैप करें, ताकि मैं शिकायत को बैकएंड में सेव कर सकूं और असली शिकायत आईडी बना सकूं।',
+            'કૃપા કરીને નીચેના **સબમિટ** બટન પર ટેપ કરો, જેથી હું ફરિયાદને બેકએન્ડમાં સેવ કરી શકું અને સાચી ફરિયાદ આઈડી બનાવી શકું.',
+            'Please neeche wale **Submit** button pe tap karo, tabhi backend me real complaint save hogi aur asli complaint ID milegi.'),
         buttons: [
           '✅ ${_localize('Submit', 'सबमिट करें', 'સબમિટ કરો', 'Submit Karo')}',
           '✏️ ${_localize('Edit', 'संपादित करें', 'સંપાદિત કરો', 'Edit Karo')}',
@@ -2958,7 +2807,8 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
       _complaintData.clear();
       _userLanguage = 'en'; // Reset language
       return ConversationResponse(
-        message: '✏️ Let\'s start fresh!\n\n🌍 Please select your language first:',
+        message:
+            '✏️ Let\'s start fresh!\n\n🌍 Please select your language first:',
         buttons: languageOptions.values
             .map((lang) => '${lang['emoji']} ${lang['native']}')
             .toList(),
@@ -2975,16 +2825,17 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
 
   /// Step 13: Success
   ConversationResponse _showEnhancedSuccess() {
-    final complaintId = 'CMP${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    final complaintId =
+        'CMP${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     _complaintData['complaint_id'] = complaintId;
-    
+
     final department = _complaintData['department'] ?? 'Municipal Corporation';
     final priority = _complaintData['priority'] ?? 'Normal';
     final resolutionTime = _estimateResolutionTime();
-    
+
     final trackingUrl = 'smartcity.gov.in/track/$complaintId';
     _complaintData['tracking_url'] = trackingUrl;
-    
+
     final successMessage = '''🎉 **Complaint Submitted!**
 
 📋 **ID:** `$complaintId`
@@ -3008,7 +2859,7 @@ ${_complaintData['category_emoji']} ${_localize('**Category:**', '**श्रे
 📞 **Helpline:** 1800-XXX-XXXX
 
 Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! 🌟''';
-    
+
     return ConversationResponse(
       message: successMessage,
       buttons: ['📋 My Complaints', '➕ New Complaint', '📊 Track', '🏠 Home'],
@@ -3020,7 +2871,8 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
   }
 
   /// AI category detection with full context analysis
-  Future<Map<String, String>?> _detectCategoryWithFullContext(String input) async {
+  Future<Map<String, String>?> _detectCategoryWithFullContext(
+      String input) async {
     try {
       // Use context analyzer for better understanding
       final analysis = await _contextAnalyzer.analyzeConversationContext(
@@ -3029,15 +2881,15 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
         currentStep: _currentStep,
         complaintData: _complaintData,
       );
-      
+
       if (analysis['success'] == true) {
         final result = analysis['analysis'];
         final categoryKey = result['category'];
-        
+
         debugPrint('Context Analysis: ${result['reasoning']}');
         debugPrint('Detected Intent: ${result['intent']}');
         debugPrint('Detected Category: $categoryKey');
-        
+
         if (categoryKey != null && categoryKey != 'null') {
           final matchedCategory = _findCategoryByKey(categoryKey.toString());
           if (matchedCategory != null) {
@@ -3048,10 +2900,11 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
     } catch (e) {
       debugPrint('Context analysis error: $e');
     }
-    
+
     // Fallback to simple AI detection
     return await _detectCategoryWithAI(input);
   }
+
   Future<Map<String, String>?> _detectCategoryWithAI(String input) async {
     try {
       // First try fuzzy match for quick response
@@ -3059,9 +2912,10 @@ Thank you for making ${_userCity.isNotEmpty ? _userCity : 'your city'} better! �
       if (fuzzyMatch != null) {
         return fuzzyMatch;
       }
-      
+
       // If fuzzy match fails, use Groq AI for better understanding
-      final prompt = '''Analyze this user complaint and identify the category. The user might be using regional language (Hindi, Gujarati, etc.) or informal language.
+      final prompt =
+          '''Analyze this user complaint and identify the category. The user might be using regional language (Hindi, Gujarati, etc.) or informal language.
 
 User complaint: "$input"
 
@@ -3078,40 +2932,50 @@ Examples:
 Respond with ONLY the category key from the list above.
 No explanation, just the key.''';
 
-      final response = await _callGroqAPI(prompt, maxTokens: 50, temperature: 0.1);
-      
+      final response =
+          await _callGroqAPI(prompt, maxTokens: 50, temperature: 0.1);
+
       if (response != null) {
         final categoryKey = response.trim().toLowerCase();
-        
+
         final matchedCategory = _findCategoryByKey(categoryKey);
         if (matchedCategory != null) {
-          debugPrint('Groq AI detected category: $categoryKey for input: $input');
+          debugPrint(
+              'Groq AI detected category: $categoryKey for input: $input');
           return matchedCategory;
         }
       }
     } catch (e) {
       debugPrint('Groq AI error: $e');
     }
-    
+
     // Final fallback to fuzzy match
     return _fuzzyMatchCategory(input);
   }
 
   /// Call Groq API
-  Future<String?> _callGroqAPI(String prompt, {int maxTokens = 500, double temperature = 0.3}) async {
+  Future<String?> _callGroqAPI(String prompt,
+      {int maxTokens = 500, double temperature = 0.3}) async {
+    if (_groqApiKey.trim().isEmpty) {
+      debugPrint('Groq API key is not configured; using local fallback.');
+      return null;
+    }
+
     try {
-      final response = await http.post(
-        Uri.parse(_groqUrl),
-        headers: {
-          'Authorization': 'Bearer $_groqApiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': _groqModel,
-          'messages': [
-            {
-              'role': 'system',
-              'content': '''You are Disha, a friendly and empathetic AI assistant for Smart City complaints. 
+      final response = await http
+          .post(
+            Uri.parse(_groqUrl),
+            headers: {
+              'Authorization': 'Bearer $_groqApiKey',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'model': _groqModel,
+              'messages': [
+                {
+                  'role': 'system',
+                  'content':
+                      '''You are Disha, a friendly and empathetic AI assistant for Smart City complaints. 
 
 Your personality:
 - Warm, caring, and understanding like a helpful friend
@@ -3129,16 +2993,14 @@ Your communication style:
 - Acknowledge user emotions
 
 Be precise and helpful while maintaining a human touch.'''
-            },
-            {
-              'role': 'user',
-              'content': prompt
-            }
-          ],
-          'temperature': temperature,
-          'max_tokens': maxTokens,
-        }),
-      ).timeout(const Duration(seconds: 10));
+                },
+                {'role': 'user', 'content': prompt}
+              ],
+              'temperature': temperature,
+              'max_tokens': maxTokens,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -3147,12 +3009,13 @@ Be precise and helpful while maintaining a human touch.'''
     } catch (e) {
       debugPrint('Groq API failed: $e');
     }
-    
+
     return null;
   }
 
   /// Validate description with AI
-  Future<bool> validateComplaintDescription(String description, String category, String subcategory) async {
+  Future<bool> validateComplaintDescription(
+      String description, String category, String subcategory) async {
     try {
       final prompt = '''Validate if this description matches the category:
 
@@ -3164,8 +3027,9 @@ Does the description match? Is it clear and specific?
 
 Respond: VALID or INVALID|reason''';
 
-      final response = await _callGroqAPI(prompt, maxTokens: 100, temperature: 0.2);
-      
+      final response =
+          await _callGroqAPI(prompt, maxTokens: 100, temperature: 0.2);
+
       if (response != null) {
         if (response.toUpperCase().startsWith('VALID')) {
           return true;
@@ -3180,7 +3044,7 @@ Respond: VALID or INVALID|reason''';
     } catch (e) {
       debugPrint('Validation error: $e');
     }
-    
+
     return true;
   }
 
@@ -3204,10 +3068,8 @@ Respond: VALID or INVALID|reason''';
       );
     }
 
-    final words = normalized
-        .split(' ')
-        .where((word) => word.trim().isNotEmpty)
-        .toList();
+    final words =
+        normalized.split(' ').where((word) => word.trim().isNotEmpty).toList();
     if (words.length < 3) {
       return _localize(
         'Please describe the issue in a meaningful sentence, not just a few words.',
@@ -3269,12 +3131,12 @@ Respond: VALID or INVALID|reason''';
   List<Map<String, String>>? _detectMultipleIssues(String input) {
     final lower = input.toLowerCase();
     final detectedCategories = <Map<String, String>>[];
-    
+
     for (final category in _getCategories()) {
       final key = (category['key'] ?? '').toString();
       if (key.isEmpty) continue;
       final keywords = _getCategoryKeywords(key);
-      
+
       for (var keyword in keywords) {
         if (lower.contains(keyword)) {
           if (!detectedCategories.any((c) => c['key'] == key)) {
@@ -3288,10 +3150,10 @@ Respond: VALID or INVALID|reason''';
         }
       }
     }
-    
+
     return detectedCategories.length > 1 ? detectedCategories : null;
   }
-  
+
   /// Get keywords for category detection
   List<String> _getCategoryKeywords(String categoryKey) {
     final dynamicKeywords = <String>{};
@@ -3318,16 +3180,19 @@ Respond: VALID or INVALID|reason''';
 
     switch (categoryKey) {
       case 'road':
-        dynamicKeywords.addAll(['road', 'pothole', 'khado', 'sadak', 'rasta', 'street']);
+        dynamicKeywords
+            .addAll(['road', 'pothole', 'khado', 'sadak', 'rasta', 'street']);
         break;
       case 'water':
         dynamicKeywords.addAll(['water', 'pani', 'paani', 'tap', 'supply']);
         break;
       case 'electricity':
-        dynamicKeywords.addAll(['electricity', 'power', 'light', 'bijli', 'current']);
+        dynamicKeywords
+            .addAll(['electricity', 'power', 'light', 'bijli', 'current']);
         break;
       case 'garbage':
-        dynamicKeywords.addAll(['garbage', 'trash', 'kachra', 'waste', 'dustbin']);
+        dynamicKeywords
+            .addAll(['garbage', 'trash', 'kachra', 'waste', 'dustbin']);
         break;
       case 'drainage':
         dynamicKeywords.addAll(['drain', 'sewage', 'nali', 'gutter']);
@@ -3336,7 +3201,8 @@ Respond: VALID or INVALID|reason''';
         dynamicKeywords.addAll(['traffic', 'signal', 'jam']);
         break;
       case 'police':
-        dynamicKeywords.addAll(['police', 'theft', 'stolen', 'chorai', 'chori', 'robbery']);
+        dynamicKeywords.addAll(
+            ['police', 'theft', 'stolen', 'chorai', 'chori', 'robbery']);
         break;
       case 'construction':
         dynamicKeywords.addAll(['construction', 'building']);
@@ -3348,7 +3214,9 @@ Respond: VALID or INVALID|reason''';
         dynamicKeywords.add(_normalizeTextForMatching(categoryKey));
         break;
     }
-    return dynamicKeywords.where((keyword) => keyword.trim().isNotEmpty).toList();
+    return dynamicKeywords
+        .where((keyword) => keyword.trim().isNotEmpty)
+        .toList();
   }
 
   List<String> _extractMeaningfulTokens(String input) {
@@ -3360,12 +3228,12 @@ Respond: VALID or INVALID|reason''';
         .where((token) => token.length >= 3)
         .toList();
   }
-  
+
   /// Get current step progress description
   String _getCurrentStepProgress() {
     final category = _complaintData['category'] ?? 'Category';
     final subcategory = _complaintData['subcategory'];
-    
+
     switch (_currentStep) {
       case 'greeting':
         return 'Starting conversation';
@@ -3374,21 +3242,32 @@ Respond: VALID or INVALID|reason''';
       case 'subcategory':
         return '$category - Selecting type';
       case 'problem':
-        return subcategory != null ? '$category - $subcategory' : '$category - Adding details';
+        return subcategory != null
+            ? '$category - $subcategory'
+            : '$category - Adding details';
       case 'date':
-        return subcategory != null ? '$category - $subcategory - Adding date' : '$category - Adding date';
+        return subcategory != null
+            ? '$category - $subcategory - Adding date'
+            : '$category - Adding date';
       case 'location':
-        return subcategory != null ? '$category - $subcategory - Adding location' : '$category - Adding location';
+        return subcategory != null
+            ? '$category - $subcategory - Adding location'
+            : '$category - Adding location';
       case 'photo':
-        return subcategory != null ? '$category - $subcategory - Adding photo' : '$category - Adding photo';
+        return subcategory != null
+            ? '$category - $subcategory - Adding photo'
+            : '$category - Adding photo';
       case 'personal_details':
-        return subcategory != null ? '$category - $subcategory - Contact details' : '$category - Contact details';
+        return subcategory != null
+            ? '$category - $subcategory - Contact details'
+            : '$category - Contact details';
       case 'summary':
         return 'Review & submit';
       default:
         return 'In progress';
     }
   }
+
   Map<String, String>? _fuzzyMatchCategory(String input) {
     final lower = input.toLowerCase();
     final normalizedInput = _normalizeTextForMatching(input);
@@ -3441,14 +3320,14 @@ Respond: VALID or INVALID|reason''';
         }
       }
     }
-    
+
     // Check each category for matches
     for (var entry in categories.entries) {
       final key = entry.key;
       final category = entry.value;
-      
+
       // Check key and all language names
-      if (lower.contains(key) || 
+      if (lower.contains(key) ||
           lower.contains(category['en']!.toLowerCase()) ||
           lower.contains(category['hi']!.toLowerCase()) ||
           lower.contains(category['gu']!.toLowerCase()) ||
@@ -3476,22 +3355,28 @@ Respond: VALID or INVALID|reason''';
         }
       }
     }
-    
+
     // Find category by key helper
     Map<String, String>? findByKey(String key) {
       return _findCategoryByKey(key);
     }
-    
+
     // Common English keywords
-    if (lower.contains('pothole') || lower.contains('road') || lower.contains('street')) {
+    if (lower.contains('pothole') ||
+        lower.contains('road') ||
+        lower.contains('street')) {
       final cat = findByKey('road');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('water') || lower.contains('tap') || lower.contains('supply')) {
+    if (lower.contains('water') ||
+        lower.contains('tap') ||
+        lower.contains('supply')) {
       final cat = findByKey('water');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('electricity') || lower.contains('power') || lower.contains('current')) {
+    if (lower.contains('electricity') ||
+        lower.contains('power') ||
+        lower.contains('current')) {
       final cat = findByKey('electricity');
       if (cat != null && cat.isNotEmpty) return cat;
     }
@@ -3499,19 +3384,29 @@ Respond: VALID or INVALID|reason''';
       final cat = findByKey('electricity');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('garbage') || lower.contains('trash') || lower.contains('waste') || lower.contains('dustbin')) {
+    if (lower.contains('garbage') ||
+        lower.contains('trash') ||
+        lower.contains('waste') ||
+        lower.contains('dustbin')) {
       final cat = findByKey('garbage');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('drain') || lower.contains('sewage') || lower.contains('gutter')) {
+    if (lower.contains('drain') ||
+        lower.contains('sewage') ||
+        lower.contains('gutter')) {
       final cat = findByKey('drainage');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('traffic') || lower.contains('signal') || lower.contains('jam')) {
+    if (lower.contains('traffic') ||
+        lower.contains('signal') ||
+        lower.contains('jam')) {
       final cat = findByKey('traffic');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('police') || lower.contains('theft') || lower.contains('stolen') || lower.contains('robbery')) {
+    if (lower.contains('police') ||
+        lower.contains('theft') ||
+        lower.contains('stolen') ||
+        lower.contains('robbery')) {
       final cat = findByKey('police');
       if (cat != null && cat.isNotEmpty) return cat;
     }
@@ -3519,7 +3414,10 @@ Respond: VALID or INVALID|reason''';
       final cat = findByKey('construction');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('cyber') || lower.contains('fraud') || lower.contains('scam') || lower.contains('hacked')) {
+    if (lower.contains('cyber') ||
+        lower.contains('fraud') ||
+        lower.contains('scam') ||
+        lower.contains('hacked')) {
       final cat = findByKey('cyber');
       if (cat != null && cat.isNotEmpty) return cat;
     }
@@ -3531,13 +3429,17 @@ Respond: VALID or INVALID|reason''';
       final cat = findByKey('illegal');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    
+
     // Hindi keywords
-    if (lower.contains('sadak') || lower.contains('rasta') || lower.contains('गड्ढा')) {
+    if (lower.contains('sadak') ||
+        lower.contains('rasta') ||
+        lower.contains('गड्ढा')) {
       final cat = findByKey('road');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('paani') || lower.contains('पानी') || lower.contains('nal')) {
+    if (lower.contains('paani') ||
+        lower.contains('पानी') ||
+        lower.contains('nal')) {
       final cat = findByKey('water');
       if (cat != null && cat.isNotEmpty) return cat;
     }
@@ -3545,11 +3447,15 @@ Respond: VALID or INVALID|reason''';
       final cat = findByKey('electricity');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('kachra') || lower.contains('कचरा') || lower.contains('gandagi')) {
+    if (lower.contains('kachra') ||
+        lower.contains('कचरा') ||
+        lower.contains('gandagi')) {
       final cat = findByKey('garbage');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('nali') || lower.contains('नाली') || lower.contains('ganda pani')) {
+    if (lower.contains('nali') ||
+        lower.contains('नाली') ||
+        lower.contains('ganda pani')) {
       final cat = findByKey('drainage');
       if (cat != null && cat.isNotEmpty) return cat;
     }
@@ -3557,13 +3463,17 @@ Respond: VALID or INVALID|reason''';
       final cat = findByKey('police');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    
+
     // Gujarati keywords
-    if (lower.contains('khado') || lower.contains('rasto') || lower.contains('ખાડો')) {
+    if (lower.contains('khado') ||
+        lower.contains('rasto') ||
+        lower.contains('ખાડો')) {
       final cat = findByKey('road');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('pani') || lower.contains('પાણી') || lower.contains('nathi avtu')) {
+    if (lower.contains('pani') ||
+        lower.contains('પાણી') ||
+        lower.contains('nathi avtu')) {
       final cat = findByKey('water');
       if (cat != null && cat.isNotEmpty) return cat;
     }
@@ -3575,11 +3485,13 @@ Respond: VALID or INVALID|reason''';
       final cat = findByKey('garbage');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    if (lower.contains('chorai') || lower.contains('ચોરાઈ') || lower.contains('bag')) {
+    if (lower.contains('chorai') ||
+        lower.contains('ચોરાઈ') ||
+        lower.contains('bag')) {
       final cat = findByKey('police');
       if (cat != null && cat.isNotEmpty) return cat;
     }
-    
+
     return null;
   }
 
@@ -3594,20 +3506,32 @@ Respond: VALID or INVALID|reason''';
   /// Get assigned department
   String _getAssignedDepartment() {
     final categoryKey = _complaintData['category_key'] as String?;
-    
+
     switch (categoryKey) {
-      case 'road': return 'Public Works Department';
-      case 'water': return 'Water Supply Department';
-      case 'electricity': return 'Electricity Board';
-      case 'garbage': return 'Sanitation Department';
-      case 'drainage': return 'Drainage Department';
-      case 'traffic': return 'Traffic Police';
-      case 'police': return 'Police Department';
-      case 'construction': return 'Municipal Corporation';
-      case 'cyber': return 'Cyber Crime Cell';
-      case 'street_light': return 'Electricity Department';
-      case 'public_toilet': return 'Sanitation Department';
-      default: return 'Municipal Corporation';
+      case 'road':
+        return 'Public Works Department';
+      case 'water':
+        return 'Water Supply Department';
+      case 'electricity':
+        return 'Electricity Board';
+      case 'garbage':
+        return 'Sanitation Department';
+      case 'drainage':
+        return 'Drainage Department';
+      case 'traffic':
+        return 'Traffic Police';
+      case 'police':
+        return 'Police Department';
+      case 'construction':
+        return 'Municipal Corporation';
+      case 'cyber':
+        return 'Cyber Crime Cell';
+      case 'street_light':
+        return 'Electricity Department';
+      case 'public_toilet':
+        return 'Sanitation Department';
+      default:
+        return 'Municipal Corporation';
     }
   }
 
@@ -3619,26 +3543,50 @@ Respond: VALID or INVALID|reason''';
 
     String iso(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
 
-    if (lower.contains('today') || lower.contains('आज') || lower.contains('આજે') || lower.contains('aaj')) {
+    if (lower.contains('today') ||
+        lower.contains('आज') ||
+        lower.contains('આજે') ||
+        lower.contains('aaj')) {
       return iso(now);
     }
-    if (lower.contains('yesterday') || lower.contains('कल') || lower.contains('ગઈકાલે') || lower.contains('kal')) {
+    if (lower.contains('yesterday') ||
+        lower.contains('कल') ||
+        lower.contains('ગઈકાલે') ||
+        lower.contains('kal')) {
       return iso(now.subtract(const Duration(days: 1)));
     }
-    if (lower.contains('2-3') || lower.contains('few') || lower.contains('कुछ दिन') || lower.contains('કેટલાક દિવસ')) {
+    if (lower.contains('2-3') ||
+        lower.contains('few') ||
+        lower.contains('कुछ दिन') ||
+        lower.contains('કેટલાક દિવસ')) {
       return iso(now.subtract(const Duration(days: 3)));
     }
-    if (lower.contains('last week') || lower.contains('पिछले सप्ताह') || lower.contains('ગયા અઠવાડિયે')) {
+    if (lower.contains('last week') ||
+        lower.contains('पिछले सप्ताह') ||
+        lower.contains('ગયા અઠવાડિયે')) {
       return iso(now.subtract(const Duration(days: 7)));
     }
-    if (lower.contains('week') || lower.contains('सप्ताह') || lower.contains('અઠવાડિયા') || lower.contains('haft')) {
+    if (lower.contains('week') ||
+        lower.contains('सप्ताह') ||
+        lower.contains('અઠવાડિયા') ||
+        lower.contains('haft')) {
       return iso(now.subtract(const Duration(days: 7)));
     }
-    if (lower.contains('weeks') || lower.contains('हफ्तों') || lower.contains('અઠવાડિયાઓ')) {
+    if (lower.contains('weeks') ||
+        lower.contains('हफ्तों') ||
+        lower.contains('અઠવાડિયાઓ')) {
       return iso(now.subtract(const Duration(days: 14)));
     }
 
-    for (final fmt in ['yyyy-MM-dd', 'dd/MM/yyyy', 'd/M/yyyy', 'dd-MM-yyyy', 'd-M-yyyy', 'dd MMM yyyy', 'd MMM yyyy']) {
+    for (final fmt in [
+      'yyyy-MM-dd',
+      'dd/MM/yyyy',
+      'd/M/yyyy',
+      'dd-MM-yyyy',
+      'd-M-yyyy',
+      'dd MMM yyyy',
+      'd MMM yyyy'
+    ]) {
       try {
         final parsed = DateFormat(fmt).parseStrict(normalizedInput);
         return iso(parsed);
@@ -3650,7 +3598,12 @@ Respond: VALID or INVALID|reason''';
 
   /// Calculate duration
   int _calculateDuration(String dateStr) {
-    for (final fmt in ['yyyy-MM-dd', 'dd MMM yyyy', 'dd/MM/yyyy', 'dd-MM-yyyy']) {
+    for (final fmt in [
+      'yyyy-MM-dd',
+      'dd MMM yyyy',
+      'dd/MM/yyyy',
+      'dd-MM-yyyy'
+    ]) {
       try {
         final date = DateFormat(fmt).parseStrict(dateStr);
         return DateTime.now().difference(date).inDays;
@@ -3668,7 +3621,7 @@ Respond: VALID or INVALID|reason''';
 
     final subs = subcategories[categoryKey];
     if (subs == null) return ['Other'];
-    
+
     switch (_userLanguage) {
       case 'hi':
         final hiSubs = subs['hi'] ?? subs['en'] ?? ['अन्य'];
@@ -3688,41 +3641,36 @@ Respond: VALID or INVALID|reason''';
   /// Get smart questions
   String _getSmartQuestions(String categoryKey) {
     switch (categoryKey) {
-      case 'road': 
+      case 'road':
         return _localize(
-          '• Location & landmarks\n• Size of damage\n• Causing accidents?\n• Traffic impact',
-          '• स्थान और लैंडमार्क\n• नुकसान का आकार\n• दुर्घटना का कारण?\n• ट्रैफिक पर प्रभाव',
-          '• સ્થાન અને લેન્ડમાર્ક\n• નુકસાનનો આકાર\n• અકસ્માતનો કારણ?\n• ટ્રાફિક પર અસર',
-          '• Location aur landmarks\n• Damage ka size\n• Accident ho rahe hain?\n• Traffic impact'
-        );
-      case 'water': 
+            '• Location & landmarks\n• Size of damage\n• Causing accidents?\n• Traffic impact',
+            '• स्थान और लैंडमार्क\n• नुकसान का आकार\n• दुर्घटना का कारण?\n• ट्रैफिक पर प्रभाव',
+            '• સ્થાન અને લેન્ડમાર્ક\n• નુકસાનનો આકાર\n• અકસ્માતનો કારણ?\n• ટ્રાફિક પર અસર',
+            '• Location aur landmarks\n• Damage ka size\n• Accident ho rahe hain?\n• Traffic impact');
+      case 'water':
         return _localize(
-          '• Your area\n• How long?\n• Many houses affected?\n• Visible leaks?',
-          '• आपका क्षेत्र\n• कितने समय से?\n• कई घर प्रभावित?\n• दिखाई देने वाला रिसाव?',
-          '• તમારો વિસ્તાર\n• કેટલા સમયથી?\n• કેટલાં ઘરો પ્રભાવિત?\n• દિખાઈ દેતો લીકેજ?',
-          '• Aapka area\n• Kitne time se?\n• Kitne ghar affected?\n• Leak dikh raha hai?'
-        );
-      case 'electricity': 
+            '• Your area\n• How long?\n• Many houses affected?\n• Visible leaks?',
+            '• आपका क्षेत्र\n• कितने समय से?\n• कई घर प्रभावित?\n• दिखाई देने वाला रिसाव?',
+            '• તમારો વિસ્તાર\n• કેટલા સમયથી?\n• કેટલાં ઘરો પ્રભાવિત?\n• દિખાઈ દેતો લીકેજ?',
+            '• Aapka area\n• Kitne time se?\n• Kitne ghar affected?\n• Leak dikh raha hai?');
+      case 'electricity':
         return _localize(
-          '• Affected area\n• Duration\n• Safety hazards?\n• Pole/transformer number',
-          '• प्रभावित क्षेत्र\n• अवधि\n• सुरक्षा खतरे?\n• पोल/ट्रांसफार्मर नंबर',
-          '• પ્રભાવિત વિસ્તાર\n• અવધિ\n• સુરક્ષા ખતરા?\n• પોલ/ટ્રાન્સફોર્મર નંબર',
-          '• Affected area\n• Kitni der se?\n• Safety hazard hai?\n• Pole/transformer number'
-        );
-      case 'garbage': 
+            '• Affected area\n• Duration\n• Safety hazards?\n• Pole/transformer number',
+            '• प्रभावित क्षेत्र\n• अवधि\n• सुरक्षा खतरे?\n• पोल/ट्रांसफार्मर नंबर',
+            '• પ્રભાવિત વિસ્તાર\n• અવધિ\n• સુરક્ષા ખતરા?\n• પોલ/ટ્રાન્સફોર્મર નંબર',
+            '• Affected area\n• Kitni der se?\n• Safety hazard hai?\n• Pole/transformer number');
+      case 'garbage':
         return _localize(
-          '• Location\n• How long?\n• Type of waste\n• Health hazards?',
-          '• स्थान\n• कितने समय से?\n• कचरे का प्रकार\n• स्वास्थ्य खतरे?',
-          '• સ્થાન\n• કેટલા સમયથી?\n• કચરાનો પ્રકાર\n• આરોગ્યના ખતરા?',
-          '• Location\n• Kitne time se?\n• Kya type ka waste?\n• Health hazard hai?'
-        );
-      default: 
+            '• Location\n• How long?\n• Type of waste\n• Health hazards?',
+            '• स्थान\n• कितने समय से?\n• कचरे का प्रकार\n• स्वास्थ्य खतरे?',
+            '• સ્થાન\n• કેટલા સમયથી?\n• કચરાનો પ્રકાર\n• આરોગ્યના ખતરા?',
+            '• Location\n• Kitne time se?\n• Kya type ka waste?\n• Health hazard hai?');
+      default:
         return _localize(
-          '• Where exactly?\n• When noticed?\n• How severe?\n• Immediate risks?',
-          '• कहां वास्तव में?\n• कब देखा?\n• कितना गंभीर?\n• तत्काल जोखिम?',
-          '• ક્યાં વાસ્તવમાં?\n• ક્યારે દેખ્યું?\n• કેટલું ગંભીર?\n• તાત્કાલિક જોખમ?',
-          '• Exactly kahan?\n• Kab notice kiya?\n• Kitna severe?\n• Immediate risk hai?'
-        );
+            '• Where exactly?\n• When noticed?\n• How severe?\n• Immediate risks?',
+            '• कहां वास्तव में?\n• कब देखा?\n• कितना गंभीर?\n• तत्काल जोखिम?',
+            '• ક્યાં વાસ્તવમાં?\n• ક્યારે દેખ્યું?\n• કેટલું ગંભીર?\n• તાત્કાલિક જોખમ?',
+            '• Exactly kahan?\n• Kab notice kiya?\n• Kitna severe?\n• Immediate risk hai?');
     }
   }
 
@@ -3731,32 +3679,49 @@ Respond: VALID or INVALID|reason''';
     switch (categoryKey) {
       case 'road':
         return [
-          _localize('Deep pothole causing accidents', 'दुर्घटना का कारण बनने वाला गहरा गड्ढा', 'અકસ્માતનો કારણ બનતો ગહેરો ખાડો', 'Accident ka karan banne wala gehra khada'),
-          _localize('Road broken for 100 meters', '100 मीटर तक टूटी सड़क', '100 મીટર સુધી તૂટેલો રસ્તો', '100 meter tak tooti sadak'),
-          _localize('Water accumulation', 'पानी का जमाव', 'પાણી જમા થવું', 'Paani jama hona')
+          _localize(
+              'Deep pothole causing accidents',
+              'दुर्घटना का कारण बनने वाला गहरा गड्ढा',
+              'અકસ્માતનો કારણ બનતો ગહેરો ખાડો',
+              'Accident ka karan banne wala gehra khada'),
+          _localize('Road broken for 100 meters', '100 मीटर तक टूटी सड़क',
+              '100 મીટર સુધી તૂટેલો રસ્તો', '100 meter tak tooti sadak'),
+          _localize('Water accumulation', 'पानी का जमाव', 'પાણી જમા થવું',
+              'Paani jama hona')
         ];
       case 'water':
         return [
-          _localize('No water for 3 days', '3 दिन से पानी नहीं', '3 દિવસથી પાણી નથી', '3 din se paani nahi'),
-          _localize('Major pipe leaking', 'मुख्य पाइप में रिसाव', 'મુખ્ય પાઇપમાં લીકેજ', 'Main pipe mein leakage'),
-          _localize('Very low pressure', 'बहुत कम दबाव', 'બહુ ઓછું દબાણ', 'Bahut kam pressure')
+          _localize('No water for 3 days', '3 दिन से पानी नहीं',
+              '3 દિવસથી પાણી નથી', '3 din se paani nahi'),
+          _localize('Major pipe leaking', 'मुख्य पाइप में रिसाव',
+              'મુખ્ય પાઇપમાં લીકેજ', 'Main pipe mein leakage'),
+          _localize('Very low pressure', 'बहुत कम दबाव', 'બહુ ઓછું દબાણ',
+              'Bahut kam pressure')
         ];
       case 'electricity':
         return [
-          _localize('Daily 5+ hour cuts', 'रोजाना 5+ घंटे की कटौती', 'રોજ વધુ 5+ કલાકની કાપ', 'Roz 5+ ghante ki katouti'),
-          _localize('Exposed wire hanging', 'खुला तार लटक रहा', 'ખુલ્લો વાયર લટકી રહ્યો', 'Khula wire latka hua'),
-          _localize('All lights not working', 'सभी लाइटें काम नहीं कर रहीं', 'બધી લાઇટો કામ નથી કરતી', 'Saari lights kaam nahi kar rahi')
+          _localize('Daily 5+ hour cuts', 'रोजाना 5+ घंटे की कटौती',
+              'રોજ વધુ 5+ કલાકની કાપ', 'Roz 5+ ghante ki katouti'),
+          _localize('Exposed wire hanging', 'खुला तार लटक रहा',
+              'ખુલ્લો વાયર લટકી રહ્યો', 'Khula wire latka hua'),
+          _localize('All lights not working', 'सभी लाइटें काम नहीं कर रहीं',
+              'બધી લાઇટો કામ નથી કરતી', 'Saari lights kaam nahi kar rahi')
         ];
       case 'garbage':
         return [
-          _localize('Not collected for week', 'एक हफ्ते से नहीं उठाया', 'એક અઠવાડિયાથી ઉપાડ્યો નથી', 'Ek hafte se nahi uthaya'),
-          _localize('Bins overflowing', 'डस्टबिन भर रहे हैं', 'ડસ્ટબિન ભરાઈ ગયા છે', 'Dustbin bhar gaye hain'),
-          _localize('Illegal dumping', 'अवैध कचरा फेंकना', 'ગેરકાયદેસર કચરો ફેંકવો', 'Galat jagah kachra phenkna')
+          _localize('Not collected for week', 'एक हफ्ते से नहीं उठाया',
+              'એક અઠવાડિયાથી ઉપાડ્યો નથી', 'Ek hafte se nahi uthaya'),
+          _localize('Bins overflowing', 'डस्टबिन भर रहे हैं',
+              'ડસ્ટબિન ભરાઈ ગયા છે', 'Dustbin bhar gaye hain'),
+          _localize('Illegal dumping', 'अवैध कचरा फेंकना',
+              'ગેરકાયદેસર કચરો ફેંકવો', 'Galat jagah kachra phenkna')
         ];
       default:
         return [
-          _localize('Describe in detail', 'विस्तार से बताएं', 'વિસ્તારમાં કહો', 'Detail mein batao'),
-          _localize('Mention severity', 'गंभीरता का उल्लेख करें', 'ગંભીરતાનો ઉલ્લેખ કરો', 'Kitna serious hai batao'),
+          _localize('Describe in detail', 'विस्तार से बताएं', 'વિસ્તારમાં કહો',
+              'Detail mein batao'),
+          _localize('Mention severity', 'गंभीरता का उल्लेख करें',
+              'ગંભીરતાનો ઉલ્લેખ કરો', 'Kitna serious hai batao'),
           _localize('Any dangers?', 'कोई खतरा?', 'કોઈ ખતરો?', 'Koi khatra hai?')
         ];
     }
@@ -3768,7 +3733,7 @@ Respond: VALID or INVALID|reason''';
     _complaintData.clear();
     _conversationHistory.clear();
     _userLanguage = 'en'; // Reset to default
-    
+
     return ConversationResponse(
       message: '❌ Cancelled.\n\nStart again anytime!',
       buttons: ['Start New'],
@@ -3779,12 +3744,175 @@ Respond: VALID or INVALID|reason''';
   }
 
   /// Get complaint data
-  Map<String, dynamic> getComplaintData() => Map<String, dynamic>.from(_complaintData);
-  
+  Map<String, dynamic> getComplaintData() =>
+      Map<String, dynamic>.from(_complaintData);
+
+  bool get isAwaitingMediaConfirmation =>
+      _currentStep == 'media_confirm' &&
+      _aiContext['awaiting_media_confirmation'] == true;
+
+  ConversationResponse applyMediaIntakeAnalysis(
+    Map<String, dynamic> analysis, {
+    required bool isVideo,
+  }) {
+    final categoryKey =
+        (analysis['category_key'] ?? analysis['category'] ?? 'other')
+            .toString()
+            .trim()
+            .toLowerCase();
+    final category = _findCategoryByKey(categoryKey) ??
+        _findCategoryByKey('other') ??
+        const {'key': 'other', 'name': 'Other Complaint', 'emoji': ''};
+    final categoryName =
+        (analysis['category_name'] ?? analysis['category'] ?? category['name'])
+            .toString()
+            .trim();
+    final subcategory = (analysis['subcategory'] ?? 'Other').toString().trim();
+    final description = (analysis['description'] ??
+            analysis['detected_issue'] ??
+            'Complaint proof uploaded by citizen')
+        .toString()
+        .trim();
+    var confidence =
+        double.tryParse((analysis['confidence'] ?? '').toString()) ?? 0.0;
+    if (confidence > 1) {
+      confidence = confidence / 100;
+    }
+
+    _complaintData['category_key'] = category['key'];
+    _complaintData['category'] =
+        categoryName.isNotEmpty ? categoryName : category['name'];
+    _complaintData['category_emoji'] = category['emoji'] ?? '';
+    _complaintData['subcategory_display'] = subcategory;
+    _complaintData['subcategory'] = _normalizeSubcategoryToEnglish(
+      category['key']!,
+      subcategory.isNotEmpty ? subcategory : 'Other',
+    );
+    _complaintData['description'] = description;
+    _complaintData['raw_description'] = description;
+    _complaintData['has_photo'] = !isVideo;
+    _complaintData['has_video'] = isVideo;
+    _complaintData['media_analysis_confidence'] = confidence;
+    _complaintData['media_detected_issue'] =
+        (analysis['detected_issue'] ?? '').toString();
+
+    _currentStep = 'media_confirm';
+    _aiContext['awaiting_media_confirmation'] = true;
+
+    final mediaLabel = isVideo ? 'video' : 'image';
+    final issueLabel = (analysis['detected_issue'] ?? '').toString().trim();
+    final confidenceText =
+        confidence > 0 ? 'Confidence: ${(confidence * 100).round()}%' : '';
+
+    return ConversationResponse(
+      message: '''I analyzed this $mediaLabel and prepared a complaint draft.
+
+Category: ${_complaintData['category']}
+Subcategory: ${_complaintData['subcategory_display']}
+${issueLabel.isNotEmpty ? 'Detected issue: $issueLabel\n' : ''}Description: $description
+${confidenceText.isNotEmpty ? '\n$confidenceText' : ''}
+
+Is this correct? If yes, I will ask only the missing details and then submit the complaint.''',
+      buttons: const [
+        'Yes, continue',
+        'Submit Complaint',
+        'Change category',
+      ],
+      suggestions: const [],
+      step: 'media_confirm',
+      showInput: true,
+      complaintData: Map<String, dynamic>.from(_complaintData),
+    );
+  }
+
+  ConversationResponse continueMediaIntake() {
+    _aiContext['awaiting_media_confirmation'] = false;
+
+    final categoryKey = (_complaintData['category_key'] ?? '').toString();
+    final subcategory = (_complaintData['subcategory'] ?? '').toString();
+    final description = (_complaintData['description'] ??
+            _complaintData['raw_description'] ??
+            '')
+        .toString()
+        .trim();
+
+    if (categoryKey.isEmpty) {
+      _currentStep = 'category';
+      return ConversationResponse(
+        message:
+            'I still need the main complaint category. Please choose the closest one.',
+        buttons:
+            _getCategories().map((c) => '${c['emoji']} ${c['name']}').toList(),
+        suggestions: const [],
+        step: 'category',
+        showInput: true,
+      );
+    }
+
+    if (subcategory.isEmpty) {
+      _currentStep = 'subcategory';
+      return ConversationResponse(
+        message:
+            'I matched the main category. Please choose the exact issue type.',
+        buttons: _getSubcategories(categoryKey),
+        suggestions: const [],
+        step: 'subcategory',
+        showInput: true,
+      );
+    }
+
+    if (description.isEmpty) {
+      _currentStep = 'problem';
+      return ConversationResponse(
+        message: 'I need one clear line describing the issue before filing it.',
+        buttons: const [],
+        suggestions: const [],
+        step: 'problem',
+        showInput: true,
+        inputPlaceholder: 'Describe the issue in one line...',
+      );
+    }
+
+    if ((_complaintData['date_noticed'] ?? '').toString().isEmpty) {
+      _currentStep = 'date';
+      return ConversationResponse(
+        message: 'When did you first notice this problem?',
+        buttons: const [
+          'Today',
+          'Yesterday',
+          '2-3 days ago',
+          'Last week',
+        ],
+        suggestions: const [],
+        step: 'date',
+        showInput: true,
+      );
+    }
+
+    if ((_complaintData['location'] ?? '').toString().trim().isEmpty) {
+      _currentStep = 'location';
+      return ConversationResponse(
+        message:
+            'Where exactly is this issue? Share the incident location, not your personal address.',
+        buttons: const [
+          'Use Current Location',
+          'Type Address',
+        ],
+        suggestions: const [],
+        step: 'location',
+        showInput: true,
+        inputPlaceholder: 'Area, street, landmark...',
+      );
+    }
+
+    return _showPersonalDetailsConfirmation();
+  }
+
   /// Get stats
   Map<String, dynamic> getConversationStats() {
     return {
-      'duration_seconds': DateTime.now().difference(_conversationStartTime).inSeconds,
+      'duration_seconds':
+          DateTime.now().difference(_conversationStartTime).inSeconds,
       'messages_count': _conversationHistory.length,
       'current_step': _currentStep,
       'sentiment': _sentiment,
@@ -3792,7 +3920,7 @@ Respond: VALID or INVALID|reason''';
       'retry_count': _retryCount,
     };
   }
-  
+
   /// Reset
   void reset() {
     _currentStep = 'language_selection';
@@ -3806,7 +3934,7 @@ Respond: VALID or INVALID|reason''';
     _userLanguage = 'en'; // Reset to default
     _currentChatId = null;
   }
-  
+
   /// Set the app's selected language for AI responses
   void setAppLanguage(String languageCode) {
     if (['en', 'hi', 'gu'].contains(languageCode)) {
@@ -3814,12 +3942,12 @@ Respond: VALID or INVALID|reason''';
       debugPrint('✅ App language set to: $languageCode');
     }
   }
-  
+
   /// Set smart mode
   void setSmartMode(bool enabled) {
     _isSmartMode = enabled;
   }
-  
+
   /// Get AI insights
   Map<String, dynamic> getAIInsights() {
     return {
@@ -3831,22 +3959,26 @@ Respond: VALID or INVALID|reason''';
       'ai_context': Map<String, dynamic>.from(_aiContext),
     };
   }
-  
+
   /// Check for duplicate complaints using backend API
-  Future<Map<String, dynamic>?> _checkDuplicateComplaint(double latitude, double longitude) async {
+  Future<Map<String, dynamic>?> _checkDuplicateComplaint(
+      double latitude, double longitude) async {
     try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.aiCheckDuplicate),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'latitude': latitude,
-          'longitude': longitude,
-          'category': _complaintData['category'],
-          'subcategory': _complaintData['subcategory'],
-          'description': _complaintData['description'] ?? _complaintData['raw_description'],
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.aiCheckDuplicate),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'latitude': latitude,
+              'longitude': longitude,
+              'category': _complaintData['category'],
+              'subcategory': _complaintData['subcategory'],
+              'description': _complaintData['description'] ??
+                  _complaintData['raw_description'],
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -3855,22 +3987,25 @@ Respond: VALID or INVALID|reason''';
     }
     return null;
   }
-  
+
   /// Get nearest department using backend API
-  Future<Map<String, dynamic>?> _getNearestDepartment(double latitude, double longitude) async {
+  Future<Map<String, dynamic>?> _getNearestDepartment(
+      double latitude, double longitude) async {
     try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.aiGetDepartment),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'latitude': latitude,
-          'longitude': longitude,
-          'category': _complaintData['category'],
-          'city': _userCity,
-          'state': _complaintData['state'] ?? '',
-        }),
-      ).timeout(const Duration(seconds: 10));
-      
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.aiGetDepartment),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'latitude': latitude,
+              'longitude': longitude,
+              'category': _complaintData['category'],
+              'city': _userCity,
+              'state': _complaintData['state'] ?? '',
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -3879,15 +4014,16 @@ Respond: VALID or INVALID|reason''';
     }
     return null;
   }
-  
+
   /// Set location coordinates
-  void setLocationCoordinates(double latitude, double longitude, {String? city, String? state}) {
+  void setLocationCoordinates(double latitude, double longitude,
+      {String? city, String? state}) {
     _complaintData['latitude'] = latitude;
     _complaintData['longitude'] = longitude;
     if (city != null) _complaintData['city'] = city;
     if (state != null) _complaintData['state'] = state;
   }
-  
+
   /// Localize text based on user language (English, Hindi, Gujarati, Hinglish)
   String _localize(String en, String hi, String gu, String hinglish) {
     switch (_userLanguage) {
@@ -3928,7 +4064,7 @@ class ConversationResponse {
     this.estimatedResolutionTime,
     this.aiInsights,
   });
-  
+
   Map<String, dynamic> toJson() {
     return {
       'message': message,
