@@ -2,84 +2,196 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint Location - Smart City</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Complaint Location - JanHelp</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        :root {
+            --primary-blue: #1E66F5;
+            --primary-dark: #154ec7;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background: #f5f7fa;
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
             padding: 20px;
+            position: relative;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
+        .bg-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            background-size: cover;
+            background-position: center;
+            filter: blur(4px);
         }
 
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        @media (min-width: 1025px) {
+            .bg-container { background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web"); }
+        }
+
+        @media (max-width: 1024px) {
+            .bg-container { background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile"); }
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(30, 102, 245, 0.2) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(118, 75, 162, 0.1) 100%);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
             border-radius: 20px;
-            padding: 20px;
+            padding: 20px 24px;
             margin-bottom: 20px;
             color: #fff;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 12px 30px rgba(30, 102, 245, 0.2);
         }
 
-        .complaint-info {
-            background: #fff;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        #map {
-            height: 500px;
-            width: 100%;
-            border-radius: 15px;
-            border: 1px solid #dee2e6;
+        .header-card h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
         }
 
         .back-btn {
             background: rgba(255, 255, 255, 0.2);
             color: #fff;
-            padding: 8px 15px;
+            padding: 8px 16px;
             border-radius: 10px;
             text-decoration: none;
             font-size: 13px;
             font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-btn:hover { background: rgba(255, 255, 255, 0.35); }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(30, 102, 245, 0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 12px;
+            border: 1.5px solid #f1f5f9;
+        }
+
+        .info-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        #map {
+            height: 450px;
+            width: 100%;
+            border-radius: 16px;
+            border: 1.5px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .info-grid { grid-template-columns: 1fr; }
+            #map { height: 350px; }
+            .header-card h1 { font-size: 18px; }
         }
     </style>
 </head>
 <body>
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
+
     <div class="container">
-        <div class="header">
-            <h1><i class="fa-solid fa-map-marked-alt"></i> Complaint Location</h1>
+        <div class="header-card">
+            <h1><i class="fa-solid fa-map-location-dot"></i> Complaint Location</h1>
             <a href="javascript:history.back()" class="back-btn">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </a>
         </div>
 
-        <div class="complaint-info">
-            <h3>{{ complaint.complaint_number }} - {{ complaint.title }}</h3>
-            <p><strong>Type:</strong> {{ complaint.get_complaint_type_display }}</p>
-            <p><strong>Status:</strong> {{ complaint.get_work_status_display }}</p>
-            <p><strong>Address:</strong> {{ complaint.address }}</p>
-            <p><strong>Coordinates:</strong> {{ complaint.latitude }}, {{ complaint.longitude }}</p>
+        <div class="glass-card">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Complaint ID</div>
+                    <div class="info-value">{{ complaint.complaint_number }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Title</div>
+                    <div class="info-value">{{ complaint.title }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Type</div>
+                    <div class="info-value">{{ complaint.get_complaint_type_display }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Status</div>
+                    <div class="info-value">{{ complaint.get_work_status_display }}</div>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <div class="info-label">Coordinates</div>
+                    <div class="info-value">{{ complaint.latitude }}, {{ complaint.longitude }}</div>
+                </div>
+            </div>
         </div>
 
         <div id="map"></div>
     </div>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
@@ -88,15 +200,16 @@
         function initMap() {
             const lat = {{ complaint.latitude }};
             const lng = {{ complaint.longitude }};
-            
+
             if (!lat || !lng) return;
 
             const map = L.map('map').setView([lat, lng], 16);
-            
+
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
             }).addTo(map);
-            
+
             L.marker([lat, lng]).addTo(map)
                 .bindPopup('<b>{{ complaint.complaint_number }}</b><br>{{ complaint.title }}')
                 .openPopup();

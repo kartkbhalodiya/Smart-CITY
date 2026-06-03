@@ -99,7 +99,7 @@
     .filter-select:focus {
         outline: none;
         border-color: #667eea;
-        background: white;
+        background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
         box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
 
@@ -108,11 +108,11 @@
         color: white;
         border: none;
         padding: 0.9rem 2.5rem;
-        border-radius: 12px;
+        border-radius: 16px;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.3s;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 24px rgba(30, 102, 245, 0.06);
     }
 
     .btn-filter:hover {
@@ -190,7 +190,7 @@
 
         .filter-select {
             padding: 0.75rem 0.9rem;
-            border-radius: 12px;
+            border-radius: 16px;
         }
 
         .filter-actions {
@@ -236,9 +236,9 @@
         }
 
         tbody tr {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
             padding: 0.85rem;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
         }

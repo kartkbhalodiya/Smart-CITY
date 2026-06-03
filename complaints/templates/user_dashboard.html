@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -182,7 +182,7 @@
         }
 
         .stat-card {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-radius: 20px;
             padding: 25px 20px;
             text-align: center;
@@ -222,7 +222,7 @@
         }
 
         .service-card {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-radius: 20px;
             padding: 30px 20px;
             text-align: center;
@@ -264,8 +264,8 @@
             height: 60px;
             border-radius: 14px;
             object-fit: cover;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
         }
 
         .service-card .title {
@@ -277,7 +277,7 @@
         }
 
         .complaints-section {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-radius: 20px;
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -509,7 +509,7 @@
             {% endif %}
         </div>
         <a href="tel:112" class="emergency-btn sos">
-                <div class="emergency-icon">ðŸš¨</div>
+                <div class="emergency-icon">🚨</div>
                 <div class="emergency-text">
                     <div class="title">Emergency</div>
                     <div class="subtitle">Call 112</div>
@@ -530,108 +530,108 @@
         // Language translation system
         const translations = {
             'hi': {
-                'Guest User': 'à¤…à¤¤à¤¿à¤¥à¤¿ à¤‰à¤ªà¤¯à¥‹à¤—à¤•à¤°à¥à¤¤à¤¾',
-                'Guest Mode': 'à¤…à¤¤à¤¿à¤¥à¤¿ à¤®à¥‹à¤¡',
-                'Track Your Complaints': 'à¤…à¤ªà¤¨à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤à¥‹à¤‚ à¤•à¥‹ à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚',
-                'Track': 'à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚',
-                'Emergency': 'à¤†à¤ªà¤¾à¤¤à¤•à¤¾à¤²',
-                'Call 112': '112 à¤ªà¤° à¤•à¥‰à¤² à¤•à¤°à¥‡à¤‚',
-                'Total Cases': 'à¤•à¥à¤² à¤®à¤¾à¤®à¤²à¥‡',
-                'Active': 'à¤¸à¤•à¥à¤°à¤¿à¤¯',
-                'Police': 'à¤ªà¥à¤²à¤¿à¤¸',
-                'Traffic': 'à¤¯à¤¾à¤¤à¤¾à¤¯à¤¾à¤¤',
-                'Construction': 'à¤¨à¤¿à¤°à¥à¤®à¤¾à¤£',
-                'Water Supply': 'à¤œà¤² à¤†à¤ªà¥‚à¤°à¥à¤¤à¤¿',
-                'Electricity': 'à¤¬à¤¿à¤œà¤²à¥€',
-                'Garbage': 'à¤•à¤šà¤°à¤¾',
-                'Road/Pothole': 'à¤¸à¤¡à¤¼à¤•/à¤—à¤¡à¥à¤¢à¤¾',
-                'Drainage': 'à¤œà¤² à¤¨à¤¿à¤•à¤¾à¤¸à¥€',
-                'Illegal Activity': 'à¤…à¤µà¥ˆà¤§ à¤—à¤¤à¤¿à¤µà¤¿à¤§à¤¿',
-                'Transportation': 'à¤ªà¤°à¤¿à¤µà¤¹à¤¨',
-                'Cyber Fraud': 'à¤¸à¤¾à¤‡à¤¬à¤° à¤§à¥‹à¤–à¤¾à¤§à¤¡à¤¼à¥€',
-                'Other': 'à¤…à¤¨à¥à¤¯',
-                'Recent Complaints': 'à¤¹à¤¾à¤² à¤•à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤à¥‡à¤‚',
-                'View Details': 'à¤µà¤¿à¤µà¤°à¤£ à¤¦à¥‡à¤–à¥‡à¤‚',
-                'No complaints yet. Start by filing your first complaint.': 'à¤…à¤­à¥€ à¤¤à¤• à¤•à¥‹à¤ˆ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤ à¤¨à¤¹à¥€à¤‚à¥¤ à¤…à¤ªà¤¨à¥€ à¤ªà¤¹à¤²à¥€ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤ à¤¦à¤°à¥à¤œ à¤•à¤°à¤•à¥‡ à¤¶à¥à¤°à¥à¤†à¤¤ à¤•à¤°à¥‡à¤‚à¥¤',
-                'New Complaint': 'à¤¨à¤ˆ à¤¶à¤¿à¤•à¤¾à¤¯à¤¤'
+                'Guest User': 'अतिथि उपयोगकर्ता',
+                'Guest Mode': 'अतिथि मोड',
+                'Track Your Complaints': 'अपनी शिकायतों को ट्रैक करें',
+                'Track': 'ट्रैक करें',
+                'Emergency': 'आपातकाल',
+                'Call 112': '112 पर कॉल करें',
+                'Total Cases': 'कुल मामले',
+                'Active': 'सक्रिय',
+                'Police': 'पुलिस',
+                'Traffic': 'यातायात',
+                'Construction': 'निर्माण',
+                'Water Supply': 'जल आपूर्ति',
+                'Electricity': 'बिजली',
+                'Garbage': 'कचरा',
+                'Road/Pothole': 'सड़क/गड्ढा',
+                'Drainage': 'जल निकासी',
+                'Illegal Activity': 'अवैध गतिविधि',
+                'Transportation': 'परिवहन',
+                'Cyber Fraud': 'साइबर धोखाधड़ी',
+                'Other': 'अन्य',
+                'Recent Complaints': 'हाल की शिकायतें',
+                'View Details': 'विवरण देखें',
+                'No complaints yet. Start by filing your first complaint.': 'अभी तक कोई शिकायत नहीं। अपनी पहली शिकायत दर्ज करके शुरुआत करें।',
+                'New Complaint': 'नई शिकायत'
             },
             'gu': {
-                'Guest User': 'àª®àª¹à«‡àª®àª¾àª¨ àªµàªªàª°àª¾àª¶àª•àª°à«àª¤àª¾',
-                'Guest Mode': 'àª®àª¹à«‡àª®àª¾àª¨ àª®à«‹àª¡',
-                'Track Your Complaints': 'àª¤àª®àª¾àª°à«€ àª«àª°àª¿àª¯àª¾àª¦à«‹àª¨à«‡ àªŸà«àª°à«‡àª• àª•àª°à«‹',
-                'Track': 'àªŸà«àª°à«‡àª• àª•àª°à«‹',
-                'Emergency': 'àª•àªŸà«‹àª•àªŸà«€',
-                'Call 112': '112 àªªàª° àª•à«‰àª² àª•àª°à«‹',
-                'Total Cases': 'àª•à«àª² àª•à«‡àª¸à«‹',
-                'Active': 'àª¸àª•à«àª°àª¿àª¯',
-                'Police': 'àªªà«‹àª²à«€àª¸',
-                'Traffic': 'àªŸà«àª°àª¾àª«àª¿àª•',
-                'Construction': 'àª¬àª¾àª‚àª§àª•àª¾àª®',
-                'Water Supply': 'àªªàª¾àª£à«€ àªªà«àª°àªµàª à«‹',
-                'Electricity': 'àªµà«€àªœàª³à«€',
-                'Garbage': 'àª•àªšàª°à«‹',
-                'Road/Pothole': 'àª°àª¸à«àª¤à«‹/àª–àª¾àª¡à«‹',
-                'Drainage': 'àª¡à«àª°à«‡àª¨à«‡àªœ',
-                'Illegal Activity': 'àª—à«‡àª°àª•àª¾àª¯àª¦à«‡àª¸àª° àªªà«àª°àªµà«ƒàª¤à«àª¤àª¿',
-                'Transportation': 'àªªàª°àª¿àªµàª¹àª¨',
-                'Cyber Fraud': 'àª¸àª¾àª¯àª¬àª° àª›à«‡àª¤àª°àªªàª¿àª‚àª¡à«€',
-                'Other': 'àª…àª¨à«àª¯',
-                'Recent Complaints': 'àª¤àª¾àªœà«‡àª¤àª°àª¨à«€ àª«àª°àª¿àª¯àª¾àª¦à«‹',
-                'View Details': 'àªµàª¿àª—àª¤à«‹ àªœà«àª“',
-                'No complaints yet. Start by filing your first complaint.': 'àª¹àªœà« àª¸à«àª§à«€ àª•à«‹àªˆ àª«àª°àª¿àª¯àª¾àª¦ àª¨àª¥à«€. àª¤àª®àª¾àª°à«€ àªªà«àª°àª¥àª® àª«àª°àª¿àª¯àª¾àª¦ àª¦àª¾àª–àª² àª•àª°à«€àª¨à«‡ àª¶àª°à«‚àª†àª¤ àª•àª°à«‹.',
-                'New Complaint': 'àª¨àªµà«€ àª«àª°àª¿àª¯àª¾àª¦'
+                'Guest User': 'મહેમાન વપરાશકર્તા',
+                'Guest Mode': 'મહેમાન મોડ',
+                'Track Your Complaints': 'તમારી ફરિયાદોને ટ્રેક કરો',
+                'Track': 'ટ્રેક કરો',
+                'Emergency': 'કટોકટી',
+                'Call 112': '112 પર કૉલ કરો',
+                'Total Cases': 'કુલ કેસો',
+                'Active': 'સક્રિય',
+                'Police': 'પોલીસ',
+                'Traffic': 'ટ્રાફિક',
+                'Construction': 'બાંધકામ',
+                'Water Supply': 'પાણી પુરવઠો',
+                'Electricity': 'વીજળી',
+                'Garbage': 'કચરો',
+                'Road/Pothole': 'રસ્તો/ખાડો',
+                'Drainage': 'ડ્રેનેજ',
+                'Illegal Activity': 'ગેરકાયદેસર પ્રવૃત્તિ',
+                'Transportation': 'પરિવહન',
+                'Cyber Fraud': 'સાયબર છેતરપિંડી',
+                'Other': 'અન્ય',
+                'Recent Complaints': 'તાજેતરની ફરિયાદો',
+                'View Details': 'વિગતો જુઓ',
+                'No complaints yet. Start by filing your first complaint.': 'હજુ સુધી કોઈ ફરિયાદ નથી. તમારી પ્રથમ ફરિયાદ દાખલ કરીને શરૂઆત કરો.',
+                'New Complaint': 'નવી ફરિયાદ'
             },
             'bn': {
-                'Guest User': 'à¦…à¦¤à¦¿à¦¥à¦¿ à¦¬à§à¦¯à¦¬à¦¹à¦¾à¦°à¦•à¦¾à¦°à§€',
-                'Guest Mode': 'à¦…à¦¤à¦¿à¦¥à¦¿ à¦®à§‹à¦¡',
-                'Track Your Complaints': 'à¦†à¦ªà¦¨à¦¾à¦° à¦…à¦­à¦¿à¦¯à§‹à¦— à¦Ÿà§à¦°à§à¦¯à¦¾à¦• à¦•à¦°à§à¦¨',
-                'Track': 'à¦Ÿà§à¦°à§à¦¯à¦¾à¦• à¦•à¦°à§à¦¨',
-                'Emergency': 'à¦œà¦°à§à¦°à¦¿',
-                'Call 112': 'à§§à§§à§¨ à¦ à¦•à¦² à¦•à¦°à§à¦¨',
-                'Total Cases': 'à¦®à§‹à¦Ÿ à¦®à¦¾à¦®à¦²à¦¾',
-                'Active': 'à¦¸à¦•à§à¦°à¦¿à¦¯à¦¼',
-                'Police': 'à¦ªà§à¦²à¦¿à¦¶',
-                'Traffic': 'à¦Ÿà§à¦°à¦¾à¦«à¦¿à¦•',
-                'Construction': 'à¦¨à¦¿à¦°à§à¦®à¦¾à¦£',
-                'Water Supply': 'à¦ªà¦¾à¦¨à¦¿ à¦¸à¦°à¦¬à¦°à¦¾à¦¹',
-                'Electricity': 'à¦¬à¦¿à¦¦à§à¦¯à§à§Ž',
-                'Garbage': 'à¦†à¦¬à¦°à§à¦œà¦¨à¦¾',
-                'Road/Pothole': 'à¦°à¦¾à¦¸à§à¦¤à¦¾/à¦—à¦°à§à¦¤',
-                'Drainage': 'à¦¨à¦¿à¦•à¦¾à¦¶à§€',
-                'Illegal Activity': 'à¦…à¦¬à§ˆà¦§ à¦•à¦¾à¦°à§à¦¯à¦•à¦²à¦¾à¦ª',
-                'Transportation': 'à¦ªà¦°à¦¿à¦¬à¦¹à¦¨',
-                'Cyber Fraud': 'à¦¸à¦¾à¦‡à¦¬à¦¾à¦° à¦œà¦¾à¦²à¦¿à¦¯à¦¼à¦¾à¦¤à¦¿',
-                'Other': 'à¦…à¦¨à§à¦¯à¦¾à¦¨à§à¦¯',
-                'Recent Complaints': 'à¦¸à¦¾à¦®à§à¦ªà§à¦°à¦¤à¦¿à¦• à¦…à¦­à¦¿à¦¯à§‹à¦—',
-                'View Details': 'à¦¬à¦¿à¦¸à§à¦¤à¦¾à¦°à¦¿à¦¤ à¦¦à§‡à¦–à§à¦¨',
-                'No complaints yet. Start by filing your first complaint.': 'à¦à¦–à¦¨à¦“ à¦•à§‹à¦¨à§‹ à¦…à¦­à¦¿à¦¯à§‹à¦— à¦¨à§‡à¦‡à¥¤ à¦†à¦ªà¦¨à¦¾à¦° à¦ªà§à¦°à¦¥à¦® à¦…à¦­à¦¿à¦¯à§‹à¦— à¦¦à¦¾à¦–à¦¿à¦² à¦•à¦°à§‡ à¦¶à§à¦°à§ à¦•à¦°à§à¦¨à¥¤',
-                'New Complaint': 'à¦¨à¦¤à§à¦¨ à¦…à¦­à¦¿à¦¯à§‹à¦—'
+                'Guest User': 'অতিথি ব্যবহারকারী',
+                'Guest Mode': 'অতিথি মোড',
+                'Track Your Complaints': 'আপনার অভিযোগ ট্র্যাক করুন',
+                'Track': 'ট্র্যাক করুন',
+                'Emergency': 'জরুরি',
+                'Call 112': '১১২ এ কল করুন',
+                'Total Cases': 'মোট মামলা',
+                'Active': 'সক্রিয়',
+                'Police': 'পুলিশ',
+                'Traffic': 'ট্রাফিক',
+                'Construction': 'নির্মাণ',
+                'Water Supply': 'পানি সরবরাহ',
+                'Electricity': 'বিদ্যুৎ',
+                'Garbage': 'আবর্জনা',
+                'Road/Pothole': 'রাস্তা/গর্ত',
+                'Drainage': 'নিকাশী',
+                'Illegal Activity': 'অবৈধ কার্যকলাপ',
+                'Transportation': 'পরিবহন',
+                'Cyber Fraud': 'সাইবার জালিয়াতি',
+                'Other': 'অন্যান্য',
+                'Recent Complaints': 'সাম্প্রতিক অভিযোগ',
+                'View Details': 'বিস্তারিত দেখুন',
+                'No complaints yet. Start by filing your first complaint.': 'এখনও কোনো অভিযোগ নেই। আপনার প্রথম অভিযোগ দাখিল করে শুরু করুন।',
+                'New Complaint': 'নতুন অভিযোগ'
             },
             'ta': {
-                'Guest User': 'à®µà®¿à®°à¯à®¨à¯à®¤à®¿à®©à®°à¯ à®ªà®¯à®©à®°à¯',
-                'Guest Mode': 'à®µà®¿à®°à¯à®¨à¯à®¤à®¿à®©à®°à¯ à®ªà®¯à®©à¯à®®à¯à®±à¯ˆ',
-                'Track Your Complaints': 'à®‰à®™à¯à®•à®³à¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯ˆà®•à¯ à®•à®£à¯à®•à®¾à®£à®¿à®•à¯à®•à®µà¯à®®à¯',
-                'Track': 'à®•à®£à¯à®•à®¾à®£à®¿à®•à¯à®•à®µà¯à®®à¯',
-                'Emergency': 'à®…à®µà®šà®°à®¨à®¿à®²à¯ˆ',
-                'Call 112': '112 à® à®…à®´à¯ˆà®•à¯à®•à®µà¯à®®à¯',
-                'Total Cases': 'à®®à¯Šà®¤à¯à®¤ à®µà®´à®•à¯à®•à¯à®•à®³à¯',
-                'Active': 'à®šà¯†à®¯à®²à®¿à®²à¯',
-                'Police': 'à®•à®¾à®µà®²à¯à®¤à¯à®±à¯ˆ',
-                'Traffic': 'à®ªà¯‹à®•à¯à®•à¯à®µà®°à®¤à¯à®¤à¯',
-                'Construction': 'à®•à®Ÿà¯à®Ÿà¯à®®à®¾à®©à®®à¯',
-                'Water Supply': 'à®¨à¯€à®°à¯ à®µà®´à®™à¯à®•à®²à¯',
-                'Electricity': 'à®®à®¿à®©à¯à®šà®¾à®°à®®à¯',
-                'Garbage': 'à®•à¯à®ªà¯à®ªà¯ˆ',
-                'Road/Pothole': 'à®šà®¾à®²à¯ˆ/à®•à¯à®´à®¿',
-                'Drainage': 'à®µà®Ÿà®¿à®•à®¾à®²à¯',
-                'Illegal Activity': 'à®šà®Ÿà¯à®Ÿà®µà®¿à®°à¯‹à®¤ à®šà¯†à®¯à®²à¯à®ªà®¾à®Ÿà¯',
-                'Transportation': 'à®ªà¯‹à®•à¯à®•à¯à®µà®°à®¤à¯à®¤à¯',
-                'Cyber Fraud': 'à®‡à®£à¯ˆà®¯ à®®à¯‹à®šà®Ÿà®¿',
-                'Other': 'à®®à®±à¯à®±à®µà¯ˆ',
-                'Recent Complaints': 'à®šà®®à¯€à®ªà®¤à¯à®¤à®¿à®¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯',
-                'View Details': 'à®µà®¿à®µà®°à®™à¯à®•à®³à¯ˆà®ªà¯ à®ªà®¾à®°à¯à®•à¯à®•à®µà¯à®®à¯',
-                'No complaints yet. Start by filing your first complaint.': 'à®‡à®©à¯à®©à¯à®®à¯ à®ªà¯à®•à®¾à®°à¯à®•à®³à¯ à®‡à®²à¯à®²à¯ˆ. à®‰à®™à¯à®•à®³à¯ à®®à¯à®¤à®²à¯ à®ªà¯à®•à®¾à®°à¯ˆà®ªà¯ à®ªà®¤à®¿à®µà¯ à®šà¯†à®¯à¯à®¤à¯ à®¤à¯Šà®Ÿà®™à¯à®•à®µà¯à®®à¯.',
-                'New Complaint': 'à®ªà¯à®¤à®¿à®¯ à®ªà¯à®•à®¾à®°à¯'
+                'Guest User': 'விருந்தினர் பயனர்',
+                'Guest Mode': 'விருந்தினர் பயன்முறை',
+                'Track Your Complaints': 'உங்கள் புகார்களைக் கண்காணிக்கவும்',
+                'Track': 'கண்காணிக்கவும்',
+                'Emergency': 'அவசரநிலை',
+                'Call 112': '112 ஐ அழைக்கவும்',
+                'Total Cases': 'மொத்த வழக்குகள்',
+                'Active': 'செயலில்',
+                'Police': 'காவல்துறை',
+                'Traffic': 'போக்குவரத்து',
+                'Construction': 'கட்டுமானம்',
+                'Water Supply': 'நீர் வழங்கல்',
+                'Electricity': 'மின்சாரம்',
+                'Garbage': 'குப்பை',
+                'Road/Pothole': 'சாலை/குழி',
+                'Drainage': 'வடிகால்',
+                'Illegal Activity': 'சட்டவிரோத செயல்பாடு',
+                'Transportation': 'போக்குவரத்து',
+                'Cyber Fraud': 'இணைய மோசடி',
+                'Other': 'மற்றவை',
+                'Recent Complaints': 'சமீபத்திய புகார்கள்',
+                'View Details': 'விவரங்களைப் பார்க்கவும்',
+                'No complaints yet. Start by filing your first complaint.': 'இன்னும் புகார்கள் இல்லை. உங்கள் முதல் புகாரைப் பதிவு செய்து தொடங்கவும்.',
+                'New Complaint': 'புதிய புகார்'
             }
         };
 
@@ -735,7 +735,7 @@
             {% endfor %}
         {% else %}
             <div class="empty-state">
-                <div class="icon">ðŸ“‚</div>
+                <div class="icon">📂</div>
                 <p>No complaints yet. Start by filing your first complaint.</p>
                 <a href="{% url 'submit_complaint' %}{% if is_guest %}?guest=true{% endif %}">
                     <i class="fa-solid fa-plus"></i> New Complaint

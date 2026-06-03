@@ -6,57 +6,58 @@
 <div style="max-width: 900px; margin: 0 auto;">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-            <h1 style="font-size: 2rem; color: var(--secondary);">Complaint Details</h1>
-            <p style="color: var(--text-muted);">Reference ID: #{{ complaint.id|stringformat:"05d" }}</p>
+            <h1 class="page-title">Complaint Details</h1>
+            <p class="page-subtitle">Reference ID: #{{ complaint.id|stringformat:"05d" }}</p>
         </div>
         <a href="javascript:history.back()" class="btn btn-outline" style="padding: 0.5rem 1rem;">
-            ← Back to Dashboard
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-        <div class="card" style="margin-bottom: 0;">
-            <h3 style="margin-bottom: 1.5rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">Information</h3>
-            
+        <div class="glass-card" style="margin-bottom: 0;">
+            <h3 style="margin-bottom: 1.5rem; color: var(--primary-blue); border-bottom: 1.5px solid rgba(0,0,0,0.08); padding-bottom: 0.75rem; font-family: 'Poppins', sans-serif;">
+                <i class="fa-solid fa-circle-info" style="margin-right: 0.5rem;"></i>Information
+            </h3>
+
             <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Status</label>
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Status</label>
                 <span class="status-badge status-{{ complaint.status }}" style="display: inline-block; margin-top: 0.25rem;">
                     {{ complaint.get_status_display }}
                 </span>
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Category</label>
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Category</label>
                 <div style="font-weight: 600; margin-top: 0.25rem;">{{ complaint.get_complaint_type_display }}</div>
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Title</label>
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Title</label>
                 <div style="font-weight: 600; margin-top: 0.25rem; font-size: 1.1rem;">{{ complaint.title }}</div>
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Description</label>
-                <div style="margin-top: 0.25rem; color: var(--text);">{{ complaint.description }}</div>
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Description</label>
+                <div style="margin-top: 0.25rem;">{{ complaint.description }}</div>
             </div>
 
             <div style="margin-bottom: 0;">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Date Submitted</label>
+                <label style="display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Date Submitted</label>
                 <div style="margin-top: 0.25rem;">{{ complaint.created_at|date:"F d, Y" }} at {{ complaint.created_at|date:"H:i" }}</div>
             </div>
         </div>
 
-        <div class="card" style="margin-bottom: 0;">
-            <h3 style="margin-bottom: 1.5rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">GPS Location</h3>
-            
-            <div id="map" style="width: 100%; height: 300px; background: #eee; border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border);"></div>
+        <div class="glass-card" style="margin-bottom: 0;">
+            <h3 style="margin-bottom: 1.5rem; color: var(--primary-blue); border-bottom: 1.5px solid rgba(0,0,0,0.08); padding-bottom: 0.75rem; font-family: 'Poppins', sans-serif;">
+                <i class="fa-solid fa-map-location-dot" style="margin-right: 0.5rem;"></i>GPS Location
+            </h3>
 
-            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-                <label style="display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">Quick Navigation</label>
-                <a href="https://www.google.com/maps?q={{ complaint.latitude }},{{ complaint.longitude }}" target="_blank" class="btn btn-success" style="width: 100%; text-decoration: none; text-align: center;">
-                    🚀 Open in Google Maps
-                </a>
-            </div>
+            <div id="map" style="width: 100%; height: 300px; border-radius: 12px; margin-bottom: 1rem; border: 1.5px solid #e2e8f0;"></div>
+
+            <a href="https://www.google.com/maps?q={{ complaint.latitude }},{{ complaint.longitude }}" target="_blank" class="btn btn-success" style="width: 100%; text-decoration: none; text-align: center;">
+                <i class="fa-solid fa-map-pin"></i> Open in Google Maps
+            </a>
         </div>
     </div>
 </div>
@@ -67,11 +68,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const lat = {{ complaint.latitude }};
     const lng = {{ complaint.longitude }};
-    
+
     if (lat && lng) {
         const map = L.map('map').setView([lat, lng], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
         L.marker([lat, lng]).addTo(map).bindPopup("{{ complaint.title }}").openPopup();
     }

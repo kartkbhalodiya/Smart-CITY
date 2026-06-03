@@ -2,51 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Select Category - JanHelp</title>
     <link rel="icon" type="image/png" href="https://res.cloudinary.com/dk1q50evg/image/upload/logo">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #2B6CF6;
-            --bg-white: #FFFFFF;
-            --bg-section: #F7F9FC;
-            --text-dark: #1a202c;
-            --text-muted: #718096;
-            --border-radius: 16px;
-            --card-shadow: 0 6px 20px rgba(0,0,0,0.06);
+            --primary-blue: #1E66F5;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg-section);
+            background: #f8fafc;
             color: var(--text-dark);
             padding-bottom: 80px;
+            position: relative;
         }
 
-        /* Header */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            background-size: cover;
+            background-position: center;
+            filter: blur(4px);
+        }
+
+        @media (min-width: 1025px) {
+            body::before { background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web"); }
+        }
+
+        @media (max-width: 1024px) {
+            body::before { background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile"); }
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(30, 102, 245, 0.2) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(118, 75, 162, 0.1) 100%);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
         .header {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg-white);
+            top: 0; left: 0; right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             padding: 16px;
             display: flex;
             align-items: center;
             gap: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 4px 20px rgba(30, 102, 245, 0.05);
             z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         .back-btn {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border-radius: 50%;
-            background: var(--bg-section);
+            background: #f1f5f9;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -54,7 +79,10 @@
             border: none;
             color: var(--text-dark);
             font-size: 18px;
+            transition: all 0.3s;
         }
+
+        .back-btn:hover { background: #e2e8f0; }
 
         .header-title {
             font-family: 'Poppins', sans-serif;
@@ -63,10 +91,12 @@
             color: var(--text-dark);
         }
 
-        /* Main Content */
         .main-content {
             margin-top: 72px;
             padding: 24px 16px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .page-title {
@@ -83,7 +113,6 @@
             margin-bottom: 24px;
         }
 
-        /* Categories Grid */
         .categories-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -91,49 +120,44 @@
         }
 
         .category-card {
-            background: var(--bg-white);
-            border-radius: var(--border-radius);
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
             padding: 24px 16px;
-            box-shadow: var(--card-shadow);
+            box-shadow: 0 8px 24px rgba(30, 102, 245, 0.06);
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             color: var(--text-dark);
-            border: 2px solid transparent;
-        }
-
-        .category-card:active {
-            transform: scale(0.97);
         }
 
         .category-card:hover {
-            border-color: var(--primary-color);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(30, 102, 245, 0.15);
+            border-color: var(--primary-blue);
         }
 
-        .category-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
+        .category-card:active { transform: scale(0.97); }
 
-        .category-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
+        .category-icon { font-size: 48px; margin-bottom: 12px; }
 
-        /* Bottom Navigation */
+        .category-name { font-size: 14px; font-weight: 600; color: var(--text-dark); }
+
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg-white);
+            bottom: 0; left: 0; right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             padding: 12px 16px;
             display: flex;
             justify-content: space-around;
             box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
             z-index: 1000;
+            border-top: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         .nav-item {
@@ -145,61 +169,28 @@
             color: var(--text-muted);
             padding: 8px 16px;
             border-radius: 12px;
+            transition: all 0.3s;
         }
 
         .nav-item.active {
-            color: var(--primary-color);
-            background: #E3F2FD;
+            color: var(--primary-blue);
+            background: rgba(30, 102, 245, 0.08);
         }
 
-        .nav-item i {
-            font-size: 24px;
-        }
+        .nav-item i { font-size: 22px; }
+        .nav-item span { font-size: 11px; font-weight: 600; }
 
-        .nav-item span {
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        /* Responsive */
         @media (min-width: 768px) {
-            .main-content {
-                max-width: 1200px;
-                margin-left: auto;
-                margin-right: auto;
-                padding: 32px;
-                margin-top: 88px;
-            }
-
-            .categories-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 24px;
-            }
-
-            .category-card {
-                padding: 32px 20px;
-            }
-
-            .category-icon {
-                font-size: 56px;
-            }
-
-            .category-name {
-                font-size: 16px;
-            }
-
-            .bottom-nav {
-                display: none;
-            }
-
-            body {
-                padding-bottom: 0;
-            }
+            .categories-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; }
+            .category-card { padding: 32px 20px; }
+            .category-icon { font-size: 56px; }
+            .category-name { font-size: 16px; }
+            .bottom-nav { display: none; }
+            body { padding-bottom: 0; }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <button class="back-btn" onclick="window.history.back()">
             <i class="fa-solid fa-arrow-left"></i>
@@ -207,7 +198,6 @@
         <h1 class="header-title">Select Category</h1>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <h2 class="page-title">What do you want to report?</h2>
         <p class="page-subtitle">Choose a category to submit your complaint</p>
@@ -217,57 +207,46 @@
                 <div class="category-icon">🚔</div>
                 <div class="category-name">Police</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=traffic{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">🚦</div>
                 <div class="category-name">Traffic</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=water{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">💧</div>
                 <div class="category-name">Water Supply</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=garbage{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">🗑️</div>
                 <div class="category-name">Garbage</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=electricity{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">⚡</div>
                 <div class="category-name">Electricity</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=construction{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">🏗️</div>
                 <div class="category-name">Construction</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=road{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">🚧</div>
                 <div class="category-name">Road</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=drainage{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">💧</div>
                 <div class="category-name">Drainage</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=illegal{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">🏪</div>
                 <div class="category-name">Illegal Activity</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=transportation{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">🚌</div>
                 <div class="category-name">Transportation</div>
             </a>
-
             <a href="tel:1930" class="category-card">
                 <div class="category-icon">🛡️</div>
                 <div class="category-name">Cyber Crime</div>
             </a>
-
             <a href="{% url 'submit_complaint' %}?type=other{% if is_guest %}&guest=true{% endif %}" class="category-card">
                 <div class="category-icon">📋</div>
                 <div class="category-name">Other</div>
@@ -275,7 +254,6 @@
         </div>
     </main>
 
-    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
         <a href="{% url 'user_dashboard' %}" class="nav-item">
             <i class="fa-solid fa-house"></i>

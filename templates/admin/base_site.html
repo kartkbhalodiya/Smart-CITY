@@ -16,17 +16,50 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     :root {
-        --primary: #0056b3;
-        --secondary: #34495e;
-        --header-bg: #ffffff;
-        --header-color: #333;
+        --primary: #1E66F5;
+        --secondary: #0f172a;
+    }
+
+    body {
+        background: #f8fafc !important;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: -2;
+        background-size: cover;
+        background-position: center;
+        filter: blur(4px);
+    }
+
+    @media (min-width: 1025px) {
+        body::before { background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-web"); }
+    }
+
+    @media (max-width: 1024px) {
+        body::before { background-image: url("https://res.cloudinary.com/dk1q50evg/image/upload/login-bg-mobile"); }
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: -1;
+        background: linear-gradient(135deg, rgba(30, 102, 245, 0.2) 0%, rgba(102, 126, 234, 0.15) 50%, rgba(118, 75, 162, 0.1) 100%);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
     }
 
     #header {
-        background: #ffffff !important;
-        color: #333 !important;
-        border-bottom: 1px solid #dee2e6;
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        color: #0f172a !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5);
         padding: 10px 40px;
+        box-shadow: 0 4px 20px rgba(30, 102, 245, 0.05);
     }
 
     #header a:link, #header a:visited {
@@ -41,13 +74,16 @@
     }
 
     .module h2, .module caption, .inline-group h2 {
-        background: var(--secondary) !important;
+        background: var(--primary) !important;
+        font-family: 'Poppins', sans-serif;
     }
 
     div.breadcrumbs {
-        background: #f8f9fa !important;
-        border-bottom: 1px solid #dee2e6;
-        color: #636e72 !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+        color: #64748b !important;
     }
 
     div.breadcrumbs a {
@@ -55,31 +91,65 @@
     }
 
     .button, input[type=submit], input[type=button], .submit-row input, a.button {
-        background: var(--primary) !important;
-        border-radius: 8px !important;
+        background: linear-gradient(135deg, var(--primary) 0%, #154ec7 100%) !important;
+        border-radius: 10px !important;
         padding: 10px 20px !important;
         font-weight: 700 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(30, 102, 245, 0.2);
     }
 
     .button.default, input[type=submit].default, .submit-row input.default {
-        background: var(--primary) !important;
+        background: linear-gradient(135deg, var(--primary) 0%, #154ec7 100%) !important;
+    }
+
+    #content {
+        padding: 40px !important;
     }
 
     #content-main {
-        padding: 40px !important;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-radius: 16px;
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 8px 24px rgba(30, 102, 245, 0.06);
+        padding: 24px !important;
+        margin: 0 auto;
     }
 
     .module {
         border-radius: 12px !important;
         overflow: hidden;
-        border: 1px solid #dee2e6 !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+        box-shadow: 0 4px 12px rgba(30, 102, 245, 0.04);
+        background: rgba(255, 255, 255, 0.9);
     }
 
     #user-tools {
         font-weight: 600;
+    }
+
+    .form-row {
+        border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+    }
+
+    input, textarea, select {
+        border-radius: 10px !important;
+        border: 1.5px solid #e2e8f0 !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 4px rgba(30, 102, 245, 0.1) !important;
+    }
+
+    @media (max-width: 768px) {
+        #header { padding: 10px 20px; }
+        #content { padding: 20px !important; }
+        #content-main { padding: 16px !important; border-radius: 12px; }
     }
 </style>
 {% endblock %}

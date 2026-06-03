@@ -12,11 +12,13 @@
     }
 
     .info-section {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
         padding: 2rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        box-shadow: 0 8px 24px rgba(30, 102, 245, 0.06);
     }
 
     .info-section h3 {
@@ -68,7 +70,7 @@
 
     .meta-card {
         background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
         border-radius: 10px;
         padding: 0.9rem 1rem;
     }
@@ -106,7 +108,7 @@
     .issue-subject-card,
     .issue-description-card {
         border: 1px solid #dbe3ee;
-        border-radius: 12px;
+        border-radius: 16px;
         background: #f8fafc;
         padding: 1rem 1.1rem;
     }
@@ -163,8 +165,8 @@
     }
 
     .issue-description-value {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
         border-radius: 10px;
         padding: 1rem 1.1rem;
         color: #1e293b;
@@ -174,9 +176,9 @@
     }
 
     .status-bar {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
         padding: 1.25rem 2rem;
         display: flex;
         justify-content: space-between;
@@ -228,7 +230,7 @@
     .btn-map {
         background: #f1f5f9;
         color: #475569;
-        border: 1px solid #e2e8f0;
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
     }
 
     .btn-map:hover {
@@ -286,7 +288,7 @@
     .media-item {
         position: relative;
         overflow: hidden;
-        border-radius: 12px;
+        border-radius: 16px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         transition: transform 0.2s ease;
         background: #f8fafc;
@@ -306,7 +308,7 @@
 
     .media-caption {
         padding: 0.75rem;
-        background: white;
+        background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
         font-size: 0.75rem;
         color: #64748b;
         border-top: 1px solid #e2e8f0;
@@ -330,9 +332,9 @@
     .solve-modal-card {
         width: 100%;
         max-width: 560px;
-        background: #ffffff;
+        background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
         border-radius: 14px;
-        border: 1px solid #e2e8f0;
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
         box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
         padding: 1.25rem;
     }
@@ -491,13 +493,13 @@
                 </div>
 
                 {% if complaint.field_responses.all %}
-                <div class="info-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #f0f9ff; border: 1px solid #e0f2fe; border-radius: 12px; box-shadow: none;">
+                <div class="info-section" style="margin-top: 1.5rem; padding: 1.5rem; background: #f0f9ff; border: 1px solid #e0f2fe; border-radius: 16px; box-shadow: none;">
                     <h3 style="margin-top:0; border-bottom: 2px solid #bae6fd; color: #0369a1; padding-bottom: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
                         <i class="fa-solid fa-list-check"></i> Additional Form Data
                     </h3>
                     <div class="meta-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
                         {% for response in complaint.field_responses.all %}
-                        <div class="meta-card" style="background: white; border: 1px solid #e0f2fe; padding: 0.85rem 1rem; border-radius: 10px;">
+                        <div class="meta-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid #e0f2fe; padding: 0.85rem 1rem; border-radius: 10px;">
                             <div class="meta-label" style="color: #0369a1; font-weight: 800; font-size: 0.68rem; text-transform: uppercase; margin-bottom: 0.3rem; letter-spacing: 0.04em;">{{ response.field.label }}</div>
                             <div class="meta-value" style="color: #0f172a; font-size: 0.95rem; line-height: 1.5; font-weight: 700;">{{ response.value|linebreaksbr }}</div>
                         </div>
@@ -510,7 +512,7 @@
             {% if complaint.resolution_notes %}
             <div class="info-item" style="margin-top: 1.5rem;">
                 <div class="info-label">Resolution Notes</div>
-                <div class="info-value" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.2rem; border-radius: 12px; font-weight: 500; color: #166534;">
+                <div class="info-value" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.2rem; border-radius: 16px; font-weight: 500; color: #166534;">
                     {{ complaint.resolution_notes }}
                 </div>
             </div>
@@ -598,7 +600,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 16px; border: 2px dashed #e2e8f0;">
                 <i class="fa-solid fa-file-circle-xmark" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
                 <p style="color: #64748b; font-weight: 600;">No live proof or media uploaded by the user.</p>
             </div>
@@ -644,7 +646,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 16px; border: 2px dashed #e2e8f0;">
                 <i class="fa-solid fa-file-circle-xmark" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
                 <p style="color: #64748b; font-weight: 600;">No completion proof uploaded yet.</p>
             </div>
@@ -676,7 +678,7 @@
         <div class="info-section">
             <h3><i class="fa-solid fa-star"></i> Citizen Rating & Feedback</h3>
             {% if complaint.citizen_rating %}
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem;">
+            <div style="background: #f8fafc; border: 1.5px solid rgba(255, 255, 255, 0.5); border-radius: 16px; padding: 1.2rem;">
                 <div style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">
                     {% for i in "12345" %}
                         {% if forloop.counter <= complaint.citizen_rating %}
@@ -695,7 +697,7 @@
                 </div>
             </div>
             {% else %}
-            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+            <div style="text-align: center; padding: 2rem; background: #f8fafc; border-radius: 16px; border: 2px dashed #e2e8f0;">
                 <i class="fa-solid fa-star-half-stroke" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
                 <p style="color: #64748b; font-weight: 600;">Citizen has not submitted rating yet.</p>
             </div>

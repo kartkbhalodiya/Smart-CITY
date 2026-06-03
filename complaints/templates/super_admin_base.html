@@ -115,7 +115,7 @@
             padding: 0.8rem 1rem;
             color: #000000;
             text-decoration: none;
-            border-radius: 12px;
+            border-radius: 16px;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
             font-size: 0.95rem;
@@ -192,7 +192,7 @@
         }
 
         .menu-toggle:hover {
-            background: white;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             color: #007bff;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
@@ -433,7 +433,7 @@
         <div class="container">
             {% if messages %}
                 {% for message in messages %}
-                    <div style="padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; background: {% if message.tags == 'success' %}#d1fae5; color: #065f46; border: 1px solid #34d399{% else %}#fee2e2; color: #991b1b; border: 1px solid #f87171{% endif %}; font-weight: 600; font-size: 0.95rem;">
+                    <div style="padding: 1rem; border-radius: 16px; margin-bottom: 1.5rem; background: {% if message.tags == 'success' %}#d1fae5; color: #065f46; border: 1px solid #34d399{% else %}#fee2e2; color: #991b1b; border: 1px solid #f87171{% endif %}; font-weight: 600; font-size: 0.95rem;">
                         {{ message }}
                     </div>
                 {% endfor %}

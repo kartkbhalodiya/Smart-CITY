@@ -1,15 +1,17 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin Login - Smart City Portal{% endblock %}
+{% block title %}Admin Login - JanHelp{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 450px; margin: 60px auto;">
+<div class="glass-card" style="max-width: 450px; margin: 60px auto;">
     <div style="text-align: center; margin-bottom: 2rem;">
-        <i class="fa-solid fa-user-shield" style="font-size: 3.5rem; color: #34495e; margin-bottom: 1rem;"></i>
-        <h1 style="color: var(--secondary); font-size: 1.75rem; font-weight: 800; letter-spacing: -0.5px;">Admin Portal</h1>
+        <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, var(--primary-blue) 0%, #154ec7 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(30, 102, 245, 0.2);">
+            <i class="fa-solid fa-user-shield" style="font-size: 2rem; color: #fff;"></i>
+        </div>
+        <h1 style="font-family: 'Poppins', sans-serif; font-size: 1.75rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px;">Admin Portal</h1>
         <p style="color: var(--text-muted); font-weight: 500;">Administrative System Login</p>
     </div>
-    
+
     {% if form.errors and not form.non_field_errors %}
     <div class="alert alert-error" style="margin-bottom: 1.5rem; font-size: 0.9rem;">
         Please correct the error below.
@@ -27,27 +29,27 @@
     <form method="post">
         {% csrf_token %}
         <div class="input-group">
-            <label style="display: block; margin-bottom: 0.5rem; color: var(--secondary); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px;">USERNAME</label>
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-dark); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Username</label>
             <input type="text" name="username" placeholder="Admin username" required autofocus>
             <i class="fa-solid fa-user"></i>
         </div>
-        
+
         <div class="input-group" style="margin-top: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; color: var(--secondary); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px;">PASSWORD</label>
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-dark); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Password</label>
             <input type="password" name="password" placeholder="••••••••" required>
             <i class="fa-solid fa-key"></i>
         </div>
-        
+
         <input type="hidden" name="next" value="{{ next }}">
-        
-        <button type="submit" class="btn" style="width: 100%; padding: 1rem; font-size: 1rem; margin-top: 2rem; background: #34495e;">
+
+        <button type="submit" class="btn" style="width: 100%; padding: 1rem; font-size: 1rem; margin-top: 2rem;">
             <i class="fa-solid fa-right-to-bracket" style="margin-right: 10px;"></i>
             Log in to Admin
         </button>
     </form>
-    
-    <div style="text-align: center; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 2rem;">
-        <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 700; font-size: 0.9rem;">
+
+    <div style="text-align: center; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 1.5rem; margin-top: 2rem;">
+        <a href="/" style="color: var(--primary-blue); text-decoration: none; font-weight: 700; font-size: 0.9rem;">
             <i class="fa-solid fa-arrow-left" style="margin-right: 5px;"></i>
             Return to Citizen Portal
         </a>
